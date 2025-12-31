@@ -431,94 +431,153 @@
       </template>
     </el-dialog>
 
-    <!-- 新增路线（模仿更新页面） -->
+    <!-- 新增路线（成对双向路线） -->
     <el-dialog
       v-model="addDialogVisible"
       title="新增门店路线"
-      width="550px"
+      width="800px"
       teleported
     >
       <el-form :model="addForm" :rules="addRules" ref="addFormRef">
         <div class="simple-form">
-          <!-- 点击计算前只显示：城市、起始门店、终点门店、导航方式 -->
-          <div class="simple-row">
-            <div class="simple-label">城市</div>
-            <div class="simple-control">
-              <el-select v-model="addForm.city" placeholder="选择城市" @change="handleAddCityChange">
-                <el-option v-for="c in cityOptions" :key="c.value" :label="c.label" :value="c.value" />
-              </el-select>
-            </div>
-          </div>
-
-          <div class="simple-row">
-            <div class="simple-label">起始门店</div>
-            <div class="simple-control">
-              <el-select v-model="addForm.startStore" placeholder="选择起始门店" filterable :disabled="!addForm.city">
-                <el-option v-for="s in addFilteredStartStores" :key="s.id" :label="s.displayName" :value="s.id" />
-              </el-select>
-            </div>
-          </div>
-
-          <div class="simple-row">
-            <div class="simple-label">终点门店</div>
-            <div class="simple-control">
-              <el-select v-model="addForm.endStore" placeholder="选择终点门店" filterable :disabled="!addForm.city">
-                <el-option v-for="s in addFilteredEndStores" :key="s.id" :label="s.displayName" :value="s.id" />
-              </el-select>
-            </div>
-          </div>
-
-          <div class="simple-row">
-            <div class="simple-label">导航方式</div>
-            <div class="simple-control" style="display:flex; gap:12px; align-items:center;">
-              <el-select v-model="addForm.navigationType" style="width:160px">
-                <el-option label="步行" value="walking" />
-                <el-option label="骑行" value="cycling" />
-                <el-option label="骑电动车" value="e-bike" />
-                <el-option label="公交" value="bus" />
-                <el-option label="驾车" value="driving" />
-              </el-select>
-              <el-select v-model="addForm.planStrategy" style="width:160px">
-                <el-option label="距离最短" value="shortest-distance" />
-                <el-option label="用时最短" value="shortest-time" />
-              </el-select>
-            </div>
-          </div>
-
-          <!-- 点击计算后显示的字段 -->
-          <template v-if="addForm.navigationTime">
-            <div class="simple-row" style="margin-top: 16px;">
-              <div class="simple-label">新导航耗时</div>
-              <div class="simple-control">
-                <span class="readonly-value">{{ addForm.navigationTime }} 分钟</span>
-                <span class="form-tip-inline">基于地图API实时计算</span>
+          <!-- 优化布局：城市、起始门店、终点门店全部在一行，门店宽度均分 -->
+          <div class="compact-row">
+            <div class="compact-item">
+              <div class="compact-label">城市</div>
+              <div class="compact-control">
+                <el-select v-model="addForm.city" placeholder="选择城市" @change="handleAddCityChange">
+                  <el-option v-for="c in cityOptions" :key="c.value" :label="c.label" :value="c.value" />
+                </el-select>
               </div>
             </div>
-
-            <div class="simple-row">
-              <div class="simple-label">新标准时间</div>
-              <div class="simple-control">
-                <el-input-number v-model="addForm.standardTime" :min="1" :max="999" controls-position="right" />
-                <el-button type="text" class="view-standard-btn" @click="showStandardDetail(addForm.navigationTime, addForm.standardTime)">查看依据</el-button>
-                <div class="form-tip-inline">建议：系统会根据导航耗时推荐</div>
+            <div class="compact-item">
+              <div class="compact-label">起始门店</div>
+              <div class="compact-control">
+                <el-select v-model="addForm.startStore" placeholder="选择起始门店" filterable :disabled="!addForm.city">
+                  <el-option v-for="s in addFilteredStartStores" :key="s.id" :label="s.displayName" :value="s.id" />
+                </el-select>
               </div>
             </div>
-
-            <div class="simple-row">
-              <div class="simple-label">更新策略</div>
-              <div class="simple-control">
-                <el-radio-group v-model="addForm.updateStrategy">
-                  <el-radio label="manual">手动更新</el-radio>
-                  <el-radio label="auto">自动更新</el-radio>
-                </el-radio-group>
-                <div class="form-tip-inline">自动更新将定期调用地图API</div>
+            <div class="compact-item">
+              <div class="compact-label">终点门店</div>
+              <div class="compact-control">
+                <el-select v-model="addForm.endStore" placeholder="选择终点门店" filterable :disabled="!addForm.city">
+                  <el-option v-for="s in addFilteredEndStores" :key="s.id" :label="s.displayName" :value="s.id" />
+                </el-select>
               </div>
             </div>
+          </div>
 
-            <div class="simple-row">
-              <div class="simple-label">更新说明</div>
-              <div class="simple-control">
-                <el-input v-model="addForm.updateNote" type="textarea" :rows="2" placeholder="请输入说明" />
+          <!-- 双向路线导航策略设置 -->
+          <div style="margin-top: 12px; margin-bottom: 8px;">
+            <el-divider>路线导航策略设置</el-divider>
+          </div>
+
+          <!-- 正向路线策略 -->
+          <div class="route-strategy-section">
+            <div class="route-strategy-header">
+              <span class="route-strategy-title">前往路线</span>
+              <span class="route-strategy-desc">{{ getStoreRouteText(addForm.startStore, addForm.endStore, 'forward') }}</span>
+            </div>
+            <div class="route-strategy-controls">
+              <div class="strategy-row">
+                <div class="strategy-label">导航方式</div>
+                <div class="strategy-control">
+                  <el-select v-model="addForm.forwardNavigationType" style="width:140px">
+                    <el-option label="步行" value="walking" />
+                    <el-option label="骑行" value="cycling" />
+                    <el-option label="骑电动车" value="e-bike" />
+                    <el-option label="公交" value="bus" />
+                    <el-option label="驾车" value="driving" />
+                  </el-select>
+                </div>
+                <div class="strategy-label">方案策略</div>
+                <div class="strategy-control">
+                  <el-select v-model="addForm.forwardPlanStrategy" style="width:140px">
+                    <el-option label="距离最短" value="shortest-distance" />
+                    <el-option label="用时最短" value="shortest-time" />
+                  </el-select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 反向路线策略 -->
+          <div class="route-strategy-section">
+            <div class="route-strategy-header">
+              <span class="route-strategy-title">返回路线</span>
+              <span class="route-strategy-desc">{{ getStoreRouteText(addForm.startStore, addForm.endStore, 'backward') }}</span>
+            </div>
+            <div class="route-strategy-controls">
+              <div class="strategy-row">
+                <div class="strategy-label">导航方式</div>
+                <div class="strategy-control">
+                  <el-select v-model="addForm.backwardNavigationType" style="width:140px">
+                    <el-option label="步行" value="walking" />
+                    <el-option label="骑行" value="cycling" />
+                    <el-option label="骑电动车" value="e-bike" />
+                    <el-option label="公交" value="bus" />
+                    <el-option label="驾车" value="driving" />
+                  </el-select>
+                </div>
+                <div class="strategy-label">方案策略</div>
+                <div class="strategy-control">
+                  <el-select v-model="addForm.backwardPlanStrategy" style="width:140px">
+                    <el-option label="距离最短" value="shortest-distance" />
+                    <el-option label="用时最短" value="shortest-time" />
+                  </el-select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 点击计算后显示的双向路线详情 -->
+          <template v-if="addForm.routePairs && addForm.routePairs.length > 0">
+            <div style="margin-top: 16px; margin-bottom: 8px;">
+              <el-divider>路线详情（将新增两条双向路线）</el-divider>
+            </div>
+
+            <div v-for="(pair, index) in addForm.routePairs" :key="index" class="route-pair-section">
+              <div class="route-pair-header">
+                <span class="route-direction">{{ pair.route }}</span>
+                <el-tag size="small" type="info">{{ getNavigationTypeLabel(pair.navigationType) }} + {{ getPlanStrategyLabel(pair.planStrategy) }}</el-tag>
+              </div>
+
+              <div class="route-pair-content">
+                <div class="simple-row">
+                  <div class="simple-label">导航耗时</div>
+                  <div class="simple-control">
+                    <span class="readonly-value">{{ pair.navigationTime }} 分钟</span>
+                    <span class="form-tip-inline">基于地图API实时计算</span>
+                  </div>
+                </div>
+
+                <div class="simple-row">
+                  <div class="simple-label">标准时间</div>
+                  <div class="simple-control">
+                    <el-input-number v-model="pair.standardTime" :min="1" :max="999" controls-position="right" style="width: 120px;" />
+                    <el-button type="text" class="view-standard-btn" @click="showStandardDetail(pair.navigationTime, pair.standardTime)">查看依据</el-button>
+                    <div class="form-tip-inline">建议：系统会根据导航耗时推荐</div>
+                  </div>
+                </div>
+
+                <div class="simple-row">
+                  <div class="simple-label">更新策略</div>
+                  <div class="simple-control">
+                    <el-radio-group v-model="pair.updateStrategy">
+                      <el-radio label="manual">手动更新</el-radio>
+                      <el-radio label="auto">自动更新</el-radio>
+                    </el-radio-group>
+                    <div class="form-tip-inline">自动更新将定期调用地图API</div>
+                  </div>
+                </div>
+
+                <div class="simple-row">
+                  <div class="simple-label">路线说明</div>
+                  <div class="simple-control">
+                    <el-input v-model="pair.routeNote" type="textarea" :rows="2" :placeholder="`请输入 ${pair.route} 的说明`" />
+                  </div>
+                </div>
               </div>
             </div>
           </template>
@@ -527,14 +586,14 @@
 
       <div v-if="addState === 'computing'" class="update-status">
         <el-icon class="is-loading"><Loading /></el-icon>
-        <span>正在计算，请稍候...</span>
+        <span>正在计算双向路线，请稍候...</span>
       </div>
 
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="addDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="computeAddRoute" :disabled="!addForm.startStore || !addForm.endStore || addState === 'computing'">{{ addState === 'ready' ? '重新计算' : '开始计算' }}</el-button>
-          <el-button type="primary" @click="confirmAddRoute" :disabled="!addForm.navigationTime">确认保存</el-button>
+          <el-button type="primary" @click="confirmAddRoute" :disabled="!addForm.routePairs || addForm.routePairs.length === 0">确认保存</el-button>
         </span>
       </template>
     </el-dialog>
@@ -1362,12 +1421,14 @@ const addForm = reactive({
   city: 'chengdu',
   startStore: '1',
   endStore: '2',
-  navigationType: strategyForm.navigationType || 'cycling',
-  planStrategy: strategyForm.planStrategy || 'shortest-time',
-  navigationTime: null,
-  standardTime: null,
-  updateStrategy: 'manual',
-  updateNote: ''
+  // 正向路线策略（默认使用全局策略）
+  forwardNavigationType: strategyForm.navigationType || 'cycling',
+  forwardPlanStrategy: strategyForm.planStrategy || 'shortest-time',
+  // 反向路线策略（默认使用全局策略）
+  backwardNavigationType: strategyForm.navigationType || 'cycling',
+  backwardPlanStrategy: strategyForm.planStrategy || 'shortest-time',
+  // 双向路线数据
+  routePairs: null // 计算后填充：[{route, navigationTime, standardTime, navigationType, planStrategy, updateStrategy, routeNote}, ...]
 })
 const addRules = {
   city: [{ required: true, message: '请选择城市', trigger: 'change' }],
@@ -1375,7 +1436,7 @@ const addRules = {
   endStore: [{ required: true, message: '请选择终点门店', trigger: 'change' }]
 }
 const addFormRef = ref(null)
-const addState = ref('idle') // idle | computing
+const addState = ref('idle') // idle | computing | ready
 
 // 新增页面城市选择处理
 const handleAddCityChange = () => {
@@ -1383,20 +1444,80 @@ const handleAddCityChange = () => {
   addForm.endStore = ''
 }
 
+// 获取路线文本描述
+const getStoreRouteText = (startStoreId, endStoreId, direction) => {
+  if (!startStoreId || !endStoreId) return ''
+  const startStore = stores.value.find(s => s.id === startStoreId)
+  const endStore = stores.value.find(s => s.id === endStoreId)
+  if (!startStore || !endStore) return ''
+
+  if (direction === 'forward') {
+    return `${startStore.displayName} → ${endStore.displayName}`
+  } else if (direction === 'backward') {
+    return `${endStore.displayName} → ${startStore.displayName}`
+  }
+  return ''
+}
+
 const computeAddRoute = async () => {
   if (!addForm.startStore || !addForm.endStore) {
     ElMessage.error('请选择起始与终点门店')
     return
   }
-  const start = stores.value.find(s => s.id === addForm.startStore)
-  const end = stores.value.find(s => s.id === addForm.endStore)
+
+  // 检查是否选择了相同的门店
+  if (addForm.startStore === addForm.endStore) {
+    ElMessage.error('起始门店和终点门店不能相同')
+    return
+  }
+
+  const startStore = stores.value.find(s => s.id === addForm.startStore)
+  const endStore = stores.value.find(s => s.id === addForm.endStore)
+
+  if (!startStore || !endStore) {
+    ElMessage.error('门店信息不完整')
+    return
+  }
+
   addState.value = 'computing'
+
   try {
-    const nav = await simulateMapApiCall(start, end, addForm.navigationType, addForm.planStrategy)
-    addForm.navigationTime = nav
-    addForm.standardTime = computeStandardFromNavigation(nav)
+    // 并行计算双向路线，使用分别设置的导航策略
+    const [forwardNav, backwardNav] = await Promise.all([
+      simulateMapApiCall(startStore, endStore, addForm.forwardNavigationType, addForm.forwardPlanStrategy),
+      simulateMapApiCall(endStore, startStore, addForm.backwardNavigationType, addForm.backwardPlanStrategy)
+    ])
+
+    // 创建双向路线对
+    addForm.routePairs = [
+      {
+        route: `${startStore.displayName} → ${endStore.displayName}`,
+        direction: 'forward',
+        startStore: startStore,
+        endStore: endStore,
+        navigationTime: forwardNav,
+        standardTime: computeStandardFromNavigation(forwardNav),
+        navigationType: addForm.forwardNavigationType,
+        planStrategy: addForm.forwardPlanStrategy,
+        updateStrategy: 'manual',
+        routeNote: ''
+      },
+      {
+        route: `${endStore.displayName} → ${startStore.displayName}`,
+        direction: 'backward',
+        startStore: endStore,
+        endStore: startStore,
+        navigationTime: backwardNav,
+        standardTime: computeStandardFromNavigation(backwardNav),
+        navigationType: addForm.backwardNavigationType,
+        planStrategy: addForm.backwardPlanStrategy,
+        updateStrategy: 'manual',
+        routeNote: ''
+      }
+    ]
+
     addState.value = 'ready'
-    ElMessage.success('计算完成')
+    ElMessage.success('双向路线计算完成')
   } catch (e) {
     console.error('计算失败', e)
     ElMessage.error('计算失败，请重试')
@@ -1405,56 +1526,59 @@ const computeAddRoute = async () => {
 }
 
 const confirmAddRoute = () => {
-  // save as new item but do not disrupt existing UX
-  if (!addForm.navigationTime) {
-    ElMessage.error('请先计算导航耗时')
+  if (!addForm.routePairs || addForm.routePairs.length === 0) {
+    ElMessage.error('请先计算路线')
     return
   }
-  const start = stores.value.find(s => s.id === addForm.startStore)
-  const end = stores.value.find(s => s.id === addForm.endStore)
-  const id = String(Date.now())
+
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
   const updaterName = sessionStorage.getItem('username') || '管理员'
   const updaterId = sessionStorage.getItem('userId') || sessionStorage.getItem('employeeId') || ''
-  const newItem = {
-    id,
-    route: `${start.displayName} → ${end.displayName}`,
+
+  // 保存两条双向路线记录
+  const newItems = addForm.routePairs.map((pair, index) => ({
+    id: String(Date.now()) + '_' + index,
+    route: pair.route,
     direction: '单向',
-    startStore: start,
-    endStore: end,
-    navigationTime: Number(addForm.navigationTime),
-    standardTime: Number(addForm.standardTime),
-    navigationType: addForm.navigationType,
-    planStrategy: addForm.planStrategy,
-    updateStrategy: 'manual',
+    startStore: pair.startStore,
+    endStore: pair.endStore,
+    navigationTime: Number(pair.navigationTime),
+    standardTime: Number(pair.standardTime),
+    navigationType: pair.navigationType,
+    planStrategy: pair.planStrategy,
+    updateStrategy: pair.updateStrategy,
     lastUpdateType: 'user',
     lastUpdateTime: now,
     history: [
       {
         updateTime: now,
         oldNavigationTime: null,
-        newNavigationTime: Number(addForm.navigationTime),
+        newNavigationTime: Number(pair.navigationTime),
         oldStandardTime: null,
-        newStandardTime: Number(addForm.standardTime),
-        updateNote: addForm.updateNote || '新增路线',
+        newStandardTime: Number(pair.standardTime),
+        updateNote: pair.routeNote || `新增路线：${pair.route}`,
         updaterType: 'user',
         updaterName: `${updaterName}`,
         updaterId: updaterId
       }
     ]
-  }
-  intervalData.value.unshift(newItem)
-  ElMessage.success('新增路线已保存')
+  }))
+
+  // 添加到数据列表
+  intervalData.value.unshift(...newItems)
+
+  ElMessage.success(`新增双向路线已保存（${newItems.length} 条记录）`)
   addDialogVisible.value = false
-  // reset
+
+  // 重置表单
   Object.assign(addForm, {
     startStore: '',
     endStore: '',
-    navigationType: strategyForm.navigationType,
-    planStrategy: strategyForm.planStrategy,
-    navigationTime: null,
-    standardTime: null,
-    updateNote: ''
+    forwardNavigationType: strategyForm.navigationType,
+    forwardPlanStrategy: strategyForm.planStrategy,
+    backwardNavigationType: strategyForm.navigationType,
+    backwardPlanStrategy: strategyForm.planStrategy,
+    routePairs: null
   })
 }
 </script>
@@ -1474,7 +1598,7 @@ const confirmAddRoute = () => {
   margin: 0 0 8px 0;
   font-size: 24px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: hsl(var(--primary));
 }
 
 .page-header p {
@@ -1737,5 +1861,119 @@ const confirmAddRoute = () => {
 .el-dialog__wrapper .el-select-dropdown,
 .el-select-dropdown {
   z-index: 3002 !important;
+}
+
+/* 路线策略设置样式 */
+.route-strategy-section {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: var(--el-bg-color-page);
+}
+
+.route-strategy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.route-strategy-title {
+  font-weight: 600;
+  color: hsl(var(--primary));
+  font-size: 14px;
+}
+
+.route-strategy-desc {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+.route-strategy-controls {
+  padding-left: 16px;
+}
+
+.strategy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.strategy-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  min-width: 60px;
+}
+
+.strategy-control {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* 紧凑布局样式 */
+.compact-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.compact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compact-item:first-child {
+  flex: 0 0 120px; /* 城市列固定宽度 */
+}
+
+.compact-item:nth-child(2),
+.compact-item:nth-child(3) {
+  flex: 1; /* 起始门店和终点门店均分剩余空间 */
+}
+
+.compact-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+}
+
+.compact-control {
+  flex: 1;
+}
+
+/* 双向路线样式 */
+.route-pair-section {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: var(--el-bg-color-page);
+}
+
+.route-pair-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.route-direction {
+  font-weight: 600;
+  color: hsl(var(--primary));
+  font-size: 14px;
+}
+
+.route-pair-content .simple-row {
+  margin-bottom: 12px;
+}
+
+.route-pair-content .simple-row:last-child {
+  margin-bottom: 0;
 }
 </style>

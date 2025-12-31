@@ -327,6 +327,14 @@ const routes = [
         meta: {
           title: '门店间隔时间库'
         }
+      },
+      {
+        path: 'custom-time-strategy',
+        name: 'custom-time-strategy',
+        component: () => import('../views/CustomTimeStrategy.vue'),
+        meta: {
+          title: '自定义时间策略'
+        }
       }
     ]
   },

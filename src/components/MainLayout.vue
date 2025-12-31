@@ -47,6 +47,10 @@
               <el-icon><Location /></el-icon>
               <span>门店间隔时间库</span>
             </el-menu-item>
+            <el-menu-item index="custom-time-strategy">
+              <el-icon><Clock /></el-icon>
+              <span>自定义时间策略</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- 主要功能菜单 - 已屏蔽 -->
