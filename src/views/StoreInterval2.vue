@@ -14,119 +14,51 @@
             <el-tag type="info" size="small">默认: 骑行导航 + 用时最短</el-tag>
           </div>
         </template>
-        <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-          <el-tab-pane label="导航策略" name="strategy">
-            <el-form :model="strategyForm" inline>
-              <el-form-item label="导航方式">
-                <el-select
-                  v-model="strategyForm.navigationType"
-                  placeholder="选择导航方式"
-                  style="width: 140px"
-                >
-                  <el-option label="步行" value="walking" />
-                  <el-option label="骑行" value="cycling" />
-                  <el-option label="骑电动车" value="e-bike" />
-                  <el-option label="公交" value="bus" />
-                  <el-option label="驾车" value="driving" />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="方案策略">
-                <el-select
-                  v-model="strategyForm.planStrategy"
-                  placeholder="选择方案策略"
-                  style="width: 140px"
-                >
-                  <el-option label="距离最短" value="shortest-distance" />
-                  <el-option label="用时最短" value="shortest-time" />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
+        <div class="strategy-section-content">
+          <el-form :model="strategyForm" inline>
+            <el-form-item label="导航方式">
+              <el-select
+                v-model="strategyForm.navigationType"
+                placeholder="选择导航方式"
+                style="width: 140px"
+              >
+                <el-option label="步行" value="walking" />
+                <el-option label="骑行" value="cycling" />
+                <el-option label="骑电动车" value="e-bike" />
+                <el-option label="公交" value="bus" />
+                <el-option label="驾车" value="driving" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="方案策略">
+              <el-select
+                v-model="strategyForm.planStrategy"
+                placeholder="选择方案策略"
+                style="width: 140px"
+              >
+                <el-option label="距离最短" value="shortest-distance" />
+                <el-option label="用时最短" value="shortest-time" />
+              </el-select>
+            </el-form-item>
+            <!-- <el-form-item>
                 <el-button type="primary" @click="handleApplyStrategy">
                   <el-icon><Setting /></el-icon>
                   应用策略
                 </el-button>
-              </el-form-item>
-            </el-form>
-          </el-tab-pane>
+              </el-form-item> -->
+          </el-form>
 
-          <el-tab-pane label="自动更新" name="auto-update">
-            <el-form :model="autoUpdateConfig" inline>
-              <el-form-item label="启用自动更新">
-                <el-switch
-                  v-model="autoUpdateConfig.enabled"
-                  active-text="开启"
-                  inactive-text="关闭"
-                />
-              </el-form-item>
-              <el-form-item v-if="autoUpdateConfig.enabled" label="更新频率">
-                <el-select
-                  v-model="autoUpdateConfig.frequency"
-                  placeholder="选择更新频率"
-                  style="width: 120px"
-                >
-                  <el-option label="每日" value="daily" />
-                  <el-option label="每周" value="weekly" />
-                  <el-option label="每月" value="monthly" />
-                </el-select>
-              </el-form-item>
-              <el-form-item v-if="autoUpdateConfig.enabled" label="更新时间">
-                <el-time-select
-                  v-model="autoUpdateConfig.time"
-                  placeholder="选择时间"
-                  start="00:00"
-                  end="23:59"
-                  step="00:30"
-                  style="width: 120px"
-                />
-              </el-form-item>
-              <el-form-item v-if="autoUpdateConfig.enabled && autoUpdateConfig.frequency === 'weekly'" label="星期">
-                <el-select
-                  v-model="autoUpdateConfig.dayOfWeek"
-                  placeholder="选择星期"
-                  style="width: 120px"
-                >
-                  <el-option label="周一" :value="1" />
-                  <el-option label="周二" :value="2" />
-                  <el-option label="周三" :value="3" />
-                  <el-option label="周四" :value="4" />
-                  <el-option label="周五" :value="5" />
-                  <el-option label="周六" :value="6" />
-                  <el-option label="周日" :value="7" />
-                </el-select>
-              </el-form-item>
-              <el-form-item v-if="autoUpdateConfig.enabled && autoUpdateConfig.frequency === 'monthly'" label="日期">
-                <el-select
-                  v-model="autoUpdateConfig.dayOfMonth"
-                  placeholder="选择日期"
-                  style="width: 120px"
-                >
-                  <el-option
-                    v-for="day in 31"
-                    :key="day"
-                    :label="`每月${day}日`"
-                    :value="day"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item v-if="autoUpdateConfig.enabled">
-                <el-button type="primary" @click="handleSaveAutoUpdateConfig">
-                  <el-icon><Check /></el-icon>
-                  保存配置
-                </el-button>
-              </el-form-item>
-            </el-form>
-
-            <div v-if="autoUpdateConfig.enabled" class="auto-update-preview">
-              <el-alert
-                title="自动更新预览"
-                :description="getAutoUpdateDescription()"
-                type="info"
-                show-icon
-                :closable="false"
-              />
-            </div>
-          </el-tab-pane>
-        </el-tabs>
+          <!-- 自动更新提示 -->
+          <div class="auto-update-hint">
+            <el-alert
+              title="自动更新说明"
+              description="默认每月1号全量更新"
+              type="info"
+              show-icon
+              :closable="false"
+              style="margin-top: 16px;"
+            />
+          </div>
+        </div>
       </el-card>
     </div>
 
@@ -149,35 +81,38 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="起始门店">
-          <el-select
-            v-model="searchForm.startStore"
-            placeholder="选择起始门店"
-            clearable
-            filterable
-          >
-            <el-option
-              v-for="store in filteredStartStores"
-              :key="store.id"
-              :label="store.displayName"
-              :value="store.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="终点门店">
-          <el-select
-            v-model="searchForm.endStore"
-            placeholder="选择终点门店"
-            clearable
-            filterable
-          >
-            <el-option
-              v-for="store in filteredEndStores"
-              :key="store.id"
-              :label="store.displayName"
-              :value="store.id"
-            />
-          </el-select>
+        <el-form-item label="关联门店">
+          <div class="store-pair-selector">
+            <el-select
+              v-model="searchForm.startStore"
+              placeholder="选择门店"
+              clearable
+              filterable
+              style="width: 160px; margin-right: 8px;"
+            >
+              <el-option
+                v-for="store in filteredStartStores"
+                :key="store.id"
+                :label="store.displayName"
+                :value="store.id"
+              />
+            </el-select>
+            <span style="margin: 0 8px; font-size: 18px; color: #999;">↔</span>
+            <el-select
+              v-model="searchForm.endStore"
+              placeholder="选择门店"
+              clearable
+              filterable
+              style="width: 160px;"
+            >
+              <el-option
+                v-for="store in filteredEndStores"
+                :key="store.id"
+                :label="store.displayName"
+                :value="store.id"
+              />
+            </el-select>
+          </div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
@@ -218,31 +153,27 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="route" label="路线" width="200">
+        <el-table-column prop="route" label="双向路线" width="200">
           <template #default="scope">
             <div class="route-info">
               <span class="route-text">{{ scope.row.route }}</span>
-              <span class="direction-tag">{{ scope.row.direction }}</span>
+              <el-tag size="small" type="info" style="margin-left: 8px;">双向</el-tag>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="startStore.displayName" label="起始门店" width="200">
+        <el-table-column prop="route" label="关联门店" width="280">
           <template #default="scope">
-            <div class="store-info">
-              <div class="store-name">{{ scope.row.startStore.displayName }}</div>
-              <div class="store-address">{{ scope.row.startStore.address }}</div>
-              <div class="store-coords">经纬度: {{ scope.row.startStore.longitude }}, {{ scope.row.startStore.latitude }}</div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="endStore.displayName" label="终点门店" width="200">
-          <template #default="scope">
-            <div class="store-info">
-              <div class="store-name">{{ scope.row.endStore.displayName }}</div>
-              <div class="store-address">{{ scope.row.endStore.address }}</div>
-              <div class="store-coords">经纬度: {{ scope.row.endStore.longitude }}, {{ scope.row.endStore.latitude }}</div>
+            <div class="store-pair-display">
+              <div class="store-info">
+                <div class="store-name">{{ scope.row.startStore.displayName }}</div>
+                <div class="store-address">{{ scope.row.startStore.address }}</div>
+              </div>
+              <span class="bidirectional-arrow">↔</span>
+              <div class="store-info">
+                <div class="store-name">{{ scope.row.endStore.displayName }}</div>
+                <div class="store-address">{{ scope.row.endStore.address }}</div>
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -332,7 +263,7 @@
         <div class="simple-form">
           <div class="simple-row">
             <div class="simple-label">路线</div>
-            <div class="simple-control">{{ currentUpdateItem?.route }}</div>
+            <div class="simple-control">{{ currentUpdateItem?.route.replace('→', '↔') }}</div>
           </div>
 
           <div class="simple-row">
@@ -470,39 +401,51 @@
               </div>
             </div>
             <div class="compact-item">
-              <div class="compact-label">起始门店</div>
+              <div class="compact-label">关联门店</div>
               <div class="compact-control">
-                <el-select v-model="addForm.startStore" placeholder="选择起始门店" filterable :disabled="!addForm.city">
-                  <el-option v-for="s in addFilteredStartStores" :key="s.id" :label="s.displayName" :value="s.id" />
-                </el-select>
-              </div>
-            </div>
-            <div class="compact-item">
-              <div class="compact-label">终点门店</div>
-              <div class="compact-control">
-                <el-select v-model="addForm.endStore" placeholder="选择终点门店" filterable :disabled="!addForm.city">
-                  <el-option v-for="s in addFilteredEndStores" :key="s.id" :label="s.displayName" :value="s.id" />
-                </el-select>
+                <div class="store-pair-selector">
+                  <el-select
+                    v-model="addForm.startStore"
+                    placeholder="选择门店"
+                    clearable
+                    filterable
+                    style="width: 160px; margin-right: 8px;"
+                    :disabled="!addForm.city"
+                  >
+                    <el-option v-for="s in addFilteredStartStores" :key="s.id" :label="s.displayName" :value="s.id" />
+                  </el-select>
+                  <span style="margin: 0 8px; font-size: 18px; color: #999;">↔</span>
+                  <el-select
+                    v-model="addForm.endStore"
+                    placeholder="选择门店"
+                    clearable
+                    filterable
+                    style="width: 160px;"
+                    :disabled="!addForm.city"
+                  >
+                    <el-option v-for="s in addFilteredEndStores" :key="s.id" :label="s.displayName" :value="s.id" />
+                  </el-select>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- 双向路线导航策略设置 -->
           <div style="margin-top: 12px; margin-bottom: 8px;">
-            <el-divider>路线导航策略设置</el-divider>
+            <el-divider>双向路线导航策略设置</el-divider>
           </div>
 
-          <!-- 正向路线策略 -->
+          <!-- 双向路线策略 -->
           <div class="route-strategy-section">
             <div class="route-strategy-header">
-              <span class="route-strategy-title">前往路线</span>
-              <span class="route-strategy-desc">{{ getStoreRouteText(addForm.startStore, addForm.endStore, 'forward') }}</span>
+              <span class="route-strategy-title">双向路线</span>
+              <span class="route-strategy-desc">{{ getStoreRouteText(addForm.startStore, addForm.endStore, 'bidirectional') }}</span>
             </div>
             <div class="route-strategy-controls">
               <div class="strategy-row">
                 <div class="strategy-label">导航方式</div>
                 <div class="strategy-control">
-                  <el-select v-model="addForm.forwardNavigationType" style="width:140px">
+                  <el-select v-model="addForm.navigationType" style="width:140px">
                     <el-option label="步行" value="walking" />
                     <el-option label="骑行" value="cycling" />
                     <el-option label="骑电动车" value="e-bike" />
@@ -512,36 +455,7 @@
                 </div>
                 <div class="strategy-label">方案策略</div>
                 <div class="strategy-control">
-                  <el-select v-model="addForm.forwardPlanStrategy" style="width:140px">
-                    <el-option label="距离最短" value="shortest-distance" />
-                    <el-option label="用时最短" value="shortest-time" />
-                  </el-select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 反向路线策略 -->
-          <div class="route-strategy-section">
-            <div class="route-strategy-header">
-              <span class="route-strategy-title">返回路线</span>
-              <span class="route-strategy-desc">{{ getStoreRouteText(addForm.startStore, addForm.endStore, 'backward') }}</span>
-            </div>
-            <div class="route-strategy-controls">
-              <div class="strategy-row">
-                <div class="strategy-label">导航方式</div>
-                <div class="strategy-control">
-                  <el-select v-model="addForm.backwardNavigationType" style="width:140px">
-                    <el-option label="步行" value="walking" />
-                    <el-option label="骑行" value="cycling" />
-                    <el-option label="骑电动车" value="e-bike" />
-                    <el-option label="公交" value="bus" />
-                    <el-option label="驾车" value="driving" />
-                  </el-select>
-                </div>
-                <div class="strategy-label">方案策略</div>
-                <div class="strategy-control">
-                  <el-select v-model="addForm.backwardPlanStrategy" style="width:140px">
+                  <el-select v-model="addForm.planStrategy" style="width:140px">
                     <el-option label="距离最短" value="shortest-distance" />
                     <el-option label="用时最短" value="shortest-time" />
                   </el-select>
@@ -551,22 +465,22 @@
           </div>
 
           <!-- 点击计算后显示的双向路线详情 -->
-          <template v-if="addForm.routePairs && addForm.routePairs.length > 0">
+          <template v-if="addForm.routePair">
             <div style="margin-top: 16px; margin-bottom: 8px;">
-              <el-divider>路线详情（将新增两条双向路线）</el-divider>
+              <el-divider>双向路线详情</el-divider>
             </div>
 
-            <div v-for="(pair, index) in addForm.routePairs" :key="index" class="route-pair-section">
+            <div class="route-pair-section">
               <div class="route-pair-header">
-                <span class="route-direction">{{ pair.route }}</span>
-                <el-tag size="small" type="info">{{ getNavigationTypeLabel(pair.navigationType) }} + {{ getPlanStrategyLabel(pair.planStrategy) }}</el-tag>
+                <span class="route-direction">{{ addForm.routePair.route }}</span>
+                <el-tag size="small" type="info">{{ getNavigationTypeLabel(addForm.routePair.navigationType) }} + {{ getPlanStrategyLabel(addForm.routePair.planStrategy) }}</el-tag>
               </div>
 
               <div class="route-pair-content">
                 <div class="simple-row">
                   <div class="simple-label">距离</div>
                   <div class="simple-control">
-                    <span class="readonly-value">{{ pair.distance ? pair.distance.toFixed(2) : 'N/A' }} km</span>
+                    <span class="readonly-value">{{ addForm.routePair.distance ? addForm.routePair.distance.toFixed(2) : 'N/A' }} km</span>
                     <span class="form-tip-inline">基于地图API实时计算</span>
                   </div>
                 </div>
@@ -574,7 +488,7 @@
                 <div class="simple-row">
                   <div class="simple-label">导航耗时</div>
                   <div class="simple-control">
-                    <span class="readonly-value">{{ pair.navigationTime }} 分钟</span>
+                    <span class="readonly-value">{{ addForm.routePair.navigationTime }} 分钟</span>
                     <span class="form-tip-inline">基于地图API实时计算</span>
                   </div>
                 </div>
@@ -582,8 +496,8 @@
                 <div class="simple-row">
                   <div class="simple-label">标准时间</div>
                   <div class="simple-control">
-                    <el-input-number v-model="pair.standardTime" :min="1" :max="999" controls-position="right" style="width: 120px;" />
-                    <el-button type="text" class="view-standard-btn" @click="showStandardDetail(pair.navigationTime, pair.standardTime)">查看依据</el-button>
+                    <el-input-number v-model="addForm.routePair.standardTime" :min="1" :max="999" controls-position="right" style="width: 120px;" />
+                    <el-button type="text" class="view-standard-btn" @click="showStandardDetail(addForm.routePair.navigationTime, addForm.routePair.standardTime)">查看依据</el-button>
                     <div class="form-tip-inline">建议：系统会根据导航耗时推荐</div>
                   </div>
                 </div>
@@ -591,7 +505,7 @@
                 <div class="simple-row">
                   <div class="simple-label">更新策略</div>
                   <div class="simple-control">
-                    <el-radio-group v-model="pair.updateStrategy">
+                    <el-radio-group v-model="addForm.routePair.updateStrategy">
                       <el-radio label="manual">手动更新</el-radio>
                       <el-radio label="auto">自动更新</el-radio>
                     </el-radio-group>
@@ -602,7 +516,7 @@
                 <div class="simple-row">
                   <div class="simple-label">路线说明</div>
                   <div class="simple-control">
-                    <el-input v-model="pair.routeNote" type="textarea" :rows="2" :placeholder="`请输入 ${pair.route} 的说明`" />
+                    <el-input v-model="addForm.routePair.routeNote" type="textarea" :rows="2" placeholder="请输入路线说明" />
                   </div>
                 </div>
               </div>
@@ -620,7 +534,7 @@
         <span class="dialog-footer">
           <el-button @click="addDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="computeAddRoute" :disabled="!addForm.startStore || !addForm.endStore || addState === 'computing'">{{ addState === 'ready' ? '重新计算' : '开始计算' }}</el-button>
-          <el-button type="primary" @click="confirmAddRoute" :disabled="!addForm.routePairs || addForm.routePairs.length === 0">确认保存</el-button>
+          <el-button type="primary" @click="confirmAddRoute" :disabled="!addForm.routePair">确认保存</el-button>
         </span>
       </template>
     </el-dialog>
@@ -734,14 +648,6 @@ const strategyForm = reactive({
   planStrategy: 'shortest-time' // 默认用时最短
 })
 
-const autoUpdateConfig = reactive({
-  enabled: false,
-  frequency: 'daily', // 'daily', 'weekly', 'monthly'
-  time: '02:00', // HH:mm格式
-  dayOfWeek: 1, // 周几 (1-7, 1=周一)
-  dayOfMonth: 1 // 每月第几天 (1-31)
-})
-
 const updateForm = reactive({
   navigationTime: null,
   distance: null,
@@ -768,8 +674,7 @@ const updateFormOriginal = reactive({
   standardTime: null
 })
 
-// 策略配置标签页
-const activeTab = ref('strategy')
+// 策略配置已简化，无需标签页切换
 
 // 表单验证规则
 const updateRules = {
@@ -1070,7 +975,7 @@ const handleReset = () => {
   currentPage.value = 1
 }
 
-const handleApplyStrategy = () => {
+/* const handleApplyStrategy = () => {
   ElMessage.success(`已应用导航策略: ${getNavigationTypeLabel(strategyForm.navigationType)} + ${getPlanStrategyLabel(strategyForm.planStrategy)}`)
 
   // 提供批量更新选项
@@ -1090,38 +995,9 @@ const handleApplyStrategy = () => {
       ElMessage.info('您可以稍后点击"批量更新耗时"按钮手动更新数据')
     }
   })
-}
+} */
 
-const handleTabClick = (tab) => {
-  // 标签页切换处理
-}
-
-const handleSaveAutoUpdateConfig = () => {
-  ElMessage.success('自动更新配置已保存')
-  // 这里可以保存到后端或本地存储
-}
-
-const getAutoUpdateDescription = () => {
-  if (!autoUpdateConfig.enabled) return '自动更新已关闭'
-
-  const timeStr = autoUpdateConfig.time
-  let frequencyStr = ''
-
-  switch (autoUpdateConfig.frequency) {
-    case 'daily':
-      frequencyStr = `每天 ${timeStr}`
-      break
-    case 'weekly':
-      const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-      frequencyStr = `每周${weekDays[autoUpdateConfig.dayOfWeek - 1]} ${timeStr}`
-      break
-    case 'monthly':
-      frequencyStr = `每月${autoUpdateConfig.dayOfMonth}日 ${timeStr}`
-      break
-  }
-
-  return `系统将在 ${frequencyStr} 自动更新所有自动更新策略的门店间隔时间数据`
-}
+// 自动更新相关功能已简化为提示文案，无需复杂配置
 
 // 获取导航方式标签
 const getNavigationTypeLabel = (value) => {
@@ -1465,14 +1341,11 @@ const addForm = reactive({
   city: 'chengdu',
   startStore: '1',
   endStore: '2',
-  // 正向路线策略（默认使用全局策略）
-  forwardNavigationType: strategyForm.navigationType || 'cycling',
-  forwardPlanStrategy: strategyForm.planStrategy || 'shortest-time',
-  // 反向路线策略（默认使用全局策略）
-  backwardNavigationType: strategyForm.navigationType || 'cycling',
-  backwardPlanStrategy: strategyForm.planStrategy || 'shortest-time',
+  // 双向路线策略（默认骑行+用时最短）
+  navigationType: 'cycling',
+  planStrategy: 'shortest-time',
   // 双向路线数据
-  routePairs: null // 计算后填充：[{route, navigationTime, standardTime, navigationType, planStrategy, updateStrategy, routeNote}, ...]
+  routePair: null // 计算后填充：{route, navigationTime, standardTime, navigationType, planStrategy, updateStrategy, routeNote}
 })
 const addRules = {
   city: [{ required: true, message: '请选择城市', trigger: 'change' }],
@@ -1526,56 +1399,34 @@ const computeAddRoute = async () => {
   addState.value = 'computing'
 
   try {
-    // 并行计算双向路线，使用分别设置的导航策略
+    // 计算双向路线，使用统一的导航策略
     // 计算基础距离
-    const forwardDistance = calculateDistance(
+    const distance = calculateDistance(
       parseFloat(startStore.latitude),
       parseFloat(startStore.longitude),
       parseFloat(endStore.latitude),
       parseFloat(endStore.longitude)
     )
-    const backwardDistance = calculateDistance(
-      parseFloat(endStore.latitude),
-      parseFloat(endStore.longitude),
-      parseFloat(startStore.latitude),
-      parseFloat(startStore.longitude)
+
+    // 调用模拟地图API计算双向路线（使用统一策略）
+    const navigationTime = await simulateMapApiCall(
+      startStore, 
+      endStore, 
+      addForm.navigationType, 
+      addForm.planStrategy
     )
 
-    // 调用模拟地图API
-    const [forwardNav, backwardNav] = await Promise.all([
-      simulateMapApiCall(startStore, endStore, addForm.forwardNavigationType, addForm.forwardPlanStrategy),
-      simulateMapApiCall(endStore, startStore, addForm.backwardNavigationType, addForm.backwardPlanStrategy)
-    ])
-
-    // 创建双向路线对
-    addForm.routePairs = [
-      {
-        route: `${startStore.displayName} → ${endStore.displayName}`,
-        direction: 'forward',
-        startStore: startStore,
-        endStore: endStore,
-        navigationTime: forwardNav,
-        distance: forwardDistance,
-        standardTime: computeStandardFromNavigation(forwardNav),
-        navigationType: addForm.forwardNavigationType,
-        planStrategy: addForm.forwardPlanStrategy,
-        updateStrategy: 'manual',
-        routeNote: ''
-      },
-      {
-        route: `${endStore.displayName} → ${startStore.displayName}`,
-        direction: 'backward',
-        startStore: endStore,
-        endStore: startStore,
-        navigationTime: backwardNav,
-        distance: backwardDistance,
-        standardTime: computeStandardFromNavigation(backwardNav),
-        navigationType: addForm.backwardNavigationType,
-        planStrategy: addForm.backwardPlanStrategy,
-        updateStrategy: 'manual',
-        routeNote: ''
-      }
-    ]
+    // 创建双向路线对（只显示一条双向路线）
+    addForm.routePair = {
+      route: `${startStore.displayName} ↔ ${endStore.displayName}`,
+      navigationTime: navigationTime,
+      distance: distance,
+      standardTime: computeStandardFromNavigation(navigationTime),
+      navigationType: addForm.navigationType,
+      planStrategy: addForm.planStrategy,
+      updateStrategy: 'manual',
+      routeNote: ''
+    }
 
     addState.value = 'ready'
     ElMessage.success('双向路线计算完成')
@@ -1587,7 +1438,7 @@ const computeAddRoute = async () => {
 }
 
 const confirmAddRoute = () => {
-  if (!addForm.routePairs || addForm.routePairs.length === 0) {
+  if (!addForm.routePair) {
     ElMessage.error('请先计算路线')
     return
   }
@@ -1596,35 +1447,68 @@ const confirmAddRoute = () => {
   const updaterName = sessionStorage.getItem('username') || '管理员'
   const updaterId = sessionStorage.getItem('userId') || sessionStorage.getItem('employeeId') || ''
 
-  // 保存两条双向路线记录
-  const newItems = addForm.routePairs.map((pair, index) => ({
-    id: String(Date.now()) + '_' + index,
-    route: pair.route,
-    direction: '单向',
-    startStore: pair.startStore,
-    endStore: pair.endStore,
-    navigationTime: Number(pair.navigationTime),
-    distance: pair.distance,
-    standardTime: Number(pair.standardTime),
-    navigationType: pair.navigationType,
-    planStrategy: pair.planStrategy,
-    updateStrategy: pair.updateStrategy,
-    lastUpdateType: 'user',
-    lastUpdateTime: now,
-    history: [
-      {
-        updateTime: now,
-        oldNavigationTime: null,
-        newNavigationTime: Number(pair.navigationTime),
-        oldStandardTime: null,
-        newStandardTime: Number(pair.standardTime),
-        updateNote: pair.routeNote || `新增路线：${pair.route}`,
-        updaterType: 'user',
-        updaterName: `${updaterName}`,
-        updaterId: updaterId
-      }
-    ]
-  }))
+  // 保存双向路线记录（保存为两条单向记录）
+  const startStore = stores.value.find(s => s.id === addForm.startStore)
+  const endStore = stores.value.find(s => s.id === addForm.endStore)
+  
+  const newItems = [
+    {
+      id: String(Date.now()) + '_forward',
+      route: `${startStore.displayName} → ${endStore.displayName}`,
+      direction: '单向',
+      startStore: startStore,
+      endStore: endStore,
+      navigationTime: Number(addForm.routePair.navigationTime),
+      distance: addForm.routePair.distance,
+      standardTime: Number(addForm.routePair.standardTime),
+      navigationType: addForm.routePair.navigationType,
+      planStrategy: addForm.routePair.planStrategy,
+      updateStrategy: addForm.routePair.updateStrategy,
+      lastUpdateType: 'user',
+      lastUpdateTime: now,
+      history: [
+        {
+          updateTime: now,
+          oldNavigationTime: null,
+          newNavigationTime: Number(addForm.routePair.navigationTime),
+          oldStandardTime: null,
+          newStandardTime: Number(addForm.routePair.standardTime),
+          updateNote: addForm.routePair.routeNote || `新增路线：${startStore.displayName} → ${endStore.displayName}`,
+          updaterType: 'user',
+          updaterName: `${updaterName}`,
+          updaterId: updaterId
+        }
+      ]
+    },
+    {
+      id: String(Date.now()) + '_backward',
+      route: `${endStore.displayName} → ${startStore.displayName}`,
+      direction: '单向',
+      startStore: endStore,
+      endStore: startStore,
+      navigationTime: Number(addForm.routePair.navigationTime),
+      distance: addForm.routePair.distance,
+      standardTime: Number(addForm.routePair.standardTime),
+      navigationType: addForm.routePair.navigationType,
+      planStrategy: addForm.routePair.planStrategy,
+      updateStrategy: addForm.routePair.updateStrategy,
+      lastUpdateType: 'user',
+      lastUpdateTime: now,
+      history: [
+        {
+          updateTime: now,
+          oldNavigationTime: null,
+          newNavigationTime: Number(addForm.routePair.navigationTime),
+          oldStandardTime: null,
+          newStandardTime: Number(addForm.routePair.standardTime),
+          updateNote: addForm.routePair.routeNote || `新增路线：${endStore.displayName} → ${startStore.displayName}`,
+          updaterType: 'user',
+          updaterName: `${updaterName}`,
+          updaterId: updaterId
+        }
+      ]
+    }
+  ]
 
   // 添加到数据列表
   intervalData.value.unshift(...newItems)
@@ -1634,13 +1518,11 @@ const confirmAddRoute = () => {
 
   // 重置表单
   Object.assign(addForm, {
-    startStore: '',
-    endStore: '',
-    forwardNavigationType: strategyForm.navigationType,
-    forwardPlanStrategy: strategyForm.planStrategy,
-    backwardNavigationType: strategyForm.navigationType,
-    backwardPlanStrategy: strategyForm.planStrategy,
-    routePairs: null
+    startStore: '1',
+    endStore: '2',
+    navigationType: 'cycling',
+    planStrategy: 'shortest-time',
+    routePair: null
   })
 }
 </script>
@@ -1806,6 +1688,12 @@ const confirmAddRoute = () => {
   margin-left: 8px;
   font-size: 13px;
   color: var(--el-color-primary);
+}
+
+.store-pair-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .update-grid {
@@ -1988,9 +1876,8 @@ const confirmAddRoute = () => {
   flex: 0 0 120px; /* 城市列固定宽度 */
 }
 
-.compact-item:nth-child(2),
-.compact-item:nth-child(3) {
-  flex: 1; /* 起始门店和终点门店均分剩余空间 */
+.compact-item:nth-child(2) {
+  flex: 1; /* 关联门店对占满剩余空间 */
 }
 
 .compact-label {
@@ -2001,6 +1888,24 @@ const confirmAddRoute = () => {
 
 .compact-control {
   flex: 1;
+}
+
+/* 门店对显示样式 */
+.store-pair-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.store-pair-display .store-info {
+  flex: 1;
+  min-width: 120px;
+}
+
+.bidirectional-arrow {
+  font-size: 18px;
+  color: #999;
+  font-weight: bold;
 }
 
 /* 双向路线样式 */

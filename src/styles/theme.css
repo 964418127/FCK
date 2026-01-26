@@ -278,28 +278,34 @@
   border: 1px solid transparent;
 }
 
+.el-tag--primary {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.2);
+}
+
 .el-tag--success {
-  background-color: hsl(var(--success) / 0.1);
-  color: hsl(var(--success));
-  border-color: hsl(var(--success) / 0.2);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.2);
 }
 
 .el-tag--warning {
-  background-color: hsl(var(--warning) / 0.1);
-  color: hsl(var(--warning));
-  border-color: hsl(var(--warning) / 0.2);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.2);
 }
 
 .el-tag--danger {
-  background-color: hsl(var(--destructive) / 0.1);
-  color: hsl(var(--destructive));
-  border-color: hsl(var(--destructive) / 0.2);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.2);
 }
 
 .el-tag--info {
-  background-color: hsl(var(--info) / 0.1);
-  color: hsl(var(--info));
-  border-color: hsl(var(--info) / 0.2);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.2);
 }
 
 /* ===== Element Plus 对话框覆盖 ===== */

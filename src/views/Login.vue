@@ -1,441 +1,282 @@
 <template>
-  <div class="login-page">
-    <div class="hero-side">
-      <div class="brand-top">
-        <div class="logo-circle">
-          <span class="logo-text">TL</span>
-        </div>
-        <div class="brand-text">
-          <div class="brand-name">TLZJ 推拿之家</div>
-          <div class="brand-sub">数字化平台</div>
-        </div>
-      </div>
-      <div class="hero-copy">
-        <p class="eyebrow">数字化 · 品牌 · 平台</p>
-        <h1>连接品牌、组织与自动化能力</h1>
-        <p class="desc">以统一的数字化基座为组织、流程、权限与数据策略赋能，打造沉浸式体验。</p>
-      </div>
-      <div class="hero-visual">
-        <div class="glass-card">
-          <div class="stat">
-            <div class="stat-title">流程时效</div>
-            <div class="stat-value">+38%</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">权限一致性</div>
-            <div class="stat-value">99.9%</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">容器覆盖</div>
-            <div class="stat-value">120+</div>
-          </div>
-        </div>
-      </div>
+  <div class="login-container">
+    <!-- 背景装饰 -->
+    <div class="background-decoration">
+      <div class="decoration-shape shape-1"></div>
+      <div class="decoration-shape shape-2"></div>
+      <div class="decoration-shape shape-3"></div>
+      <div class="decoration-shape shape-4"></div>
     </div>
-
-    <div class="form-side">
-      <div class="login-card">
-        <div class="login-header">
-          <h2>欢迎登录</h2>
-          <p>进入 TLZJ 平台，开启智能协同</p>
+    
+    <!-- 登录卡片 -->
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo">
+          <svg width="80" height="80" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#a40035"/>
+                <stop offset="100%" stop-color="#7a0026"/>
+              </linearGradient>
+            </defs>
+            <rect width="96" height="96" rx="20" fill="url(#g)"/>
+            <g fill="white">
+              <path d="M28 28 L40 68 M40 28 L28 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
+              <path d="M48 28 L68 28 L68 68 L56 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
+              <circle cx="34" cy="48" r="4" fill="white" />
+              <circle cx="62" cy="48" r="4" fill="white" />
+            </g>
+          </svg>
         </div>
-
-        <el-tabs v-model="activeTab" class="login-tabs">
-          <el-tab-pane label="账号密码登录" name="account">
-            <el-form :model="loginForm" :rules="rules" ref="formRef" label-width="0" class="login-form">
-              <el-form-item prop="username">
-                <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名">
-                  <template #prefix>
-                    <el-icon><User /></el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-              <el-form-item prop="password">
-                <el-input v-model="loginForm.password" size="large" type="password" placeholder="请输入密码" show-password>
-                  <template #prefix>
-                    <el-icon><Lock /></el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" size="large" @click="handleLogin" class="full-btn">
-                  <el-icon-loading v-if="loading" />
-                  <span v-else>登录</span>
-                </el-button>
-              </el-form-item>
-            </el-form>
-          </el-tab-pane>
-
-          <el-tab-pane label="扫码登录" name="qrcode">
-            <div class="qr-wrapper">
-              <div class="qr-box">
-                <div class="qr-placeholder">
-                  <div class="qr-dots"></div>
-                  <div class="qr-dots second"></div>
-                  <div class="qr-dots third"></div>
-                  <span class="qr-text">QR</span>
-                </div>
-              </div>
-              <p class="qr-tip">请使用移动端「TLZJ App」扫一扫登录</p>
-              <el-button text type="primary">刷新二维码</el-button>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-
-        <div class="login-footer">
-          <span>© TLZJ 平台</span>
-          <span class="dot">•</span>
-          <span>数字化平台</span>
-        </div>
+        <h2 class="login-title">XV 平台</h2>
+        <p class="login-subtitle">专业的推拿之家数字化平台</p>
       </div>
+      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
+        <el-form-item prop="username">
+          <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" />
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" />
+        </el-form-item>
+        <el-form-item prop="captcha">
+          <div class="captcha-container">
+            <el-input v-model="loginForm.captcha" placeholder="验证码" prefix-icon="Key" />
+            <div class="captcha-image">
+              <div class="captcha-placeholder" @click="refreshCaptcha">
+                <el-icon class="captcha-icon"><Key /></el-icon>
+                <span>点击刷新</span>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" class="login-button" @click="handleLogin" :loading="loading">
+            登录
+          </el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="text" class="mobile-login-link" @click="goToMobileLogin">
+            移动端登录
+          </el-button>
+        </el-form-item>
+      </el-form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter()
-const formRef = ref(null)
-const loading = ref(false)
-const activeTab = ref('account')
-
-const loginForm = ref({
+const loginForm = reactive({
   username: '',
-  password: ''
+  password: '',
+  captcha: ''
 })
 
-const rules = {
+const router = useRouter()
+
+const loginRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
+  ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' }
   ]
 }
 
+const loading = ref(false)
+
 const handleLogin = () => {
-  formRef.value?.validate((valid) => {
-    if (valid) {
-      loading.value = true
-      // 模拟登录请求
-      setTimeout(() => {
-        // 简单的登录验证 - 任何用户名和密码都可以登录（模拟）
-        ElMessage.success('登录成功')
-        // 保存登录信息到 sessionStorage
-        sessionStorage.setItem('isLoggedIn', 'true')
-        sessionStorage.setItem('username', loginForm.value.username)
-        // 跳转到系统选择页面
-        router.push('/system-select')
-        loading.value = false
-      }, 1000)
-    }
-  })
+  loading.value = true
+  setTimeout(() => {
+    loading.value = false
+    ElMessage.success('登录成功')
+    // 登录成功后跳转到欢迎页面
+    router.push('/welcome')
+  }, 1500)
+}
+
+const refreshCaptcha = () => {
+  // 这里可以添加刷新验证码的逻辑
+}
+
+const goToMobileLogin = () => {
+  router.push('/mobile-login')
 }
 </script>
 
 <style scoped>
-.login-page {
+.login-container {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  background:
-    linear-gradient(115deg, rgba(19, 17, 26, 0.9), rgba(12, 12, 18, 0.88)),
-    url('https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
-  color: #e7ecf3;
-  align-items: center;
-  padding: 64px 82px;
-  gap: 40px;
-  position: relative;
-}
-
-.login-page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.12), transparent 32%),
-    radial-gradient(circle at 80% 0%, hsl(var(--primary-hover) / 0.14), transparent 26%);
-  pointer-events: none;
-}
-
-.hero-side {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: 32px 24px;
-  color: #e7ecf3;
-}
-
-.brand-top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.logo-circle {
-  width: 76px;
-  height: 76px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12px 30px hsl(var(--primary) / 0.35);
-}
-
-.logo-text {
-  font-size: 28px;
-  font-weight: 800;
-  color: #e8f6ff;
-  letter-spacing: 0.6px;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.brand-name {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: hsl(var(--primary) / 0.92);
-}
-
-.brand-sub {
-  margin: 0;
-  font-size: 16px;
-  color: #b8c4d6;
-}
-
-.hero-copy {
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.eyebrow {
-  color: hsl(var(--primary));
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  font-weight: 700;
-  font-size: 12px;
-  margin: 0;
-}
-
-.hero-copy h1 {
-  margin: 0;
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  color: #f2f5f9;
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-.desc {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #cdd6e3;
-}
-
-.hero-visual {
-  margin-top: 10px;
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 18px 20px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.26);
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.stat-title {
-  font-size: 13px;
-  color: #bfc8d6;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: hsl(var(--primary));
-}
-
-.form-side {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.login-card {
-  background: #0f1724;
-  border-radius: 20px;
-  padding: 38px;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.32);
-  max-width: 460px;
-  width: 100%;
-  border: 1px solid rgba(232, 246, 255, 0.08);
-}
-
-.login-header {
-  text-align: left;
-  margin-bottom: 20px;
-}
-
-.login-header h2 {
-  margin: 0;
-  color: #f2f5f9;
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-
-.login-header p {
-  margin: 8px 0 0 0;
-  color: #c5d0de;
-  font-size: 14px;
-}
-
-.login-tabs :deep(.el-tabs__header) {
-  border-bottom: 1px solid rgba(232, 246, 255, 0.08);
-}
-
-.login-tabs :deep(.el-tabs__item) {
-  color: #c5d0de;
-}
-
-.login-tabs :deep(.el-tabs__item.is-active) {
-  color: hsl(var(--primary));
-}
-
-.login-form {
-  margin-top: 18px;
-}
-
-.full-btn {
-  width: 100%;
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
-  border: none;
-  box-shadow: 0 18px 38px hsl(var(--primary) / 0.35);
-}
-
-.qr-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0 6px;
-}
-
-.qr-box {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(232, 246, 255, 0.25);
-  border-radius: 14px;
-  padding: 12px;
-}
-
-.qr-placeholder {
-  width: 180px;
-  height: 180px;
-  border-radius: 10px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05) 6px, transparent 6px, transparent 12px);
-  border: 1px solid rgba(232, 246, 255, 0.16);
-  display: grid;
-  place-items: center;
+  background: linear-gradient(135deg, #a40035 0%, #7a0026 100%);
   position: relative;
   overflow: hidden;
 }
 
-.qr-dots {
+/* 背景装饰 */
+.background-decoration {
   position: absolute;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.06));
-  top: 18px;
-  left: 18px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.qr-dots.second {
-  top: 18px;
-  right: 18px;
-  left: auto;
+.decoration-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: float 20s ease-in-out infinite;
 }
 
-.qr-dots.third {
-  bottom: 18px;
-  left: 18px;
-  top: auto;
+.shape-1 {
+  width: 400px;
+  height: 400px;
+  top: -200px;
+  right: -200px;
+  animation-delay: 0s;
 }
 
-.qr-text {
-  font-size: 42px;
-  font-weight: 800;
-  color: hsl(var(--primary));
-  text-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  letter-spacing: 0.3px;
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -150px;
+  left: -150px;
+  animation-delay: 5s;
 }
 
-.qr-tip {
-  margin: 0;
-  color: #c5d0de;
-  font-size: 13px;
+.shape-3 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 10s;
 }
 
-.login-footer {
+.shape-4 {
+  width: 150px;
+  height: 150px;
+  top: 80%;
+  right: 20%;
+  animation-delay: 15s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-50px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(0) rotate(180deg);
+  }
+  75% {
+    transform: translateY(50px) rotate(270deg);
+  }
+}
+
+/* 登录卡片 */
+.login-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 50px;
+  width: 100%;
+  max-width: 450px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.login-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.login-form {
   margin-top: 20px;
+}
+
+.login-form .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+}
+
+.login-form .el-input__inner {
+  color: white;
+}
+
+.login-form .el-input__inner::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.login-form .el-form-item__label {
+  color: white;
+}
+
+.captcha-container {
+  display: flex;
+  gap: 10px;
+}
+
+.captcha-image {
+  width: 120px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #9aa8bc;
-  font-size: 12px;
   justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.dot {
-  color: #c0c4cc;
+.captcha-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: white;
+  font-size: 12px;
 }
 
-@media (max-width: 960px) {
-  .login-page {
-    grid-template-columns: 1fr;
-    padding: 40px 20px;
-  }
-  .form-side {
-    justify-content: center;
-  }
-  .login-card {
-    justify-self: center;
-  }
-  .hero-side {
-    align-items: center;
-    text-align: center;
-  }
-  .glass-card {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.captcha-icon {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.login-button {
+  width: 100%;
+  height: 44px;
+  font-size: 16px;
+  font-weight: bold;
 }
 </style>

@@ -47,9 +47,29 @@
               <el-icon><Location /></el-icon>
               <span>门店间隔时间库</span>
             </el-menu-item>
+            <el-menu-item index="store-interval2">
+              <el-icon><Location /></el-icon>
+              <span>标准时间库</span>
+            </el-menu-item>
+            <el-menu-item index="store-interval3">
+              <el-icon><Location /></el-icon>
+              <span>标库3</span>
+            </el-menu-item>
             <el-menu-item index="custom-time-strategy">
               <el-icon><Clock /></el-icon>
               <span>自定义时间策略</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 挂店分组 -->
+          <el-sub-menu index="store-hanging">
+            <template #title>
+              <el-icon><Shop /></el-icon>
+              <span>挂店</span>
+            </template>
+            <el-menu-item index="store-hanging-application">
+              <el-icon><Document /></el-icon>
+              <span>挂店申请管理</span>
             </el-menu-item>
           </el-sub-menu>
 
@@ -303,33 +323,13 @@ import { users as mockUsers } from '../mock/data.js'
 import {
   Fold,
   Expand,
-  House,
   HomeFilled,
-  UserFilled,
   User,
-  OfficeBuilding,
-  Key,
-  Setting,
-  Folder,
-  DataLine,
-  Document,
-  Location,
-  Delete,
-  ArrowDown,
-  SwitchButton,
-  Shop,
-  Promotion,
-  List,
-  Message,
   Clock,
   Calendar,
-  Edit,
-  Connection,
-  Collection,
-  Monitor,
-  Cpu,
-  Briefcase,
-  Operation
+  Location,
+  ArrowDown,
+  SwitchButton
 } from '@element-plus/icons-vue'
 
 

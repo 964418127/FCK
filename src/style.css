@@ -105,7 +105,13 @@ h4 {
   z-index: 200000 !important;
 }
 
+/* Ensure dropdowns appear above dialogs */
+.el-select-dropdown,
+.el-popper {
+  z-index: 200100 !important;
+}
+
 /* In case scoped styles create stacking contexts, ensure our fallback modal is above */
 .fallback-modal {
-  z-index: 200100 !important;
+  z-index: 200200 !important;
 }

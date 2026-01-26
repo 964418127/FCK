@@ -45,6 +45,17 @@
       </el-form>
     </div>
 
+    <!-- 说明区域 -->
+    <div class="explanation-section">
+      <el-alert
+        title="标准时间说明"
+        description="实际方案耗时，向上收整，比如导航耗时12分钟，标准时间20分钟"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+    </div>
+
     <!-- 自定义策略列表 -->
     <div class="strategy-section">
       <el-card class="box-card">
@@ -170,8 +181,24 @@
                     <h5>前往</h5>
                     <div class="direction-details">
                       <div class="detail-row">
+                        <span class="detail-label">通勤方式：</span>
+                        <el-select
+                          v-model="pair.forward.navigationType"
+                          :disabled="!pair.enabled"
+                          style="width: 180px; margin-right: 16px;"
+                        >
+                          <el-option label="步行" value="walking" />
+                          <el-option label="骑行" value="cycling" />
+                          <el-option label="骑电动车" value="e-bike" />
+                          <el-option label="公交" value="bus" />
+                          <el-option label="驾车" value="driving" />
+                        </el-select>
+                        <span class="detail-label">距离：</span>
+                        <span class="detail-value">{{ pair.forward.distance.toFixed(2) }}km</span>
+                      </div>
+                      <div class="detail-row">
                         <span class="detail-label">导航时间：</span>
-                        <span class="detail-value">{{ pair.forward.navigationTime }}分钟 ({{ getNavigationTypeLabel(pair.forward.navigationType) }} + {{ getPlanStrategyLabel(pair.forward.planStrategy) }})</span>
+                        <span class="detail-value">{{ pair.forward.navigationTime }}分钟</span>
                       </div>
                       <div class="detail-row">
                         <span class="detail-label">标准时间：</span>
@@ -197,8 +224,24 @@
                     <h5>返回</h5>
                     <div class="direction-details">
                       <div class="detail-row">
+                        <span class="detail-label">通勤方式：</span>
+                        <el-select
+                          v-model="pair.backward.navigationType"
+                          :disabled="!pair.enabled"
+                          style="width: 180px; margin-right: 16px;"
+                        >
+                          <el-option label="步行" value="walking" />
+                          <el-option label="骑行" value="cycling" />
+                          <el-option label="骑电动车" value="e-bike" />
+                          <el-option label="公交" value="bus" />
+                          <el-option label="驾车" value="driving" />
+                        </el-select>
+                        <span class="detail-label">距离：</span>
+                        <span class="detail-value">{{ pair.backward.distance.toFixed(2) }}km</span>
+                      </div>
+                      <div class="detail-row">
                         <span class="detail-label">导航时间：</span>
-                        <span class="detail-value">{{ pair.backward.navigationTime }}分钟 ({{ getNavigationTypeLabel(pair.backward.navigationType) }} + {{ getPlanStrategyLabel(pair.backward.planStrategy) }})</span>
+                        <span class="detail-value">{{ pair.backward.navigationTime }}分钟</span>
                       </div>
                       <div class="detail-row">
                         <span class="detail-label">标准时间：</span>
@@ -225,12 +268,12 @@
                   <div class="detail-row">
                     <span class="detail-label">有效期模式：</span>
                     <el-radio-group v-model="pair.validity" :disabled="!pair.enabled">
-                      <el-radio label="permanent">永久</el-radio>
-                      <el-radio label="temporary">限时有效</el-radio>
+                      <el-radio label="永久" value="permanent">永久</el-radio>
+                      <el-radio label="限时有效" value="temporary">限时有效</el-radio>
                     </el-radio-group>
                   </div>
                   
-                  <div v-if="pair.validity === 'temporary'" class="validity-dates">
+                  <div class="validity-dates">
                     <div class="date-row">
                       <span class="detail-label">开始时间：</span>
                       <el-date-picker
@@ -242,8 +285,9 @@
                         :disabled="!pair.enabled"
                         style="width: 200px; margin-right: 20px;"
                       />
-                      <span class="detail-label">结束时间：</span>
+                      <span v-if="pair.validity === 'temporary'" class="detail-label">结束时间：</span>
                       <el-date-picker
+                        v-if="pair.validity === 'temporary'"
                         v-model="pair.validTo"
                         type="datetime"
                         placeholder="选择结束时间"
@@ -279,7 +323,8 @@ import {
   Plus,
   Edit,
   Delete,
-  Refresh
+  Refresh,
+  InfoFilled
 } from '@element-plus/icons-vue'
 
 // 响应式数据
@@ -347,68 +392,44 @@ const generateStorePairs = (employeeId) => {
   const navigationTypes = ['walking', 'cycling', 'e-bike', 'bus', 'driving']
   const planStrategies = ['shortest-distance', 'shortest-time']
   
-  // 生成所有可能的门店组合
-  for (let i = 0; i < stores.value.length; i++) {
-    for (let j = i + 1; j < stores.value.length; j++) {
-      // 为每个门店对生成多条路线（不同导航方式）
-      const navigationType = navigationTypes[Math.floor(Math.random() * navigationTypes.length)]
-      const planStrategy = planStrategies[Math.floor(Math.random() * planStrategies.length)]
+  // 生成2-3条门店组合（减少数据量）
+  const maxPairs = 2;
+  let pairCount = 0;
+  
+  // 生成有限的门店组合
+  for (let i = 0; i < stores.value.length && pairCount < maxPairs; i++) {
+    for (let j = i + 1; j < stores.value.length && pairCount < maxPairs; j++) {
+      // 为每个门店对生成单条路线（减少导航方式数量）
+      const navigationType = 'cycling'; // 只使用骑行导航方式
+      const planStrategy = 'shortest-time'; // 只使用最短时间策略
       
+      const forwardNavTime = Math.floor(Math.random() * 20) + 10;
+      const backwardNavTime = Math.floor(Math.random() * 20) + 10;
       pairs.push({
         id: `${stores.value[i].id}-${stores.value[j].id}-${navigationType}`,
         route: `${stores.value[i].displayName} ↔ ${stores.value[j].displayName}`,
         forward: {
-          navigationTime: Math.floor(Math.random() * 20) + 10, // 10-30分钟
-          standardTime: Math.floor(Math.random() * 20) + 15,   // 15-35分钟
-          navigationType: navigationType,
-          planStrategy: planStrategy,
-          customTime: null
-        },
-        backward: {
-          navigationTime: Math.floor(Math.random() * 20) + 10, // 10-30分钟
-          standardTime: Math.floor(Math.random() * 20) + 15,   // 15-35分钟
-          navigationType: navigationType,
-          planStrategy: planStrategy,
-          customTime: null
-        },
+        navigationTime: forwardNavTime, // 10-30分钟
+        standardTime: Math.ceil(forwardNavTime / 10) * 10,   // 向上取整到最近的十位整数
+        navigationType: navigationType,
+        planStrategy: planStrategy,
+        customTime: null,
+        distance: Math.random() * 10 + 5 // 5-15km
+      },
+      backward: {
+        navigationTime: backwardNavTime, // 10-30分钟
+        standardTime: Math.ceil(backwardNavTime / 10) * 10,   // 向上取整到最近的十位整数
+        navigationType: navigationType,
+        planStrategy: planStrategy,
+        customTime: null,
+        distance: Math.random() * 10 + 5 // 5-15km
+      },
         enabled: false,
         validity: 'permanent',
         validFrom: null,
         validTo: null
       })
-    }
-  }
-  
-  // 额外生成一些反向路线（增加数据量）
-  for (let i = 0; i < stores.value.length; i++) {
-    for (let j = i + 1; j < stores.value.length; j++) {
-      if (Math.random() > 0.5) {
-        const navigationType = navigationTypes[Math.floor(Math.random() * navigationTypes.length)]
-        const planStrategy = planStrategies[Math.floor(Math.random() * planStrategies.length)]
-        
-        pairs.push({
-          id: `${stores.value[j].id}-${stores.value[i].id}-${navigationType}`,
-          route: `${stores.value[j].displayName} ↔ ${stores.value[i].displayName}`,
-          forward: {
-            navigationTime: Math.floor(Math.random() * 20) + 10, // 10-30分钟
-            standardTime: Math.floor(Math.random() * 20) + 15,   // 15-35分钟
-            navigationType: navigationType,
-            planStrategy: planStrategy,
-            customTime: null
-          },
-          backward: {
-            navigationTime: Math.floor(Math.random() * 20) + 10, // 10-30分钟
-            standardTime: Math.floor(Math.random() * 20) + 15,   // 15-35分钟
-            navigationType: navigationType,
-            planStrategy: planStrategy,
-            customTime: null
-          },
-          enabled: false,
-          validity: 'permanent',
-          validFrom: null,
-          validTo: null
-        })
-      }
+      pairCount++;
     }
   }
   
@@ -431,14 +452,16 @@ const customStrategies = ref([
           standardTime: 20,
           navigationType: 'cycling',
           planStrategy: 'shortest-time',
-          customTime: 22
+          customTime: 22,
+          distance: 8.50
         },
         backward: {
           navigationTime: 16,
           standardTime: 20,
           navigationType: 'cycling',
           planStrategy: 'shortest-time',
-          customTime: 18
+          customTime: 18,
+          distance: 8.20
         },
         enabled: true,
         validity: 'temporary',
@@ -453,14 +476,16 @@ const customStrategies = ref([
           standardTime: 30,
           navigationType: 'bus',
           planStrategy: 'shortest-distance',
-          customTime: 28
+          customTime: 28,
+          distance: 12.30
         },
         backward: {
           navigationTime: 22,
           standardTime: 30,
           navigationType: 'bus',
           planStrategy: 'shortest-distance',
-          customTime: 25
+          customTime: 25,
+          distance: 11.80
         },
         enabled: true,
         validity: 'permanent',
@@ -475,14 +500,16 @@ const customStrategies = ref([
           standardTime: 40,
           navigationType: 'walking',
           planStrategy: 'shortest-time',
-          customTime: null
+          customTime: null,
+          distance: 5.60
         },
         backward: {
           navigationTime: 32,
           standardTime: 40,
           navigationType: 'walking',
           planStrategy: 'shortest-time',
-          customTime: null
+          customTime: null,
+          distance: 5.40
         },
         enabled: false,
         validity: 'permanent',
@@ -503,17 +530,19 @@ const customStrategies = ref([
         route: '天府凯德店 ↔ 春熙路店',
         forward: {
           navigationTime: 12,
-          standardTime: 15,
+          standardTime: 20,
           navigationType: 'e-bike',
           planStrategy: 'shortest-time',
-          customTime: null
+          customTime: null,
+          distance: 7.80
         },
         backward: {
           navigationTime: 11,
-          standardTime: 15,
+          standardTime: 20,
           navigationType: 'e-bike',
           planStrategy: 'shortest-time',
-          customTime: null
+          customTime: null,
+          distance: 7.60
         },
         enabled: false,
         validity: 'permanent',
@@ -528,14 +557,16 @@ const customStrategies = ref([
           standardTime: 20,
           navigationType: 'driving',
           planStrategy: 'shortest-distance',
-          customTime: null
+          customTime: null,
+          distance: 9.20
         },
         backward: {
           navigationTime: 13,
           standardTime: 20,
           navigationType: 'driving',
           planStrategy: 'shortest-distance',
-          customTime: null
+          customTime: null,
+          distance: 9.00
         },
         enabled: false,
         validity: 'permanent',
@@ -829,6 +860,10 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
+.explanation-section {
+  margin-bottom: 24px;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -1040,16 +1075,5 @@ onMounted(() => {
   gap: 12px;
 }
 
-/* 修复下拉框z-index问题 */
-:deep(.el-dialog) {
-  z-index: 2000 !important;
-}
 
-:deep(.el-popper) {
-  z-index: 2100 !important;
-}
-
-:deep(.el-select-dropdown) {
-  z-index: 2100 !important;
-}
 </style>
