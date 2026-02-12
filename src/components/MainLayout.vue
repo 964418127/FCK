@@ -62,16 +62,32 @@
           </el-sub-menu>
 
           <!-- 挂店分组 -->
-          <el-sub-menu index="store-hanging">
-            <template #title>
-              <el-icon><Shop /></el-icon>
-              <span>挂店</span>
-            </template>
-            <el-menu-item index="store-hanging-application">
-              <el-icon><Document /></el-icon>
-              <span>挂店申请管理</span>
-            </el-menu-item>
-          </el-sub-menu>
+        <el-sub-menu index="store-hanging">
+          <template #title>
+            <el-icon><Shop /></el-icon>
+            <span>挂店</span>
+          </template>
+          <el-menu-item index="store-hanging-application">
+            <el-icon><Document /></el-icon>
+            <span>挂店申请管理</span>
+          </el-menu-item>
+          <el-menu-item index="store-recommendation-record">
+            <el-icon><TrendCharts /></el-icon>
+            <span>挂店推荐记录</span>
+          </el-menu-item>
+        </el-sub-menu>
+        
+        <!-- 排假分组 -->
+        <el-sub-menu index="leave-management">
+          <template #title>
+            <el-icon><Calendar /></el-icon>
+            <span>排排排假</span>
+          </template>
+          <el-menu-item index="temporary-leave-rules">
+            <el-icon><Document /></el-icon>
+            <span>临时假获取规则</span>
+          </el-menu-item>
+        </el-sub-menu>
 
           <!-- 主要功能菜单 - 已屏蔽 -->
           <!-- <el-menu-item index="user-center">
@@ -329,7 +345,10 @@ import {
   Calendar,
   Location,
   ArrowDown,
-  SwitchButton
+  SwitchButton,
+  Shop,
+  Document,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 

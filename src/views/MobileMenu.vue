@@ -12,43 +12,51 @@
       </div>
     </div>
     
-    <div class="menu-list">
-      <div class="menu-item" @click="goToStoreHanging">
-        <div class="menu-icon">
-          <el-icon><ShoppingBag /></el-icon>
-        </div>
-        <div class="menu-content">
-          <p class="menu-title">挂店申请审核</p>
-          <p class="menu-desc">审核推拿师挂店申请</p>
-        </div>
-        <div class="menu-arrow">
-          <el-icon><ArrowRight /></el-icon>
+    <div class="menu-content">
+      <!-- 职能岗位分组 -->
+      <div class="menu-group">
+        <div class="group-title">职能岗位</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="goToStoreHanging">
+            <div class="grid-icon">
+              <el-icon><ShoppingBag /></el-icon>
+            </div>
+            <div class="grid-title">挂店申请审核</div>
+          </div>
+          
+          <div class="grid-item">
+            <div class="grid-icon">
+              <el-icon><Setting /></el-icon>
+            </div>
+            <div class="grid-title">系统设置</div>
+          </div>
+          
+          <div class="grid-item">
+            <div class="grid-icon">
+              <el-icon><Help /></el-icon>
+            </div>
+            <div class="grid-title">帮助中心</div>
+          </div>
         </div>
       </div>
       
-      <div class="menu-item">
-        <div class="menu-icon">
-          <el-icon><Setting /></el-icon>
-        </div>
-        <div class="menu-content">
-          <p class="menu-title">系统设置</p>
-          <p class="menu-desc">账号与安全设置</p>
-        </div>
-        <div class="menu-arrow">
-          <el-icon><ArrowRight /></el-icon>
-        </div>
-      </div>
-      
-      <div class="menu-item">
-        <div class="menu-icon">
-          <el-icon><Help /></el-icon>
-        </div>
-        <div class="menu-content">
-          <p class="menu-title">帮助中心</p>
-          <p class="menu-desc">使用帮助与常见问题</p>
-        </div>
-        <div class="menu-arrow">
-          <el-icon><ArrowRight /></el-icon>
+      <!-- 推拿师分组 -->
+      <div class="menu-group">
+        <div class="group-title">推拿师</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="goToStoreManagement">
+            <div class="grid-icon">
+              <el-icon><Shop /></el-icon>
+            </div>
+            <div class="grid-title">挂店管理</div>
+          </div>
+          
+          <div class="grid-item" @click="goToScheduleLeave">
+            <div class="grid-icon">
+              <el-icon><Calendar /></el-icon>
+            </div>
+            <div class="grid-title">排班排假</div>
+          </div>
         </div>
       </div>
     </div>
@@ -65,11 +73,20 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 const goToStoreHanging = () => {
   router.push('/mobile-store-hanging')
+}
+
+const goToStoreManagement = () => {
+  router.push('/mobile-store-management')
+}
+
+const goToScheduleLeave = () => {
+  router.push('/mobile-schedule-leave')
 }
 
 const handleLogout = () => {
@@ -124,59 +141,55 @@ const handleLogout = () => {
   opacity: 0.8;
 }
 
-.menu-list {
+.menu-content {
   padding: 20px;
 }
 
-.menu-item {
+.menu-group {
+  margin-bottom: 30px;
+}
+
+.group-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.grid-menu {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.grid-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  padding: 16px;
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
+  text-align: center;
 }
 
-.menu-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.menu-icon {
-  width: 48px;
-  height: 48px;
-  background: rgba(164, 0, 53, 0.1);
-  border-radius: 12px;
+.grid-icon {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  color: #a40035;
-  margin-right: 20px;
+  background: #a40035;
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
 
-.menu-content {
-  flex: 1;
-}
-
-.menu-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
-}
-
-.menu-desc {
+.grid-title {
   font-size: 12px;
-  color: #999;
-}
-
-.menu-arrow {
-  color: #999;
-  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
 }
 
 .menu-footer {

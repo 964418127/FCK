@@ -73,7 +73,23 @@ const routes = [
         meta: {
           title: '挂店申请管理'
         }
+      },
+      {
+      path: 'store-recommendation-record',
+      name: 'store-recommendation-record',
+      component: () => import('../views/StoreRecommendationRecord.vue'),
+      meta: {
+        title: '挂店推荐记录'
       }
+    },
+    {
+      path: 'temporary-leave-rules',
+      name: 'temporary-leave-rules',
+      component: () => import('../views/TemporaryLeaveRules.vue'),
+      meta: {
+        title: '临时假获取规则'
+      }
+    }
     ]
   },
   {
@@ -98,6 +114,22 @@ const routes = [
     component: () => import('../views/MobileStoreHanging.vue'),
     meta: {
       title: '移动端挂店申请审核'
+    }
+  },
+  {
+    path: '/mobile-store-management',
+    name: 'mobile-store-management',
+    component: () => import('../views/MobileStoreManagement.vue'),
+    meta: {
+      title: '移动端挂店管理'
+    }
+  },
+  {
+    path: '/mobile-schedule-leave',
+    name: 'mobile-schedule-leave',
+    component: () => import('../views/MobileScheduleLeave.vue'),
+    meta: {
+      title: '移动端排班排假'
     }
   }
 ]
