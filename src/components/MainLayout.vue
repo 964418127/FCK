@@ -87,6 +87,10 @@
             <el-icon><Document /></el-icon>
             <span>临时假获取规则</span>
           </el-menu-item>
+          <el-menu-item index="schedule-leave-approval">
+            <el-icon><Check /></el-icon>
+            <span>排班排假审核</span>
+          </el-menu-item>
         </el-sub-menu>
 
           <!-- 主要功能菜单 - 已屏蔽 -->
@@ -348,7 +352,8 @@ import {
   SwitchButton,
   Shop,
   Document,
-  TrendCharts
+  TrendCharts,
+  Check
 } from '@element-plus/icons-vue'
 
 

@@ -89,6 +89,14 @@ const routes = [
       meta: {
         title: '临时假获取规则'
       }
+    },
+    {
+      path: 'schedule-leave-approval',
+      name: 'schedule-leave-approval',
+      component: () => import('../views/ScheduleLeaveApproval.vue'),
+      meta: {
+        title: '排班排假审核'
+      }
     }
     ]
   },

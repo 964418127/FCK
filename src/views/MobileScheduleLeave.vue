@@ -148,7 +148,7 @@
       
       <div v-show="activeTab === 2" class="leave-section">
         <div class="section-header">
-          <div class="section-title">排假详情</div>
+          <div class="section-title">排假</div>
         </div>
         
         <div class="recommendation-info">
@@ -777,7 +777,7 @@ onMounted(() => {
 
 .content-container {
   padding: 15px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
 }
 
@@ -1649,19 +1649,5 @@ onMounted(() => {
   color: #a40035;
 }
 
-.bottom-action {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 15px;
-  background: white;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-}
 
-.confirm-btn {
-  width: 100%;
-  height: 44px;
-  font-size: 16px;
-}
 </style>
