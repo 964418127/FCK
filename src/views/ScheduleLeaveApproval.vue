@@ -59,7 +59,7 @@
               <el-table-column prop="therapistCount" label="在岗调理师数" width="120" />
               
               <!-- 每个日期的班次数据 -->
-              <el-table-column v-for="date in selectedWeekDates" :key="date" :label="date" min-width="600">
+              <el-table-column v-for="date in selectedWeekDates" :key="date" :label="date" min-width="800">
                 <template #default="scope">
                   <div class="date-shifts">
                     <!-- 早班 -->
@@ -207,7 +207,7 @@
               </el-table-column>
               
               <!-- 每个日期的排假数据 -->
-              <el-table-column v-for="date in selectedWeekDates" :key="date" :label="date" min-width="700">
+              <el-table-column v-for="date in selectedWeekDates" :key="date" :label="date" min-width="1050">
                 <template #default="scope">
                   <div class="date-shifts">
                     <!-- 全天 -->
@@ -226,6 +226,18 @@
                         </span>
                         <span class="shift-info recommended">
                           建议: <span class="recommended-value">{{ getLeaveData(scope.row, '全天', date + 'Recommended') }}</span>
+                        </span>
+                        <span class="shift-info">
+                          在岗率: 
+                          <el-input-number 
+                            :model-value="70" 
+                            @update:model-value="updateLeaveData(scope.row, '全天', date + 'AttendanceRate', $event)"
+                            :min="0" 
+                            :max="100" 
+                            size="small"
+                            style="width: 90px; margin: 0 5px"
+                          />
+                          <span>%</span>
                         </span>
                       </div>
                     </div>
@@ -247,6 +259,18 @@
                         <span class="shift-info recommended">
                           建议: <span class="recommended-value">{{ getLeaveData(scope.row, '早半天', date + 'Recommended') }}</span>
                         </span>
+                        <span class="shift-info">
+                          在岗率: 
+                          <el-input-number 
+                            :model-value="70" 
+                            @update:model-value="updateLeaveData(scope.row, '早半天', date + 'AttendanceRate', $event)"
+                            :min="0" 
+                            :max="100" 
+                            size="small"
+                            style="width: 90px; margin: 0 5px"
+                          />
+                          <span>%</span>
+                        </span>
                       </div>
                     </div>
                     
@@ -266,6 +290,18 @@
                         </span>
                         <span class="shift-info recommended">
                           建议: <span class="recommended-value">{{ getLeaveData(scope.row, '晚半天', date + 'Recommended') }}</span>
+                        </span>
+                        <span class="shift-info">
+                          在岗率: 
+                          <el-input-number 
+                            :model-value="70" 
+                            @update:model-value="updateLeaveData(scope.row, '晚半天', date + 'AttendanceRate', $event)"
+                            :min="0" 
+                            :max="100" 
+                            size="small"
+                            style="width: 90px; margin: 0 5px"
+                          />
+                          <span>%</span>
                         </span>
                       </div>
                     </div>

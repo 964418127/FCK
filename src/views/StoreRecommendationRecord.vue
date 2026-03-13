@@ -30,19 +30,37 @@
           />
         </el-form-item>
         <el-form-item label="门店">
-          <el-input
+          <template #label>
+            <span class="label-with-tooltip">
+              门店
+              <el-tooltip content="主服务门店、已挂店信息、推荐/取消挂店门店、意向挂店门店" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
             v-model="searchForm.store"
-            placeholder="输入门店编号或名称"
+            placeholder="选择门店"
             clearable
+            multiple
             style="width: 200px"
-            maxlength="20"
-            show-word-limit
-          />
+          >
+            <el-option label="天府凯德店" value="天府凯德店" />
+            <el-option label="环球中心店" value="环球中心店" />
+            <el-option label="高新区店" value="高新区店" />
+            <el-option label="春熙路店" value="春熙路店" />
+            <el-option label="金牛凯德店" value="金牛凯德店" />
+            <el-option label="万达广场店" value="万达广场店" />
+            <el-option label="世纪城店" value="世纪城店" />
+            <el-option label="太古里店" value="太古里店" />
+            <el-option label="九眼桥店" value="九眼桥店" />
+            <el-option label="桐梓林店" value="桐梓林店" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item label="意向状态">
           <el-select
             v-model="searchForm.status"
-            placeholder="选择状态"
+            placeholder="选择意向状态"
             clearable
             style="width: 120px"
           >
@@ -51,6 +69,143 @@
             <el-option label="已拒绝" value="已拒绝" />
             <el-option label="已确认" value="已确认" />
             <el-option label="自动取消" value="自动取消" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="推送状态">
+          <el-select
+            v-model="searchForm.pushStatus"
+            placeholder="选择推送状态"
+            clearable
+            style="width: 120px"
+          >
+            <el-option label="已推送" value="已推送" />
+            <el-option label="未推送" value="未推送" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="项目标签">
+          <template #label>
+            <span class="label-with-tooltip">
+              项目标签
+              <el-tooltip content="技师自身包含的项目标签" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
+            v-model="searchForm.projectTagInclude"
+            placeholder="选择项目标签"
+            clearable
+            multiple
+            style="width: 200px"
+          >
+            <el-option label="中医推拿" value="中医推拿" />
+            <el-option label="精油推拿" value="精油推拿" />
+            <el-option label="肩颈调理" value="肩颈调理" />
+            <el-option label="中式足疗" value="中式足疗" />
+            <el-option label="泰式足疗" value="泰式足疗" />
+            <el-option label="草药足疗" value="草药足疗" />
+            <el-option label="精油SPA" value="精油SPA" />
+            <el-option label="热石SPA" value="热石SPA" />
+            <el-option label="面部护理" value="面部护理" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="技法等级">
+          <template #label>
+            <span class="label-with-tooltip">
+              技法等级
+              <el-tooltip content="技师自身的技法等级" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
+            v-model="searchForm.skillLevelInclude"
+            placeholder="选择技法等级"
+            clearable
+            multiple
+            style="width: 150px"
+          >
+            <el-option label="LV3" value="LV3" />
+            <el-option label="LV4" value="LV4" />
+            <el-option label="LV5" value="LV5" />
+            <el-option label="LV6" value="LV6" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="挂店门店">
+          <template #label>
+            <span class="label-with-tooltip">
+              挂店门店
+              <el-tooltip content="推荐/取消挂店列中的门店" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
+            v-model="searchForm.hangingStore"
+            placeholder="选择挂店门店"
+            clearable
+            multiple
+            style="width: 200px"
+          >
+            <el-option label="天府凯德店" value="天府凯德店" />
+            <el-option label="环球中心店" value="环球中心店" />
+            <el-option label="高新区店" value="高新区店" />
+            <el-option label="春熙路店" value="春熙路店" />
+            <el-option label="金牛凯德店" value="金牛凯德店" />
+            <el-option label="万达广场店" value="万达广场店" />
+            <el-option label="世纪城店" value="世纪城店" />
+            <el-option label="太古里店" value="太古里店" />
+            <el-option label="九眼桥店" value="九眼桥店" />
+            <el-option label="桐梓林店" value="桐梓林店" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="项目标签去重">
+          <template #label>
+            <span class="label-with-tooltip">
+              项目标签去重
+              <el-tooltip content="挂入的技师，与主服务门店技师的项目标签不重复" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
+            v-model="searchForm.projectTagNotRepeat"
+            placeholder="选择项目标签"
+            clearable
+            multiple
+            style="width: 200px"
+          >
+            <el-option label="中医推拿" value="中医推拿" />
+            <el-option label="精油推拿" value="精油推拿" />
+            <el-option label="肩颈调理" value="肩颈调理" />
+            <el-option label="中式足疗" value="中式足疗" />
+            <el-option label="泰式足疗" value="泰式足疗" />
+            <el-option label="草药足疗" value="草药足疗" />
+            <el-option label="精油SPA" value="精油SPA" />
+            <el-option label="热石SPA" value="热石SPA" />
+            <el-option label="面部护理" value="面部护理" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="技法等级去重">
+          <template #label>
+            <span class="label-with-tooltip">
+              技法等级去重
+              <el-tooltip content="挂入的技师，与主服务门店技师的等级不重复" placement="top">
+                <el-icon class="question-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-select
+            v-model="searchForm.skillLevelNotRepeat"
+            placeholder="选择技法等级"
+            clearable
+            multiple
+            style="width: 150px"
+          >
+            <el-option label="LV3" value="LV3" />
+            <el-option label="LV4" value="LV4" />
+            <el-option label="LV5" value="LV5" />
+            <el-option label="LV6" value="LV6" />
           </el-select>
         </el-form-item>
         <el-form-item label="操作时间">
@@ -76,6 +231,18 @@
       </el-form>
     </div>
 
+    <!-- 操作按钮区域 -->
+    <div class="action-section">
+      <el-button type="primary" @click="handleBatchPush" :disabled="selectedRows.length === 0 || !selectedRows.some(row => row.type === '推荐挂店')">
+        <el-icon><ArrowRight /></el-icon>
+        批量推送
+      </el-button>
+      <el-button type="primary" @click="handleOneClickPush" :disabled="filteredRecords.length === 0 || !filteredRecords.some(row => row.type === '推荐挂店')">
+        <el-icon><ArrowRight /></el-icon>
+        一键推送
+      </el-button>
+    </div>
+
     <!-- 表格区域 -->
     <div class="table-section">
       <el-table
@@ -84,7 +251,9 @@
         border
         stripe
         style="width: 100%"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="type" label="类型" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.type === '推荐挂店' ? 'primary' : 'danger'" size="small">
@@ -92,7 +261,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="pushStatus" label="确认推送" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.pushStatus === '已推送' ? 'success' : 'info'" size="small">
+              {{ scope.row.pushStatus || '未推送' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="意向状态" width="100">
           <template #default="scope">
             <el-tag :type="getTagType(scope.row.status)" size="small">
               {{ scope.row.status }}
@@ -111,6 +287,13 @@
             <el-tag type="primary" size="small">{{ scope.row.projectPlate }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="项目标签" width="150">
+          <template #default="scope">
+            <el-tag v-for="tag in scope.row.projectTags" :key="tag" size="small" type="info" style="margin-right: 4px; margin-bottom: 4px;">
+              {{ tag }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="skillLevel" label="技法等级" width="80">
           <template #default="scope">
             <el-tag type="info" size="small">{{ scope.row.skillLevel }}</el-tag>
@@ -123,11 +306,16 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="recommendStore" label="推荐/取消挂店门店" width="200">
+        <el-table-column prop="recommendStore" label="推荐/取消挂店门店" width="250">
           <template #default="scope">
-            <el-tag v-for="store in scope.row.recommendStore" :key="store" size="small" :type="scope.row.type === '推荐挂店' ? 'warning' : 'danger'" style="margin-right: 4px; margin-bottom: 4px;">
-              {{ store }}
-            </el-tag>
+            <div v-for="store in scope.row.recommendStore" :key="store" style="display: inline-block; margin-right: 4px; margin-bottom: 4px;">
+              <el-tag size="small" :type="scope.row.type === '推荐挂店' ? 'warning' : 'danger'" style="margin-right: 4px;">
+                {{ store }}
+              </el-tag>
+              <el-icon v-if="scope.row.type === '推荐挂店' && (scope.row.pushStatus !== '已推送')" class="delete-icon" @click="handleRemoveStore(scope.row, store)">
+                <Close />
+              </el-icon>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="intentionStore" label="意向挂店门店" width="200">
@@ -204,28 +392,37 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, ArrowRight, QuestionFilled, Close } from '@element-plus/icons-vue'
 
 // 响应式数据
 const searchForm = reactive({
   type: '',
   employee: '',
-  store: '',
+  store: [],
   status: '',
+  pushStatus: '',
+  projectTagInclude: [],
+  projectTagNotRepeat: [],
+  skillLevelInclude: [],
+  skillLevelNotRepeat: [],
+  hangingStore: [],
   confirmTimeRange: []
 })
 
 // 表格引用
 const tableRef = ref(null)
 
+// 选中的行
+const selectedRows = ref([])
+
 // 模拟数据
 const records = ref([
-  {
-    id: '1',
+  {    id: '1',
     type: '推荐挂店',
     employeeId: '10001',
     employeeName: '张三',
     projectPlate: '推拿',
+    projectTags: ['中医推拿', '精油推拿', '肩颈调理'],
     skillLevel: 'LV6',
     workDuration: 24,
     mainStore: '天府凯德店',
@@ -236,6 +433,7 @@ const records = ref([
     expireTime: '2026-01-31 00:00:00',
     approveTime: '2026-01-26 15:00:00',
     status: '已确认',
+    pushStatus: '已推送',
     trendData: {
       stores: [
         { name: '天府凯德店', weekOutputTrend: { value: '48000元', change: 5.2 }, weekRetentionTrend: { value: '85.6%', change: 2.3 }, weekChurnTrend: { value: '12.3%', change: -1.5 } },
@@ -249,6 +447,7 @@ const records = ref([
     employeeId: '10002',
     employeeName: '李四',
     projectPlate: '足疗',
+    projectTags: ['中式足疗', '泰式足疗', '草药足疗'],
     skillLevel: 'LV4',
     workDuration: 18,
     mainStore: '春熙路店',
@@ -259,6 +458,7 @@ const records = ref([
     expireTime: '2026-01-30 00:00:00',
     approveTime: '2026-01-25 16:00:00',
     status: '已拒绝',
+    pushStatus: '未推送',
     trendData: {
       stores: [
         { name: '春熙路店', weekOutputTrend: { value: '33000元', change: -8.1 }, weekRetentionTrend: { value: '84.7%', change: -1.2 }, weekChurnTrend: { value: '12.6%', change: 3.4 } }
@@ -271,6 +471,7 @@ const records = ref([
     employeeId: '10003',
     employeeName: '王五',
     projectPlate: 'SPA',
+    projectTags: ['精油SPA', '热石SPA', '面部护理'],
     skillLevel: 'LV5',
     workDuration: 30,
     mainStore: '环球中心店',
@@ -280,6 +481,7 @@ const records = ref([
     operationTime: '2026-01-27 09:00:00',
     expireTime: '2026-02-01 00:00:00',
     status: '待确认',
+    pushStatus: '未推送',
     trendData: {
       stores: [
         { name: '环球中心店', weekOutputTrend: { value: '52000元', change: 12.5 }, weekRetentionTrend: { value: '88.2%', change: 4.1 }, weekChurnTrend: { value: '9.8%', change: -2.7 } },
@@ -293,6 +495,7 @@ const records = ref([
     employeeId: '10004',
     employeeName: '赵六',
     projectPlate: '推拿',
+    projectTags: ['中医推拿', '肩颈调理'],
     skillLevel: 'LV3',
     workDuration: 12,
     mainStore: '桐梓林店',
@@ -302,6 +505,7 @@ const records = ref([
     operationTime: '2026-01-20 11:00:00',
     expireTime: '2026-01-25 00:00:00',
     status: '自动取消',
+    pushStatus: '未推送',
     trendData: {
       stores: [
         { name: '桐梓林店', weekOutputTrend: { value: '28000元', change: -15.3 }, weekRetentionTrend: { value: '79.5%', change: -3.8 }, weekChurnTrend: { value: '18.2%', change: 5.6 } }
@@ -325,17 +529,57 @@ const filteredRecords = computed(() => {
     if (searchForm.employee && !`${record.employeeName}${record.employeeId}`.includes(searchForm.employee)) {
       return false
     }
-    // 门店搜索
-    if (searchForm.store) {
-      const searchValue = searchForm.store.toLowerCase();
-      const storeText = `${record.mainStore} ${record.hangingStores.join(' ')} ${record.recommendStore.join(' ')} ${record.intentionStore.join(' ')}`.toLowerCase();
-      if (!storeText.includes(searchValue)) {
+    // 门店搜索（多选）
+    if (searchForm.store && searchForm.store.length > 0) {
+      const storeText = `${record.mainStore} ${record.hangingStores.join(' ')} ${record.recommendStore.join(' ')} ${record.intentionStore.join(' ')}`;
+      const hasMatchingStore = searchForm.store.some(store => storeText.includes(store));
+      if (!hasMatchingStore) {
         return false;
       }
     }
-    // 状态过滤
+    // 挂店门店搜索（多选）
+    if (searchForm.hangingStore && searchForm.hangingStore.length > 0) {
+      const recommendStoreText = record.recommendStore.join(' ');
+      const hasMatchingHangingStore = searchForm.hangingStore.some(store => recommendStoreText.includes(store));
+      if (!hasMatchingHangingStore) {
+        return false;
+      }
+    }
+    // 意向状态过滤
     if (searchForm.status && record.status !== searchForm.status) {
       return false
+    }
+    // 推送状态过滤
+    if (searchForm.pushStatus) {
+      if (searchForm.pushStatus === '已推送' && record.pushStatus !== '已推送') {
+        return false
+      }
+      if (searchForm.pushStatus === '未推送' && record.pushStatus === '已推送') {
+        return false
+      }
+    }
+    // 项目标签包含过滤（多选）
+    if (searchForm.projectTagInclude && searchForm.projectTagInclude.length > 0) {
+      const hasMatchingTag = searchForm.projectTagInclude.some(tag => record.projectTags.includes(tag))
+      if (!hasMatchingTag) {
+        return false
+      }
+    }
+    // 项目标签不重复过滤（多选）
+    if (searchForm.projectTagNotRepeat && searchForm.projectTagNotRepeat.length > 0) {
+      // 这里需要根据实际业务逻辑实现，暂时假设与主服务门店技师的项目标签不重复
+      // 为了演示，我们假设所有记录都满足不重复条件
+    }
+    // 技法等级包含过滤（多选）
+    if (searchForm.skillLevelInclude && searchForm.skillLevelInclude.length > 0) {
+      if (!searchForm.skillLevelInclude.includes(record.skillLevel)) {
+        return false
+      }
+    }
+    // 技法等级不重复过滤（多选）
+    if (searchForm.skillLevelNotRepeat && searchForm.skillLevelNotRepeat.length > 0) {
+      // 这里需要根据实际业务逻辑实现，暂时假设与主服务门店技师的等级不重复
+      // 为了演示，我们假设所有记录都满足不重复条件
     }
     // 时间范围过滤
     if (searchForm.confirmTimeRange && searchForm.confirmTimeRange.length === 2) {
@@ -390,9 +634,80 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     employee: '',
-    store: '',
+    store: [],
     status: '',
+    pushStatus: '',
+    projectTagInclude: [],
+    projectTagNotRepeat: [],
+    skillLevelInclude: [],
+    skillLevelNotRepeat: [],
+    hangingStore: [],
     confirmTimeRange: []
+  })
+}
+
+// 处理选择变化
+const handleSelectionChange = (val) => {
+  selectedRows.value = val
+}
+
+// 批量推送
+const handleBatchPush = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要推送的数据')
+    return
+  }
+  
+  // 过滤出类型为推荐挂店的记录
+  const recommendRecords = selectedRows.value.filter(row => row.type === '推荐挂店')
+  if (recommendRecords.length === 0) {
+    ElMessage.warning('只能推送类型为推荐挂店的记录')
+    return
+  }
+  
+  ElMessageBox.confirm('确定要推送选中的推荐挂店记录吗？', '确认推送', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 模拟推送操作
+    recommendRecords.forEach(row => {
+      row.pushStatus = '已推送'
+    })
+    ElMessage.success(`成功推送 ${recommendRecords.length} 条推荐挂店记录`)
+    // 清空选择
+    selectedRows.value = []
+  }).catch(() => {
+    // 取消操作
+  })
+}
+
+// 一键推送
+const handleOneClickPush = () => {
+  if (filteredRecords.value.length === 0) {
+    ElMessage.warning('没有可推送的数据')
+    return
+  }
+  
+  // 过滤出类型为推荐挂店的记录
+  const recommendRecords = filteredRecords.value.filter(row => row.type === '推荐挂店')
+  if (recommendRecords.length === 0) {
+    ElMessage.warning('只能推送类型为推荐挂店的记录')
+    return
+  }
+  
+  ElMessageBox.confirm('确定要推送所有筛选出来的推荐挂店记录吗？', '一键推送', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 模拟推送操作
+    recommendRecords.forEach(row => {
+      row.pushStatus = '已推送'
+    })
+    ElMessage.success(`成功推送 ${recommendRecords.length} 条推荐挂店记录`)
+  }).catch(() => {
+    // 取消操作
   })
 }
 
@@ -415,6 +730,24 @@ const showTrend = (row) => {
 const closeTrendDialog = () => {
   trendDialogVisible.value = false
   currentTrendData.value = null
+}
+
+// 移除推荐挂店门店
+const handleRemoveStore = (row, store) => {
+  ElMessageBox.confirm(`确定要移除门店 ${store} 吗？`, '确认移除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 从推荐门店数组中移除指定门店
+    const index = row.recommendStore.indexOf(store)
+    if (index > -1) {
+      row.recommendStore.splice(index, 1)
+      ElMessage.success(`成功移除门店 ${store}`)
+    }
+  }).catch(() => {
+    // 取消操作
+  })
 }
 </script>
 
@@ -449,6 +782,35 @@ const closeTrendDialog = () => {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.label-with-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.question-icon {
+  font-size: 14px;
+  color: #909399;
+  cursor: help;
+}
+
+.delete-icon {
+  font-size: 14px;
+  color: #f56c6c;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.delete-icon:hover {
+  color: #f5222d;
+}
+
+.action-section {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
 }
 
 .table-section {
