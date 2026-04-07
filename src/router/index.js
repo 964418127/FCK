@@ -91,13 +91,93 @@ const routes = [
       }
     },
     {
-      path: 'schedule-leave-approval',
-      name: 'schedule-leave-approval',
-      component: () => import('../views/ScheduleLeaveApproval.vue'),
-      meta: {
-        title: '排班排假审核'
+        path: 'schedule-leave-approval',
+        name: 'schedule-leave-approval',
+        component: () => import('../views/ScheduleLeaveApproval.vue'),
+        meta: {
+          title: '排班排假审核'
+        }
+      },
+      {
+        path: 'bean-account-list',
+        name: 'bean-account-list',
+        component: () => import('../views/BeanAccountList.vue'),
+        meta: {
+          title: '常乐豆账户列表'
+        }
+      },
+      {
+        path: 'bean-settlement-detail',
+        name: 'bean-settlement-detail',
+        component: () => import('../views/BeanSettlementDetail.vue'),
+        meta: {
+          title: '常乐豆结算明细'
+        }
+      },
+      {
+        path: 'bean-withdrawal-detail',
+        name: 'bean-withdrawal-detail',
+        component: () => import('../views/BeanWithdrawalDetail.vue'),
+        meta: {
+          title: '常乐豆提现明细'
+        }
+      },
+      {
+        path: 'bean-consumption-detail',
+        name: 'bean-consumption-detail',
+        component: () => import('../views/BeanConsumptionDetail.vue'),
+        meta: {
+          title: '常乐豆消费明细'
+        }
+      },
+      {
+        path: 'bean-refund-detail',
+        name: 'bean-refund-detail',
+        component: () => import('../views/BeanRefundDetail.vue'),
+        meta: {
+          title: '常乐豆退货明细'
+        }
+      },
+      {
+        path: 'bean-therapist-detail',
+        name: 'bean-therapist-detail',
+        component: () => import('../views/BeanTherapistDetail.vue'),
+        meta: {
+          title: '推拿师获豆明细'
+        }
+      },
+      {
+        path: 'bean-account-manager-detail',
+        name: 'bean-account-manager-detail',
+        component: () => import('../views/BeanAccountManagerDetail.vue'),
+        meta: {
+          title: '客户经理获豆明细'
+        }
+      },
+      {
+        path: 'bean-headquarter-detail',
+        name: 'bean-headquarter-detail',
+        component: () => import('../views/BeanHeadquarterDetail.vue'),
+        meta: {
+          title: '总部岗位获豆明细'
+        }
+      },
+      {
+        path: 'bean-account-monthly',
+        name: 'bean-account-monthly',
+        component: () => import('../views/BeanAccountMonthly.vue'),
+        meta: {
+          title: '账户月度信息'
+        }
+      },
+      {
+        path: 'bean-usage-detail',
+        name: 'bean-usage-detail',
+        component: () => import('../views/BeanUsageDetail.vue'),
+        meta: {
+          title: '常乐豆使用明细'
+        }
       }
-    }
     ]
   },
   {

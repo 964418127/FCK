@@ -93,197 +93,53 @@
           </el-menu-item>
         </el-sub-menu>
 
-          <!-- 主要功能菜单 - 已屏蔽 -->
-          <!-- <el-menu-item index="user-center">
-            <el-icon><UserFilled /></el-icon>
-            <span>用户中心</span>
-          </el-menu-item>
-          <el-menu-item index="brand">
-            <el-icon><Shop /></el-icon>
-            <span>品牌管理</span>
-          </el-menu-item>
-
-          <el-sub-menu index="budget-management">
+          <!-- 常乐豆账户分组 -->
+          <el-sub-menu index="bean-account">
             <template #title>
-              <el-icon><Briefcase /></el-icon>
-              <span>预算管理</span>
+              <el-icon><Coin /></el-icon>
+              <span>常乐豆账户</span>
             </template>
-            <el-menu-item index="budget-personnel">
-              <el-icon><Briefcase /></el-icon>
-              <span>人员编制</span>
+            <!-- <el-menu-item index="bean-account-list">
+              <el-icon><List /></el-icon>
+              <span>账户列表</span>
+            </el-menu-item> -->
+            <el-menu-item index="bean-account-monthly">
+              <el-icon><Calendar /></el-icon>
+              <span>月度信息</span>
+            </el-menu-item>
+            <!-- <el-menu-item index="bean-settlement-detail">
+              <el-icon><Document /></el-icon>
+              <span>结算明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-withdrawal-detail">
+              <el-icon><ArrowUp /></el-icon>
+              <span>提现明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-consumption-detail">
+              <el-icon><ShoppingCart /></el-icon>
+              <span>消费明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-refund-detail">
+              <el-icon><Refresh /></el-icon>
+              <span>退货明细</span>
+            </el-menu-item> -->
+            <el-menu-item index="bean-usage-detail">
+              <el-icon><Operation /></el-icon>
+              <span>使用明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-therapist-detail">
+              <el-icon><User /></el-icon>
+              <span>推拿师获豆明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-account-manager-detail">
+              <el-icon><UserFilled /></el-icon>
+              <span>客户经理获豆明细</span>
+            </el-menu-item>
+            <el-menu-item index="bean-headquarter-detail">
+              <el-icon><OfficeBuilding /></el-icon>
+              <span>总部岗位获豆明细</span>
             </el-menu-item>
           </el-sub-menu>
-
-          <el-menu-item index="user">
-            <el-icon><User /></el-icon>
-            <span>员工管理</span>
-          </el-menu-item>
-          <el-menu-item index="organization">
-            <el-icon><OfficeBuilding /></el-icon>
-            <span>组织架构</span>
-          </el-menu-item> -->
-          
-          <!-- 身份管理分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="identity-management">
-            <template #title>
-              <el-icon><UserFilled /></el-icon>
-              <span>身份&角色</span>
-            </template>
-            <el-menu-item index="new-role">
-              <el-icon><Key /></el-icon>
-              <span>平台超管</span>
-            </el-menu-item>
-            <el-menu-item index="certified-user">
-              <el-icon><User /></el-icon>
-              <span>认证用户</span>
-            </el-menu-item>
-            <el-menu-item index="visitor-user">
-              <el-icon><UserFilled /></el-icon>
-              <span>访客用户</span>
-            </el-menu-item>
-            <el-menu-item index="brand-role">
-              <el-icon><Key /></el-icon>
-              <span>品牌角色</span>
-            </el-menu-item>
-          </el-sub-menu> -->
-          
-          <!-- 其他菜单项 - 已屏蔽 -->
-          <!-- <el-menu-item index="permission">
-            <el-icon><Setting /></el-icon>
-            <span>权限注册</span>
-          </el-menu-item>
-          <el-menu-item index="business">
-            <el-icon><Folder /></el-icon>
-            <span>业务管理</span>
-          </el-menu-item>
-          <el-menu-item index="process">
-            <el-icon><DataLine /></el-icon>
-            <span>业务流程</span>
-          </el-menu-item>
-          <el-menu-item index="data-rule">
-            <el-icon><Document /></el-icon>
-            <span>数据策略</span>
-          </el-menu-item>
-          <el-menu-item index="business-container">
-            <el-icon><Location /></el-icon>
-            <span>业务容器</span>
-          </el-menu-item> -->
-          
-          <!-- 分享推荐分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="share-recommend">
-            <template #title>
-              <el-icon><Promotion /></el-icon>
-              <span>分享推荐</span>
-            </template>
-            <el-menu-item index="share-recommend-list">
-              <el-icon><List /></el-icon>
-              <span>分享推荐列表</span>
-            </el-menu-item>
-            <el-menu-item index="share-rule-management">
-              <el-icon><Setting /></el-icon>
-              <span>分享活动</span>
-            </el-menu-item>
-          </el-sub-menu> -->
-          
-          <!-- 消息中心分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="message-center">
-            <template #title>
-              <el-icon><Message /></el-icon>
-              <span>消息中心</span>
-            </template>
-            <el-menu-item index="message-history">
-              <el-icon><Document /></el-icon>
-              <span>历史消息管理</span>
-            </el-menu-item>
-            <el-menu-item index="message-scheduled">
-              <el-icon><Clock /></el-icon>
-              <span>定时消息管理</span>
-            </el-menu-item>
-            <el-menu-item index="message-plan">
-              <el-icon><Calendar /></el-icon>
-              <span>消息发送计划</span>
-            </el-menu-item>
-            <el-menu-item index="message-template">
-              <el-icon><Edit /></el-icon>
-              <span>模板配置</span>
-            </el-menu-item>
-            <el-menu-item index="message-channel">
-              <el-icon><Connection /></el-icon>
-              <span>消息通道配置</span>
-            </el-menu-item>
-            <el-menu-item index="message-rule">
-              <el-icon><Setting /></el-icon>
-              <span>规则配置</span>
-            </el-menu-item>
-            <el-menu-item index="message-type">
-              <el-icon><Collection /></el-icon>
-              <span>消息类型配置</span>
-            </el-menu-item>
-          </el-sub-menu> -->
-          
-          <!-- 可视化开发分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="visual-dev">
-            <template #title>
-              <el-icon><Monitor /></el-icon>
-              <span>可视化编排 v1</span>
-            </template>
-            <el-menu-item index="process-designer">
-              <el-icon><DataLine /></el-icon>
-              <span>可视化流程设计 v1</span>
-            </el-menu-item>
-            <el-menu-item index="rule-configurator">
-              <el-icon><Setting /></el-icon>
-              <span>可视化规则配置 v1</span>
-            </el-menu-item>
-            <el-menu-item index="event-configurator">
-              <el-icon><Connection /></el-icon>
-              <span>可视化事件配置 v1</span>
-            </el-menu-item>
-          </el-sub-menu> -->
-          
-          <!-- 自动化引擎分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="auto-engine">
-            <template #title>
-              <el-icon><Cpu /></el-icon>
-              <span>自动化引擎 v1</span>
-            </template>
-            <el-menu-item index="engine-business">
-              <el-icon><Briefcase /></el-icon>
-              <span>引擎业务</span>
-            </el-menu-item>
-            <el-menu-item index="engine-process">
-              <el-icon><Operation /></el-icon>
-              <span>引擎流程设计</span>
-            </el-menu-item>
-            <el-menu-item index="engine-event">
-              <el-icon><Connection /></el-icon>
-              <span>引擎事件管理</span>
-            </el-menu-item>
-            <el-menu-item index="engine-work-permission">
-              <el-icon><Key /></el-icon>
-              <span>工作权限</span>
-            </el-menu-item>
-          </el-sub-menu> -->
-          
-          <!-- 回收箱分组 - 已屏蔽 -->
-          <!-- <el-sub-menu index="recycle-bin">
-            <template #title>
-              <el-icon><Delete /></el-icon>
-              <span>回收站</span>
-            </template>
-            <el-menu-item index="role">
-              <el-icon><Key /></el-icon>
-              <span>角色管理（旧）</span>
-            </el-menu-item>
-            <el-menu-item index="business-entity">
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>业务主体（回收）</span>
-            </el-menu-item>
-            <el-menu-item index="data-sync">
-              <el-icon><Connection /></el-icon>
-              <span>数据同步（回收）</span>
-            </el-menu-item>
-          </el-sub-menu> -->
         </el-menu>
       </nav>
     </aside>
@@ -353,7 +209,15 @@ import {
   Shop,
   Document,
   TrendCharts,
-  Check
+  Check,
+  Coin,
+  List,
+  ArrowUp,
+  ShoppingCart,
+  Refresh,
+  OfficeBuilding,
+  UserFilled,
+  Operation
 } from '@element-plus/icons-vue'
 
 
