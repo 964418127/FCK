@@ -59,6 +59,14 @@
               <el-icon><Clock /></el-icon>
               <span>自定义时间策略</span>
             </el-menu-item>
+            <el-menu-item index="therapist-offline-config">
+              <el-icon><Setting /></el-icon>
+              <span>自主下线配置</span>
+            </el-menu-item>
+            <el-menu-item index="therapist-offline-detail">
+              <el-icon><Document /></el-icon>
+              <span>自主下线明细</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- 挂店分组 -->
@@ -140,6 +148,102 @@
               <span>总部岗位获豆明细</span>
             </el-menu-item>
           </el-sub-menu>
+
+          <!-- 客户经理分组 -->
+          <el-sub-menu index="customer-manager">
+            <template #title>
+              <el-icon><UserFilled /></el-icon>
+              <span>客户经理</span>
+            </template>
+            <el-menu-item index="shift-subsidy-config">
+              <el-icon><Money /></el-icon>
+              <span>顶班补贴配置</span>
+            </el-menu-item>
+            <el-menu-item index="leave-deduction-config">
+              <el-icon><Money /></el-icon>
+              <span>请假扣款配置</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 模块薪酬分组 -->
+          <el-sub-menu index="module-salary">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>模块薪酬</span>
+            </template>
+            <el-menu-item index="compensation-calculation-guide">
+              <el-icon><InfoFilled /></el-icon>
+              <span>产品需求说明</span>
+            </el-menu-item>
+            <el-menu-item index="salary-item-management">
+              <el-icon><List /></el-icon>
+              <span>薪酬项配置</span>
+            </el-menu-item>
+            <el-menu-item index="job-compensation-template">
+              <el-icon><Document /></el-icon>
+              <span>岗位薪酬模板</span>
+            </el-menu-item>
+            <el-menu-item index="salary-distribution-strategy">
+              <el-icon><Coin /></el-icon>
+              <span>薪酬发放策略</span>
+            </el-menu-item>
+            <el-menu-item index="negative-wage-account">
+              <el-icon><Wallet /></el-icon>
+              <span>负工资账户</span>
+            </el-menu-item>
+            <el-menu-item index="negative-wage-record-list">
+              <el-icon><List /></el-icon>
+              <span>负工资流水查询</span>
+            </el-menu-item>
+            <el-menu-item index="dependency-calculation">
+              <el-icon><List /></el-icon>
+              <span>依赖计算</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 员工福利保障分组 -->
+          <el-sub-menu index="employee-welfare">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>员工福利保障</span>
+            </template>
+            <el-menu-item index="employee-welfare-guide">
+              <el-icon><InfoFilled /></el-icon>
+              <span>福利保障说明</span>
+            </el-menu-item>
+            <el-menu-item index="city-salary-standard">
+              <el-icon><List /></el-icon>
+              <span>城市基准系数</span>
+            </el-menu-item>
+            <el-menu-item index="employee-welfare-detail">
+              <el-icon><List /></el-icon>
+              <span>员工福利保障</span>
+            </el-menu-item>
+            <el-menu-item index="security-monthly-summary">
+              <el-icon><Document /></el-icon>
+              <span>社保月度汇总</span>
+            </el-menu-item>
+            <el-menu-item index="security-monthly-record">
+              <el-icon><Document /></el-icon>
+              <span>社保月度流水</span>
+            </el-menu-item>
+            <el-menu-item index="housing-fund-monthly-summary">
+              <el-icon><Document /></el-icon>
+              <span>公积金月度汇总</span>
+            </el-menu-item>
+            <el-menu-item index="housing-fund-monthly-record">
+              <el-icon><Document /></el-icon>
+              <span>公积金月度流水</span>
+            </el-menu-item>
+            <el-menu-item index="individual-tax-monthly-summary">
+              <el-icon><Document /></el-icon>
+              <span>个税月度汇总</span>
+            </el-menu-item>
+            <el-menu-item index="individual-tax-monthly-record">
+              <el-icon><Document /></el-icon>
+              <span>个税月度流水</span>
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </nav>
     </aside>
@@ -217,8 +321,17 @@ import {
   Refresh,
   OfficeBuilding,
   UserFilled,
-  Operation
+  Operation,
+  Money,
+  Setting,
+  InfoFilled,
+  Wallet
 } from '@element-plus/icons-vue'
+
+// 图标映射
+const iconMap = {
+  Money
+}
 
 
 
@@ -369,11 +482,6 @@ const handleLogout = () => {
   padding-left: 50px !important;
   height: 44px;
   line-height: 44px;
-}
-
-/* 三级菜单项（如果有） */
-.sidebar-nav :deep(.el-sub-menu .el-sub-menu .el-menu-item) {
-  padding-left: 80px !important;
 }
 
 /* 折叠状态下的菜单项 */

@@ -8,15 +8,19 @@
       <div class="nav-title">挂店管理</div>
       <div class="nav-spacer"></div>
     </div>
+
+    <!-- 锚点导航 -->
+    <div class="anchor-nav">
+      <a class="anchor-item" :class="{ active: activeAnchor === 'self-offline' }" @click.prevent="scrollTo('self-offline')">自主下线</a>
+      <a class="anchor-item" :class="{ active: activeAnchor === 'temp-offline' }" @click.prevent="scrollTo('temp-offline')">临时下线</a>
+      <a class="anchor-item" :class="{ active: activeAnchor === 'interval-settings' }" @click.prevent="scrollTo('interval-settings')">接单间隔时间</a>
+    </div>
     
     <div class="page-content">
       <!-- 自主下线 -->
-      <div class="module">
+      <div class="module" id="self-offline">
         <div class="module-header">
           <div class="module-title">自主下线</div>
-          <div class="module-action">
-            <el-tag type="success" v-if="isSelfOffline">已下线</el-tag>
-          </div>
         </div>
         
         <div class="module-content">
@@ -27,13 +31,17 @@
             </div>
           </div>
           
-          <div class="offline-button-container">
+           <div class="offline-button-container">
             <el-button type="primary" @click="handleSelfOffline" :disabled="todayServiceDuration < 480 || isSelfOffline" size="large">
               {{ isSelfOffline ? '已下线' : '我要下线' }}
             </el-button>
           </div>
+
+          <div v-if="isSelfOffline && selfOfflineTime" class="self-offline-time">
+            下线时间：{{ selfOfflineTime }}
+          </div>
           
-          <div class="self-offline-info">
+          <div v-if="!isSelfOffline" class="self-offline-info">
             <p class="requirement">规则说明</p>
             <ol class="rule-list">
               <li>当日项目服务时长>=480分钟</li>
@@ -44,14 +52,9 @@
       </div>
       
       <!-- 临时下线 -->
-      <div class="module">
+      <div class="module" id="temp-offline">
         <div class="module-header">
           <div class="module-title">临时下线</div>
-          <div class="module-action">
-            <el-button type="danger" @click="handleBatchOffline" :disabled="allStoresOffline" size="small">
-              一键下线
-            </el-button>
-          </div>
         </div>
         
         <div class="module-content">
@@ -60,37 +63,26 @@
               临时下线后今日不可重新上线，次日自动恢复接单
             </el-tag>
           </div>
-          
+
           <div class="store-list">
             <div class="store-item" v-for="store in hangingStores" :key="store.id">
               <div class="store-info">
                 <div class="store-name">{{ store.name }}</div>
                 <div class="store-address">{{ store.address }}</div>
               </div>
-              <div class="store-control">
-                 <div class="switch-with-text">
-                    <span class="switch-text" :class="store.enabled ? 'active' : 'inactive'">
-                      {{ store.enabled ? '接单中' : '已下线' }}
-                    </span>
-                    <el-switch
-                        v-model="store.enabled"
-                        :active-value="true"
-                        :inactive-value="false"
-                        @change="handleStoreSwitch(store)"
-                        :active-color="'#a40035'"
-                        :inactive-color="'#ccc'"
-                        active-text=""
-                        inactive-text=""
-                      />
-                  </div>
-              </div>
             </div>
+          </div>
+
+          <div class="batch-offline-wrapper">
+            <el-button type="danger" @click="handleBatchOffline" :disabled="allStoresOffline" class="batch-offline-btn">
+              今日暂停挂店门店接单
+            </el-button>
           </div>
         </div>
       </div>
       
       <!-- 接单间隔时间 -->
-      <div class="module">
+      <div class="module" id="interval-settings">
         <div class="module-header">
           <div class="module-title">接单间隔时间</div>
           <div class="module-tip">
@@ -98,17 +90,31 @@
               <el-option label="步行" value="walk" />
               <el-option label="骑行" value="bike" />
               <el-option label="驾车" value="car" />
+              <el-option label="公共交通" value="transit" />
             </el-select>
           </div>
         </div>
-        
+
         <div class="module-content">
-          <div v-if="globalNewInterval" class="global-effective-time">
-            <el-tag type="success" size="small">
-              新跨店间隔：{{ globalNewInterval }}分钟（{{ globalNewEffectiveTime }}生效）
-            </el-tag>
+          <div class="interval-adjust">
+            <span class="adjust-label">调整间隔：</span>
+            <div class="slider-wrapper">
+              <el-slider
+                v-model="globalAdjustment"
+                :min="-30"
+                :max="30"
+                :step="10"
+                show-stops
+                @change="onAdjustmentChange"
+              />
+            </div>
+            <span class="adjust-value">{{ adjustmentLabel }}</span>
           </div>
-          
+          <div class="interval-hint">
+            <el-icon class="hint-icon"><QuestionFilled /></el-icon>
+            最小生效间隔<span class="hint-num">10</span>分钟，最大调整范围<span class="hint-num">±30</span>分钟
+          </div>
+
           <div class="commute-list">
             <div class="commute-item" v-for="store in hangingStores" :key="store.id">
               <div class="commute-info">
@@ -117,7 +123,7 @@
                    跨店间隔：<span class="interval-value">{{ store.interval }}分钟</span>
                  </div>
                  <div v-if="store.newInterval" class="new-interval">
-                   新跨店间隔：<span class="new-interval-value">{{ store.newInterval }}分钟</span>（{{ store.newEffectiveTime }}生效）
+                   新跨店间隔：<span class="new-interval-value">{{ store.newInterval }}分钟</span>（<span class="effective-time">{{ store.newEffectiveTime }}生效</span>）
                  </div>
                </div>
             </div>
@@ -130,20 +136,34 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, ArrowDown } from '@element-plus/icons-vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+
 
 const router = useRouter()
 
 // 今日服务时长
 const todayServiceDuration = ref(482)
 const isSelfOffline = ref(false)
+const selfOfflineTime = ref(null)
 
 // 全局通勤方式
 const globalCommute = ref('walk')
-const globalNewInterval = ref(null)
+const globalBaseInterval = ref(30)
+const globalAdjustment = ref(0)
 const globalNewEffectiveTime = ref(null)
+
+// 计算最终的新间隔
+const globalNewInterval = computed(() => globalBaseInterval.value + globalAdjustment.value)
+
+// 调整值文案
+const adjustmentLabel = computed(() => {
+  const v = globalAdjustment.value
+  if (v > 0) return `增加${v}分钟`
+  if (v < 0) return `减少${Math.abs(v)}分钟`
+  return '无调整'
+})
 
 // 已挂店门店
 const hangingStores = ref([
@@ -164,24 +184,56 @@ const goBack = () => {
 
 // 全局切换通勤方式
 const handleGlobalCommuteChange = () => {
-  // 根据通勤方式更新间隔时间
-  const commuteTimes = {
-    walk: 30,
-    bike: 15,
-    car: 10
-  }
-  // 保存新的间隔时间和生效时间
-  globalNewInterval.value = commuteTimes[globalCommute.value]
+  // 重置调整值为0
+  globalAdjustment.value = 0
   // 更新生效时间为次日0点
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   globalNewEffectiveTime.value = tomorrow.toISOString().slice(0, 10) + ' 00:00:00'
-  // 更新每个门店的新间隔时间
+  // 更新每个门店的通勤方式和间隔（统一通勤方式）
   hangingStores.value.forEach(store => {
-    store.newInterval = globalNewInterval.value
+    store.commute = globalCommute.value
+    store.interval = getCommuteInterval(globalCommute.value)
+    store.newInterval = store.interval
     store.newEffectiveTime = globalNewEffectiveTime.value
   })
-  ElMessage.success(`已切换通勤方式，新的跨店间隔时间为${globalNewInterval.value}分钟，次日0点生效`)
+  ElMessage.success(`通勤方式已切换为【${getCommuteLabel(globalCommute.value)}】，调整值已重置`)
+}
+
+// 获取通勤方式对应的基础间隔
+const getCommuteInterval = (commuteType) => {
+  const times = { walk: 30, bike: 20, car: 10, transit: 40 }
+  return times[commuteType] || 30
+}
+
+// 获取通勤方式中文标签
+const getCommuteLabel = (commuteType) => {
+  const labels = { walk: '步行', bike: '骑行', car: '驾车', transit: '公共交通' }
+  return labels[commuteType] || commuteType
+}
+
+// 滑块调整间隔时间
+const onAdjustmentChange = (val) => {
+  if (!globalNewEffectiveTime.value) {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    globalNewEffectiveTime.value = tomorrow.toISOString().slice(0, 10) + ' 00:00:00'
+  }
+  hangingStores.value.forEach(store => {
+    const baseInterval = getCommuteInterval(store.commute)
+    store.newInterval = baseInterval + val
+    store.newEffectiveTime = globalNewEffectiveTime.value
+  })
+  ElMessage.success(`跨店间隔已调整为${globalNewInterval.value}分钟（${globalNewEffectiveTime.value}生效）`)
+}
+
+// 当前锚点
+const activeAnchor = ref('self-offline')
+
+// 锚点滚动
+const scrollTo = (id) => {
+  activeAnchor.value = id
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
 // 自主下线
@@ -203,6 +255,7 @@ const handleSelfOffline = () => {
         store.currentStatus = '接单中'
       })
       isSelfOffline.value = false
+      selfOfflineTime.value = null
       ElMessage.success('已重新上线')
     }).catch(() => {
       ElMessage.info('已取消上线操作')
@@ -224,6 +277,8 @@ const handleSelfOffline = () => {
         store.currentStatus = '今日已临时下线'
       })
       isSelfOffline.value = true
+      const now = new Date()
+      selfOfflineTime.value = now.toLocaleString('zh-CN', { hour12: false })
       ElMessage.success('已自主下线，可重新上线')
     }).catch(() => {
       ElMessage.info('已取消下线操作')
@@ -287,7 +342,7 @@ const handleStoreSwitch = (store) => {
 }
 
 .page-content {
-  height: calc(100vh - 64px);
+  height: calc(100vh - 116px);
   overflow-y: auto;
 }
 
@@ -451,6 +506,14 @@ const handleStoreSwitch = (store) => {
 }
 
 /* 临时下线模块 */
+.batch-offline-wrapper {
+  margin-top: 16px;
+}
+
+.batch-offline-btn {
+  width: 100%;
+}
+
 .store-list {
   margin-top: 16px;
 }
@@ -479,7 +542,92 @@ const handleStoreSwitch = (store) => {
   color: #666;
 }
 
+/* 锚点导航 */
+.anchor-nav {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  overflow-x: auto;
+}
+
+.anchor-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.anchor-item:hover {
+  background: #a40035;
+  color: #fff;
+}
+
+.anchor-item.active {
+  background: #a40035;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(164, 0, 53, 0.35);
+}
+
 /* 接单间隔时间模块 */
+.interval-adjust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.adjust-label {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.slider-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.adjust-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a40035;
+  white-space: nowrap;
+  min-width: 68px;
+  text-align: right;
+}
+
+.interval-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #999;
+  margin-top: 12px;
+}
+
+.hint-icon {
+  font-size: 14px;
+  color: #faad14;
+}
+
+.hint-num {
+  color: #a40035;
+  font-weight: 600;
+}
+
 .commute-list {
   margin-top: 16px;
 }
@@ -514,17 +662,21 @@ const handleStoreSwitch = (store) => {
 
 .interval-value {
   font-weight: 600;
-  color: #a40035;
 }
 
 .new-interval {
   font-size: 12px;
-  color: #67c23a;
+  color: #666;
   margin-top: 4px;
 }
 
 .new-interval-value {
   font-weight: 600;
+  color: #a40035;
+}
+
+.effective-time {
+  color: #a40035;
 }
 
 .commute-action {
@@ -568,6 +720,14 @@ const handleStoreSwitch = (store) => {
 .offline-button-container {
   text-align: center;
   margin-bottom: 24px;
+}
+
+.self-offline-time {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #a40035;
+  font-weight: 600;
 }
 
 .self-offline-info {

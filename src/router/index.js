@@ -51,6 +51,118 @@ const routes = [
         }
       },
       {
+        path: 'dependency-calculation',
+        name: 'dependency-calculation',
+        component: () => import('../views/DependencyCalculation.vue'),
+        meta: {
+          title: '依赖计算'
+        }
+      },
+      {
+        path: 'strategy-form',
+        name: 'strategy-form',
+        component: () => import('../views/StrategyForm.vue'),
+        meta: {
+          title: '策略表单'
+        }
+      },
+      {
+        path: 'salary-item-management',
+        name: 'salary-item-management',
+        component: () => import('../views/SalaryItemManagement.vue'),
+        meta: {
+          title: '薪酬项配置'
+        }
+      },
+      {
+        path: 'job-compensation-template',
+        name: 'job-compensation-template',
+        component: () => import('../views/JobCompensationTemplate.vue'),
+        meta: {
+          title: '岗位薪酬模板'
+        }
+      },
+      {
+        path: 'job-compensation-template/:id',
+        name: 'job-compensation-template-detail',
+        component: () => import('../views/JobCompensationTemplateDetail.vue'),
+        meta: {
+          title: '岗位模板详情'
+        }
+      },
+      {
+        path: 'employee-welfare-detail',
+        name: 'employee-welfare-detail',
+        component: () => import('../views/EmployeeWelfareDetail.vue'),
+        meta: {
+          title: '员工福利保障明细'
+        }
+      },
+      {
+        path: 'employee-welfare-guide',
+        name: 'employee-welfare-guide',
+        component: () => import('../views/EmployeeWelfareGuide.vue'),
+        meta: {
+          title: '员工福利保障说明'
+        }
+      },
+      {
+        path: 'city-salary-standard',
+        name: 'city-salary-standard',
+        component: () => import('../views/CitySalaryStandard.vue'),
+        meta: {
+          title: '城市基准系数配置'
+        }
+      },
+      {
+        path: 'security-monthly-summary',
+        name: 'security-monthly-summary',
+        component: () => import('../views/SecurityMonthlySummary.vue'),
+        meta: {
+          title: '社保月度汇总'
+        }
+      },
+      {
+        path: 'security-monthly-record',
+        name: 'security-monthly-record',
+        component: () => import('../views/SecurityMonthlyRecord.vue'),
+        meta: {
+          title: '社保月度流水明细'
+        }
+      },
+      {
+        path: 'housing-fund-monthly-summary',
+        name: 'housing-fund-monthly-summary',
+        component: () => import('../views/HousingFundMonthlySummary.vue'),
+        meta: {
+          title: '公积金月度汇总'
+        }
+      },
+      {
+        path: 'housing-fund-monthly-record',
+        name: 'housing-fund-monthly-record',
+        component: () => import('../views/HousingFundMonthlyRecord.vue'),
+        meta: {
+          title: '公积金月度流水明细'
+        }
+      },
+      {
+        path: 'individual-tax-monthly-summary',
+        name: 'individual-tax-monthly-summary',
+        component: () => import('../views/IndividualTaxMonthlySummary.vue'),
+        meta: {
+          title: '个税月度汇总'
+        }
+      },
+      {
+        path: 'individual-tax-monthly-record',
+        name: 'individual-tax-monthly-record',
+        component: () => import('../views/IndividualTaxMonthlyRecord.vue'),
+        meta: {
+          title: '个税月度流水明细'
+        }
+      },
+      {
         path: 'store-interval2',
         name: 'store-interval2',
         component: () => import('../views/StoreInterval2.vue'),
@@ -177,6 +289,54 @@ const routes = [
         meta: {
           title: '常乐豆使用明细'
         }
+      },
+      {
+        path: 'compensation-calculation-guide',
+        name: 'compensation-calculation-guide',
+        component: () => import('../views/CompensationCalculationGuide.vue'),
+        meta: {
+          title: '产品需求说明'
+        }
+      },
+      {
+        path: 'negative-wage-account',
+        name: 'negative-wage-account',
+        component: () => import('../views/NegativeWageAccount.vue'),
+        meta: {
+          title: '员工负工资账户'
+        }
+      },
+      {
+        path: 'negative-wage-record',
+        name: 'negative-wage-record',
+        component: () => import('../views/NegativeWageRecord.vue'),
+        meta: {
+          title: '负工资流水明细'
+        }
+      },
+      {
+        path: 'negative-wage-record-list',
+        name: 'negative-wage-record-list',
+        component: () => import('../views/NegativeWageRecordList.vue'),
+        meta: {
+          title: '负工资流水查询'
+        }
+      },
+      {
+        path: 'salary-distribution-strategy',
+        name: 'salary-distribution-strategy',
+        component: () => import('../views/SalaryDistributionStrategy.vue'),
+        meta: {
+          title: '薪酬发放策略'
+        }
+      },
+      {
+        path: 'salary-distribution-strategy/:id',
+        name: 'salary-distribution-strategy-detail',
+        component: () => import('../views/SalaryDistributionStrategyDetail.vue'),
+        meta: {
+          title: '发放策略详情'
+        }
       }
     ]
   },
@@ -219,6 +379,10 @@ const routes = [
     meta: {
       title: '移动端排班排假'
     }
+  },
+  {
+    path: '/docs',
+    redirect: '/docs-h5/index.html'
   }
 ]
 
