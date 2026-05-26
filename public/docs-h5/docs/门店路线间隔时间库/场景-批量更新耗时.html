@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景一：批量更新耗时 - 门店路线间隔时间库</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/门店路线间隔时间库/index.html">门店路线间隔时间库</a>
+          <span>/</span>
+          <span>场景一</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/门店路线间隔时间库/场景-批量更新耗时.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">场景一</span>
+            <span class="doc-version-date">批量更新耗时</span>
+          </div>
+          <h1 class="doc-page-title">🔄 批量更新耗时</h1>
+          <p class="doc-page-desc">一次性更新多条路线的间隔时间，适用于地图数据大规模更新或路线变化后的统一修正</p>
+        </div>
+
+        <!-- Business Scenario -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 业务背景</div>
+              <p>当地图数据发生大规模更新（如道路规划变化、交通管制调整），或公司门店布局调整后，需要对受影响的多个路线进行统一的耗时数据更新。批量更新功能可以一次性处理多条路线，提高工作效率。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">使用场景</div>
+                <div class="doc-config-value">地图数据大规模更新、门店布局调整、路线重新规划</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">操作方式</div>
+                <div class="doc-config-value">批量选择路线，统一调用地图API获取新数据</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">数据范围</div>
+                <div class="doc-config-value">可选择多条路线同时更新</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Flow Chart -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务流程</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="overflow-x: auto;">
+              <svg viewBox="0 0 600 400" width="600" height="400">
+                <defs>
+                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#999"/>
+                  </marker>
+                </defs>
+
+                <!-- Step 1: Select Routes -->
+                <rect x="220" y="20" width="160" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="50" text-anchor="middle" fill="#333" font-size="14" font-weight="500">选择待更新路线</text>
+
+                <!-- Arrow down -->
+                <line x1="300" y1="70" x2="300" y2="100" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Step 2: Configure Strategy -->
+                <rect x="220" y="100" width="160" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="130" text-anchor="middle" fill="#333" font-size="14" font-weight="500">配置导航策略</text>
+
+                <!-- Arrow down -->
+                <line x1="300" y1="150" x2="300" y2="180" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Step 3: Call API -->
+                <rect x="180" y="180" width="240" height="50" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="300" y="210" text-anchor="middle" fill="#409eff" font-size="14" font-weight="500">调用地图API获取新数据</text>
+
+                <!-- Arrow down -->
+                <line x1="300" y1="230" x2="300" y2="260" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Step 4: Preview -->
+                <rect x="220" y="260" width="160" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="290" text-anchor="middle" fill="#333" font-size="14" font-weight="500">预览更新结果</text>
+
+                <!-- Arrow down -->
+                <line x1="300" y1="310" x2="300" y2="340" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Step 5: Confirm -->
+                <rect x="220" y="340" width="160" height="50" rx="8" fill="#f0f9eb" stroke="#67c23a" stroke-width="2"/>
+                <text x="300" y="370" text-anchor="middle" fill="#67c23a" font-size="14" font-weight="500">确认批量保存</text>
+
+                <!-- Legend -->
+                <rect x="30" y="20" width="14" height="14" fill="#fff" stroke="#a40035" stroke-width="2" rx="2"/>
+                <text x="50" y="32" fill="#666" font-size="11">用户操作</text>
+
+                <rect x="30" y="50" width="14" height="14" fill="#ecf5ff" stroke="#409eff" stroke-width="2" rx="2"/>
+                <text x="50" y="62" fill="#666" font-size="11">系统/API</text>
+
+                <rect x="30" y="80" width="14" height="14" fill="#f0f9eb" stroke="#67c23a" stroke-width="2" rx="2"/>
+                <text x="50" y="92" fill="#666" font-size="11">完成状态</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置要点</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>配置项</th>
+                  <th>配置值</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>更新方式</strong></td>
+                  <td>批量更新</td>
+                  <td>一次性处理多条路线</td>
+                </tr>
+                <tr>
+                  <td><strong>导航策略</strong></td>
+                  <td>可自定义</td>
+                  <td>可选择导航方式和方案策略</td>
+                </tr>
+                <tr>
+                  <td><strong>数据来源</strong></td>
+                  <td>地图API</td>
+                  <td>实时调用地图服务获取最新数据</td>
+                </tr>
+                <tr>
+                  <td><strong>标准时间</strong></td>
+                  <td>自动计算</td>
+                  <td>根据推荐规则自动上浮</td>
+                </tr>
+                <tr>
+                  <td><strong>更新日志</strong></td>
+                  <td>自动记录</td>
+                  <td>每条路线的更新都会记录历史</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="doc-section">
+          <div class="doc-callout doc-callout-success">
+            <div class="doc-callout-title">✅ 场景小结</div>
+            <p><strong>批量更新耗时</strong>是门店路线间隔时间库的核心功能之一，主要特点：</p>
+            <ul style="margin-top: var(--spacing-sm); padding-left: var(--spacing-lg);">
+              <li>一次性处理多条路线，提高工作效率</li>
+              <li>统一调用地图API，保证数据一致性</li>
+              <li>自动记录更新历史，支持数据追溯</li>
+              <li>支持自定义导航策略，适应不同业务需求</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-20</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

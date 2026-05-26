@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCK 文档中心</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <span>首页</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">📋 <span id="doc-title-text"></span> 业务文档中心</h1>
+          <p class="doc-page-desc">面向业务方的产品需求文档库，提供直观的交互式阅读体验</p>
+        </div>
+
+        <!-- Intro Callout -->
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 文档说明</div>
+          <p>本文档库面向业务人员设计，通过卡片、流程图、模拟器等交互元素，帮助您快速理解产品功能和业务流程。</p>
+        </div>
+
+        <!-- Module Cards -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">📚 产品模块</h2>
+          <div class="doc-section-content">
+            <div class="doc-cards">
+              <!-- Card 1: 依赖计算策略 -->
+              <a href="/docs-h5/docs/依赖计算策略/index.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🧮</div>
+                <div class="doc-card-title">依赖计算策略</div>
+                <div class="doc-card-desc">配置薪酬项之间的依赖关系、外部服务调用和跨规则引用，支持保底获豆、个税计算、负工资抵扣等业务场景。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-primary">3 个场景</span>
+                  <span class="doc-tag doc-tag-info">含模拟器</span>
+                </div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+
+              <!-- Card 2: 门店路线间隔时间库 -->
+              <a href="/docs-h5/docs/门店路线间隔时间库/index.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🗺️</div>
+                <div class="doc-card-title">门店路线间隔时间库</div>
+                <div class="doc-card-desc">管理推拿师在不同门店之间的出行耗时数据，用于排班调度时的路径时间计算。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-primary">3 个场景</span>
+                </div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+
+              <!-- Card 3: 账户月度信息 -->
+              <a href="/docs-h5/docs/账户月度信息/index.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🪙</div>
+                <div class="doc-card-title">账户月度信息</div>
+                <div class="doc-card-desc">展示员工账户的月度结算、提现、消费汇总，支持按月份和员工信息筛选查询。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-primary">4 个场景</span>
+                </div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">✨ 文档特性</h2>
+          <div class="doc-section-content">
+            <div class="doc-config-grid">
+              <div class="doc-config-item">
+                <div class="doc-config-label">🎨 视觉友好</div>
+                <div class="doc-config-value">采用卡片式布局，色彩层次分明，业务方阅读无门槛</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">🔄 交互模拟</div>
+                <div class="doc-config-value">内置计算模拟器，输入参数即可实时查看计算结果</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">📊 流程可视化</div>
+                <div class="doc-config-value">SVG 绘制的流程图，清晰展示业务逻辑和计算路径</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">🌙 暗夜模式</div>
+                <div class="doc-config-value">支持暗夜模式切换，保护视力，适合长时间阅读</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span id="doc-footer-text"></span>
+        <span> | </span>
+        <span>最后更新：2026-05-19</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    document.getElementById('doc-title-text').textContent = document.title.replace(' 文档中心', '');
+    document.getElementById('doc-footer-text').textContent = document.title.replace(' 文档中心', '');
+  </script>
+</body>
+</html>

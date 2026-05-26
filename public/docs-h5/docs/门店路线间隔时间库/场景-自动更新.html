@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景三：自动更新 - 门店路线间隔时间库</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/门店路线间隔时间库/index.html">门店路线间隔时间库</a>
+          <span>/</span>
+          <span>场景三</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/门店路线间隔时间库/场景-自动更新.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">场景三</span>
+            <span class="doc-version-date">自动更新</span>
+          </div>
+          <h1 class="doc-page-title">⏰ 自动更新</h1>
+          <p class="doc-page-desc">配置定时任务自动调用地图API更新路线耗时，减少人工维护成本</p>
+        </div>
+
+        <!-- Business Scenario -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 业务背景</div>
+              <p>城市交通状况时刻变化（道路施工、交通管制、新建道路等），门店路线间隔时间需要定期同步更新。自动更新功能通过配置定时任务，系统自动调用地图API更新数据，减少人工维护成本。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">触发方式</div>
+                <div class="doc-config-value">系统定时触发</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">操作方式</div>
+                <div class="doc-config-value">配置更新频率和时间，系统自动执行</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">适用范围</div>
+                <div class="doc-config-value">所有标记为「自动更新」的路线</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Flow Chart -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">执行流程</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="overflow-x: auto;">
+              <svg viewBox="0 0 700 500" width="700" height="500">
+                <defs>
+                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#999"/>
+                  </marker>
+                </defs>
+
+                <!-- Config Setup -->
+                <rect x="250" y="20" width="200" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="350" y="50" text-anchor="middle" fill="#333" font-size="14" font-weight="500">配置自动更新规则</text>
+
+                <!-- Arrow down -->
+                <line x1="350" y1="70" x2="350" y2="100" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Scheduled Task -->
+                <rect x="250" y="100" width="200" height="50" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="350" y="130" text-anchor="middle" fill="#409eff" font-size="14" font-weight="500">定时任务触发</text>
+
+                <!-- Branch: Is Enabled? -->
+                <line x1="350" y1="150" x2="350" y2="180" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <polygon points="350,200 430,240 350,280 270,240" fill="#fff7f7" stroke="#a40035" stroke-width="2"/>
+                <text x="350" y="235" text-anchor="middle" fill="#a40035" font-size="12" font-weight="500">是否启用?</text>
+
+                <!-- No branch -->
+                <line x1="430" y1="240" x2="520" y2="240" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="475" y="230" text-anchor="middle" fill="#f56c6c" font-size="12">否</text>
+                <rect x="520" y="215" width="100" height="50" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="2"/>
+                <text x="570" y="245" text-anchor="middle" fill="#666" font-size="13">跳过执行</text>
+
+                <!-- Yes branch -->
+                <line x1="270" y1="240" x2="170" y2="240" stroke="#999" stroke-width="2"/>
+                <line x1="170" y1="240" x2="170" y2="300" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="215" y="230" text-anchor="middle" fill="#67c23a" font-size="12">是</text>
+
+                <!-- Query Routes -->
+                <rect x="70" y="300" width="200" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="170" y="330" text-anchor="middle" fill="#333" font-size="14" font-weight="500">查询需自动更新的路线</text>
+
+                <!-- Arrow down -->
+                <line x1="170" y1="350" x2="170" y2="380" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Loop: For each route -->
+                <rect x="70" y="380" width="200" height="50" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="170" y="410" text-anchor="middle" fill="#409eff" font-size="14" font-weight="500">遍历每条路线</text>
+
+                <!-- Arrow right -->
+                <line x1="270" y1="405" x2="370" y2="405" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Call API -->
+                <rect x="370" y="380" width="160" height="50" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="450" y="410" text-anchor="middle" fill="#409eff" font-size="14" font-weight="500">调用地图API</text>
+
+                <!-- Arrow down -->
+                <line x1="450" y1="430" x2="450" y2="460" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Save -->
+                <rect x="370" y="460" width="160" height="35" rx="6" fill="#f0f9eb" stroke="#67c23a" stroke-width="2"/>
+                <text x="450" y="483" text-anchor="middle" fill="#67c23a" font-size="12" font-weight="500">保存新数据</text>
+
+                <!-- Loop back -->
+                <line x1="450" y1="380" x2="450" y2="320" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="450" y1="320" x2="270" y2="320" stroke="#999" stroke-width="2"/>
+                <line x1="270" y1="320" x2="270" y2="380" stroke="#999" stroke-width="2"/>
+                <text x="360" y="315" text-anchor="middle" fill="#999" font-size="10">循环</text>
+
+                <!-- Legend -->
+                <rect x="50" y="480" width="14" height="14" fill="#fff" stroke="#a40035" stroke-width="2" rx="2"/>
+                <text x="70" y="492" fill="#666" font-size="11">用户操作</text>
+
+                <rect x="150" y="480" width="14" height="14" fill="#ecf5ff" stroke="#409eff" stroke-width="2" rx="2"/>
+                <text x="170" y="492" fill="#666" font-size="11">系统/API</text>
+
+                <rect x="250" y="480" width="14" height="14" fill="#f0f9eb" stroke="#67c23a" stroke-width="2" rx="2"/>
+                <text x="270" y="492" fill="#666" font-size="11">完成</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置说明</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>配置项</th>
+                  <th>选项</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>启用状态</strong></td>
+                  <td>开启/关闭</td>
+                  <td>关闭后将不会执行任何自动更新</td>
+                </tr>
+                <tr>
+                  <td><strong>更新频率</strong></td>
+                  <td>每日/每周/每月</td>
+                  <td>每日：每天定时执行；每周：按选择的星期执行；每月：按选择的日期执行</td>
+                </tr>
+                <tr>
+                  <td><strong>更新时间</strong></td>
+                  <td>00:00-23:59</td>
+                  <td>选择具体时间点，建议选择业务低峰期</td>
+                </tr>
+                <tr>
+                  <td><strong>星期（周频）</strong></td>
+                  <td>周一至周日</td>
+                  <td>仅在选择「每周」时显示</td>
+                </tr>
+                <tr>
+                  <td><strong>日期（月频）</strong></td>
+                  <td>1日至31日</td>
+                  <td>仅在选择「每月」时显示，如选择31日但月份不足31天则不执行</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Update Scope -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">更新范围</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-warning">
+              <div class="doc-callout-title">⚠️ 自动更新只会处理以下路线</div>
+              <p>当路线的新增或编辑时选择了「自动更新」策略，该路线才会被自动更新任务处理。选择「手动更新」的路线需要人工手动更新。</p>
+            </div>
+
+            <table class="doc-table" style="margin-top: var(--spacing-lg);">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">更新策略</th>
+                  <th>是否自动更新</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>手动更新</strong></td>
+                  <td>
+                    <span class="doc-tag doc-tag-danger">否</span> 需要人工手动触发
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>自动更新</strong></td>
+                  <td>
+                    <span class="doc-tag doc-tag-success">是</span> 参与定时自动更新
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="doc-section">
+          <div class="doc-callout doc-callout-success">
+            <div class="doc-callout-title">✅ 场景小结</div>
+            <p><strong>自动更新</strong>功能大大减少了人工维护成本，主要特点：</p>
+            <ul style="margin-top: var(--spacing-sm); padding-left: var(--spacing-lg);">
+              <li>配置灵活，支持每日/每周/每月三种频率</li>
+              <li>智能选择执行时间，避免影响业务高峰</li>
+              <li>仅更新标记为「自动更新」的路线，避免不必要的数据变动</li>
+              <li>系统自动执行，无需人工干预</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-20</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

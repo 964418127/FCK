@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景二：个税计算 - 依赖计算策略</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/依赖计算策略/index.html">依赖计算策略</a>
+          <span>/</span>
+          <span>场景二</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/依赖计算策略/scene-tax.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">场景二</span>
+            <span class="doc-version-date">兼职员工个税计算</span>
+          </div>
+          <h1 class="doc-page-title">💰 兼职员工个税计算</h1>
+          <p class="doc-page-desc">兼职员工按业务周预扣个税，月末汇总进行退补，涉及多条规则和跨规则引用</p>
+        </div>
+
+        <!-- Business Scenario -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 业务背景</div>
+              <p>兼职员工的薪酬按业务周（周一开始）计算，每周预扣 3% 个税。月末时，将当月各周的预扣税与实际应纳税额进行对比，多退少补。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">适用对象</div>
+                <div class="doc-config-value">兼职员工（按周发放薪酬）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">预扣税率</div>
+                <div class="doc-config-value">3%</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">计算周期</div>
+                <div class="doc-config-value">月（业务周）</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Flow Chart -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务流程</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow">
+              <svg viewBox="0 0 800 450" width="100%" height="450">
+                <!-- Title -->
+                <text x="400" y="20" text-anchor="middle" fill="#333" font-size="16" font-weight="600">跨规则依赖：4条规则的数据流向</text>
+
+                <!-- Rule 1 -->
+                <rect x="30" y="50" width="150" height="80" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="105" y="75" text-anchor="middle" fill="#a40035" font-size="13" font-weight="600">规则1</text>
+                <text x="105" y="95" text-anchor="middle" fill="#333" font-size="11">第1周预扣个税</text>
+                <text x="105" y="115" text-anchor="middle" fill="#666" font-size="10">(基础+绩效+夜班)×3%</text>
+
+                <!-- Rule 2 -->
+                <rect x="30" y="150" width="150" height="80" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="105" y="175" text-anchor="middle" fill="#a40035" font-size="13" font-weight="600">规则2</text>
+                <text x="105" y="195" text-anchor="middle" fill="#333" font-size="11">第2周预扣个税</text>
+                <text x="105" y="215" text-anchor="middle" fill="#666" font-size="10">(回头客+时长)×3%</text>
+
+                <!-- Rule 3 -->
+                <rect x="30" y="250" width="150" height="80" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="105" y="275" text-anchor="middle" fill="#a40035" font-size="13" font-weight="600">规则3</text>
+                <text x="105" y="295" text-anchor="middle" fill="#333" font-size="11">第3周预扣个税</text>
+                <text x="105" y="315" text-anchor="middle" fill="#666" font-size="10">(周时长+节假日)×3%</text>
+
+                <!-- Arrows from R1, R2, R3 to R4 -->
+                <line x1="180" y1="90" x2="280" y2="120" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="180" y1="190" x2="280" y2="160" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="180" y1="290" x2="280" y2="200" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Cross-rule dependency label -->
+                <rect x="200" y="130" width="80" height="40" rx="6" fill="#fff7f7" stroke="#f56c6c" stroke-width="1" stroke-dasharray="4,2"/>
+                <text x="240" y="150" text-anchor="middle" fill="#f56c6c" font-size="10">crossRuleDeps</text>
+                <text x="240" y="163" text-anchor="middle" fill="#f56c6c" font-size="10">[0, 1, 2]</text>
+
+                <!-- Rule 4 (Main) -->
+                <rect x="280" y="80" width="180" height="150" rx="8" fill="#fff7f7" stroke="#a40035" stroke-width="3"/>
+                <text x="370" y="105" text-anchor="middle" fill="#a40035" font-size="14" font-weight="600">规则4</text>
+                <text x="370" y="125" text-anchor="middle" fill="#333" font-size="12">月度个税汇总退补</text>
+
+                <!-- Step boxes inside Rule 4 -->
+                <rect x="300" y="140" width="140" height="30" rx="4" fill="#fff" stroke="#dcdfe6"/>
+                <text x="370" y="160" text-anchor="middle" fill="#333" font-size="11">税前收入合计</text>
+
+                <rect x="300" y="180" width="140" height="30" rx="4" fill="#fff" stroke="#dcdfe6"/>
+                <text x="370" y="200" text-anchor="middle" fill="#333" font-size="11">实际税额 (外部服务)</text>
+
+                <rect x="300" y="220" width="140" height="30" rx="4" fill="#fff" stroke="#dcdfe6"/>
+                <text x="370" y="240" text-anchor="middle" fill="#333" font-size="11">预扣税合计</text>
+
+                <!-- External Service Box -->
+                <rect x="490" y="150" width="130" height="60" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="555" y="175" text-anchor="middle" fill="#409eff" font-size="12" font-weight="500">TAX 申报服务</text>
+                <text x="555" y="195" text-anchor="middle" fill="#666" font-size="10">调用外部税务接口</text>
+
+                <line x1="440" y1="195" x2="490" y2="180" stroke="#409eff" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowhead-blue)"/>
+                <defs>
+                  <marker id="arrowhead-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#409eff"/>
+                  </marker>
+                </defs>
+
+                <!-- Result Arrows -->
+                <line x1="460" y1="90" x2="510" y2="90" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="485" y="82" text-anchor="middle" fill="#67c23a" font-size="10">退税</text>
+
+                <line x1="460" y1="260" x2="510" y2="260" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="485" y="275" text-anchor="middle" fill="#f56c6c" font-size="10">补缴</text>
+
+                <!-- Target Payslips -->
+                <rect x="510" y="50" width="120" height="50" rx="8" fill="#fff" stroke="#67c23a" stroke-width="2"/>
+                <text x="570" y="75" text-anchor="middle" fill="#67c23a" font-size="12" font-weight="500">第4周工资条</text>
+                <text x="570" y="92" text-anchor="middle" fill="#666" font-size="10">应发收入(退税)</text>
+
+                <rect x="510" y="220" width="120" height="50" rx="8" fill="#fff" stroke="#f56c6c" stroke-width="2"/>
+                <text x="570" y="245" text-anchor="middle" fill="#f56c6c" font-size="12" font-weight="500">第4周工资条</text>
+                <text x="570" y="262" text-anchor="middle" fill="#666" font-size="10">代扣税(补缴)</text>
+
+                <!-- Legend -->
+                <rect x="30" y="370" width="12" height="12" fill="#fff" stroke="#a40035" stroke-width="2" rx="2"/>
+                <text x="48" y="380" fill="#666" font-size="11">预扣规则 (R1-R3)</text>
+
+                <rect x="180" y="370" width="12" height="12" fill="#fff7f7" stroke="#a40035" stroke-width="2"/>
+                <text x="198" y="380" fill="#666" font-size="11">汇总规则 (R4)</text>
+
+                <rect x="330" y="370" width="12" height="12" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="348" y="380" fill="#666" font-size="11">外部服务</text>
+
+                <rect x="470" y="370" width="12" height="12" fill="#f5f5f5" stroke="#999" stroke-dasharray="4,2"/>
+                <text x="488" y="380" fill="#666" font-size="11">显式跨规则依赖</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cross Rule Deps Explanation -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">跨规则依赖机制</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-warning">
+              <div class="doc-callout-title">⚠️ 关键设计</div>
+              <p>规则4需要引用规则1-3的计算结果（各周的预扣税），这里采用<strong>显式声明</strong>的跨规则依赖机制，而不是简单的「按顺序引用」。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">声明方式</div>
+                <div class="doc-config-value">规则4配置 <code>crossRuleDeps: [0, 1, 2]</code>，显式声明依赖规则1-3</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">引用格式</div>
+                <div class="doc-config-value">公式中使用 <code>规则1/第1周预扣个税</code> 格式引用</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">执行顺序</div>
+                <div class="doc-config-value">系统根据声明确定先执行R1-R3，再执行R4</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Calculation Logic -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">计算逻辑</h2>
+          <div class="doc-section-content">
+            <div class="doc-formula">
+              <pre><code>// 规则1-3：每周预扣税
+第1周预扣 = (基础提成 + 绩效补贴 + 夜班补贴) × 3%
+第2周预扣 = (回头客激励 + 服务时长补贴) × 3%
+第3周预扣 = (周时长激励 + 节假日补贴) × 3%
+
+// 规则4：月末汇总退补
+税前收入合计 = 基础提成 + 回头客激励 + 周时长激励
+实际税额 = 外部服务(TAX, 税前收入合计)
+预扣税合计 = 规则1/第1周预扣个税 + 规则2/第2周预扣个税 + 规则3/第3周预扣个税
+
+if (预扣税合计 > 实际税额):
+    个税退税 = 预扣税合计 - 实际税额  → 嵌入第4周工资条(应发收入)
+else:
+    个税补缴 = 实际税额 - 预扣税合计  → 嵌入第4周工资条(代扣税)</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">🧮 计算模拟器</h2>
+          <div class="doc-section-content">
+            <div class="doc-simulator" id="simulator">
+              <div class="doc-simulator-title">个税计算模拟</div>
+
+              <div class="doc-simulator-inputs">
+                <div class="doc-input-group">
+                  <label>第1周收入</label>
+                  <input type="number" v-model.number="week1Income">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>第2周收入</label>
+                  <input type="number" v-model.number="week2Income">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>第3周收入</label>
+                  <input type="number" v-model.number="week3Income">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>预扣税率</label>
+                  <input type="number" v-model.number="taxRate" step="0.01">
+                  <span>%</span>
+                </div>
+              </div>
+
+              <div class="doc-simulator-result">
+                <div class="doc-result-box">
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">月度税前收入</span>
+                    <span class="doc-result-value">{{ totalIncome }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">第1周预扣</span>
+                    <span class="doc-result-value">{{ week1Tax }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">第2周预扣</span>
+                    <span class="doc-result-value">{{ week2Tax }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">第3周预扣</span>
+                    <span class="doc-result-value">{{ week3Tax }} 元</span>
+                  </div>
+                  <div class="doc-result-item" style="border-top: 2px dashed var(--color-primary); padding-top: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                    <span class="doc-result-label">预扣税合计</span>
+                    <span class="doc-result-value">{{ totalWithheld }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">实际税额</span>
+                    <span class="doc-result-value">{{ actualTax }} 元</span>
+                  </div>
+                  <div class="doc-result-item" style="border-top: 2px solid var(--color-primary); padding-top: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                    <span class="doc-result-label">{{ isRefund ? '应退税额' : '应补税额' }}</span>
+                    <span class="doc-result-value" :style="{ color: isRefund ? '#67c23a' : '#f56c6c' }">
+                      {{ Math.abs(difference) }} 元
+                    </span>
+                  </div>
+                  <div class="doc-result-note" v-if="isRefund">
+                    ✓ 预扣多于实缴，将退还 {{ Math.abs(difference) }} 元到第4周工资条
+                  </div>
+                  <div class="doc-result-note" v-else>
+                    ○ 预扣少于实缴，需补缴 {{ Math.abs(difference) }} 元从第4周工资条扣除
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置要点</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>规则</th>
+                  <th>依赖项</th>
+                  <th>跨规则依赖</th>
+                  <th>结果嵌入</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>规则1</strong><br><span style="color: #666; font-size: 12px;">第1周预扣</span></td>
+                  <td>基础提成、绩效补贴、夜班补贴</td>
+                  <td>无</td>
+                  <td>第1周工资条 → 代扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>规则2</strong><br><span style="color: #666; font-size: 12px;">第2周预扣</span></td>
+                  <td>回头客激励、服务时长补贴</td>
+                  <td>无</td>
+                  <td>第2周工资条 → 代扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>规则3</strong><br><span style="color: #666; font-size: 12px;">第3周预扣</span></td>
+                  <td>周时长激励、节假日补贴</td>
+                  <td>无</td>
+                  <td>第3周工资条 → 代扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>规则4</strong><br><span style="color: #666; font-size: 12px;">月度汇总</span></td>
+                  <td>基础提成、回头客激励、周时长激励</td>
+                  <td><span class="doc-tag doc-tag-danger">规则1, 2, 3</span></td>
+                  <td>第4周工资条 → 应发收入/代扣税</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="doc-section">
+          <div class="doc-callout doc-callout-success">
+            <div class="doc-callout-title">✅ 场景小结</div>
+            <p><strong>个税计算</strong>展示了跨规则依赖的核心能力：</p>
+            <ul style="margin-top: var(--spacing-sm); padding-left: var(--spacing-lg);">
+              <li>通过 <strong>显式声明</strong> <code>crossRuleDeps</code> 引用前序规则结果</li>
+              <li>在公式中使用 <strong>规则{n}/{结果名}</strong> 格式插入跨规则引用</li>
+              <li>支持 <strong>外部服务调用</strong>（TAX申报）获取真实税额</li>
+              <li>多条规则协同完成 <strong>多退少补</strong> 的完整业务闭环</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-19</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    Vue.createApp({
+      data() {
+        return {
+          week1Income: 2000,
+          week2Income: 1800,
+          week3Income: 2200,
+          taxRate: 3
+        }
+      },
+      computed: {
+        totalIncome() {
+          return this.week1Income + this.week2Income + this.week3Income
+        },
+        week1Tax() {
+          return Math.round(this.week1Income * this.taxRate / 100 * 100) / 100
+        },
+        week2Tax() {
+          return Math.round(this.week2Income * this.taxRate / 100 * 100) / 100
+        },
+        week3Tax() {
+          return Math.round(this.week3Income * this.taxRate / 100 * 100) / 100
+        },
+        totalWithheld() {
+          return Math.round((this.week1Tax + this.week2Tax + this.week3Tax) * 100) / 100
+        },
+        actualTax() {
+          // 简化：实际税额也按3%计算
+          return Math.round(this.totalIncome * this.taxRate / 100 * 100) / 100
+        },
+        difference() {
+          return Math.round((this.totalWithheld - this.actualTax) * 100) / 100
+        },
+        isRefund() {
+          return this.difference >= 0
+        }
+      }
+    }).mount('#simulator')
+  </script>
+</body>
+</html>

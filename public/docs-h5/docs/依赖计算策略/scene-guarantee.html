@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景一：保底获豆 - 依赖计算策略</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/依赖计算策略/index.html">依赖计算策略</a>
+          <span>/</span>
+          <span>场景一</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/依赖计算策略/scene-guarantee.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">场景一</span>
+            <span class="doc-version-date">全职员工保底获豆</span>
+          </div>
+          <h1 class="doc-page-title">🏦 保底获豆计算</h1>
+          <p class="doc-page-desc">当全职员工月度收入低于最低工资标准时，由公司补足差额，以常乐豆形式发放</p>
+        </div>
+
+        <!-- Business Scenario -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 业务背景</div>
+              <p>为保障全职员工的基本生活，当员工某月的现金收入（计件提成 + 加班费）低于当地最低工资标准时，差额部分由公司以「常乐豆」形式补足。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">适用对象</div>
+                <div class="doc-config-value">全职员工（按月发放薪酬）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">发放形式</div>
+                <div class="doc-config-value">常乐豆（非现金）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">计算周期</div>
+                <div class="doc-config-value">月（自然月）</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Flow Chart -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务流程</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="overflow-x: auto;">
+              <svg viewBox="0 0 600 520" width="600" height="520">
+                <defs>
+                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#999"/>
+                  </marker>
+                </defs>
+
+                <!-- Row 1: Three input boxes -->
+                <g transform="translate(60, 20)">
+                  <!-- 计件提成 -->
+                  <rect x="0" y="0" width="100" height="40" rx="6" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                  <text x="50" y="25" text-anchor="middle" fill="#333" font-size="13">计件提成</text>
+                </g>
+
+                <g transform="translate(200, 20)">
+                  <!-- 超时加班费 -->
+                  <rect x="0" y="0" width="100" height="40" rx="6" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                  <text x="50" y="25" text-anchor="middle" fill="#333" font-size="13">超时加班费</text>
+                </g>
+
+                <g transform="translate(340, 20)">
+                  <!-- 节假日加班费 -->
+                  <rect x="0" y="0" width="100" height="40" rx="6" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                  <text x="50" y="25" text-anchor="middle" fill="#333" font-size="13">节假日加班费</text>
+                </g>
+
+                <!-- Arrows down from inputs -->
+                <line x1="110" y1="60" x2="110" y2="80" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="250" y1="60" x2="250" y2="80" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="390" y1="60" x2="390" y2="80" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Row 2: Sum diamond -->
+                <polygon points="300,110 380,150 300,190 220,150" fill="#fff7f7" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="145" text-anchor="middle" fill="#a40035" font-size="14" font-weight="500">求和</text>
+                <text x="300" y="162" text-anchor="middle" fill="#999" font-size="10">SUM</text>
+
+                <!-- Lines to diamond -->
+                <line x1="160" y1="80" x2="220" y2="140" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="300" y1="60" x2="300" y2="110" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="440" y1="80" x2="380" y2="140" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Row 3: Monthly Income -->
+                <line x1="300" y1="190" x2="300" y2="220" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <rect x="230" y="220" width="140" height="45" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="247" text-anchor="middle" fill="#333" font-size="14" font-weight="500">月度收入</text>
+
+                <!-- Row 4: Compare diamond -->
+                <line x1="300" y1="265" x2="300" y2="295" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <polygon points="300,305 400,355 300,405 200,355" fill="#fff7f7" stroke="#a40035" stroke-width="2"/>
+                <text x="300" y="350" text-anchor="middle" fill="#a40035" font-size="12" font-weight="500">收入 &lt; 最低工资?</text>
+                <text x="300" y="370" text-anchor="middle" fill="#999" font-size="10">2360元</text>
+
+                <!-- Min wage config (left side) -->
+                <rect x="30" y="340" width="100" height="35" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+                <text x="80" y="362" text-anchor="middle" fill="#666" font-size="12">最低工资标准</text>
+                <line x1="130" y1="355" x2="200" y2="355" stroke="#999" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowhead)"/>
+
+                <!-- Branch arrows -->
+                <!-- No branch (right) -->
+                <line x1="400" y1="355" x2="480" y2="355" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="440" y="345" text-anchor="middle" fill="#67c23a" font-size="12">否</text>
+
+                <!-- Yes branch (down) -->
+                <line x1="300" y1="405" x2="300" y2="445" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="315" y="430" text-anchor="middle" fill="#f56c6c" font-size="12">是</text>
+
+                <!-- Row 5: Results -->
+                <!-- 0 result (right) -->
+                <rect x="480" y="335" width="80" height="40" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="2"/>
+                <text x="520" y="360" text-anchor="middle" fill="#666" font-size="16" font-weight="600">0</text>
+
+                <!-- 保底获豆 result (down) -->
+                <rect x="240" y="445" width="120" height="45" rx="8" fill="#f0f9eb" stroke="#67c23a" stroke-width="2"/>
+                <text x="300" y="472" text-anchor="middle" fill="#67c23a" font-size="14" font-weight="600">保底获豆</text>
+
+                <!-- Arrow to embed target -->
+                <line x1="360" y1="467" x2="420" y2="467" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Embed target (right of result) -->
+                <rect x="420" y="445" width="120" height="50" rx="8" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="480" y="465" text-anchor="middle" fill="#333" font-size="12" font-weight="500">常乐豆工资条</text>
+                <text x="480" y="482" text-anchor="middle" fill="#666" font-size="10">应发收入分组</text>
+
+                <!-- Legend (bottom left) -->
+                <rect x="30" y="470" width="14" height="14" fill="#fff" stroke="#a40035" stroke-width="2" rx="2"/>
+                <text x="50" y="482" fill="#666" font-size="11">输入</text>
+
+                <polygon points="37,500 45,508 37,516 29,508" fill="#fff7f7" stroke="#a40035" stroke-width="1.5"/>
+                <text x="50" y="512" fill="#666" font-size="11">判断</text>
+
+                <rect x="110" y="470" width="14" height="14" fill="#f5f5f5" stroke="#999" stroke-width="1" rx="2"/>
+                <text x="130" y="482" fill="#666" font-size="11">参数</text>
+
+                <rect x="110" y="496" width="14" height="14" fill="#f0f9eb" stroke="#67c23a" stroke-width="2" rx="2"/>
+                <text x="130" y="508" fill="#666" font-size="11">结果</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Calculation Logic -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">计算逻辑</h2>
+          <div class="doc-section-content">
+            <div class="doc-formula">
+              <pre><code>// 公式定义
+月度收入 = 计件提成 + 超时加班费 + 节假日加班费
+
+if (月度收入 < 最低工资标准):
+    保底获豆 = 最低工资标准 - 月度收入
+else:
+    保底获豆 = 0
+
+// 示例计算
+// 情况1: 计件=3000, 加班=500, 节假日=300
+// 月度收入 = 3000 + 500 + 300 = 3800
+// 3800 >= 2360 → 保底获豆 = 0
+
+// 情况2: 计件=1500, 加班=200, 节假日=0
+// 月度收入 = 1500 + 200 + 0 = 1700
+// 1700 < 2360 → 保底获豆 = 2360 - 1700 = 660</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">🧮 计算模拟器</h2>
+          <div class="doc-section-content">
+            <div class="doc-simulator" id="simulator">
+              <div class="doc-simulator-title">保底获豆计算</div>
+
+              <div class="doc-simulator-inputs">
+                <div class="doc-input-group">
+                  <label>计件提成</label>
+                  <input type="number" v-model.number="pieceCommission">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>超时加班费</label>
+                  <input type="number" v-model.number="overtimePay">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>节假日加班</label>
+                  <input type="number" v-model.number="holidayPay">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>最低工资</label>
+                  <input type="number" v-model.number="minWage" disabled>
+                  <span>元</span>
+                </div>
+              </div>
+
+              <div class="doc-simulator-result">
+                <div class="doc-result-box">
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">月度收入</span>
+                    <span class="doc-result-value">{{ totalIncome }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">与最低工资差额</span>
+                    <span class="doc-result-value" :style="{ color: gap > 0 ? '#f56c6c' : '#67c23a' }">
+                      {{ gap > 0 ? '-' + gap : '0' }} 元
+                    </span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">保底获豆</span>
+                    <span class="doc-result-value" :style="{ color: guaranteeBean > 0 ? '#67c23a' : '#999' }">
+                      {{ guaranteeBean }} 元
+                    </span>
+                  </div>
+                  <div class="doc-result-note" v-if="guaranteeBean > 0">
+                    ✓ 员工收入低于最低工资，公司将补足差额 {{ guaranteeBean }} 元
+                  </div>
+                  <div class="doc-result-note" v-else>
+                    ○ 员工收入已达到最低工资标准，无需补足
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置要点</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>配置项</th>
+                  <th>配置值</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>关联发放策略</strong></td>
+                  <td>2026年全职员工发放策略</td>
+                  <td>该策略关联的薪酬发放规则</td>
+                </tr>
+                <tr>
+                  <td><strong>计算频率</strong></td>
+                  <td>月（自然月）当月 M1日</td>
+                  <td>每月1日结算上月薪酬</td>
+                </tr>
+                <tr>
+                  <td><strong>依赖项</strong></td>
+                  <td>
+                    <span class="doc-tag doc-tag-primary">计件提成</span>
+                    <span class="doc-tag doc-tag-primary">超时加班费</span>
+                    <span class="doc-tag doc-tag-primary">节假日加班费</span>
+                    <span class="doc-tag">最低工资标准</span>
+                  </td>
+                  <td>收入项 + 配置参数</td>
+                </tr>
+                <tr>
+                  <td><strong>数据格式</strong></td>
+                  <td>保留0位小数</td>
+                  <td>计算结果取整数</td>
+                </tr>
+                <tr>
+                  <td><strong>结果嵌入</strong></td>
+                  <td>
+                    <span class="doc-tag doc-tag-success">常乐豆工资条</span>
+                    <span class="doc-tag doc-tag-success">应发收入</span>
+                  </td>
+                  <td>以常乐豆形式发放</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="doc-section">
+          <div class="doc-callout doc-callout-success">
+            <div class="doc-callout-title">✅ 场景小结</div>
+            <p><strong>保底获豆</strong>是最基础的依赖计算场景，体现了依赖计算的核心能力：</p>
+            <ul style="margin-top: var(--spacing-sm); padding-left: var(--spacing-lg);">
+              <li>多个依赖项（计件 + 加班费）通过 <strong>求和公式</strong> 汇总</li>
+              <li>通过 <strong>条件分支</strong> 判断是否需要补足</li>
+              <li>结果嵌入到 <strong>常乐豆工资条</strong> 的应发收入分组</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-19</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    Vue.createApp({
+      data() {
+        return {
+          pieceCommission: 3000,
+          overtimePay: 500,
+          holidayPay: 300,
+          minWage: 2360
+        }
+      },
+      computed: {
+        totalIncome() {
+          return this.pieceCommission + this.overtimePay + this.holidayPay
+        },
+        gap() {
+          return this.minWage - this.totalIncome
+        },
+        guaranteeBean() {
+          return this.gap > 0 ? this.gap : 0
+        }
+      }
+    }).mount('#simulator')
+  </script>
+</body>
+</html>

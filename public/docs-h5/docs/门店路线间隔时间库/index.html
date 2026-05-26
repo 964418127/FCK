@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>门店路线间隔时间库 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <span>门店路线间隔时间库</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/门店路线间隔时间库/index.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">v1.0</span>
+            <span class="doc-version-date">2026-05-20</span>
+          </div>
+          <h1 class="doc-page-title">🗺️ 门店路线间隔时间库</h1>
+          <p class="doc-page-desc">管理推拿师在不同门店之间的出行耗时数据，用于排班调度时的路径时间计算</p>
+        </div>
+
+        <!-- Version Info -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">一 版本信息</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>项目</th>
+                  <th>内容</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>当前版本号</strong></td>
+                  <td>v1.0</td>
+                </tr>
+                <tr>
+                  <td><strong>创建日期</strong></td>
+                  <td>2026-05-20</td>
+                </tr>
+                <tr>
+                  <td><strong>负责人</strong></td>
+                  <td>吴涛</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Change Log -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">二 变更日志</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 说明</div>
+              <p>重点包含创建文档、文档编辑留痕、需求评审修改/修订或者在开发过程中发现的需要修改设计的记录。</p>
+            </div>
+            <table class="doc-table" style="margin-top: var(--spacing-lg);">
+              <thead>
+                <tr>
+                  <th style="width: 120px;">时间</th>
+                  <th style="width: 100px;">版本号</th>
+                  <th style="width: 100px;">变更人</th>
+                  <th style="width: 100px;">变更标记</th>
+                  <th>主要变更内容</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026-05-20</td>
+                  <td>v1.0</td>
+                  <td>吴涛</td>
+                  <td><span class="doc-tag doc-tag-success">创建</span></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>初始版本发布</li>
+                      <li>定义门店路线间隔时间库核心概念和产品架构</li>
+                      <li>设计三个核心业务场景：批量更新耗时、单条路线更新、自动更新</li>
+                      <li>设计全局导航策略配置和自动更新配置功能</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- What is it -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">三 需求背景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 业务痛点</div>
+              <p>推拿师需要在多个门店之间移动服务客户，但门店之间的距离和出行时间难以准确预估。当技师从一个门店转移到另一个门店时，如果不知道准确的出行时间，可能会导致客户等待时间过长或排班冲突。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">🎯 解决什么问题</div>
+                <div class="doc-config-value">建立门店路线间隔时间数据库，精确管理推拿师在任意两个门店之间的出行耗时</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">👤 谁来使用</div>
+                <div class="doc-config-value">排班调度人员、薪酬管理员</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">📋 配置什么内容</div>
+                <div class="doc-config-value">门店路线数据、导航策略、标准间隔时间、自动更新规则</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Core Concepts -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">四 核心概念</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>概念</th>
+                  <th>说明</th>
+                  <th>示例</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>门店路线</strong></td>
+                  <td>从一个起始门店到终点门店的单向路线</td>
+                  <td>天府凯德店 → 金牛凯德店</td>
+                </tr>
+                <tr>
+                  <td><strong>导航方式</strong></td>
+                  <td>出行采用的交通方式</td>
+                  <td>步行、骑行、骑电动车、公交、驾车</td>
+                </tr>
+                <tr>
+                  <td><strong>方案策略</strong></td>
+                  <td>地图导航的路线选择策略</td>
+                  <td>距离最短、用时最短</td>
+                </tr>
+                <tr>
+                  <td><strong>标准间隔时间</strong></td>
+                  <td>用于排班计算的预留时间，基于导航耗时上浮一定比例</td>
+                  <td>导航耗时18分钟 → 标准间隔20分钟（+11%）</td>
+                </tr>
+                <tr>
+                  <td><strong>自动更新</strong></td>
+                  <td>定时调用地图API更新路线数据</td>
+                  <td>每日凌晨2:00自动更新</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Scenarios -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">五 业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-cards">
+              <!-- Scene 1 -->
+              <a href="/docs-h5/docs/门店路线间隔时间库/场景-批量更新耗时.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🔄</div>
+                <div class="doc-card-title">场景一：批量更新耗时</div>
+                <div class="doc-card-desc">一次性更新多条路线的间隔时间，适用于地图数据大规模更新或路线变化后的统一修正。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-primary">批量操作</span>
+                  <span class="doc-tag doc-tag-info">地图API</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+
+              <!-- Scene 2 -->
+              <a href="/docs-h5/docs/门店路线间隔时间库/场景-单条路线更新.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">✏️</div>
+                <div class="doc-card-title">场景二：单条路线更新</div>
+                <div class="doc-card-desc">针对特定路线手动更新间隔时间和标准时间，适用于员工反馈路线变化后的单独修正。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-warning">手动操作</span>
+                  <span class="doc-tag doc-tag-info">单条记录</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+
+              <!-- Scene 3 -->
+              <a href="/docs-h5/docs/门店路线间隔时间库/场景-自动更新.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">⏰</div>
+                <div class="doc-card-title">场景三：自动更新</div>
+                <div class="doc-card-desc">配置定时任务自动调用地图API更新路线耗时，减少人工维护成本。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-success">自动化</span>
+                  <span class="doc-tag doc-tag-info">定时任务</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Function Description -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">六 功能说明</h2>
+          <div class="doc-section-content">
+            <p style="margin-bottom: var(--spacing-lg);">门店路线间隔时间库包含三个核心功能页面：列表页、新增路线、编辑路线。</p>
+
+            <!-- Tabs for different pages -->
+            <div class="doc-tabs">
+              <div class="doc-tab-list">
+                <button class="doc-tab active" onclick="showTab(this, 'tab-list')">列表页</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-add')">新增路线</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-edit')">编辑路线</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-config')">全局配置</button>
+              </div>
+
+              <!-- 列表页 -->
+              <div class="doc-tab-content active" id="tab-list">
+                <h3 style="font-size: 16px; margin: var(--spacing-lg) 0 var(--spacing-md);">列表页面功能</h3>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">功能区域</th>
+                      <th>功能说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>搜索筛选</strong></td>
+                      <td>支持按城市、起始门店、终点门店进行筛选查询</td>
+                    </tr>
+                    <tr>
+                      <td><strong>数据表格</strong></td>
+                      <td>展示路线、起始门店、终点门店、导航策略、距离、导航耗时、标准间隔时间、更新方式、最后更新时间等字段</td>
+                    </tr>
+                    <tr>
+                      <td><strong>批量更新耗时</strong></td>
+                      <td>点击「批量更新耗时」按钮，一次性更新多条路线的间隔时间</td>
+                    </tr>
+                    <tr>
+                      <td><strong>新增路线</strong></td>
+                      <td>点击「新增门店路线」按钮，新增成对双向路线</td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新单条</strong></td>
+                      <td>点击操作栏的「更新」按钮，进入单条路线更新对话框</td>
+                    </tr>
+                    <tr>
+                      <td><strong>查看历史</strong></td>
+                      <td>点击操作栏的「历史」按钮，查看该路线的更新历史记录</td>
+                    </tr>
+                    <tr>
+                      <td><strong>分页</strong></td>
+                      <td>支持10/20/50/100条每页的分页切换</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">列表字段说明</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>城市</strong></td>
+                      <td>门店所属城市，支持成都市、北京市、上海市、广州市、深圳市</td>
+                    </tr>
+                    <tr>
+                      <td><strong>路线</strong></td>
+                      <td>格式为「起始门店 → 终点门店」，显示路线方向标签（单向）</td>
+                    </tr>
+                    <tr>
+                      <td><strong>起始门店</strong></td>
+                      <td>显示门店名称、地址、经纬度坐标</td>
+                    </tr>
+                    <tr>
+                      <td><strong>终点门店</strong></td>
+                      <td>显示门店名称、地址、经纬度坐标</td>
+                    </tr>
+                    <tr>
+                      <td><strong>导航策略</strong></td>
+                      <td>显示当前使用的导航方式（步行/骑行/骑电动车/公交/驾车）和方案策略（距离最短/用时最短）</td>
+                    </tr>
+                    <tr>
+                      <td><strong>距离</strong></td>
+                      <td>两点之间的直线或路线距离，单位为公里(km)，保留2位小数</td>
+                    </tr>
+                    <tr>
+                      <td><strong>导航耗时</strong></td>
+                      <td>基于地图API实时计算的实际出行时间，单位为分钟</td>
+                    </tr>
+                    <tr>
+                      <td><strong>标准间隔时间</strong></td>
+                      <td>用于排班计算的预留时间，单位为分钟，通常为导航耗时的110%-150%</td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新方式</strong></td>
+                      <td>
+                        <span class="doc-tag doc-tag-success">自动</span> 系统定时任务自动更新<br>
+                        <span class="doc-tag doc-tag-warning">手动</span> 人工手动更新
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>最后更新时间</strong></td>
+                      <td>该路线数据最近一次更新的时间</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 新增路线 -->
+              <div class="doc-tab-content" id="tab-add">
+                <h3 style="font-size: 16px; margin: var(--spacing-lg) 0 var(--spacing-md);">新增路线功能</h3>
+                <div class="doc-callout doc-callout-warning">
+                  <div class="doc-callout-title">⚠️ 重要特性</div>
+                  <p>新增路线时会自动创建一对双向路线：前往路线和返回路线。例如新增「天府凯德店 → 金牛凯德店」会自动同时创建「金牛凯德店 → 天府凯德店」。</p>
+                </div>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">新增字段说明</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>城市</strong></td>
+                      <td>必填，选择门店所属城市，用于筛选可选门店列表</td>
+                    </tr>
+                    <tr>
+                      <td><strong>起始门店</strong></td>
+                      <td>必填，选择路线起点门店，支持搜索过滤</td>
+                    </tr>
+                    <tr>
+                      <td><strong>终点门店</strong></td>
+                      <td>必填，选择路线终点门店，支持搜索过滤</td>
+                    </tr>
+                    <tr>
+                      <td><strong>前往路线导航方式</strong></td>
+                      <td>
+                        <span class="doc-tag">步行</span>
+                        <span class="doc-tag">骑行</span>
+                        <span class="doc-tag">骑电动车</span>
+                        <span class="doc-tag">公交</span>
+                        <span class="doc-tag">驾车</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>前往路线方案策略</strong></td>
+                      <td>
+                        <span class="doc-tag">距离最短</span> 按照实际行驶距离选择路线<br>
+                        <span class="doc-tag">用时最短</span> 按照预计时间选择路线
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>返回路线导航方式</strong></td>
+                      <td>与前往路线相同，可独立配置</td>
+                    </tr>
+                    <tr>
+                      <td><strong>返回路线方案策略</strong></td>
+                      <td>与前往路线相同，可独立配置</td>
+                    </tr>
+                    <tr>
+                      <td><strong>路线详情</strong></td>
+                      <td>
+                        点击「开始计算」后显示，基于地图API实时计算：
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                          <li><strong>距离</strong>：路线总距离（公里）</li>
+                          <li><strong>导航耗时</strong>：预估出行时间（分钟）</li>
+                          <li><strong>标准时间</strong>：可手动调整的建议间隔时间</li>
+                          <li><strong>更新策略</strong>：手动更新/自动更新</li>
+                          <li><strong>路线说明</strong>：可选的备注信息</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">标准时间推荐规则</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th>导航耗时区间</th>
+                      <th>推荐标准间隔时间</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>0-10分钟</td>
+                      <td>导航耗时 × 1.5（+50%）</td>
+                    </tr>
+                    <tr>
+                      <td>11-20分钟</td>
+                      <td>导航耗时 × 1.2（+20%）</td>
+                    </tr>
+                    <tr>
+                      <td>21-30分钟</td>
+                      <td>导航耗时 × 1.15（+15%）</td>
+                    </tr>
+                    <tr>
+                      <td>31-60分钟</td>
+                      <td>导航耗时 × 1.1（+10%）</td>
+                    </tr>
+                    <tr>
+                      <td>60分钟以上</td>
+                      <td>导航耗时 + 10分钟</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 编辑路线 -->
+              <div class="doc-tab-content" id="tab-edit">
+                <h3 style="font-size: 16px; margin: var(--spacing-lg) 0 var(--spacing-md);">编辑路线功能</h3>
+                <p style="margin-bottom: var(--spacing-md);">点击列表操作栏的「更新」按钮，进入单条路线更新对话框。</p>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">更新字段说明</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>路线</strong></td>
+                      <td>只读显示当前更新的路线名称</td>
+                    </tr>
+                    <tr>
+                      <td><strong>导航策略</strong></td>
+                      <td>可重新选择导航方式和方案策略</td>
+                    </tr>
+                    <tr>
+                      <td><strong>当前距离</strong></td>
+                      <td>只读显示数据库中现有的距离数据</td>
+                    </tr>
+                    <tr>
+                      <td><strong>当前导航耗时</strong></td>
+                      <td>只读显示数据库中现有的耗时数据</td>
+                    </tr>
+                    <tr>
+                      <td><strong>新距离</strong></td>
+                      <td>点击「开始更新」后显示，基于地图API实时计算的新距离</td>
+                    </tr>
+                    <tr>
+                      <td><strong>新导航耗时</strong></td>
+                      <td>点击「开始更新」后显示，基于地图API实时计算的新耗时</td>
+                    </tr>
+                    <tr>
+                      <td><strong>新标准时间</strong></td>
+                      <td>
+                        可手动输入或调整，单位为分钟<br>
+                        取值范围：1-300分钟
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新策略</strong></td>
+                      <td>
+                        <span class="doc-tag doc-tag-warning">手动更新</span> 人工维护数据<br>
+                        <span class="doc-tag doc-tag-success">自动更新</span> 定期调用地图API同步
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新说明</strong></td>
+                      <td>必填，输入本次更新的原因或依据</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">更新对话框状态</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">状态</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>查看</strong></td>
+                      <td>初始状态，显示当前数据，可点击「开始更新」获取新数据</td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新中</strong></td>
+                      <td>正在调用地图API获取新数据，对话框不可操作</td>
+                    </tr>
+                    <tr>
+                      <td><strong>就绪</strong></td>
+                      <td>新数据已获取，可确认保存或点击「重新更新」</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 全局配置 -->
+              <div class="doc-tab-content" id="tab-config">
+                <h3 style="font-size: 16px; margin: var(--spacing-lg) 0 var(--spacing-md);">全局导航策略配置</h3>
+                <p style="margin-bottom: var(--spacing-md);">设置默认的导航方式和方案策略，新增加的路线将默认使用此配置。</p>
+
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>选项说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>导航方式</strong></td>
+                      <td>
+                        <span class="doc-tag">步行</span> 适合短距离<br>
+                        <span class="doc-tag">骑行</span> 默认选项<br>
+                        <span class="doc-tag">骑电动车</span><br>
+                        <span class="doc-tag">公交</span><br>
+                        <span class="doc-tag">驾车</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>方案策略</strong></td>
+                      <td>
+                        <span class="doc-tag">距离最短</span><br>
+                        <span class="doc-tag">用时最短</span> 默认选项
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h3 style="font-size: 16px; margin: var(--spacing-xl) 0 var(--spacing-lg);">自动更新配置</h3>
+                <p style="margin-bottom: var(--spacing-md);">配置定时任务自动调用地图API更新所有已标记为「自动更新」的路线数据。</p>
+
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>选项说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>启用自动更新</strong></td>
+                      <td>
+                        <span class="doc-tag doc-tag-success">开启</span> 启用定时更新任务<br>
+                        <span class="doc-tag">关闭</span> 禁用自动更新
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新频率</strong></td>
+                      <td>
+                        <span class="doc-tag">每日</span> 每天定时执行<br>
+                        <span class="doc-tag">每周</span> 按周执行，需额外选择星期<br>
+                        <span class="doc-tag">每月</span> 按月执行，需额外选择日期
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>更新时间</strong></td>
+                      <td>选择具体时间点，支持00:00-23:59，间隔30分钟</td>
+                    </tr>
+                    <tr>
+                      <td><strong>星期（周频）</strong></td>
+                      <td>周一至周日可选</td>
+                    </tr>
+                    <tr>
+                      <td><strong>日期（月频）</strong></td>
+                      <td>每月1日至31日可选</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="doc-callout doc-callout-success" style="margin-top: var(--spacing-lg);">
+                  <div class="doc-callout-title">💡 预览功能</div>
+                  <p>开启自动更新后，系统会显示自动更新预览，清晰告知下次执行的时间和规则。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Structure -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">七 数据结构</h2>
+          <div class="doc-section-content">
+            <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">门店路线数据</h4>
+            <div class="doc-formula">
+              <pre><code>interface StoreInterval {
+  id: string;                           // 路线唯一标识
+  route: string;                        // 路线名称，如"天府凯德店 → 金牛凯德店"
+  direction: 'forward' | 'backward';    // 路线方向
+  startStore: Store;                   // 起始门店
+  endStore: Store;                      // 终点门店
+  navigationType: NavigationType;      // 导航方式
+  planStrategy: PlanStrategy;          // 方案策略
+  distance: number;                    // 距离(km)
+  navigationTime: number;              // 导航耗时(分钟)
+  standardTime: number;                // 标准间隔时间(分钟)
+  updateStrategy: 'manual' | 'auto';   // 更新策略
+  lastUpdateType: 'auto' | 'manual';   // 上次更新方式
+  lastUpdateTime: string;              // 上次更新时间
+  history: UpdateHistory[];           // 更新历史
+}
+
+interface Store {
+  id: string;                          // 门店ID
+  name: string;                         // 门店名称
+  displayName: string;                  // 显示名称
+  address: string;                       // 门店地址
+  city: string;                         // 所属城市
+  longitude: string;                    // 经度
+  latitude: string;                     // 纬度
+}
+
+interface UpdateHistory {
+  updateTime: string;                   // 更新时间
+  oldNavigationTime: number | null;    // 原导航耗时
+  newNavigationTime: number;            // 新导航耗时
+  oldStandardTime: number | null;       // 原标准时间
+  newStandardTime: number;             // 新标准时间
+  updateNote: string;                   // 更新说明
+  updaterType: 'system' | 'user';      // 更新者类型
+  updaterName: string;                 // 更新者名称
+}
+
+type NavigationType = 'walking' | 'cycling' | 'e-bike' | 'bus' | 'driving';
+type PlanStrategy = 'shortest-distance' | 'shortest-time';</code></pre>
+            </div>
+
+            <h4 style="font-size: 14px; margin: var(--spacing-xl) 0 var(--spacing-md); color: var(--color-text-primary);">自动更新配置</h4>
+            <div class="doc-formula">
+              <pre><code>interface AutoUpdateConfig {
+  enabled: boolean;                     // 是否启用
+  frequency: 'daily' | 'weekly' | 'monthly';  // 更新频率
+  time: string;                        // 更新时间，HH:mm格式
+  dayOfWeek?: number;                  // 星期几（周频），1-7
+  dayOfMonth?: number;                 // 日期（月频），1-31
+}</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Acceptance Criteria -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">八 验收标准</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th style="width: 200px;">验收项</th>
+                  <th>检查点</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>列表展示</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 列表正确展示所有路线数据</li>
+                      <li>✓ 城市/起始门店/终点门店筛选功能正常</li>
+                      <li>✓ 分页切换功能正常</li>
+                      <li>✓ 操作按钮（更新/历史）功能正常</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>新增路线</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 城市变更后门店下拉选项正确更新</li>
+                      <li>✓ 点击「开始计算」正确调用地图API</li>
+                      <li>✓ 计算结果正确显示距离、耗时、标准时间</li>
+                      <li>✓ 标准时间推荐值正确计算</li>
+                      <li>✓ 确认保存后正确创建双向路线</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>更新路线</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 点击更新后正确进入对话框</li>
+                      <li>✓ 「开始更新」正确调用地图API</li>
+                      <li>✓ 更新策略切换正常</li>
+                      <li>✓ 确认保存后数据正确更新</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>历史记录</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 正确显示该路线的所有历史更新记录</li>
+                      <li>✓ 区分系统自动更新和人工手动更新</li>
+                      <li>✓ 显示更新前后数据对比</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>全局配置</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 默认导航策略正确应用</li>
+                      <li>✓ 自动更新配置正确保存</li>
+                      <li>✓ 预览信息正确显示下次执行时间</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>数据一致性</strong></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>✓ 双向路线数据正确关联</li>
+                      <li>✓ 地图API返回数据正确解析</li>
+                      <li>✓ 标准时间计算规则正确执行</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-20</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    function showTab(btn, tabId) {
+      document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'))
+      btn.classList.add('active')
+      document.querySelectorAll('.doc-tab-content').forEach(c => c.classList.remove('active'))
+      document.getElementById(tabId).classList.add('active')
+    }
+  </script>
+</body>
+</html>

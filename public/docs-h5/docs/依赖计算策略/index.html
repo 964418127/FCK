@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>依赖计算策略 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <span>依赖计算策略</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/依赖计算策略/index.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">v1.0</span>
+            <span class="doc-version-date">2026-05-19</span>
+          </div>
+          <h1 class="doc-page-title">🧮 依赖计算策略</h1>
+          <p class="doc-page-desc">配置薪酬项之间的依赖关系和执行顺序，支持条件分支、外部服务调用和跨规则引用</p>
+        </div>
+
+        <!-- Version Info -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">一 版本信息</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>项目</th>
+                  <th>内容</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>当前版本号</strong></td>
+                  <td>v1.0</td>
+                </tr>
+                <tr>
+                  <td><strong>创建日期</strong></td>
+                  <td>2026-05-19</td>
+                </tr>
+                <tr>
+                  <td><strong>负责人</strong></td>
+                  <td>吴涛</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Change Log -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">二 变更日志</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 说明</div>
+              <p>重点包含创建文档、文档编辑留痕、需求评审修改/修订或者在开发过程中发现的需要修改设计的记录。</p>
+            </div>
+            <table class="doc-table" style="margin-top: var(--spacing-lg);">
+              <thead>
+                <tr>
+                  <th style="width: 120px;">时间</th>
+                  <th style="width: 100px;">版本号</th>
+                  <th style="width: 100px;">变更人</th>
+                  <th style="width: 100px;">变更标记</th>
+                  <th>主要变更内容</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026-05-19</td>
+                  <td>v1.0</td>
+                  <td>吴涛</td>
+                  <td><span class="doc-tag doc-tag-success">创建</span></td>
+                  <td>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>初始版本发布</li>
+                      <li>定义依赖计算策略核心概念和产品架构</li>
+                      <li>设计依赖项分类体系（薪酬、常乐豆、元数据、配置参数、数据对象）</li>
+                      <li>完成三个核心业务场景：
+                        <ol style="margin: 4px 0; padding-left: 16px;">
+                          <li>场景一：保底获豆（条件分支）</li>
+                          <li>场景二：个税计算（跨规则依赖）</li>
+                          <li>场景三：负工资抵扣（外部服务）</li>
+                        </ol>
+                      </li>
+                      <li>设计交互式计算模拟器</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- What is it -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">什么是依赖计算策略？</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">💡 核心概念</div>
+              <p>依赖计算策略用于定义 <strong>薪酬项之间的计算依赖关系</strong>。例如：当员工的月度收入低于最低工资标准时，公司需要补足差额。这个「补足」的计算就依赖「收入」这个前置结果。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">🎯 解决什么问题</div>
+                <div class="doc-config-value">解决薪酬计算中多工资条联动、跨周期计算、外部服务依赖等复杂场景</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">👤 谁来配置</div>
+                <div class="doc-config-value">薪酬管理员，无需开发介入</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">📋 配置什么内容</div>
+                <div class="doc-config-value">计算规则、依赖项、条件分支、外部服务、结果嵌入目标</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">产品架构</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="padding: var(--spacing-xl);">
+              <div style="display: flex; flex-direction: column; gap: var(--spacing-lg); align-items: center;">
+                <!-- Top Level -->
+                <div style="display: flex; gap: var(--spacing-xl); align-items: center;">
+                  <div style="text-align: center;">
+                    <div style="background: var(--color-primary-bg); border: 2px solid var(--color-primary); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600; color: var(--color-primary);">
+                      发放策略
+                    </div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">关联的薪酬策略</div>
+                  </div>
+                  <div style="font-size: 24px; color: var(--color-primary);">→</div>
+                  <div style="text-align: center;">
+                    <div style="background: var(--color-primary-bg); border: 2px solid var(--color-primary); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600; color: var(--color-primary);">
+                      依赖计算策略
+                    </div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">核心配置单元</div>
+                  </div>
+                </div>
+
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+
+                <!-- Rules -->
+                <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; justify-content: center;">
+                  <div style="text-align: center;">
+                    <div style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--border-radius); padding: var(--spacing-md); min-width: 120px;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">规则 1</div>
+                      <div style="font-size: 12px; color: var(--color-text-secondary);">依赖项 + 公式</div>
+                    </div>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--border-radius); padding: var(--spacing-md); min-width: 120px;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">规则 2</div>
+                      <div style="font-size: 12px; color: var(--color-text-secondary);">跨规则依赖</div>
+                    </div>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--border-radius); padding: var(--spacing-md); min-width: 120px;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">规则 3</div>
+                      <div style="font-size: 12px; color: var(--color-text-secondary);">外部服务</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+
+                <!-- Result -->
+                <div style="text-align: center;">
+                  <div style="background: var(--color-success-bg); border: 2px solid var(--color-success); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600; color: var(--color-success);">
+                    嵌入工资条
+                  </div>
+                  <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">计算结果 → 目标工资条的指定分组</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Core Concepts -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">核心概念</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>概念</th>
+                  <th>说明</th>
+                  <th>示例</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>依赖项</strong></td>
+                  <td>计算所需的原始数据</td>
+                  <td>计件提成、超时加班费、员工.在职状态</td>
+                </tr>
+                <tr>
+                  <td><strong>计算步骤</strong></td>
+                  <td>由条件分支和公式组成的计算单元</td>
+                  <td>月度收入 = 求和(计件提成, 加班费)</td>
+                </tr>
+                <tr>
+                  <td><strong>跨规则依赖</strong></td>
+                  <td>当前规则引用前序规则的结果</td>
+                  <td>规则4引用规则1-3的预扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>外部服务</strong></td>
+                  <td>调用外部系统获取计算结果</td>
+                  <td>TAX 申报、负工资抵扣</td>
+                </tr>
+                <tr>
+                  <td><strong>结果嵌入</strong></td>
+                  <td>将计算结果写入目标工资条</td>
+                  <td>保底获豆 → 常乐豆工资条 → 应发收入</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Scenarios -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">📚 业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-cards">
+              <!-- Scene 1 -->
+              <a href="/docs-h5/docs/依赖计算策略/scene-guarantee.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🏦</div>
+                <div class="doc-card-title">场景一：保底获豆</div>
+                <div class="doc-card-desc">当全职员工月度收入低于最低工资标准时，由公司补足差额，以常乐豆形式发放。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-success">全职员工</span>
+                  <span class="doc-tag doc-tag-info">条件分支</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+
+              <!-- Scene 2 -->
+              <a href="/docs-h5/docs/依赖计算策略/scene-tax.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">💰</div>
+                <div class="doc-card-title">场景二：个税计算</div>
+                <div class="doc-card-desc">兼职员工按周预扣个税，月末汇总进行退补。涉及多条规则和跨规则引用。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-warning">兼职员工</span>
+                  <span class="doc-tag doc-tag-primary">跨规则依赖</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+
+              <!-- Scene 3 -->
+              <a href="/docs-h5/docs/依赖计算策略/scene-deduction.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">⚠️</div>
+                <div class="doc-card-title">场景三：负工资抵扣</div>
+                <div class="doc-card-desc">员工出现负工资时，根据在职状态从不同工资条逐步抵扣。涉及数据对象判断。</div>
+                <div class="doc-card-meta">
+                  <span class="doc-tag doc-tag-danger">负工资</span>
+                  <span class="doc-tag doc-tag-info">外部服务</span>
+                </div>
+                <div class="doc-card-arrow">查看详情 →</div>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Dependency Types -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">依赖项分类</h2>
+          <div class="doc-section-content">
+            <div class="doc-tabs">
+              <div class="doc-tab-list">
+                <button class="doc-tab active" onclick="showTab(this, 'tab-salary')">薪酬</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-bean')">常乐豆</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-meta')">元数据</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-param')">配置参数</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-object')">数据对象</button>
+              </div>
+
+              <div class="doc-tab-content active" id="tab-salary">
+                <p style="margin-bottom: var(--spacing-md);">来自各工资条的薪酬项，属于现金收入类。</p>
+                <div class="doc-config-tags">
+                  <span class="doc-tag doc-tag-primary">计件提成</span>
+                  <span class="doc-tag doc-tag-primary">超时加班费</span>
+                  <span class="doc-tag doc-tag-primary">节假日加班费</span>
+                  <span class="doc-tag doc-tag-primary">超产值补贴</span>
+                  <span class="doc-tag doc-tag-primary">客户打赏</span>
+                  <span class="doc-tag doc-tag-primary">基础提成</span>
+                  <span class="doc-tag doc-tag-primary">绩效补贴</span>
+                </div>
+              </div>
+
+              <div class="doc-tab-content" id="tab-bean">
+                <p style="margin-bottom: var(--spacing-md);">常乐豆相关收入项，以「常乐豆」为计量单位。</p>
+                <div class="doc-config-tags">
+                  <span class="doc-tag doc-tag-warning">保底获豆</span>
+                  <span class="doc-tag doc-tag-warning">回头客获豆</span>
+                  <span class="doc-tag doc-tag-warning">内部介绍获豆</span>
+                  <span class="doc-tag doc-tag-warning">培训获豆</span>
+                  <span class="doc-tag doc-tag-warning">顶班获豆</span>
+                  <span class="doc-tag doc-tag-warning">服务圈获豆</span>
+                </div>
+              </div>
+
+              <div class="doc-tab-content" id="tab-meta">
+                <p style="margin-bottom: var(--spacing-md);">系统统计类数据，由系统自动计算生成。</p>
+                <div class="doc-config-tags">
+                  <span class="doc-tag doc-tag-info">员工工龄</span>
+                  <span class="doc-tag doc-tag-info">门店技师数</span>
+                  <span class="doc-tag doc-tag-info">本月出勤天数</span>
+                  <span class="doc-tag doc-tag-info">当前余额</span>
+                  <span class="doc-tag doc-tag-info">累计收益</span>
+                  <span class="doc-tag doc-tag-info">门店评分</span>
+                </div>
+              </div>
+
+              <div class="doc-tab-content" id="tab-param">
+                <p style="margin-bottom: var(--spacing-md);">业务配置常量，由管理员在系统中维护。</p>
+                <div class="doc-config-tags">
+                  <span class="doc-tag">最低工资标准</span>
+                  <span class="doc-tag">社保基数上限</span>
+                  <span class="doc-tag">公积金基数上限</span>
+                  <span class="doc-tag">个税起征点</span>
+                  <span class="doc-tag">加班费率</span>
+                  <span class="doc-tag">节假日费率</span>
+                </div>
+              </div>
+
+              <div class="doc-tab-content" id="tab-object">
+                <p style="margin-bottom: var(--spacing-md);">业务实体及其属性，用于条件判断和业务规则。</p>
+                <table class="doc-table" style="margin-top: var(--spacing-md);">
+                  <thead>
+                    <tr>
+                      <th>对象</th>
+                      <th>可用属性</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>员工</strong></td>
+                      <td>在职状态、部门、岗位、入职日期、离职日期、负工资余额</td>
+                    </tr>
+                    <tr>
+                      <td><strong>订单</strong></td>
+                      <td>状态、金额、日期</td>
+                    </tr>
+                    <tr>
+                      <td><strong>门店</strong></td>
+                      <td>名称、地区</td>
+                    </tr>
+                    <tr>
+                      <td><strong>客户</strong></td>
+                      <td>名称、等级</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Function Description -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">三 功能说明</h2>
+          <div class="doc-section-content">
+            <p style="margin-bottom: var(--spacing-lg);">依赖计算策略包含三个核心功能页面：策略列表、新增策略、编辑策略。</p>
+
+            <!-- Tabs for different pages -->
+            <div class="doc-tabs">
+              <div class="doc-tab-list">
+                <button class="doc-tab active" onclick="showTab(this, 'tab-list')">策略列表</button>
+                <button class="doc-tab" onclick="showTab(this, 'tab-form')">新增/编辑策略</button>
+              </div>
+
+              <!-- 策略列表 -->
+              <div class="doc-tab-content active" id="tab-list">
+                <div class="doc-callout doc-callout-info">
+                  <div class="doc-callout-title">💡 功能入口</div>
+                  <p>进入【薪酬管理】→【依赖计算策略】，查看所有已配置的依赖计算策略。</p>
+                </div>
+
+                <h3 style="font-size: 16px; margin: var(--spacing-lg) 0 var(--spacing-md);">列表页面功能</h3>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">功能区域</th>
+                      <th>功能说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>搜索筛选</strong></td>
+                      <td>支持按策略名称关键字搜索，快速定位目标策略</td>
+                    </tr>
+                    <tr>
+                      <td><strong>策略列表</strong></td>
+                      <td>展示策略名称、关联发放策略、开始日期、结束日期、操作（编辑/删除）</td>
+                    </tr>
+                    <tr>
+                      <td><strong>新增策略</strong></td>
+                      <td>点击「新增」按钮，进入新增依赖计算策略页面</td>
+                    </tr>
+                    <tr>
+                      <td><strong>编辑策略</strong></td>
+                      <td>点击列表操作栏的「编辑」按钮，进入编辑页面修改策略配置</td>
+                    </tr>
+                    <tr>
+                      <td><strong>删除策略</strong></td>
+                      <td>点击「删除」按钮，确认后删除策略</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 新增/编辑策略 -->
+              <div class="doc-tab-content" id="tab-form">
+                <h3 style="font-size: 16px; margin: var(--spacing-md) 0 var(--spacing-lg);">基本信息配置</h3>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>策略名称</strong></td>
+                      <td>必填，输入策略的中文名称，如「全职员工保底获豆计算」</td>
+                    </tr>
+                    <tr>
+                      <td><strong>关联发放策略</strong></td>
+                      <td>必填，下拉选择关联的薪酬发放策略，决定策略的适用范围</td>
+                    </tr>
+                    <tr>
+                      <td><strong>有效期</strong></td>
+                      <td>必填，选择策略的生效开始日期和结束日期</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h3 style="font-size: 16px; margin: var(--spacing-xl) 0 var(--spacing-lg);">规则配置</h3>
+                <div class="doc-callout doc-callout-warning">
+                  <div class="doc-callout-title">⚠️ 重要概念</div>
+                  <p>一个策略可以包含多条规则，规则之间可以设置跨规则依赖。系统按规则顺序依次执行。</p>
+                </div>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">规则概览区域</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">功能</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>规则名称</strong></td>
+                      <td>点击可编辑，输入规则的简短描述名称</td>
+                    </tr>
+                    <tr>
+                      <td><strong>规则摘要</strong></td>
+                      <td>自动显示「依赖项 → 步骤结果 → 嵌入目标」的简要说明</td>
+                    </tr>
+                    <tr>
+                      <td><strong>上移/下移</strong></td>
+                      <td>调整规则的执行顺序，影响跨规则依赖的执行先后</td>
+                    </tr>
+                    <tr>
+                      <td><strong>删除规则</strong></td>
+                      <td>删除整条规则（需保留至少一条规则）</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">计算频率</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>选项说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>计算周期</strong></td>
+                      <td>
+                        <span class="doc-tag">日（自然日）</span> 每日结算<br>
+                        <span class="doc-tag">周（自然周）</span> 按自然周结算<br>
+                        <span class="doc-tag">月（自然月）</span> 按自然月结算<br>
+                        <span class="doc-tag">月（业务周）</span> 按业务周（如周一至周日）结算
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>计算节点</strong></td>
+                      <td>
+                        取决于计算周期：
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                          <li>日结算：次日</li>
+                          <li>周结算：次周周一~周日</li>
+                          <li>月结算：当月 M1日、次月 M1日</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">依赖项配置</h4>
+                <div class="doc-callout doc-callout-info">
+                  <div class="doc-callout-title">💡 依赖项作用</div>
+                  <p>依赖项是计算公式中引用的原始数据，可以是其他薪酬项、常乐豆、系统元数据、业务配置参数或数据对象属性。</p>
+                </div>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 120px;">分组</th>
+                      <th>可用项</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>薪酬</strong></td>
+                      <td>
+                        <strong>计件工资条：</strong>计件提成、超时加班费、节假日加班费、退单补贴、人事手动补贴、投诉扣款、代扣个税、代扣社保、代扣公积金<br>
+                        <strong>补贴工资条：</strong>超产值补贴、客户打赏、退单补贴、人事手动补贴、投诉扣款、代扣个税、代扣社保、代扣公积金<br>
+                        <strong>兼职工资条：</strong>基础提成、回头客激励、周时长激励、退单补贴、打赏、人事手动补贴、内部介绍、面试激励、知识萃取、投诉扣款、时长不足扣提成、人事手动扣款
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>常乐豆</strong></td>
+                      <td>保底获豆、回头客获豆、内部介绍获豆、培训获豆、顶班获豆、住宿获豆、服务圈获豆、营销折扣获豆、三级合伙人获豆</td>
+                    </tr>
+                    <tr>
+                      <td><strong>元数据</strong></td>
+                      <td>员工工龄（计数）、门店技师数（计数）、本月出勤天数（计数）、当前余额（金额）、累计收益（金额）、门店评分（数值）、客户满意度（数值）、入职日期（时间）、业务周期开始（时间）、业务周期结束（时间）</td>
+                    </tr>
+                    <tr>
+                      <td><strong>配置参数</strong></td>
+                      <td>最低工资标准（默认值2360）、社保基数上限（默认值30000）、公积金基数上限（默认值25000）、个税起征点（默认值5000）、加班费率（默认值1.5）、节假日费率（默认值2.0）、保底月工时（默认值176）、常乐豆兑换比率（默认值1:1）</td>
+                    </tr>
+                    <tr>
+                      <td><strong>数据对象</strong></td>
+                      <td>
+                        <strong>员工：</strong>在职状态（枚举值：在职/离职）、部门、岗位、入职日期、离职日期、负工资余额<br>
+                        <strong>订单：</strong>状态、金额、日期<br>
+                        <strong>门店：</strong>名称、地区<br>
+                        <strong>客户：</strong>名称、等级
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">跨规则依赖</h4>
+                <div class="doc-callout doc-callout-success">
+                  <div class="doc-callout-title">💡 使用场景</div>
+                  <p>当当前规则需要引用前序规则（如规则1-3）的计算结果时使用。例如：个税汇总规则依赖前3周的预扣税结果。</p>
+                </div>
+                <ul style="margin: var(--spacing-md) 0; padding-left: var(--spacing-xl); color: var(--color-text-regular);">
+                  <li>点击「添加跨规则依赖」，选择需要引用结果的前序规则</li>
+                  <li>已添加的跨规则依赖以标签形式显示，可点击 × 删除</li>
+                  <li>只能引用排在前面的规则，不能形成循环依赖</li>
+                </ul>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">数据要求</h4>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">字段</th>
+                      <th>选项</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>取整模式</strong></td>
+                      <td>
+                        <span class="doc-tag">四舍五入</span> 标准取整<br>
+                        <span class="doc-tag">向上取整</span> 遇小数进位<br>
+                        <span class="doc-tag">向下取整</span> 舍去小数
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>数据格式</strong></td>
+                      <td>
+                        <span class="doc-tag">保留0位小数</span> 如：2360<br>
+                        <span class="doc-tag">保留1位小数</span> 如：2360.5<br>
+                        <span class="doc-tag">保留2位小数</span> 如：2360.50
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">计算公式（步骤）</h4>
+                <p style="margin-bottom: var(--spacing-md);">每个规则可以包含多个计算步骤，步骤按添加顺序执行。</p>
+
+                <div class="doc-callout doc-callout-info" style="margin-bottom: var(--spacing-lg);">
+                  <div class="doc-callout-title">🔢 步骤结构</div>
+                  <p>步骤 = 结果名称 + 计算方式（内部计算/外部服务）+ 条件分支 + 公式</p>
+                </div>
+
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 150px;">配置项</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>结果名称</strong></td>
+                      <td>定义计算结果的变量名，如「月度收入」「保底获豆」「个税退补」</td>
+                    </tr>
+                    <tr>
+                      <td><strong>计算方式</strong></td>
+                      <td>
+                        <span class="doc-tag doc-tag-primary">内部计算</span> 使用公式自行计算<br>
+                        <span class="doc-tag doc-tag-info">外部服务</span> 调用外部系统接口
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>条件分支</strong></td>
+                      <td>
+                        支持多分支判断，每条分支包含：
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                          <li><strong>字段</strong>：选择依赖项、前序步骤、其他规则步骤或数据对象属性</li>
+                          <li><strong>判断符</strong>：等于、不等于、大于、小于、包含等</li>
+                          <li><strong>值类型</strong>：输入值、引用值、上下文参数、下拉选择</li>
+                          <li><strong>条件关系</strong>：子条件间为「且」关系</li>
+                        </ul>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>公式</strong></td>
+                      <td>
+                        支持函数和运算符：
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                          <li><strong>函数</strong>：求和(SUM)、平均值(AVG)、最大值(MAX)、最小值(MIN)、取整(ROUND)</li>
+                          <li><strong>运算符</strong>：+、-、*、/、()</li>
+                          <li><strong>引用</strong>：可插入其他规则的步骤结果作为变量</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h5 style="font-size: 13px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-secondary);">外部服务配置</h5>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 120px;">服务</th>
+                      <th>说明</th>
+                      <th>返回字段</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>申报个税</strong></td>
+                      <td>调用TAX系统计算个人所得税</td>
+                      <td>税额、税率、应税收入、速算扣除数</td>
+                    </tr>
+                    <tr>
+                      <td><strong>负工资抵扣</strong></td>
+                      <td>查询负工资余额并计算抵扣金额</td>
+                      <td>抵扣前余额、本次抵扣金额、剩余余额、状态</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 14px; margin: var(--spacing-lg) 0 var(--spacing-md); color: var(--color-text-primary);">结果嵌入</h4>
+                <div class="doc-callout doc-callout-warning">
+                  <div class="doc-callout-title">⚠️ 嵌入目标</div>
+                  <p>计算结果需要嵌入到具体的工资条和分组中，才能最终呈现在员工的工资单上。</p>
+                </div>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 120px;">字段</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>来源步骤</strong></td>
+                      <td>选择哪个计算步骤的结果需要嵌入</td>
+                    </tr>
+                    <tr>
+                      <td><strong>别名</strong></td>
+                      <td>在目标工资条中显示的名称，默认使用步骤结果名称</td>
+                    </tr>
+                    <tr>
+                      <td><strong>类型</strong></td>
+                      <td>
+                        <span class="doc-tag doc-tag-primary">薪酬项</span> 作为收入计入<br>
+                        <span class="doc-tag doc-tag-danger">扣缴项</span> 作为扣除项目
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>支付方式</strong></td>
+                      <td>
+                        <span class="doc-tag">现金</span> 以现金形式发放<br>
+                        <span class="doc-tag doc-tag-warning">常乐豆</span> 以常乐豆形式发放
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>目标工资条</strong></td>
+                      <td>选择嵌入到哪个工资条，如：常乐豆工资条、计件工资条、第1周工资条等</td>
+                    </tr>
+                    <tr>
+                      <td><strong>目标分组</strong></td>
+                      <td>选择嵌入到工资条的哪个分组，如：应发收入、代扣税、实发收入、税前扣除</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h3 style="font-size: 16px; margin: var(--spacing-xl) 0 var(--spacing-lg);">操作按钮</h3>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 120px;">按钮</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>取消</strong></td>
+                      <td>放弃当前编辑，返回策略列表页面</td>
+                    </tr>
+                    <tr>
+                      <td><strong>保存</strong></td>
+                      <td>
+                        校验必填项和逻辑，保存策略配置：
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                          <li>检查策略名称、关联策略、有效期是否填写</li>
+                          <li>检查规则是否有循环依赖</li>
+                          <li>检查每个规则是否至少有一个步骤</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-19</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    function showTab(btn, tabId) {
+      // Update tab buttons
+      document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'))
+      btn.classList.add('active')
+
+      // Update tab contents
+      document.querySelectorAll('.doc-tab-content').forEach(c => c.classList.remove('active'))
+      document.getElementById(tabId).classList.add('active')
+    }
+  </script>
+</body>
+</html>

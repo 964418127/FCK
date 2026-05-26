@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景五：常乐豆使用明细（提现/消费） - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/账户月度信息/index.html">账户月度信息</a>
+          <span>/</span>
+          <span>场景五：常乐豆使用明细（提现/消费）</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/账户月度信息/scene-usage.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">v1.0</span>
+            <span class="doc-version-date">2026-05-20</span>
+          </div>
+          <h1 class="doc-page-title">💰 场景五：常乐豆使用明细（提现/消费）</h1>
+          <p class="doc-page-desc">查看员工账户的常乐豆使用明细，包括提现记录、消费记录和退货记录</p>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">一 版本信息</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr><th>项目</th><th>内容</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>当前版本号</strong></td><td>v1.0</td></tr>
+                <tr><td><strong>创建日期</strong></td><td>2026-05-20</td></tr>
+                <tr><td><strong>负责人</strong></td><td>-</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">二 业务描述</h2>
+          <div class="doc-section-content">
+            <p>查看员工账户的常乐豆使用明细，包括提现记录、消费记录和退货记录。</p>
+            <div class="doc-callout doc-callout-info" style="margin-top: var(--spacing-md);">
+              <div class="doc-callout-title">💡 说明</div>
+              <p>财务人员或管理员通过账户月度信息的"提现明细"或"消费明细"按钮，跳转到此页面查看对应的使用记录。提现和消费显示负数(-)，退货显示正数(+)。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">三 业务流程</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="padding: var(--spacing-xl);">
+              <div style="display: flex; flex-direction: column; gap: var(--spacing-lg); align-items: center;">
+                <div style="text-align: center;">
+                  <div style="background: var(--color-primary-bg); border: 1px solid var(--color-primary); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl);">
+                    <div style="font-weight: 600; color: var(--color-primary);">从账户月度信息跳转</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">(month, employeeId, employeeName, type=withdrawal/consumption)</div>
+                  </div>
+                </div>
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+                <div style="text-align: center;">
+                  <div style="background: var(--color-primary-bg); border: 1px solid var(--color-primary); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl);">
+                    <div style="font-weight: 600; color: var(--color-primary);">筛选条件区域</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">月份、使用类型、单号、时间...</div>
+                  </div>
+                </div>
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+                <div style="text-align: center;">
+                  <div style="background: var(--color-primary); color: #fff; border-radius: var(--border-radius); padding: var(--spacing-sm) var(--spacing-xl); font-weight: 600;">[查询] 按钮</div>
+                </div>
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+                <div style="text-align: center;">
+                  <div style="background: var(--color-primary-bg); border: 1px solid var(--color-primary); border-radius: var(--border-radius); padding: var(--spacing-md) var(--spacing-xl);">
+                    <div style="font-weight: 600; color: var(--color-primary);">数据表格区域</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">展示常乐豆使用明细数据</div>
+                  </div>
+                </div>
+                <div style="font-size: 24px; color: var(--color-primary);">↓</div>
+                <div style="text-align: center;">
+                  <div style="background: var(--color-primary); color: #fff; border-radius: var(--border-radius); padding: var(--spacing-sm) var(--spacing-xl); font-weight: 600;">[导出] 按钮</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">四 筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr><th style="width: 120px;">字段</th><th style="width: 120px;">说明</th><th style="width: 120px;">控件类型</th><th>业务说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>月份</strong></td><td>选择查询月份</td><td>monthPicker</td><td>选择查询的月份，格式YYYY-MM，默认从跳转参数带回</td></tr>
+                <tr><td><strong>使用类型</strong></td><td>选择使用类型</td><td>select</td><td>可选：全部、提现、消费、退货，默认从跳转参数带回（withdrawal/consumption）</td></tr>
+                <tr><td><strong>单号</strong></td><td>输入单号</td><td>input</td><td>按单号精确查询某笔使用记录</td></tr>
+                <tr><td><strong>发起时间</strong></td><td>选择开始时间</td><td>datetimePicker</td><td>筛选发起时间范围起点</td></tr>
+                <tr><td><strong>完成时间</strong></td><td>选择结束时间</td><td>datetimePicker</td><td>筛选完成时间范围终点</td></tr>
+                <tr><td><strong>姓名&工号</strong></td><td>支持按姓名或工号搜索</td><td>input</td><td>输入员工姓名或工号进行搜索，支持模糊匹配，默认从跳转参数带回员工姓名</td></tr>
+                <tr><td><strong>部门</strong></td><td>输入部门名称</td><td>input</td><td>按部门维度筛选数据</td></tr>
+                <tr><td><strong>岗位</strong></td><td>输入岗位名称</td><td>input</td><td>按岗位维度筛选数据</td></tr>
+                <tr><td><strong>主服务门店</strong></td><td>主服务门店名称或编码</td><td>input</td><td>按主服务门店筛选</td></tr>
+                <tr><td><strong>劳动关系门店</strong></td><td>劳动关系门店名称或编码</td><td>input</td><td>按劳动关系门店筛选</td></tr>
+                <tr><td><strong>合同主体</strong></td><td>输入合同主体名称</td><td>input</td><td>按合同主体公司筛选</td></tr>
+                <tr><td><strong>状态</strong></td><td>选择状态</td><td>select</td><td>可选：全部、结算发起、结算成功、结算失败、提现冻结、提现成功、提现失败、消费冻结、消费成功、消费失败、退货中、退货成功、退货失败，用于筛选不同状态记录</td></tr>
+                <tr><td><strong>账户类型</strong></td><td>固定选择"余额账户"</td><td>select</td><td>当前固定为"余额账户"</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">五 表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr><th style="width: 150px;">列名</th><th style="width: 150px;">说明</th><th>业务说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>月份</strong></td><td>数据所属月份</td><td>格式为 YYYY-MM，用于标识数据统计周期</td></tr>
+                <tr><td><strong>使用类型</strong></td><td>类型标签</td><td>Tag显示：提现(警告色)、消费(主色)、退货(成功色)、结算(信息色)</td></tr>
+                <tr><td><strong>单号</strong></td><td>交易单编号</td><td>唯一标识每笔使用记录的编号</td></tr>
+                <tr><td><strong>姓名</strong></td><td>员工姓名</td><td>员工基本信息</td></tr>
+                <tr><td><strong>部门</strong></td><td>员工部门</td><td>员工所属组织部门</td></tr>
+                <tr><td><strong>岗位</strong></td><td>员工岗位</td><td>员工职位信息</td></tr>
+                <tr><td><strong>工号</strong></td><td>员工工号</td><td>员工唯一标识</td></tr>
+                <tr><td><strong>主服务门店</strong></td><td>主服务门店名称</td><td>员工主要服务的门店</td></tr>
+                <tr><td><strong>劳动关系门店</strong></td><td>劳动关系门店</td><td>员工签订劳动合同的门店或公司</td></tr>
+                <tr><td><strong>合同主体</strong></td><td>合同签约主体公司</td><td>员工签署劳动合同的公司主体</td></tr>
+                <tr><td><strong>数量</strong></td><td>交易数量</td><td>提现和消费显示负号(-)，退货显示正号(+)，单位为常乐豆</td></tr>
+                <tr><td><strong>交易前余额</strong></td><td>交易前账户余额</td><td>执行该笔交易前的账户余额</td></tr>
+                <tr><td><strong>交易后余额</strong></td><td>交易后账户余额</td><td>执行该笔交易后的账户余额，高亮显示</td></tr>
+                <tr><td><strong>账户类型</strong></td><td>账户类型</td><td>统一显示为"余额账户"</td></tr>
+                <tr><td><strong>发起时间</strong></td><td>交易发起时间</td><td>发起交易的时间戳</td></tr>
+                <tr><td><strong>完成时间</strong></td><td>交易完成时间</td><td>交易完成的时间戳</td></tr>
+                <tr><td><strong>交易金额</strong></td><td>实际交易金额</td><td>实际发生的交易金额</td></tr>
+                <tr><td><strong>状态</strong></td><td>当前状态</td><td>Tag显示，根据使用类型不同显示不同状态：提现类/消费类/退货类各有不同状态</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">六 操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr><th style="width: 100px;">按钮</th><th style="width: 120px;">功能</th><th>详细说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>查询</strong></td><td>根据条件搜索</td><td>点击后根据筛选条件重新查询并展示常乐豆使用明细数据</td></tr>
+                <tr><td><strong>重置</strong></td><td>清空筛选条件</td><td>清空所有筛选条件输入框，恢复默认状态，表格数据重置为默认展示</td></tr>
+                <tr><td><strong>导出</strong></td><td>导出数据</td><td>导出搜索条件下所有符合条件的数据，导出字段包括：月份、使用类型、单号、姓名、部门、岗位、工号、主服务门店、劳动关系门店、合同主体、数量、交易前余额、交易后余额、账户类型、发起时间、完成时间、交易金额、状态，导出格式为 Excel</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">七 跳转参数</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr><th style="width: 120px;">参数</th><th style="width: 120px;">来源</th><th>说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>month</strong></td><td>URL Query</td><td>月份，格式 YYYY-MM，从账户月度信息页面带入</td></tr>
+                <tr><td><strong>employeeId</strong></td><td>URL Query</td><td>员工工号，从账户月度信息页面带入</td></tr>
+                <tr><td><strong>employeeName</strong></td><td>URL Query</td><td>员工姓名，从账户月度信息页面带入</td></tr>
+                <tr><td><strong>type</strong></td><td>URL Query</td><td>使用类型：withdrawal(提现)、consumption(消费)，从账户月度信息页面带入</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">八 分页说明</h2>
+          <div class="doc-section-content">
+            <p>每页显示条数可选：10、20、50、100 条，支持跳转到指定页码。</p>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">👨‍💻 研发参考</h2>
+          <div class="doc-section-content">
+            <details>
+              <summary style="cursor: pointer; color: var(--color-primary);">点击展开参考信息</summary>
+              <div style="margin-top: var(--spacing-md); font-size: 12px; color: var(--color-text-secondary);">
+                <p><strong>组件</strong>：src/views/BeanUsageDetail.vue</p>
+                <p><strong>路由</strong>：/bean-usage-detail</p>
+              </div>
+            </details>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-20</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

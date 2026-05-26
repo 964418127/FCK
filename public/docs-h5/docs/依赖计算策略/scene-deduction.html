@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>场景三：负工资抵扣 - 依赖计算策略</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/docs/依赖计算策略/index.html">依赖计算策略</a>
+          <span>/</span>
+          <span>场景三</span>
+        </div>
+        <div class="doc-header-actions">
+          <a href="/docs-h5/md-viewer.html?path=/docs-h5/docs/依赖计算策略/scene-deduction.md" class="doc-btn doc-btn-ghost">📄</a>
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <!-- Page Header -->
+        <div class="doc-page-header">
+          <div class="doc-version">
+            <span class="doc-version-tag">场景三</span>
+            <span class="doc-version-date">负工资抵扣</span>
+          </div>
+          <h1 class="doc-page-title">⚠️ 负工资抵扣</h1>
+          <p class="doc-page-desc">员工出现负工资时，根据在职状态从不同工资条逐步抵扣，涉及数据对象和外部服务</p>
+        </div>
+
+        <!-- Business Scenario -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">业务场景</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-danger">
+              <div class="doc-callout-title">❓ 什么是负工资</div>
+              <p>负工资是指员工历史工资结算中出现多发或少扣的情况，形成对公司的欠款。当员工<strong>在职</strong>时，从<strong>现金工资条</strong>抵扣；当员工<strong>离职</strong>时，从<strong>常乐豆工资条</strong>抵扣。</p>
+            </div>
+
+            <div class="doc-config-grid" style="margin-top: var(--spacing-lg);">
+              <div class="doc-config-item">
+                <div class="doc-config-label">在职员工</div>
+                <div class="doc-config-value">从现金工资条收入中扣除（每次最多20%）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">离职员工</div>
+                <div class="doc-config-value">从常乐豆工资条收入中扣除</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">外部服务</div>
+                <div class="doc-config-value">负工资服务提供余额查询和抵扣计算</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Decision Tree -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">判断逻辑</h2>
+          <div class="doc-section-content">
+            <div class="doc-flow" style="overflow-x: auto;">
+              <svg viewBox="0 0 550 650" width="550" height="650">
+                <!-- Arrowhead def -->
+                <defs>
+                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#999"/>
+                  </marker>
+                </defs>
+
+                <!-- Start -->
+                <rect x="205" y="20" width="140" height="45" rx="22" fill="#a40035"/>
+                <text x="275" y="48" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">开始抵扣</text>
+
+                <!-- Arrow down to diamond -->
+                <line x1="275" y1="65" x2="275" y2="95" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Employee Status Check Diamond -->
+                <polygon points="275,105 365,155 275,205 185,155" fill="#fff7f7" stroke="#a40035" stroke-width="2"/>
+                <text x="275" y="148" text-anchor="middle" fill="#a40035" font-size="13" font-weight="500">员工.在职状态</text>
+                <text x="275" y="165" text-anchor="middle" fill="#999" font-size="11">等于什么?</text>
+
+                <!-- Left branch (Active) -->
+                <line x1="185" y1="155" x2="120" y2="155" stroke="#999" stroke-width="2"/>
+                <line x1="120" y1="155" x2="120" y2="250" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="145" y="148" text-anchor="middle" fill="#67c23a" font-size="12">在职</text>
+
+                <!-- Active result box -->
+                <rect x="40" y="250" width="160" height="55" rx="8" fill="#fff" stroke="#67c23a" stroke-width="2"/>
+                <text x="120" y="273" text-anchor="middle" fill="#67c23a" font-size="13" font-weight="600">现金工资条抵扣</text>
+                <text x="120" y="292" text-anchor="middle" fill="#666" font-size="11">从现金工资条收入中扣除</text>
+
+                <!-- Right branch (Terminated) -->
+                <line x1="365" y1="155" x2="430" y2="155" stroke="#999" stroke-width="2"/>
+                <line x1="430" y1="155" x2="430" y2="250" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="400" y="148" text-anchor="middle" fill="#f56c6c" font-size="12">离职</text>
+
+                <!-- Terminated result box -->
+                <rect x="350" y="250" width="160" height="55" rx="8" fill="#fff" stroke="#f56c6c" stroke-width="2"/>
+                <text x="430" y="273" text-anchor="middle" fill="#f56c6c" font-size="13" font-weight="600">常乐豆工资条抵扣</text>
+                <text x="430" y="292" text-anchor="middle" fill="#666" font-size="11">从常乐豆收入中扣除</text>
+
+                <!-- Arrows down to service -->
+                <line x1="120" y1="305" x2="200" y2="370" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <line x1="430" y1="305" x2="350" y2="370" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- External Service Box -->
+                <rect x="150" y="370" width="250" height="60" rx="8" fill="#ecf5ff" stroke="#409eff" stroke-width="2"/>
+                <text x="275" y="398" text-anchor="middle" fill="#409eff" font-size="14" font-weight="600">负工资服务</text>
+                <text x="275" y="418" text-anchor="middle" fill="#666" font-size="11">外部服务调用 → 返回抵扣金额</text>
+
+                <!-- Arrow down to result -->
+                <line x1="275" y1="430" x2="275" y2="475" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Result box -->
+                <rect x="165" y="475" width="220" height="45" rx="8" fill="#f0f9eb" stroke="#67c23a" stroke-width="2"/>
+                <text x="275" y="503" text-anchor="middle" fill="#67c23a" font-size="13" font-weight="600">嵌入抵扣金额到目标工资条</text>
+
+                <!-- Arrow down to embed target -->
+                <line x1="275" y1="520" x2="275" y2="550" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Embed target -->
+                <rect x="165" y="550" width="220" height="40" rx="6" fill="#fff" stroke="#a40035" stroke-width="2"/>
+                <text x="275" y="573" text-anchor="middle" fill="#333" font-size="12">目标工资条 → 代扣税分组</text>
+
+                <!-- Legend (bottom left) -->
+                <rect x="30" y="540" width="14" height="14" fill="#a40035" rx="7"/>
+                <text x="50" y="552" fill="#666" font-size="11">开始</text>
+
+                <polygon points="37,570 45,578 37,586 29,578" fill="#fff7f7" stroke="#a40035" stroke-width="1.5"/>
+                <text x="50" y="582" fill="#666" font-size="11">判断</text>
+
+                <rect x="430" y="540" width="14" height="14" fill="#ecf5ff" stroke="#409eff" stroke-width="1.5" rx="2"/>
+                <text x="450" y="552" fill="#666" font-size="11">外部服务</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- External Service -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">外部服务：负工资抵扣</h2>
+          <div class="doc-section-content">
+            <div class="doc-callout doc-callout-info">
+              <div class="doc-callout-title">🔌 服务说明</div>
+              <p>负工资服务是外部系统提供的接口，用于查询员工负工资余额并计算每次抵扣金额。</p>
+            </div>
+
+            <table class="doc-table" style="margin-top: var(--spacing-lg);">
+              <thead>
+                <tr>
+                  <th>传入参数</th>
+                  <th>返回字段</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowspan="4">
+                    <span class="doc-tag doc-tag-primary">收入金额</span>
+                    <span style="color: #666; font-size: 12px; display: block; margin-top: 4px;">（当前工资条收入）</span>
+                  </td>
+                  <td><code>before</code></td>
+                  <td>抵扣前负工资余额</td>
+                </tr>
+                <tr>
+                  <td><code>deduction</code></td>
+                  <td>本次抵扣金额</td>
+                </tr>
+                <tr>
+                  <td><code>remaining</code></td>
+                  <td>剩余未抵扣余额</td>
+                </tr>
+                <tr>
+                  <td><code>status</code></td>
+                  <td>状态（正常/已清零/部分抵扣）</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Calculation Logic -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置逻辑</h2>
+          <div class="doc-section-content">
+            <div class="doc-formula">
+              <pre><code>// 规则1：计件工资条抵扣
+条件: 员工.在职状态 = '在职'
+收入合计 = 计件提成 + 超时加班费 + 节假日加班费
+负工资抵扣 = 外部服务(负工资服务, 收入合计)
+嵌入: 负工资抵扣 → 计件工资条 → 代扣税
+
+// 规则2：补贴工资条抵扣
+跨规则依赖: [规则1]  ← 依赖前序规则
+条件: 员工.在职状态 = '在职'
+收入合计 = 超产值补贴 + 客户打赏
+负工资抵扣 = 外部服务(负工资服务, 收入合计)
+嵌入: 负工资抵扣 → 补贴工资条 → 代扣税
+
+// 规则3：加班工资条抵扣（离职员工用常乐豆抵扣）
+跨规则依赖: [规则1, 规则2]
+条件: 员工.在职状态 = '离职'
+常乐豆收入 = 保底获豆
+负工资抵扣 = 外部服务(负工资服务, 常乐豆收入)
+嵌入: 负工资抵扣 → 常乐豆工资条 → 代扣税</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">🧮 计算模拟器</h2>
+          <div class="doc-section-content">
+            <div class="doc-simulator" id="simulator">
+              <div class="doc-simulator-title">负工资抵扣计算</div>
+
+              <div class="doc-simulator-inputs">
+                <div class="doc-input-group">
+                  <label>当前收入</label>
+                  <input type="number" v-model.number="currentIncome">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>负工资余额</label>
+                  <input type="number" v-model.number="negativeBalance">
+                  <span>元</span>
+                </div>
+                <div class="doc-input-group">
+                  <label>员工状态</label>
+                  <select v-model="employeeStatus">
+                    <option value="active">在职</option>
+                    <option value="terminated">离职</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="doc-simulator-result">
+                <div class="doc-result-box">
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">抵扣前余额</span>
+                    <span class="doc-result-value">{{ negativeBalance }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">本次抵扣金额</span>
+                    <span class="doc-result-value" style="color: #f56c6c;">{{ deduction }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">剩余余额</span>
+                    <span class="doc-result-value">{{ remainingBalance }} 元</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">抵扣来源</span>
+                    <span class="doc-result-value">{{ deductFrom }}</span>
+                  </div>
+                  <div class="doc-result-item">
+                    <span class="doc-result-label">最高抵扣上限</span>
+                    <span class="doc-result-value">{{ maxDeduction }} 元（收入的20%）</span>
+                  </div>
+                  <div class="doc-result-note" v-if="remainingBalance === 0">
+                    ✓ 负工资已全部抵扣完毕
+                  </div>
+                  <div class="doc-result-note" v-else-if="negativeBalance <= 0">
+                    ○ 当前无负工资，无需抵扣
+                  </div>
+                  <div class="doc-result-note" v-else>
+                    ○ 负工资尚未抵扣完毕，剩余 {{ remainingBalance }} 元将在下次继续抵扣
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="doc-section">
+          <h2 class="doc-section-title">配置要点</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>规则</th>
+                  <th>依赖项</th>
+                  <th>数据对象条件</th>
+                  <th>结果嵌入</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>规则1</strong><br><span style="color: #666; font-size: 12px;">计件工资条抵扣</span></td>
+                  <td>计件提成、加班费、员工</td>
+                  <td><span class="doc-tag doc-tag-success">员工.在职状态 = 在职</span></td>
+                  <td>计件工资条 → 代扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>规则2</strong><br><span style="color: #666; font-size: 12px;">补贴工资条抵扣</span></td>
+                  <td>超产值补贴、客户打赏、员工</td>
+                  <td><span class="doc-tag doc-tag-success">员工.在职状态 = 在职</span></td>
+                  <td>补贴工资条 → 代扣税</td>
+                </tr>
+                <tr>
+                  <td><strong>规则3</strong><br><span style="color: #666; font-size: 12px;">常乐豆抵扣</span></td>
+                  <td>保底获豆、员工</td>
+                  <td><span class="doc-tag doc-tag-danger">员工.在职状态 = 离职</span></td>
+                  <td>常乐豆工资条 → 代扣税</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="doc-callout doc-callout-warning" style="margin-top: var(--spacing-lg);">
+              <div class="doc-callout-title">⚠️ 跨规则依赖说明</div>
+              <p>规则2依赖规则1，规则3依赖规则1和规则2，通过 <code>crossRuleDeps</code> 显式声明。系统会按依赖顺序执行，确保负工资余额在规则间传递。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="doc-section">
+          <div class="doc-callout doc-callout-success">
+            <div class="doc-callout-title">✅ 场景小结</div>
+            <p><strong>负工资抵扣</strong>展示了数据对象和外部服务的结合能力：</p>
+            <ul style="margin-top: var(--spacing-sm); padding-left: var(--spacing-lg);">
+              <li>通过 <strong>数据对象条件</strong>（员工.在职状态）判断走不同分支</li>
+              <li>调用 <strong>外部服务</strong>（负工资服务）获取抵扣计算结果</li>
+              <li>通过 <strong>跨规则依赖</strong> 实现多工资条的顺序抵扣</li>
+              <li>根据员工状态决定从 <strong>现金</strong> 或 <strong>常乐豆</strong> 工资条扣除</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>FCK 文档中心</span>
+        <span> | </span>
+        <span>最后更新：2026-05-19</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    Vue.createApp({
+      data() {
+        return {
+          currentIncome: 3000,
+          negativeBalance: 500,
+          employeeStatus: 'active'
+        }
+      },
+      computed: {
+        maxDeduction() {
+          return Math.round(this.currentIncome * 0.2 * 100) / 100
+        },
+        deduction() {
+          if (this.negativeBalance <= 0) return 0
+          if (this.maxDeduction >= this.negativeBalance) {
+            return Math.round(this.negativeBalance * 100) / 100
+          }
+          return this.maxDeduction
+        },
+        remainingBalance() {
+          return Math.round((this.negativeBalance - this.deduction) * 100) / 100
+        },
+        deductFrom() {
+          return this.employeeStatus === 'active' ? '现金工资条' : '常乐豆工资条'
+        }
+      }
+    }).mount('#simulator')
+  </script>
+</body>
+</html>
