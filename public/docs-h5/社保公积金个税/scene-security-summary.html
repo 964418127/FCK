@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社保月度汇总 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/社保公积金个税/index.html">社保公积金个税</a>
+          <span>/</span>
+          <span>社保月度汇总</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">🛡️ 社保月度汇总</h1>
+          <p class="doc-page-desc">查看员工每月社保缴纳的汇总数据，支持按员工和月份筛选</p>
+        </div>
+
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 业务说明</div>
+          <p>社保月度汇总展示每个员工每月的社保缴纳合计，包括正常缴纳、补缴、退缴金额。点击「查看流水明细」可跳转至明细页面查看每条记录。</p>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">统计卡片</h2>
+          <div class="doc-section-content">
+            <div class="doc-stat-grid">
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥12,800</div>
+                <div class="doc-stat-label">本月缴纳合计</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥12,000</div>
+                <div class="doc-stat-label">正常缴纳</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥800</div>
+                <div class="doc-stat-label">补缴</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥0</div>
+                <div class="doc-stat-label">退缴</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>关键字</td><td>输入框</td><td>支持按员工姓名或员工编号模糊搜索，输入后自动过滤表格数据</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>选择查询的月份，支持2026-01至2026-06等月份范围筛选</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>列名</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工编号</td><td>员工唯一标识，如E001、E002等</td></tr>
+                <tr><td>姓名</td><td>员工真实姓名</td></tr>
+                <tr><td>岗位</td><td>员工当前岗位，如推拿师</td></tr>
+                <tr><td>城市</td><td>社保缴纳所在城市</td></tr>
+                <tr><td>缴纳基数</td><td>社保缴纳基数，用于计算各项保险费用</td></tr>
+                <tr><td>正常缴纳</td><td>本月正常缴纳的社保金额</td></tr>
+                <tr><td>补缴</td><td>本月补缴的社保金额（如跨月补缴）</td></tr>
+                <tr><td>退缴</td><td>本月退还的社保金额（如多缴退还）</td></tr>
+                <tr><td>本月合计</td><td>正常缴纳 + 补缴 - 退缴 的最终金额</td></tr>
+                <tr><td>月份</td><td>数据所属月份，格式YYYY-MM</td></tr>
+                <tr><td>操作</td><td>操作列，包含「明细」按钮</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>按钮</th><th>功能</th><th>详细说明</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>重置</td>
+                  <td>清空筛选条件</td>
+                  <td>1. 清空关键字输入框<br>2. 重置月份选择为空<br>3. 表格恢复展示全部数据</td>
+                </tr>
+                <tr>
+                  <td>导出</td>
+                  <td>导出Excel</td>
+                  <td>导出当前筛选条件下所有符合条件的数据，导出字段包括：员工编号、姓名、岗位、城市、缴纳基数、正常缴纳、补缴、退缴、本月合计、月份</td>
+                </tr>
+                <tr>
+                  <td>查看流水明细</td>
+                  <td>跳转至详情页</td>
+                  <td>点击后跳转至「社保月度流水明细」页面，可查看该员工该月的每条缴纳记录明细</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="doc-details">
+          <summary>👨‍💻 研发参考（点击展开）</summary>
+          <div class="doc-details-content">
+            <p><strong>组件</strong>：src/views/SecurityMonthlySummary.vue</p>
+            <p><strong>路由</strong>：/security-monthly-summary</p>
+            <p><strong>跳转方法</strong>：goToDetail()、goToDetailRow(row) - router.push to security-monthly-record</p>
+          </div>
+        </details>
+
+        <div class="doc-nav-links">
+          <a href="/docs-h5/社保公积金个税/scene-security-record.html" class="doc-btn doc-btn-primary">查看流水明细 →</a>
+        </div>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

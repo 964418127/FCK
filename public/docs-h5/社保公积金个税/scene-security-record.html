@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社保月度流水明细 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/社保公积金个税/index.html">社保公积金个税</a>
+          <span>/</span>
+          <span>社保月度流水明细</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">📝 社保月度流水明细</h1>
+          <p class="doc-page-desc">查看每条社保缴纳记录的流水明细，支持新增、编辑、手动导入</p>
+        </div>
+
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 业务流程</div>
+          <pre class="doc-code-block">
+┌─────────────────┐
+│   设置筛选条件   │ ← 关键字、月份、记录类型、数据来源
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│   查看流水列表   │ ← 展示每条缴纳记录
+└────────┬────────┘
+         ▼
+┌─────────────────┐     ┌─────────────────┐
+│   新增记录      │ ◄──► │   编辑记录       │
+└────────┬────────┘     └─────────────────┘
+         ▼
+┌─────────────────┐
+│   手动导入      │ ← 批量导入记录
+└─────────────────┘
+          </pre>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">数据来源图例</h2>
+          <div class="doc-section-content">
+            <div class="source-legend">
+              <span><span class="dot third-party"></span> 三方服务（系统自动接入的数据）</span>
+              <span><span class="dot manual"></span> 手动导入（人工录入的数据）</span>
+            </div>
+            <p style="font-size: 13px; color: var(--color-text-secondary);">说明：系统自动区分数据来源，便于追溯数据录入方式和核对差异</p>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>关键字</td><td>输入框</td><td>支持按员工姓名或员工编号模糊搜索</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>选择查询的月份，支持2026-01至2026-06等月份范围筛选</td></tr>
+                <tr><td>记录类型</td><td>下拉选择</td><td>可选：正常、补缴、退缴。用于区分正常缴纳和补退缴记录</td></tr>
+                <tr><td>数据来源</td><td>下拉选择</td><td>可选：三方服务、手动导入。用于筛选数据录入方式</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>列名</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工编号</td><td>员工唯一标识，如E001</td></tr>
+                <tr><td>姓名</td><td>员工真实姓名</td></tr>
+                <tr><td>等级</td><td>员工等级，用于区分不同费率</td></tr>
+                <tr><td>费用类型</td><td>包括「社保」（正常缴纳）和「<span class="tag tag-danger">滞纳金</span>」（逾期未缴产生的罚款）</td></tr>
+                <tr><td>缴纳基数</td><td>当月社保缴纳基数</td></tr>
+                <tr><td>缴纳金额</td><td>当月实际缴纳金额</td></tr>
+                <tr><td>费用产生月份</td><td>费用实际产生的月份（用于跨月补缴场景）</td></tr>
+                <tr><td>费用归属月份</td><td>费用应归属的月份</td></tr>
+                <tr><td>费用实际缴纳月份</td><td>费用实际缴纳到的月份（可能晚于归属月份）</td></tr>
+                <tr><td>类型</td><td>正常/补缴/退缴，标识记录性质</td></tr>
+                <tr><td>来源</td><td>三方服务/手动导入，标识数据来源</td></tr>
+                <tr><td>调整原因</td><td>如为补缴或退缴，说明调整原因</td></tr>
+                <tr><td>记录时间</td><td>记录创建时间，格式YYYY-MM-DD HH:mm:ss</td></tr>
+                <tr><td>操作</td><td>「编辑」按钮，点击打开编辑弹窗</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>按钮</th><th>功能</th><th>详细说明</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>重置</td>
+                  <td>清空筛选条件</td>
+                  <td>1. 清空关键字输入框<br>2. 重置月份和记录类型为空<br>3. 数据来源恢复全部<br>4. 表格恢复展示全部数据</td>
+                </tr>
+                <tr>
+                  <td>手动导入</td>
+                  <td>批量导入记录</td>
+                  <td>1. 打开导入弹窗<br>2. 支持拖拽或点击上传Excel文件（xlsx/xls/csv）<br>3. 选择导入月份和数据类型<br>4. 确认后系统提示导入成功</td>
+                </tr>
+                <tr>
+                  <td>+ 新增记录</td>
+                  <td>新增单条记录</td>
+                  <td>1. 打开新增弹窗<br>2. 选择员工（员工编号自动关联姓名）<br>3. 填写月份、缴纳基数、缴纳金额<br>4. 选择记录类型（正常/补缴/退缴）<br>5. 选择数据来源（三方服务/手动导入）<br>6. 填写调整原因（如有）<br>7. 确认保存</td>
+                </tr>
+                <tr>
+                  <td>编辑</td>
+                  <td>编辑单条记录</td>
+                  <td>1. 点击表格「编辑」按钮打开编辑弹窗<br>2. 表单预填充当前记录数据<br>3. 修改后确认保存<br>4. 自动更新员工姓名显示</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">弹窗说明</h2>
+          <div class="doc-section-content">
+            <h3 class="doc-subsection-title">新增/编辑记录弹窗</h3>
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工</td><td>下拉选择</td><td>选择员工，自动显示员工编号和姓名</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>选择费用所属月份</td></tr>
+                <tr><td>缴纳基数</td><td>数字输入</td><td>输入缴纳基数，数值≥0</td></tr>
+                <tr><td>缴纳金额</td><td>数字输入</td><td>输入缴纳金额，数值≥0</td></tr>
+                <tr><td>记录类型</td><td>单选按钮组</td><td>正常/补缴/退缴</td></tr>
+                <tr><td>数据来源</td><td>单选按钮组</td><td>三方服务/手动导入</td></tr>
+                <tr><td>调整原因</td><td>文本域</td><td>选填，补充说明</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="doc-details">
+          <summary>👨‍💻 研发参考（点击展开）</summary>
+          <div class="doc-details-content">
+            <p><strong>组件</strong>：src/views/SecurityMonthlyRecord.vue</p>
+            <p><strong>路由</strong>：/security-monthly-record</p>
+            <p><strong>弹窗</strong>：新增/编辑弹窗（450px）、导入弹窗（500px）</p>
+            <p><strong>特殊字段</strong>：费用产生月份、费用归属月份、费用实际缴纳月份用于处理跨月场景</p>
+          </div>
+        </details>
+
+        <div class="doc-nav-links">
+          <a href="scene-security-summary.html" class="doc-btn doc-btn-secondary">← 返回汇总</a>
+          <a href="scene-housing-fund-record.html" class="doc-btn doc-btn-primary">公积金月度流水 →</a>
+        </div>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

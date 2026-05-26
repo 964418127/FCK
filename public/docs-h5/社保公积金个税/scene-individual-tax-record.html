@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个税月度流水明细 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/社保公积金个税/index.html">社保公积金个税</a>
+          <span>/</span>
+          <span>个税月度流水明细</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">📝 个税月度流水明细</h1>
+          <p class="doc-page-desc">查看每条个税缴纳记录的流水明细，支持新增、编辑、手动导入</p>
+        </div>
+
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 业务流程</div>
+          <pre class="doc-code-block">
+┌─────────────────┐
+│  兼职预扣模式   │ ← 每周预扣3%，月末汇算
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  全职代扣模式   │ ← 每月由百旺服务计算实际税额
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  正常/补税/退税  │ ← 区分记录类型
+└─────────────────┘
+          </pre>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">数据来源图例</h2>
+          <div class="doc-section-content">
+            <div class="source-legend">
+              <span><span class="dot" style="background: var(--color-primary);"></span> 三方服务（百旺系统自动接入）</span>
+              <span><span class="dot" style="background: hsl(38 92% 50%);"></span> 手动导入（人工录入）</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>关键字</td><td>输入框</td><td>按员工姓名或编号搜索</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>筛选特定月份数据</td></tr>
+                <tr><td>类型</td><td>下拉选择</td><td>正常/补税/退税/汇算清缴。注：个税的类型比社保/公积金多了「汇算清缴」</td></tr>
+                <tr><td>数据来源</td><td>下拉选择</td><td>三方服务/手动导入</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>列名</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工编号</td><td>员工唯一标识</td></tr>
+                <tr><td>姓名</td><td>员工真实姓名</td></tr>
+                <tr><td>身份证号</td><td>员工身份证号，用于个税申报</td></tr>
+                <tr><td>费用类型</td><td>包括「个税」和「<span class="tag tag-danger">滞纳金</span>」（逾期未缴产生）</td></tr>
+                <tr><td>税前工资</td><td>税前工资金额</td></tr>
+                <tr><td>应纳税所得额</td><td>扣除起征点等后的应纳税所得额</td></tr>
+                <tr><td>税额</td><td>计算得出的税额，<span style="color: var(--color-danger);">红色显示</span></td></tr>
+                <tr><td>费用产生月份</td><td>费用实际产生月份</td></tr>
+                <tr><td>费用归属月份</td><td>费用归属月份</td></tr>
+                <tr><td>费用实际缴纳月份</td><td>费用实际缴纳到的月份</td></tr>
+                <tr><td>类型</td><td>正常/补税/退税/汇算清缴</td></tr>
+                <tr><td>来源</td><td>三方服务/手动导入</td></tr>
+                <tr><td>状态</td><td>已确认/待确认</td></tr>
+                <tr><td>操作</td><td>「编辑」按钮</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>按钮</th><th>功能</th><th>详细说明</th></tr></thead>
+              <tbody>
+                <tr><td>重置</td><td>清空筛选条件</td><td>恢复全部筛选条件为空</td></tr>
+                <tr><td>手动导入</td><td>批量导入</td><td>上传Excel文件（xlsx/xls/csv），用于批量录入补税/退税等特殊情况</td></tr>
+                <tr><td>+ 新增记录</td><td>新增记录</td><td>新增单条个税记录，包括员工、月份、税前工资、应纳税所得额、税额的完整信息</td></tr>
+                <tr><td>编辑</td><td>编辑记录</td><td>修改单条记录</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">弹窗字段说明</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工</td><td>下拉选择</td><td>选择员工，自动关联编号和姓名</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>选择费用所属月份</td></tr>
+                <tr><td>税前工资</td><td>数字输入</td><td>输入税前工资金额</td></tr>
+                <tr><td>应纳税所得额</td><td>数字输入</td><td>输入应纳税所得额</td></tr>
+                <tr><td>税额</td><td>数字输入</td><td>输入计算得出的税额</td></tr>
+                <tr><td>记录类型</td><td>单选按钮组</td><td>正常/补税/退税/汇算清缴</td></tr>
+                <tr><td>数据来源</td><td>单选按钮组</td><td>三方服务/手动导入</td></tr>
+                <tr><td>状态</td><td>单选按钮组</td><td>已确认/待确认</td></tr>
+                <tr><td>备注</td><td>文本域</td><td>选填，补充说明</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="doc-details">
+          <summary>👨‍💻 研发参考（点击展开）</summary>
+          <div class="doc-details-content">
+            <p><strong>组件</strong>：src/views/IndividualTaxMonthlyRecord.vue</p>
+            <p><strong>路由</strong>：/individual-tax-monthly-record</p>
+            <p><strong>个税模式</strong>：预扣（兼职每周3%）+ 代扣（全职月末百旺计算）+ 汇算清缴（年度）</p>
+            <p><strong>滞纳金</strong>：个税逾期未缴会产生滞纳金，费用类型标记为滞纳金</p>
+          </div>
+        </details>
+
+        <div class="doc-nav-links">
+          <a href="scene-individual-tax-summary.html" class="doc-btn doc-btn-secondary">← 返回汇总</a>
+          <a href="scene-security-record.html" class="doc-btn doc-btn-primary">社保月度流水 →</a>
+        </div>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

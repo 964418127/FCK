@@ -129,7 +129,6 @@
                 <el-select v-model="form.calcLevel" placeholder="请选择" style="width: 100%;">
                   <el-option label="第1级" :value="1" />
                   <el-option label="第2级" :value="2" />
-                  <el-option label="系统项" :value="3" />
                 </el-select>
               </el-form-item>
             </el-col>

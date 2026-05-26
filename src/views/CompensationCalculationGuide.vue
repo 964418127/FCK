@@ -15,7 +15,7 @@
       <!-- 版本日志 -->
       <div id="version" class="section version-log">
         <div class="version-info">
-          <span class="version-tag">v2.0</span>
+          <span class="version-tag">v1.2</span>
           <span class="version-date">2026-05-22</span>
         </div>
         <h3>核心调整</h3>
@@ -131,7 +131,7 @@
                   <span style="font-weight: 600; color: hsl(var(--foreground));">全职</span>
                   <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">（劳动合同，每月3个工资条）</span>
                   <div style="margin-top: 4px; font-size: 12px; color: hsl(var(--muted-foreground));">
-                    工资条1：计件提成 + 投诉扣款 + 代扣社保　｜　工资条2：超产值奖金 + 超时加班费 + 代扣公积金　｜　工资条3：保底获豆 + 代扣个税
+                    工资条1：计件提成 + 投诉扣款 + 代扣社保　｜　工资条2：超产值奖金 + 超时加班费 + 代扣公积金 + 代扣个税　｜　工资条3：保底获豆
                   </div>
                 </div>
                 <div>
@@ -144,39 +144,9 @@
               </div>
             </div>
             <div class="arch-arrow">↓</div>
-            <!-- 步骤3：工资条生成（含动态项） -->
+            <!-- 步骤3：计算节点 -->
             <div class="arch-layer">
-              <div class="arch-layer-title">3. 工资条生成（完整组成）</div>
-              <div style="font-size: 12px; line-height: 2; text-align: left;">
-                <div style="margin-bottom: 8px; padding: 6px 10px; background: hsl(var(--background)); border-radius: 4px;">
-                  <span style="font-weight: 600;">全职工资条1~3</span>
-                  <span style="color: hsl(var(--muted-foreground));"> — 基础项 + 系统项</span>
-                  <div style="margin-top: 2px;">计件提成/超产值奖金/超时加班费 + 投诉扣款 + 代扣社保/公积金/个税</div>
-                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 条件触发：负工资抵扣（应发 &gt; 0 且有余额时）</div>
-                </div>
-                <div style="margin-bottom: 8px; padding: 6px 10px; background: hsl(var(--background)); border-radius: 4px;">
-                  <span style="font-weight: 600;">兼职周工资条1~3</span>
-                  <span style="color: hsl(var(--muted-foreground));"> — 基础项</span>
-                  <div style="margin-top: 2px;">计件提成 + 超产值奖金 + 超时加班费 + 投诉扣款</div>
-                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 计算后加入：个税预扣（系统项）、负工资抵扣（触发时）</div>
-                </div>
-                <div style="padding: 6px 10px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px;">
-                  <span style="font-weight: 600;">兼职周工资条4（最后一周）</span>
-                  <span style="color: hsl(var(--muted-foreground));"> — 基础项</span>
-                  <div style="margin-top: 2px;">计件提成 + 超产值奖金 + 超时加班费 + 投诉扣款</div>
-                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 计算后加入：个税预扣（系统项）、代扣个税计算、负工资抵扣（触发时）</div>
-                </div>
-                <div style="padding: 6px 10px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px; margin-top: 4px;">
-                  <span style="font-weight: 600;">兼职个税汇算（月末）</span>
-                  <span style="color: hsl(var(--muted-foreground));"> — 代扣个税（汇算结果）</span>
-                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 工资条加入：<strong>个税补缴</strong>（少缴）或<strong>个税退税</strong>（多缴）</div>
-                </div>
-              </div>
-            </div>
-            <div class="arch-arrow">↓</div>
-            <!-- 步骤4：计算节点 -->
-            <div class="arch-layer">
-              <div class="arch-layer-title">4. 计算节点（按层级顺序）</div>
+              <div class="arch-layer-title">3. 计算节点（按层级顺序）</div>
               <div style="font-size: 14px; line-height: 2; text-align: left;">
                 <div style="margin-bottom: 8px; padding-left: 12px; border-left: 3px solid hsl(var(--primary));">
                   <span style="font-weight: 700; color: hsl(var(--foreground));">第1级计算</span>
@@ -209,6 +179,36 @@
                     <span style="color: hsl(var(--primary); font-weight: 600;">负工资抵扣</span>
                     <span style="color: hsl(--muted-foreground);">（扣减负工资余额）</span>
                   </div>
+                </div>
+              </div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <!-- 步骤4：工资条生成 -->
+            <div class="arch-layer">
+              <div class="arch-layer-title">4. 工资条生成（完整组成）</div>
+              <div style="font-size: 12px; line-height: 2; text-align: left;">
+                <div style="margin-bottom: 8px; padding: 6px 10px; background: hsl(var(--background)); border-radius: 4px;">
+                  <span style="font-weight: 600;">全职工资条1~3</span>
+                  <span style="color: hsl(var(--muted-foreground));"> — 基础项 + 系统项</span>
+                  <div style="margin-top: 2px;">计件提成/超产值奖金/超时加班费 + 投诉扣款 + 代扣社保/公积金/个税</div>
+                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 条件触发：负工资抵扣（应发 &gt; 0 且有余额时）</div>
+                </div>
+                <div style="margin-bottom: 8px; padding: 6px 10px; background: hsl(var(--background)); border-radius: 4px;">
+                  <span style="font-weight: 600;">兼职周工资条1~3</span>
+                  <span style="color: hsl(var(--muted-foreground));"> — 基础项</span>
+                  <div style="margin-top: 2px;">计件提成 + 超产值奖金 + 超时加班费 + 投诉扣款</div>
+                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 计算后加入：个税预扣（系统项）、负工资抵扣（触发时）</div>
+                </div>
+                <div style="padding: 6px 10px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px;">
+                  <span style="font-weight: 600;">兼职周工资条4（最后一周）</span>
+                  <span style="color: hsl(var(--muted-foreground));"> — 基础项</span>
+                  <div style="margin-top: 2px;">计件提成 + 超产值奖金 + 超时加班费 + 投诉扣款</div>
+                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 计算后加入：个税预扣（系统项）、代扣个税计算、负工资抵扣（触发时）</div>
+                </div>
+                <div style="padding: 6px 10px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px; margin-top: 4px;">
+                  <span style="font-weight: 600;">兼职个税汇算（月末）</span>
+                  <span style="color: hsl(var(--muted-foreground));"> — 代扣个税（汇算结果）</span>
+                  <div style="margin-top: 2px; color: hsl(var(--primary);">→ 工资条加入：<strong>个税补缴</strong>（少缴）或<strong>个税退税</strong>（多缴）</div>
                 </div>
               </div>
             </div>
@@ -399,7 +399,9 @@
           </table>
           <div class="note">
             <strong>系统项：</strong>只有代扣个税（无社保、无公积金）<br/><br/>
-            <strong>预扣个税：</strong>在每个工资条中预扣，公式 = (第1级收入之和 - 第1级扣缴) × 3%<br/>
+            <strong>预扣个税：</strong>在每个工资条中预扣，公式 = (全部收入之和 - 全部扣缴之和) × 3%<br/>
+            &nbsp;&nbsp;&nbsp;- 全部收入 = 第1级收入 + 第2级收入（如有）<br/>
+            &nbsp;&nbsp;&nbsp;- 全部扣缴 = 第1级扣缴 + 第2级扣缴（如有）<br/>
             &nbsp;&nbsp;&nbsp;- 每周独立计算，每个工资条各自生成预扣金额<br/>
             &nbsp;&nbsp;&nbsp;- 预扣金额累计，记为"已预扣合计"<br/><br/>
             <strong>代扣个税（多退少补）：</strong>仅出现在月末汇算工资条中<br/>
@@ -604,7 +606,7 @@
                 <td>系统项（随工资条）</td>
                 <td>个税预扣</td>
                 <td>预扣个税</td>
-                <td>(第1级收入之和 - 第1级扣缴) × 3%</td>
+                <td>(全部收入之和 - 全部扣缴之和) × 3%</td>
               </tr>
               <tr>
                 <td>系统项（月末汇算）</td>
@@ -804,19 +806,19 @@
                 <tr><th>周次</th><th>计件提成</th><th>超产值奖金</th><th>超时加班费</th><th>投诉扣款</th><th>预扣个税</th></tr>
               </thead>
               <tbody>
-                <tr><td>第1周</td><td>+5000</td><td>+1500</td><td>+300</td><td>-100</td><td>(6500-100)×3%=192</td></tr>
-                <tr><td>第2周</td><td>+4500</td><td>+2000</td><td>+400</td><td>0</td><td>(6700)×3%=201</td></tr>
-                <tr><td>第3周</td><td>+6000</td><td>+1800</td><td>+500</td><td>-200</td><td>(7800-200)×3%=228</td></tr>
-                <tr><td>第4周</td><td>+5500</td><td>+2200</td><td>+400</td><td>0</td><td>(7900)×3%=237</td></tr>
+                <tr><td>第1周</td><td>+5000</td><td>+1500</td><td>+300</td><td>-100</td><td>(5000+1500+300-100)×3%=201</td></tr>
+                <tr><td>第2周</td><td>+4500</td><td>+2000</td><td>+400</td><td>0</td><td>(4500+2000+400-0)×3%=207</td></tr>
+                <tr><td>第3周</td><td>+6000</td><td>+1800</td><td>+500</td><td>-200</td><td>(6000+1800+500-200)×3%=243</td></tr>
+                <tr><td>第4周</td><td>+5500</td><td>+2200</td><td>+400</td><td>0</td><td>(5500+2200+400-0)×3%=243</td></tr>
               </tbody>
             </table>
             <p><strong>月末汇算：</strong></p>
             <ul class="calc-steps">
-              <li>已预扣合计 = 192 + 201 + 228 + 237 = <strong>858</strong></li>
+              <li>已预扣合计 = 201 + 207 + 243 + 243 = <strong>894</strong></li>
               <li>百旺实际税额 = <strong>1200</strong></li>
-              <li>补缴 = 1200 - 858 = <strong>342</strong>（&gt;0，生成个税补缴）</li>
+              <li>补缴 = 1200 - 894 = <strong>306</strong>（&gt;0，生成个税补缴）</li>
             </ul>
-            <p><strong>汇算工资条：个税补缴 = -342</strong></p>
+            <p><strong>汇算工资条：个税补缴 = -306</strong></p>
           </div>
         </div>
 
@@ -834,7 +836,7 @@
                 <tr><td>超产值奖金</td><td>+2000</td><td>第1级收入</td></tr>
                 <tr><td>超时加班费</td><td>+500</td><td>第1级收入</td></tr>
                 <tr><td>投诉扣款</td><td>-200</td><td>第1级扣缴</td></tr>
-                <tr><td>保底获豆</td><td>+0</td><td>第2级收入</td></tr>
+                <tr><td>保底获豆</td><td>+0</td><td>第2级收入（第1级收入超过最低工资标准）</td></tr>
                 <tr><td>代扣社保</td><td>-800</td><td>系统项</td></tr>
                 <tr><td>代扣公积金</td><td>-600</td><td>系统项</td></tr>
                 <tr><td>代扣个税</td><td>-57</td><td>系统项（百旺计算）</td></tr>
@@ -872,7 +874,7 @@
                 <tr><td>超产值奖金</td><td>+0</td><td>第1级收入</td></tr>
                 <tr><td>超时加班费</td><td>+0</td><td>第1级收入</td></tr>
                 <tr><td>投诉扣款</td><td>-3000</td><td>第1级扣缴（大额扣款）</td></tr>
-                <tr><td>保底获豆</td><td>+0</td><td>第2级收入</td></tr>
+                <tr><td>保底获豆</td><td>+7000</td><td>第2级收入（最低工资标准8000 - 第1级收入1000）</td></tr>
                 <tr><td>代扣社保</td><td>-800</td><td>系统项</td></tr>
                 <tr><td>代扣公积金</td><td>-600</td><td>系统项</td></tr>
                 <tr><td>负工资余额</td><td>-500</td><td>历史欠款</td></tr>
@@ -880,17 +882,19 @@
             </table>
             <p><strong>计算顺序：</strong></p>
             <ul class="calc-steps">
-              <li>收入合计 = 1000 + 0 + 0 = <strong>1000</strong></li>
-              <li>应税收入 = 1000 - 投诉扣款(3000) = <strong>-2000</strong>（≤ 0，无应税收入）</li>
-              <li>应税收入 ≤ 0，<strong>不交个税</strong>，百旺不计算</li>
-              <li>工资条应发 = 1000 - 3000 - 800 - 600 = <strong>-3400</strong></li>
-              <li>应发 ≤ 0，<strong>不抵扣负工资</strong>，负数累加到余额</li>
+              <li>第1级收入 = 1000 + 0 + 0 = <strong>1000</strong></li>
+              <li>第2级收入 = 保底获豆 = <strong>7000</strong>（最低工资标准8000 - 第1级收入1000）</li>
+              <li>收入合计 = 1000 + 7000 = <strong>8000</strong></li>
+              <li>应税收入 = 8000 - 投诉扣款(3000) = <strong>5000</strong>（报税基数）</li>
+              <li>百旺计算代扣个税 = <strong>90</strong>（基于5000计算）</li>
+              <li>工资条扣款：代扣社保(800) + 代扣公积金(600) + 代扣个税(90)</li>
+              <li>工资条应发 = 8000 - 3000 - 800 - 600 - 90 = <strong>3510</strong></li>
+              <li>3510 > 0，可抵扣负工资：min(3510, 500) = <strong>500</strong></li>
             </ul>
             <p><strong>结果：</strong></p>
             <ul>
-              <li>应发金额 = <strong>-3400</strong></li>
-              <li>负工资抵扣：<strong>0</strong></li>
-              <li>剩余负工资余额 = 500 + 3400 = <strong>3900</strong></li>
+              <li>实发金额 = 3510 - 500 = <strong>3010</strong></li>
+              <li>剩余负工资余额 = 500 - 500 = <strong>0</strong></li>
             </ul>
             <div class="note">
               <strong>说明：</strong>当应税收入（收入-扣缴项）≤ 0时，无个税；当工资条应发 ≤ 0时，无法抵扣负工资。负数累加到负工资余额中。
@@ -935,28 +939,28 @@
             <tbody>
               <tr>
                 <td>工资条1（计件）</td>
-                <td>计件提成 + 投诉扣款(100) + 代扣社保(800)</td>
+                <td>计件提成 + 投诉扣款(200) + 代扣社保(800)</td>
                 <td>6000</td>
-                <td>100 + 800 = 900</td>
-                <td><strong>5100</strong></td>
+                <td>200 + 800 = 1000</td>
+                <td><strong>5000</strong></td>
               </tr>
               <tr>
                 <td>工资条2（奖金）</td>
-                <td>超产值奖金 + 超时加班费 + 投诉扣款(100) + 代扣公积金(600)</td>
+                <td>超产值奖金 + 超时加班费 + 代扣公积金(600) + 代扣个税(57)</td>
                 <td>2000 + 500 = 2500</td>
-                <td>100 + 600 = 700</td>
-                <td><strong>1800</strong></td>
+                <td>600 + 57 = 657</td>
+                <td><strong>1843</strong></td>
               </tr>
               <tr>
                 <td>工资条3（常乐豆）</td>
-                <td>保底获豆 + 代扣个税</td>
+                <td>保底获豆</td>
                 <td>0</td>
-                <td>57</td>
-                <td><strong>-57</strong></td>
+                <td>0</td>
+                <td><strong>0</strong></td>
               </tr>
             </tbody>
           </table>
-          <p><strong>验证：5100 + 1800 + (-57) = 6843 ✅</strong></p>
+          <p><strong>验证：5000 + 1843 + 0 = 6843 ✅</strong></p>
         </div>
 
         <div class="card">

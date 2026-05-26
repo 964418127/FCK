@@ -224,23 +224,10 @@
 }
 
 /* 菜单项图标样式 */
-.el-menu-item .el-icon {
-  margin-right: 8px;
-  width: 18px;
-  height: 18px;
-}
-
-.el-sub-menu__title {
-  color: hsl(var(--sidebar-foreground));
-  border-radius: var(--radius);
-  margin: 0.125rem 0.25rem;
-  padding-left: 20px !important;
-}
-
+.el-menu-item .el-icon,
 .el-sub-menu__title .el-icon {
   margin-right: 8px;
-  width: 18px;
-  height: 18px;
+  font-size: 18px;
 }
 
 .el-sub-menu__title:hover {

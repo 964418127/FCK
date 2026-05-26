@@ -207,6 +207,18 @@ const DocApp = {
           { title: '场景五：常乐豆使用明细', path: '/docs-h5/docs/账户月度信息/scene-usage.html' }
         ]
       },
+      {
+        title: '🛡️ 社保公积金个税',
+        children: [
+          { title: '📖 总览', path: '/docs-h5/社保公积金个税/index.html' },
+          { title: '场景一：社保月度汇总', path: '/docs-h5/社保公积金个税/scene-security-summary.html' },
+          { title: '场景二：社保月度流水', path: '/docs-h5/社保公积金个税/scene-security-record.html' },
+          { title: '场景三：公积金月度汇总', path: '/docs-h5/社保公积金个税/scene-housing-fund-summary.html' },
+          { title: '场景四：公积金月度流水', path: '/docs-h5/社保公积金个税/scene-housing-fund-record.html' },
+          { title: '场景五：个税月度汇总', path: '/docs-h5/社保公积金个税/scene-individual-tax-summary.html' },
+          { title: '场景六：个税月度流水', path: '/docs-h5/社保公积金个税/scene-individual-tax-record.html' }
+        ]
+      }
           ]
   },
 

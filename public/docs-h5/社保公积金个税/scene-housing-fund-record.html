@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公积金月度流水明细 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/社保公积金个税/index.html">社保公积金个税</a>
+          <span>/</span>
+          <span>公积金月度流水明细</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">📝 公积金月度流水明细</h1>
+          <p class="doc-page-desc">查看每条公积金缴纳记录的流水明细</p>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">数据来源图例</h2>
+          <div class="doc-section-content">
+            <div class="source-legend">
+              <span><span class="dot" style="background: var(--color-primary);"></span> 三方服务（系统自动接入）</span>
+              <span><span class="dot" style="background: hsl(38 92% 50%);"></span> 手动导入（人工录入）</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>关键字</td><td>输入框</td><td>按员工姓名或编号搜索</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>筛选特定月份数据</td></tr>
+                <tr><td>记录类型</td><td>下拉选择</td><td>正常/补缴/退缴</td></tr>
+                <tr><td>数据来源</td><td>下拉选择</td><td>三方服务/手动导入</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>列名</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工编号</td><td>员工唯一标识</td></tr>
+                <tr><td>姓名</td><td>员工真实姓名</td></tr>
+                <tr><td>等级</td><td>员工等级</td></tr>
+                <tr><td>费用类型</td><td>包括「公积金」和「<span class="tag tag-danger">滞纳金</span>」</td></tr>
+                <tr><td>缴纳基数</td><td>公积金缴纳基数</td></tr>
+                <tr><td>缴纳金额</td><td>实际缴纳金额</td></tr>
+                <tr><td>费用产生月份</td><td>费用实际产生月份</td></tr>
+                <tr><td>费用归属月份</td><td>费用归属月份</td></tr>
+                <tr><td>费用实际缴纳月份</td><td>费用实际缴纳到的月份</td></tr>
+                <tr><td>类型</td><td>正常/补缴/退缴</td></tr>
+                <tr><td>来源</td><td>三方服务/手动导入</td></tr>
+                <tr><td>调整原因</td><td>补缴或退缴的原因说明</td></tr>
+                <tr><td>记录时间</td><td>记录创建时间</td></tr>
+                <tr><td>操作</td><td>「编辑」按钮</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>按钮</th><th>功能</th><th>详细说明</th></tr></thead>
+              <tbody>
+                <tr><td>重置</td><td>清空筛选条件</td><td>恢复全部筛选条件为空</td></tr>
+                <tr><td>手动导入</td><td>批量导入</td><td>上传Excel文件（xlsx/xls/csv）</td></tr>
+                <tr><td>+ 新增记录</td><td>新增记录</td><td>打开新增弹窗，填写员工、月份、缴纳基数、金额等</td></tr>
+                <tr><td>编辑</td><td>编辑记录</td><td>修改单条记录信息</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="doc-details">
+          <summary>👨‍💻 研发参考（点击展开）</summary>
+          <div class="doc-details-content">
+            <p><strong>组件</strong>：src/views/HousingFundMonthlyRecord.vue</p>
+            <p><strong>路由</strong>：/housing-fund-monthly-record</p>
+          </div>
+        </details>
+
+        <div class="doc-nav-links">
+          <a href="scene-housing-fund-summary.html" class="doc-btn doc-btn-secondary">← 返回汇总</a>
+          <a href="scene-security-record.html" class="doc-btn doc-btn-primary">社保月度流水 →</a>
+        </div>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

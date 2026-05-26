@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社保公积金个税 - 产品需求文档</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <!-- Sidebar rendered by app.js -->
+    <aside class="doc-aside"></aside>
+
+    <!-- Main Content -->
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <span>社保公积金个税</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">🛡️ 社保公积金个税</h1>
+          <p class="doc-page-desc">员工福利保障模块 - 社保、公积金、个税的月度汇总与流水明细管理</p>
+        </div>
+
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 模块说明</div>
+          <p>管理员工每月的社保、公积金、个税缴纳明细，支持汇总查看和流水明细查询。每个模块包含「月度汇总」和「月度流水明细」两个页面。</p>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">页面结构</h2>
+          <div class="doc-section-content">
+            <div class="doc-cards">
+              <a href="/docs-h5/社保公积金个税/scene-security-summary.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🛡️</div>
+                <div class="doc-card-title">社保月度汇总</div>
+                <div class="doc-card-desc">查看员工每月社保缴纳的汇总数据，支持按员工和月份筛选</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">汇总</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+              <a href="/docs-h5/社保公积金个税/scene-security-record.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">📝</div>
+                <div class="doc-card-title">社保月度流水明细</div>
+                <div class="doc-card-desc">查看每条社保缴纳记录的流水明细，支持新增、编辑、手动导入</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">流水</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+              <a href="/docs-h5/社保公积金个税/scene-housing-fund-summary.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">🏠</div>
+                <div class="doc-card-title">公积金月度汇总</div>
+                <div class="doc-card-desc">查看员工每月公积金缴纳的汇总数据</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">汇总</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+              <a href="/docs-h5/社保公积金个税/scene-housing-fund-record.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">📝</div>
+                <div class="doc-card-title">公积金月度流水明细</div>
+                <div class="doc-card-desc">查看每条公积金缴纳记录的流水明细</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">流水</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+              <a href="/docs-h5/社保公积金个税/scene-individual-tax-summary.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">💰</div>
+                <div class="doc-card-title">个税月度汇总</div>
+                <div class="doc-card-desc">查看员工每月个人所得税的预扣汇总数据</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">汇总</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+              <a href="/docs-h5/社保公积金个税/scene-individual-tax-record.html" class="doc-card doc-card-link">
+                <div class="doc-card-icon">📝</div>
+                <div class="doc-card-title">个税月度流水明细</div>
+                <div class="doc-card-desc">查看每条个税缴纳记录的流水明细，支持新增、编辑、手动导入</div>
+                <div class="doc-card-meta"><span class="doc-tag doc-tag-primary">流水</span></div>
+                <div class="doc-card-arrow">进入文档 →</div>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">跳转关系图</h2>
+          <div class="doc-section-content">
+            <pre class="doc-code-block">
+┌─────────────────┐     查看流水明细      ┌─────────────────────┐
+│   社保月度汇总   │ ──────────────────► │   社保月度流水明细    │
+└─────────────────┘                      └─────────────────────┘
+
+┌─────────────────┐     查看流水明细      ┌─────────────────────┐
+│  公积金月度汇总  │ ──────────────────► │  公积金月度流水明细   │
+└─────────────────┘                      └─────────────────────┘
+
+┌─────────────────┐     查看流水明细      ┌─────────────────────┐
+│   个税月度汇总   │ ──────────────────► │   个税月度流水明细    │
+└─────────────────┘                      └─────────────────────┘
+            </pre>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">通用模式说明</h2>
+          <div class="doc-section-content">
+            <div class="doc-config-grid">
+              <div class="doc-config-item">
+                <div class="doc-config-label">📋 月度汇总页面模式</div>
+                <div class="doc-config-value">筛选条件（员工姓名/编号、月份）、统计卡片（本月缴纳合计、正常缴纳、补缴、退缴）、操作按钮（导出Excel、查看流水明细）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">📝 月度流水明细页面模式</div>
+                <div class="doc-config-value">筛选条件（关键字、月份、记录类型、数据来源）、数据来源图例（区分三方服务/手动导入）、操作按钮（手动导入、新增记录、编辑）</div>
+              </div>
+              <div class="doc-config-item">
+                <div class="doc-config-label">🔄 跨月场景支持</div>
+                <div class="doc-config-value">费用产生月份、费用归属月份、费用实际缴纳月份三个字段用于处理社保公积金跨月补缴场景</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+  <script>
+    document.title = '社保公积金个税 - 文档中心';
+  </script>
+</body>
+</html>

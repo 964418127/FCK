@@ -29,6 +29,7 @@
           <el-form-item label="缴纳类型">
             <el-select v-model="searchForm.type" placeholder="选择" clearable style="width: 100px;">
               <el-option label="社保" value="security" />
+              <el-option label="雇主险" value="employer" />
               <el-option label="公积金" value="fund" />
             </el-select>
           </el-form-item>
@@ -69,21 +70,27 @@
             ¥{{ row.salaryBase.toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="社保" width="200">
+        <el-table-column label="社保（元/月）" width="180">
           <template #default="{ row }">
             <div class="welfare-cell">
-              <span class="base">基数: ¥{{ row.securityBase.toLocaleString() }}</span>
-              <span class="ratio">比例: {{ (row.securityRatio * 100).toFixed(1) }}%</span>
-              <el-tag v-if="row.securityIsOverride" type="warning" size="small" class="override-tag">已调整</el-tag>
+              <span class="label">公司：</span><span class="value">¥{{ row.securityCompany.toLocaleString() }}</span>
+              <span class="label">个人：</span><span class="value">¥{{ row.securityEmployee.toLocaleString() }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="公积金" width="200">
+        <el-table-column label="雇主险（元/年）" width="140">
           <template #default="{ row }">
             <div class="welfare-cell">
-              <span class="base">基数: ¥{{ row.fundBase.toLocaleString() }}</span>
-              <span class="ratio">比例: {{ (row.fundRatio * 100).toFixed(1) }}%</span>
-              <el-tag v-if="row.fundIsOverride" type="warning" size="small" class="override-tag">已调整</el-tag>
+              <span class="label">公司：</span><span class="value">¥{{ row.employerInsuranceCompany.toLocaleString() }}</span>
+              <span class="label">个人：</span><span class="value">¥0</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="公积金（元/月）" width="180">
+          <template #default="{ row }">
+            <div class="welfare-cell">
+              <span class="label">公司：</span><span class="value">¥{{ row.fundCompany.toLocaleString() }}</span>
+              <span class="label">个人：</span><span class="value">¥{{ row.fundEmployee.toLocaleString() }}</span>
             </div>
           </template>
         </el-table-column>
@@ -129,14 +136,14 @@
           <el-input v-model="form.salaryBase" disabled style="width: 100%;" />
         </el-form-item>
 
-        <el-divider content-position="left">社保调整</el-divider>
-        <el-form-item label="社保基数">
-          <el-input-number v-model="form.securityBase" :min="0" :step="100" style="width: 100%;" />
-          <div class="field-tip">原标准值：¥{{ form.originalSecurityBase }}</div>
+        <el-divider content-position="left">社保调整（元/月）</el-divider>
+        <el-form-item label="公司部分">
+          <el-input-number v-model="form.securityCompany" :min="0" :step="100" style="width: 100%;" />
+          <div class="field-tip">原标准值：¥{{ form.originalSecurityCompany }}</div>
         </el-form-item>
-        <el-form-item label="社保比例">
-          <el-input-number v-model="form.securityRatio" :min="0" :max="1" :step="0.001" style="width: 100%;" />
-          <div class="field-tip">原标准值：{{ (form.originalSecurityRatio * 100).toFixed(1) }}%</div>
+        <el-form-item label="个人部分">
+          <el-input-number v-model="form.securityEmployee" :min="0" :step="100" style="width: 100%;" />
+          <div class="field-tip">原标准值：¥{{ form.originalSecurityEmployee }}</div>
         </el-form-item>
         <el-form-item label="调整原因">
           <el-select v-model="form.securityReason" placeholder="选择原因" style="width: 100%;">
@@ -147,14 +154,23 @@
           </el-select>
         </el-form-item>
 
-        <el-divider content-position="left">公积金调整</el-divider>
-        <el-form-item label="公积金基数">
-          <el-input-number v-model="form.fundBase" :min="0" :step="100" style="width: 100%;" />
-          <div class="field-tip">原标准值：¥{{ form.originalFundBase }}</div>
+        <el-divider content-position="left">雇主险调整（元/年）</el-divider>
+        <el-form-item label="公司部分">
+          <el-input-number v-model="form.employerInsuranceCompany" :min="0" :step="100" style="width: 100%;" />
+          <div class="field-tip">原标准值：¥{{ form.originalEmployerInsuranceCompany }}</div>
         </el-form-item>
-        <el-form-item label="公积金比例">
-          <el-input-number v-model="form.fundRatio" :min="0" :max="1" :step="0.001" style="width: 100%;" />
-          <div class="field-tip">原标准值：{{ (form.originalFundRatio * 100).toFixed(1) }}%</div>
+        <el-form-item label="个人部分">
+          <span class="field-tip">员工无需承担，显示¥0</span>
+        </el-form-item>
+
+        <el-divider content-position="left">公积金调整（元/月）</el-divider>
+        <el-form-item label="公司部分">
+          <el-input-number v-model="form.fundCompany" :min="0" :step="100" style="width: 100%;" />
+          <div class="field-tip">原标准值：¥{{ form.originalFundCompany }}</div>
+        </el-form-item>
+        <el-form-item label="个人部分">
+          <el-input-number v-model="form.fundEmployee" :min="0" :step="100" style="width: 100%;" />
+          <div class="field-tip">原标准值：¥{{ form.originalFundEmployee }}</div>
         </el-form-item>
         <el-form-item label="调整原因">
           <el-select v-model="form.fundReason" placeholder="选择原因" style="width: 100%;">
@@ -206,11 +222,11 @@ const standardCount = ref(20)
 const overriddenCount = ref(5)
 
 const welfareList = ref([
-  { id: 1, employeeId: 'E001', employeeName: '张三', position: '推拿师', city: '北京', salaryBase: 8000, securityBase: 8000, securityRatio: 0.085, fundBase: 8000, fundRatio: 0.12, securityIsOverride: false, fundIsOverride: false, standardSource: '推拿师-北京-薪资8000档', updateTime: '2026-05-20 10:00:00' },
-  { id: 2, employeeId: 'E002', employeeName: '李四', position: '推拿师', city: '北京', salaryBase: 5000, securityBase: 5000, securityRatio: 0.085, fundBase: 6000, fundRatio: 0.12, securityIsOverride: false, fundIsOverride: true, standardSource: '推拿师-北京-薪资5000档', updateTime: '2026-05-18 14:30:00' },
-  { id: 3, employeeId: 'E003', employeeName: '王五', position: '客户经理', city: '上海', salaryBase: 12000, securityBase: 12000, securityRatio: 0.105, fundBase: 12000, fundRatio: 0.07, securityIsOverride: true, fundIsOverride: false, standardSource: '客户经理-上海-薪资12000档', updateTime: '2026-05-15 09:20:00' },
-  { id: 4, employeeId: 'E004', employeeName: '赵六', position: '理疗师', city: '深圳', salaryBase: 10000, securityBase: 10000, securityRatio: 0.085, fundBase: 10000, fundRatio: 0.05, securityIsOverride: false, fundIsOverride: false, standardSource: '理疗师-深圳-薪资10000档', updateTime: '2026-05-20 10:00:00' },
-  { id: 5, employeeId: 'E005', employeeName: '钱七', position: '推拿师', city: '上海', salaryBase: 8000, securityBase: 8000, securityRatio: 0.105, fundBase: 8000, fundRatio: 0.07, securityIsOverride: false, fundIsOverride: false, standardSource: '推拿师-上海-薪资8000档', updateTime: '2026-05-20 10:00:00' }
+  { id: 1, employeeId: 'E001', employeeName: '张三', position: '推拿师', city: '北京', salaryBase: 8000, securityCompany: 680, securityEmployee: 170, employerInsuranceCompany: 120, fundCompany: 480, fundEmployee: 480, securityIsOverride: false, fundIsOverride: false, standardSource: '推拿师-北京-薪资8000档', updateTime: '2026-05-20 10:00:00' },
+  { id: 2, employeeId: 'E002', employeeName: '李四', position: '推拿师', city: '北京', salaryBase: 5000, securityCompany: 425, securityEmployee: 106.25, employerInsuranceCompany: 120, fundCompany: 360, fundEmployee: 360, securityIsOverride: false, fundIsOverride: true, standardSource: '推拿师-北京-薪资5000档', updateTime: '2026-05-18 14:30:00' },
+  { id: 3, employeeId: 'E003', employeeName: '王五', position: '客户经理', city: '上海', salaryBase: 12000, securityCompany: 1260, securityEmployee: 315, employerInsuranceCompany: 180, fundCompany: 840, fundEmployee: 840, securityIsOverride: true, fundIsOverride: false, standardSource: '客户经理-上海-薪资12000档', updateTime: '2026-05-15 09:20:00' },
+  { id: 4, employeeId: 'E004', employeeName: '赵六', position: '理疗师', city: '深圳', salaryBase: 10000, securityCompany: 850, securityEmployee: 212.5, employerInsuranceCompany: 150, fundCompany: 500, fundEmployee: 500, securityIsOverride: false, fundIsOverride: false, standardSource: '理疗师-深圳-薪资10000档', updateTime: '2026-05-20 10:00:00' },
+  { id: 5, employeeId: 'E005', employeeName: '钱七', position: '推拿师', city: '上海', salaryBase: 8000, securityCompany: 840, securityEmployee: 210, employerInsuranceCompany: 120, fundCompany: 560, fundEmployee: 560, securityIsOverride: false, fundIsOverride: false, standardSource: '推拿师-上海-薪资8000档', updateTime: '2026-05-20 10:00:00' }
 ])
 
 const dialogVisible = ref(false)
@@ -220,16 +236,18 @@ const form = reactive({
   employeeName: '',
   positionCity: '',
   salaryBase: 0,
-  securityBase: 0,
-  securityRatio: 0,
+  securityCompany: 0,
+  securityEmployee: 0,
   securityReason: '',
-  fundBase: 0,
-  fundRatio: 0,
+  employerInsuranceCompany: 0,
+  fundCompany: 0,
+  fundEmployee: 0,
   fundReason: '',
-  originalSecurityBase: 0,
-  originalSecurityRatio: 0,
-  originalFundBase: 0,
-  originalFundRatio: 0
+  originalSecurityCompany: 0,
+  originalSecurityEmployee: 0,
+  originalEmployerInsuranceCompany: 0,
+  originalFundCompany: 0,
+  originalFundEmployee: 0
 })
 
 const logList = ref([
@@ -262,16 +280,18 @@ const handleEdit = (row) => {
     employeeName: row.employeeName,
     positionCity: `${row.position} / ${row.city}`,
     salaryBase: `¥${row.salaryBase.toLocaleString()}`,
-    securityBase: row.securityBase,
-    securityRatio: row.securityRatio,
+    securityCompany: row.securityCompany,
+    securityEmployee: row.securityEmployee,
     securityReason: '',
-    fundBase: row.fundBase,
-    fundRatio: row.fundRatio,
+    employerInsuranceCompany: row.employerInsuranceCompany,
+    fundCompany: row.fundCompany,
+    fundEmployee: row.fundEmployee,
     fundReason: '',
-    originalSecurityBase: row.securityBase,
-    originalSecurityRatio: row.securityRatio,
-    originalFundBase: row.fundBase,
-    originalFundRatio: row.fundRatio
+    originalSecurityCompany: row.securityCompany,
+    originalSecurityEmployee: row.securityEmployee,
+    originalEmployerInsuranceCompany: row.employerInsuranceCompany,
+    originalFundCompany: row.fundCompany,
+    originalFundEmployee: row.fundEmployee
   })
   dialogVisible.value = true
 }
@@ -350,12 +370,13 @@ const handleSave = () => {
   font-size: 12px;
 }
 
-.welfare-cell .base {
-  color: hsl(var(--foreground));
+.welfare-cell .label {
+  color: hsl(var(--muted-foreground));
 }
 
-.welfare-cell .ratio {
-  color: hsl(var(--muted-foreground));
+.welfare-cell .value {
+  color: hsl(var(--foreground));
+  font-weight: 500;
 }
 
 .override-tag {

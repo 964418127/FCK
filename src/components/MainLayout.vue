@@ -166,84 +166,10 @@
           </el-sub-menu>
 
           <!-- 模块薪酬分组 -->
-          <el-sub-menu index="module-salary">
-            <template #title>
-              <el-icon><Coin /></el-icon>
-              <span>模块薪酬</span>
-            </template>
-            <el-menu-item index="compensation-calculation-guide">
-              <el-icon><InfoFilled /></el-icon>
-              <span>产品需求说明</span>
-            </el-menu-item>
-            <el-menu-item index="salary-item-management">
-              <el-icon><List /></el-icon>
-              <span>薪酬项配置</span>
-            </el-menu-item>
-            <el-menu-item index="job-compensation-template">
-              <el-icon><Document /></el-icon>
-              <span>岗位薪酬模板</span>
-            </el-menu-item>
-            <el-menu-item index="salary-distribution-strategy">
-              <el-icon><Coin /></el-icon>
-              <span>薪酬发放策略</span>
-            </el-menu-item>
-            <el-menu-item index="negative-wage-account">
-              <el-icon><Wallet /></el-icon>
-              <span>负工资账户</span>
-            </el-menu-item>
-            <el-menu-item index="negative-wage-record-list">
-              <el-icon><List /></el-icon>
-              <span>负工资流水查询</span>
-            </el-menu-item>
-            <el-menu-item index="dependency-calculation">
-              <el-icon><List /></el-icon>
-              <span>依赖计算</span>
-            </el-menu-item>
-          </el-sub-menu>
+          <MultiLevelMenu :menu-data="moduleSalaryMenu" :is-collapsed="isSidebarCollapsed" />
 
           <!-- 员工福利保障分组 -->
-          <el-sub-menu index="employee-welfare">
-            <template #title>
-              <el-icon><Coin /></el-icon>
-              <span>员工福利保障</span>
-            </template>
-            <el-menu-item index="employee-welfare-guide">
-              <el-icon><InfoFilled /></el-icon>
-              <span>福利保障说明</span>
-            </el-menu-item>
-            <el-menu-item index="city-salary-standard">
-              <el-icon><List /></el-icon>
-              <span>城市基准系数</span>
-            </el-menu-item>
-            <el-menu-item index="employee-welfare-detail">
-              <el-icon><List /></el-icon>
-              <span>员工福利保障</span>
-            </el-menu-item>
-            <el-menu-item index="security-monthly-summary">
-              <el-icon><Document /></el-icon>
-              <span>社保月度汇总</span>
-            </el-menu-item>
-            <el-menu-item index="security-monthly-record">
-              <el-icon><Document /></el-icon>
-              <span>社保月度流水</span>
-            </el-menu-item>
-            <el-menu-item index="housing-fund-monthly-summary">
-              <el-icon><Document /></el-icon>
-              <span>公积金月度汇总</span>
-            </el-menu-item>
-            <el-menu-item index="housing-fund-monthly-record">
-              <el-icon><Document /></el-icon>
-              <span>公积金月度流水</span>
-            </el-menu-item>
-            <el-menu-item index="individual-tax-monthly-summary">
-              <el-icon><Document /></el-icon>
-              <span>个税月度汇总</span>
-            </el-menu-item>
-            <el-menu-item index="individual-tax-monthly-record">
-              <el-icon><Document /></el-icon>
-              <span>个税月度流水</span>
-            </el-menu-item>
-          </el-sub-menu>
+          <MultiLevelMenu :menu-data="employeeWelfareMenu" :is-collapsed="isSidebarCollapsed" />
         </el-menu>
       </nav>
     </aside>
@@ -297,9 +223,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { users as mockUsers } from '../mock/data.js'
+import MultiLevelMenu from './MultiLevelMenu.vue'
 import {
   Fold,
   Expand,
@@ -328,10 +255,71 @@ import {
   Wallet
 } from '@element-plus/icons-vue'
 
-// 图标映射
-const iconMap = {
-  Money
-}
+// 员工福利保障菜单数据
+const employeeWelfareMenu = [
+  {
+    index: 'employee-welfare',
+    label: '员工福利保障',
+    icon: Coin,
+    children: [
+      { index: 'employee-welfare-guide', label: '福利保障说明', icon: InfoFilled },
+      { index: 'city-salary-standard', label: '城市基准系数', icon: List },
+      { index: 'employee-welfare-detail', label: '员工福利保障', icon: List },
+      {
+        index: 'social-security',
+        label: '社保',
+        icon: Document,
+        children: [
+          { index: 'security-monthly-summary', label: '社保月度汇总', icon: Document },
+          { index: 'security-monthly-record', label: '社保月度流水', icon: Document }
+        ]
+      },
+      {
+        index: 'housing-fund',
+        label: '公积金',
+        icon: Document,
+        children: [
+          { index: 'housing-fund-monthly-summary', label: '公积金月度汇总', icon: Document },
+          { index: 'housing-fund-monthly-record', label: '公积金月度流水', icon: Document }
+        ]
+      },
+      {
+        index: 'individual-tax',
+        label: '个税',
+        icon: Document,
+        children: [
+          { index: 'individual-tax-monthly-summary', label: '个税月度汇总', icon: Document },
+          { index: 'individual-tax-monthly-record', label: '个税月度流水', icon: Document }
+        ]
+      }
+    ]
+  }
+]
+
+// 模块薪酬菜单数据
+const moduleSalaryMenu = [
+  {
+    index: 'module-salary',
+    label: '模块薪酬',
+    icon: Coin,
+    children: [
+      { index: 'compensation-calculation-guide', label: '产品需求说明', icon: InfoFilled },
+      { index: 'salary-item-management', label: '薪酬项配置', icon: List },
+      { index: 'job-compensation-template', label: '岗位薪酬模板', icon: Document },
+      { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },
+      {
+        index: 'negative-wage',
+        label: '负工资',
+        icon: Wallet,
+        children: [
+          { index: 'negative-wage-account', label: '负工资账户', icon: Wallet },
+          { index: 'negative-wage-record-list', label: '负工资流水查询', icon: List }
+        ]
+      },
+      { index: 'dependency-calculation', label: '依赖计算', icon: List }
+    ]
+  }
+]
 
 
 
@@ -488,7 +476,13 @@ const handleLogout = () => {
 .sidebar.collapsed .sidebar-nav :deep(.el-menu-item),
 .sidebar.collapsed .sidebar-nav :deep(.el-sub-menu__title) {
   padding-left: 20px !important;
-  text-align: center;
+  padding-right: 20px !important;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-nav :deep(.el-menu-item span),
+.sidebar.collapsed .sidebar-nav :deep(.el-sub-menu__title span) {
+  display: none;
 }
 
 /* 主内容区域 */

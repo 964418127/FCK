@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个税月度汇总 - PRD</title>
+  <link rel="stylesheet" href="/docs-h5/styles/variables.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/base.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/layout.css?v=1.0.1">
+  <link rel="stylesheet" href="/docs-h5/styles/components.css?v=1.0.1">
+</head>
+<body>
+  <div class="doc-layout">
+    <aside class="doc-aside"></aside>
+
+    <main class="doc-main">
+      <header class="doc-header">
+        <div class="doc-breadcrumb">
+          <a href="/docs-h5/index.html">首页</a>
+          <span>/</span>
+          <a href="/docs-h5/社保公积金个税/index.html">社保公积金个税</a>
+          <span>/</span>
+          <span>个税月度汇总</span>
+        </div>
+        <div class="doc-header-actions">
+          <button class="doc-btn doc-btn-ghost" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="doc-content">
+        <div class="doc-page-header">
+          <h1 class="doc-page-title">💰 个税月度汇总</h1>
+          <p class="doc-page-desc">查看员工每月个人所得税的预扣汇总数据</p>
+        </div>
+
+        <div class="doc-callout doc-callout-info">
+          <div class="doc-callout-title">💡 说明</div>
+          <p>个税采用「预扣+汇算」模式，每月先预扣，年度终了时汇算清缴，多退少补</p>
+        </div>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">统计卡片</h2>
+          <div class="doc-section-content">
+            <div class="doc-stat-grid">
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥580</div>
+                <div class="doc-stat-label">本月预扣合计</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥580</div>
+                <div class="doc-stat-label">正常预扣</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥0</div>
+                <div class="doc-stat-label">补税</div>
+              </div>
+              <div class="doc-stat-card">
+                <div class="doc-stat-value">¥0</div>
+                <div class="doc-stat-label">退税</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">筛选条件</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>字段</th><th>控件类型</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>关键字</td><td>输入框</td><td>按员工姓名或编号搜索</td></tr>
+                <tr><td>月份</td><td>月份选择器</td><td>筛选特定月份数据</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">表格列</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>列名</th><th>业务说明</th></tr></thead>
+              <tbody>
+                <tr><td>员工编号</td><td>员工唯一标识</td></tr>
+                <tr><td>姓名</td><td>员工真实姓名</td></tr>
+                <tr><td>身份证号</td><td>员工身份证号码，用于个税申报</td></tr>
+                <tr><td>岗位</td><td>员工当前岗位</td></tr>
+                <tr><td>税前工资</td><td>税前工资金额，作为个税计算基数</td></tr>
+                <tr><td>正常预扣</td><td>本月正常预扣的个税金额</td></tr>
+                <tr><td>补税</td><td>本月需要补缴的个税（如汇算后发现少缴）</td></tr>
+                <tr><td>退税</td><td>本月需要退还的个税（如汇算后发现多缴）</td></tr>
+                <tr><td>本月合计</td><td>正常预扣 + 补税 - 退税</td></tr>
+                <tr><td>月份</td><td>数据所属月份</td></tr>
+                <tr><td>操作</td><td>「明细」按钮跳转至流水详情</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <h2 class="doc-section-title">操作按钮</h2>
+          <div class="doc-section-content">
+            <table class="doc-table">
+              <thead><tr><th>按钮</th><th>功能</th><th>详细说明</th></tr></thead>
+              <tbody>
+                <tr><td>重置</td><td>清空筛选条件</td><td>恢复筛选条件为空</td></tr>
+                <tr><td>导出</td><td>导出Excel</td><td>导出字段：员工编号、姓名、身份证号、岗位、税前工资、正常预扣、补税、退税、本月合计、月份</td></tr>
+                <tr><td>查看流水明细</td><td>跳转至详情页</td><td>跳转至「个税月度流水明细」</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="doc-details">
+          <summary>👨‍💻 研发参考（点击展开）</summary>
+          <div class="doc-details-content">
+            <p><strong>组件</strong>：src/views/IndividualTaxMonthlySummary.vue</p>
+            <p><strong>路由</strong>：/individual-tax-monthly-summary</p>
+            <p><strong>个税模式</strong>：预扣（按月）+ 汇算清缴（年度）</p>
+          </div>
+        </details>
+
+        <div class="doc-nav-links">
+          <a href="scene-individual-tax-record.html" class="doc-btn doc-btn-primary">查看流水明细 →</a>
+          <a href="scene-security-summary.html" class="doc-btn doc-btn-secondary">社保月度汇总</a>
+          <a href="scene-housing-fund-summary.html" class="doc-btn doc-btn-secondary">公积金月度汇总</a>
+        </div>
+      </div>
+
+      <footer class="doc-footer">
+        <span>社保公积金个税</span>
+        <span> | </span>
+        <span>最后更新：2026-05-26</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/docs-h5/components/app.js?v=1.0.6"></script>
+</body>
+</html>

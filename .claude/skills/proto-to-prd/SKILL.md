@@ -58,7 +58,8 @@ tools: WebFetch, Read, Glob, Grep, Write, Edit, Bash, Agent
 2. 生成总览页（index.html）和场景页（scene-*.html）
 3. **为每个 HTML 页面生成对应的 .md 文件**，用于飞书导入
 4. 为每个 HTML 页面的 header 添加 MD 预览按钮
-5. 更新首页入口和菜单
+5. **更新首页入口**：在 `public/docs-h5/index.html` 中添加模块卡片
+6. **更新左侧导航**：在 `public/docs-h5/components/app.js` 的 `getMenuData()` 中添加菜单项
 
 ---
 
@@ -235,6 +236,7 @@ tools: WebFetch, Read, Glob, Grep, Write, Edit, Bash, Agent
 6. **操作按钮必须有详细说明**：不能只写"导出数据"，必须说明导出的具体行为和导出字段
 7. **字段必须有业务说明**：不能只写字段名，必须说明业务含义和取值范围
 8. **每个发现的子页面必须生成对应场景文档**：如果 BeanAccountMonthly 有3个跳转目标（结算明细/提现明细/消费明细），则必须生成3个场景页，不能遗漏
+9. **必须更新入口页面和导航**：生成文档后，必须同时更新 `public/docs-h5/index.html`（首页入口卡片）和 `public/docs-h5/components/app.js`（左侧导航菜单）
 
 ---
 
