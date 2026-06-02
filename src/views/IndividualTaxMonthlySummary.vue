@@ -2,7 +2,7 @@
   <div class="individual-tax-monthly-summary">
     <div class="page-header">
       <h1>个税月度汇总</h1>
-      <p class="tip">💡 查看员工个税每月预扣汇总，含正常预扣、补税、退税的合计金额</p>
+      <p class="tip">💡 1 个员工在 N 个门店 = N 个申报主体（1 门店 = 1 主体），按主体拆分展示。多主体员工标识 ⭐</p>
     </div>
 
     <div class="content-section">
@@ -42,12 +42,28 @@
 
       <el-table :data="summaryData" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="employeeId" label="员工编号" width="100" />
-        <el-table-column prop="employeeName" label="姓名" width="100" />
+        <el-table-column label="姓名" width="120">
+          <template #default="{ row }">
+            <span>{{ row.employeeName }}</span>
+            <el-tag v-if="row.isMultiEntity" size="small" type="warning" style="margin-left: 4px;">⭐ 多主体</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="idCard" label="身份证号" width="180" />
         <el-table-column prop="position" label="岗位" width="100" />
+        <el-table-column prop="declarationEntity" label="申报主体" width="160">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary">{{ row.declarationEntity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="store" label="门店" width="100" />
         <el-table-column prop="salaryBeforeTax" label="税前工资" width="100">
           <template #default="{ row }">
             ¥{{ row.salaryBeforeTax.toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="preDeduct" label="本主体预扣" width="110">
+          <template #default="{ row }">
+            <span class="amount">¥{{ row.preDeduct.toLocaleString() }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="normalAmount" label="正常预扣" width="100">
@@ -105,11 +121,19 @@ const searchForm = reactive({ keyword: '', month: '' })
 const monthOptions = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']
 
 const summaryData = ref([
-  { employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', position: '推拿师', salaryBeforeTax: 15000, normalAmount: 290, supplementAmount: 0, refundAmount: 0, totalAmount: 290, month: '2026-02' },
-  { employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', position: '推拿师', salaryBeforeTax: 15000, normalAmount: 290, supplementAmount: 0, refundAmount: 0, totalAmount: 290, month: '2026-01' },
-  { employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', position: '推拿师', salaryBeforeTax: 8000, normalAmount: 90, supplementAmount: 0, refundAmount: 30, totalAmount: 60, month: '2026-03' },
-  { employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', position: '推拿师', salaryBeforeTax: 8000, normalAmount: 90, supplementAmount: 0, refundAmount: 0, totalAmount: 90, month: '2026-02' },
-  { employeeId: 'E003', employeeName: '王五', idCard: '440101199003033456', position: '客户经理', salaryBeforeTax: 20000, normalAmount: 590, supplementAmount: 200, refundAmount: 0, totalAmount: 790, month: '2026-01' }
+  // 张三（全职）单主体：1 个员工 1 个合同主体，反映"累计预扣预缴"真实业务
+  // 1月：累计收入15000, 累计应纳税所得额10000, 累计税额=10000×3%=290, 当月预扣=290
+  // 2月：累计收入30000, 累计应纳税所得额20000, 累计税额=20000×3%=600, 当月预扣=600-290=310
+  // 3月：累计收入45000, 累计应纳税所得额35000, 累计税额=35000×3%=1050, 当月预扣=1050-600=450
+  { employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', position: '推拿师', declarationEntity: '北京推拿公司', store: '北京旗舰店', isMultiEntity: false, salaryBeforeTax: 15000, preDeduct: 290, normalAmount: 290, supplementAmount: 0, refundAmount: 0, totalAmount: 290, month: '2026-01' },
+  { employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', position: '推拿师', declarationEntity: '北京推拿公司', store: '北京旗舰店', isMultiEntity: false, salaryBeforeTax: 15000, preDeduct: 310, normalAmount: 310, supplementAmount: 0, refundAmount: 0, totalAmount: 310, month: '2026-02' },
+  { employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', position: '推拿师', declarationEntity: '北京推拿公司', store: '北京旗舰店', isMultiEntity: false, salaryBeforeTax: 15000, preDeduct: 450, normalAmount: 450, supplementAmount: 0, refundAmount: 0, totalAmount: 450, month: '2026-03' },
+  // 李四（兼职）多主体：1 个员工 2 个门店 = 2 个申报主体，按倒序申报
+  { employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', position: '兼职推拿师', declarationEntity: '上海推拿公司A店', store: '上海A店', isMultiEntity: true, salaryBeforeTax: 22400, preDeduct: 672, normalAmount: 672, supplementAmount: 1128, refundAmount: 0, totalAmount: 1800, month: '2026-01' },
+  { employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', position: '兼职推拿师', declarationEntity: '上海推拿公司B店', store: '上海B店', isMultiEntity: true, salaryBeforeTax: 12600, preDeduct: 378, normalAmount: 378, supplementAmount: 822, refundAmount: 0, totalAmount: 1200, month: '2026-01' },
+  { employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', position: '兼职推拿师', declarationEntity: '上海推拿公司B店', store: '上海B店', isMultiEntity: true, salaryBeforeTax: 8000, preDeduct: 0, normalAmount: 0, supplementAmount: 0, refundAmount: 30, totalAmount: -30, month: '2026-03' },
+  // 王五（全职）单主体：含汇算清缴
+  { employeeId: 'E003', employeeName: '王五', idCard: '440101199003033456', position: '客户经理', declarationEntity: '深圳推拿公司', store: '深圳总店', isMultiEntity: false, salaryBeforeTax: 20000, preDeduct: 790, normalAmount: 790, supplementAmount: 200, refundAmount: 0, totalAmount: 990, month: '2026-01' }
 ])
 
 const pagination = reactive({

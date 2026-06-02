@@ -2,7 +2,7 @@
   <div class="individual-tax-monthly-record">
     <div class="page-header">
       <h1>个税月度流水明细</h1>
-      <p class="tip">💡 查看每条个税缴纳记录的流水明细，支持筛选和手动导入</p>
+      <p class="tip">💡 1 个员工在 N 个门店 = N 个申报主体（1 门店 = 1 主体），每主体 1 行明细。多主体兼职/非全日制员工按倒序申报顺序展示</p>
     </div>
 
     <div class="content-section">
@@ -42,6 +42,12 @@
         <el-table-column prop="employeeId" label="员工编号" width="100" />
         <el-table-column prop="employeeName" label="姓名" width="100" />
         <el-table-column prop="idCard" label="身份证号" width="160" />
+        <el-table-column prop="declarationEntity" label="申报主体" width="160">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary">{{ row.declarationEntity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="store" label="门店" width="120" />
         <el-table-column prop="feeType" label="费用类型" width="100">
           <template #default="{ row }">
             <el-tag :type="row.feeType === '滞纳金' ? 'danger' : 'success'" size="small">
@@ -62,6 +68,23 @@
         <el-table-column prop="taxAmount" label="税额" width="100">
           <template #default="{ row }">
             <span class="tax-amount">¥{{ row.taxAmount.toLocaleString() }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="thisEntityPreDeduct" label="本主体预扣合计" width="130">
+          <template #default="{ row }">
+            <span class="amount">¥{{ row.thisEntityPreDeduct.toLocaleString() }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="declarationOrder" label="倒序申报顺序" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.declarationOrder" size="small" type="info">第 {{ row.declarationOrder }} 个</el-tag>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="relatedSlipId" label="对应工资条" width="140">
+          <template #default="{ row }">
+            <span v-if="row.relatedSlipId" class="slip-link">{{ row.relatedSlipId }}</span>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="generateMonth" label="费用产生月份" width="120" />
@@ -106,6 +129,22 @@
             <el-option label="王五 (E003)" value="E003" />
           </el-select>
         </el-form-item>
+        <el-form-item label="申报主体">
+          <el-select v-model="form.declarationEntity" placeholder="选择申报主体" style="width: 100%;">
+            <el-option label="北京推拿公司" value="北京推拿公司" />
+            <el-option label="上海推拿公司A店" value="上海推拿公司A店" />
+            <el-option label="上海推拿公司B店" value="上海推拿公司B店" />
+            <el-option label="深圳推拿公司" value="深圳推拿公司" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="门店">
+          <el-select v-model="form.store" placeholder="选择门店" style="width: 100%;">
+            <el-option label="北京旗舰店" value="北京旗舰店" />
+            <el-option label="上海A店" value="上海A店" />
+            <el-option label="上海B店" value="上海B店" />
+            <el-option label="深圳总店" value="深圳总店" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="月份">
           <el-date-picker v-model="form.month" type="month" value-format="YYYY-MM" placeholder="选择月份" style="width: 100%;" />
         </el-form-item>
@@ -117,6 +156,15 @@
         </el-form-item>
         <el-form-item label="税额">
           <el-input-number v-model="form.taxAmount" :min="0" :step="100" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="本主体预扣">
+          <el-input-number v-model="form.thisEntityPreDeduct" :min="0" :step="100" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="倒序申报顺序">
+          <el-input-number v-model="form.declarationOrder" :min="0" :step="1" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="对应工资条">
+          <el-input v-model="form.relatedSlipId" placeholder="如 PS-2026-01-E002-A-W4" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="记录类型">
           <el-radio-group v-model="form.recordType">
@@ -199,13 +247,22 @@ const searchForm = reactive({ keyword: '', month: '', recordType: '' })
 const monthOptions = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']
 
 const records = ref([
-  { id: 1, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', feeType: '个税', salaryBeforeTax: 15000, taxableIncome: 10000, taxAmount: 290, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '' },
-  { id: 2, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', feeType: '个税', salaryBeforeTax: 15000, taxableIncome: 10000, taxAmount: 290, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '' },
-  { id: 3, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', feeType: '滞纳金', salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 18, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-04', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '个税逾期未缴产生滞纳金' },
-  { id: 4, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', feeType: '个税', salaryBeforeTax: 8000, taxableIncome: 4000, taxAmount: 90, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '' },
-  { id: 5, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', feeType: '个税', salaryBeforeTax: 8000, taxableIncome: 4000, taxAmount: 90, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '' },
-  { id: 6, employeeId: 'E003', employeeName: '王五', idCard: '440101199003033456', feeType: '个税', salaryBeforeTax: 20000, taxableIncome: 15000, taxAmount: 590, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-01', recordType: '汇算清缴', dataSource: '手动导入', status: '已确认', remark: '年终汇算补税' },
-  { id: 7, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', feeType: '个税', salaryBeforeTax: 8000, taxableIncome: 4000, taxAmount: 0, generateMonth: '2026-03', attrributionMonth: '2026-03', paymentMonth: '2026-03', recordType: '退税', dataSource: '手动导入', status: '已确认', remark: '专项附加扣除补充' }
+  // 张三（全职）单主体，反映"累计预扣预缴"真实业务
+  // 1月：累计应纳税所得额10000, 累计税额=10000×3%=290, 当月预扣=290
+  // 2月：累计应纳税所得额20000, 累计税额=20000×3%=600, 当月预扣=600-290=310
+  // 3月：累计应纳税所得额35000, 累计税额=35000×3%=1050, 当月预扣=1050-600=450
+  { id: 1, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', declarationEntity: '北京推拿公司', store: '北京旗舰店', feeType: '个税', salaryBeforeTax: 15000, taxableIncome: 10000, taxAmount: 290, thisEntityPreDeduct: 290, declarationOrder: null, relatedSlipId: null, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '1月：累计应纳税所得额10000，累计税额290' },
+  { id: 2, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', declarationEntity: '北京推拿公司', store: '北京旗舰店', feeType: '个税', salaryBeforeTax: 15000, taxableIncome: 10000, taxAmount: 310, thisEntityPreDeduct: 310, declarationOrder: null, relatedSlipId: null, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '2月：累计应纳税所得额20000，累计税额600，本月预扣=600-290=310' },
+  { id: 3, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', declarationEntity: '北京推拿公司', store: '北京旗舰店', feeType: '个税', salaryBeforeTax: 15000, taxableIncome: 10000, taxAmount: 450, thisEntityPreDeduct: 450, declarationOrder: null, relatedSlipId: null, generateMonth: '2026-03', attrributionMonth: '2026-03', paymentMonth: '2026-03', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '3月：累计应纳税所得额35000，累计税额1050，本月预扣=1050-600=450' },
+  // 李四（兼职）多主体示例：1 个门店 = 1 个主体，按应税金额倒序申报
+  { id: 4, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', declarationEntity: '上海推拿公司A店', store: '上海A店', feeType: '个税', salaryBeforeTax: 22400, taxableIncome: 20400, taxAmount: 1128, thisEntityPreDeduct: 672, declarationOrder: 1, relatedSlipId: 'PS-2026-01-E002-A-W4', generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '补税', dataSource: '三方服务', status: '已确认', remark: '门店A 倒序申报第1个，应税22400，百旺累计1800-本主体预扣672' },
+  { id: 5, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', declarationEntity: '上海推拿公司B店', store: '上海B店', feeType: '个税', salaryBeforeTax: 12600, taxableIncome: 10600, taxAmount: 822, thisEntityPreDeduct: 378, declarationOrder: 2, relatedSlipId: 'PS-2026-01-E002-B-W4', generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '补税', dataSource: '三方服务', status: '已确认', remark: '门店B 倒序申报第2个，应税12600，可能跳档' },
+  // 张三的滞纳金（与个税分开记录，但产生月份/归属月份不同）
+  { id: 6, employeeId: 'E001', employeeName: '张三', idCard: '110101199001011234', declarationEntity: '北京推拿公司', store: '北京旗舰店', feeType: '滞纳金', salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 18, thisEntityPreDeduct: 0, declarationOrder: null, relatedSlipId: null, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-04', recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '个税逾期未缴产生滞纳金' },
+  // 王五（全职）单主体，含汇算清缴
+  { id: 7, employeeId: 'E003', employeeName: '王五', idCard: '440101199003033456', declarationEntity: '深圳推拿公司', store: '深圳总店', feeType: '个税', salaryBeforeTax: 20000, taxableIncome: 15000, taxAmount: 790, thisEntityPreDeduct: 790, declarationOrder: null, relatedSlipId: 'PS-2026-01-E003-M1', generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-01', recordType: '汇算清缴', dataSource: '手动导入', status: '已确认', remark: '年终汇算补税' },
+  // 李四（兼职）退税示例
+  { id: 8, employeeId: 'E002', employeeName: '李四', idCard: '310101199002022345', declarationEntity: '上海推拿公司B店', store: '上海B店', feeType: '个税', salaryBeforeTax: 8000, taxableIncome: 4000, taxAmount: 0, thisEntityPreDeduct: 0, declarationOrder: 2, relatedSlipId: 'PS-2026-03-E002-B-W4', generateMonth: '2026-03', attrributionMonth: '2026-03', paymentMonth: '2026-03', recordType: '退税', dataSource: '手动导入', status: '已确认', remark: '专项附加扣除补充，退税-30' }
 ])
 
 const filteredData = computed(() => {
@@ -227,7 +284,9 @@ const importDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentEditId = ref(null)
 const form = reactive({
-  employeeId: '', month: '', salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 0,
+  employeeId: '', declarationEntity: '', store: '', month: '',
+  salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 0,
+  thisEntityPreDeduct: 0, declarationOrder: null, relatedSlipId: '',
   recordType: '正常', dataSource: '三方服务', status: '已确认', remark: ''
 })
 const importForm = reactive({ month: '', recordType: '正常' })
@@ -236,7 +295,12 @@ const handleReset = () => { searchForm.keyword = ''; searchForm.month = ''; sear
 
 const openAddDialog = () => {
   isEdit.value = false
-  Object.assign(form, { employeeId: '', month: '', salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 0, recordType: '正常', dataSource: '三方服务', status: '已确认', remark: '' })
+  Object.assign(form, {
+    employeeId: '', declarationEntity: '', store: '', month: '',
+    salaryBeforeTax: 0, taxableIncome: 0, taxAmount: 0,
+    thisEntityPreDeduct: 0, declarationOrder: null, relatedSlipId: '',
+    recordType: '正常', dataSource: '三方服务', status: '已确认', remark: ''
+  })
   dialogVisible.value = true
 }
 
@@ -304,4 +368,8 @@ const handleImportSubmit = () => {
 .source-tag.manual { background: hsl(var(--warning) / 0.1); color: hsl(var(--warning)); }
 
 .tax-amount { color: hsl(var(--destructive)); font-weight: 600; }
+.amount { color: hsl(var(--foreground)); font-weight: 500; }
+.text-muted { color: hsl(var(--muted-foreground)); font-size: 12px; }
+.slip-link { color: hsl(var(--primary)); font-family: monospace; font-size: 12px; cursor: pointer; }
+.slip-link:hover { text-decoration: underline; }
 </style>

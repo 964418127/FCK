@@ -299,6 +299,14 @@ const routes = [
         }
       },
       {
+        path: 'v2-product-guide',
+        name: 'v2-product-guide',
+        component: () => import('../views/V2ProductGuide.vue'),
+        meta: {
+          title: 'V2产品说明'
+        }
+      },
+      {
         path: 'negative-wage-account',
         name: 'negative-wage-account',
         component: () => import('../views/NegativeWageAccount.vue'),

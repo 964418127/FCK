@@ -2,7 +2,7 @@
   <div class="city-salary-standard">
     <div class="page-header">
       <h1>城市基准系数配置</h1>
-      <p class="tip">💡 配置各城市、不同薪资区间下的社保和公积金缴纳标准，作为岗位薪酬模板的基准数据来源</p>
+      <p class="tip">💡 配置各城市下的社保、公积金、工伤险、雇主险缴纳标准。社保/公积金支持全额交纳模式（按实际工资）</p>
     </div>
 
     <div class="content-section">
@@ -19,8 +19,10 @@
           </el-form-item>
           <el-form-item label="缴纳类型">
             <el-select v-model="searchForm.type" placeholder="选择" clearable style="width: 120px;">
-              <el-option label="社保" value="security" />
-              <el-option label="公积金" value="fund" />
+              <el-option label="社保" value="社保" />
+              <el-option label="公积金" value="公积金" />
+              <el-option label="工伤险" value="工伤险" />
+              <el-option label="雇主险" value="雇主险" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -40,15 +42,17 @@
       <!-- 基准列表 -->
       <el-table :data="standardList" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="city" label="城市" width="100" />
-        <el-table-column prop="salaryRange" label="薪资区间" width="120">
-          <template #default="{ row }">
-            ¥{{ row.salaryMin }} - ¥{{ row.salaryMax }}
-          </template>
-        </el-table-column>
         <el-table-column prop="type" label="缴纳类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.type === '社保' ? 'primary' : 'success'" size="small">
+            <el-tag :type="getTypeTagType(row.type)" size="small">
               {{ row.type }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="mode" label="交纳模式" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.mode === '全额交纳' ? 'success' : 'default'" size="small">
+              {{ row.mode }}
             </el-tag>
           </template>
         </el-table-column>
@@ -110,23 +114,22 @@
             <el-option label="杭州" value="hangzhou" />
           </el-select>
         </el-form-item>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="薪资区间下限">
-              <el-input-number v-model="form.salaryMin" :min="0" :step="1000" style="width: 100%;" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="薪资区间上限">
-              <el-input-number v-model="form.salaryMax" :min="0" :step="1000" style="width: 100%;" />
-            </el-form-item>
-          </el-col>
-        </el-row>
         <el-form-item label="缴纳类型">
           <el-radio-group v-model="form.type">
-            <el-radio label="security">社保</el-radio>
-            <el-radio label="fund">公积金</el-radio>
+            <el-radio label="社保">社保</el-radio>
+            <el-radio label="公积金">公积金</el-radio>
+            <el-radio label="工伤险">工伤险</el-radio>
+            <el-radio label="雇主险">雇主险</el-radio>
           </el-radio-group>
+        </el-form-item>
+        <el-form-item label="交纳模式" v-if="form.type === '社保' || form.type === '公积金'">
+          <el-radio-group v-model="form.mode">
+            <el-radio label="全额交纳">全额交纳（按实际工资）</el-radio>
+            <el-radio label="按基数交纳">按基数交纳（有最低限制）</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="form.type === '工伤险' || form.type === '雇主险'" label="交纳模式">
+          <el-tag type="info">按基数交纳</el-tag>
         </el-form-item>
         <el-form-item label="缴纳基数">
           <el-input-number v-model="form.baseAmount" :min="0" :step="100" style="width: 100%;" />
@@ -183,24 +186,37 @@ const pagination = reactive({
 })
 
 const standardList = ref([
-  { id: 1, city: '北京', salaryMin: 3000, salaryMax: 5000, type: '社保', baseAmount: 5000, ratio: 0.165, personalRatio: 0.085, companyAmount: 825, personalAmount: 425, updateTime: '2026-05-20 10:00:00' },
-  { id: 2, city: '北京', salaryMin: 5000, salaryMax: 10000, type: '社保', baseAmount: 8000, ratio: 0.165, personalRatio: 0.085, companyAmount: 1320, personalAmount: 680, updateTime: '2026-05-20 10:00:00' },
-  { id: 3, city: '北京', salaryMin: 10000, salaryMax: 20000, type: '社保', baseAmount: 12000, ratio: 0.165, personalRatio: 0.085, companyAmount: 1980, personalAmount: 1020, updateTime: '2026-05-20 10:00:00' },
-  { id: 4, city: '北京', salaryMin: 3000, salaryMax: 5000, type: '公积金', baseAmount: 5000, ratio: 0.12, personalRatio: 0.12, companyAmount: 600, personalAmount: 600, updateTime: '2026-05-20 10:00:00' },
-  { id: 5, city: '北京', salaryMin: 5000, salaryMax: 10000, type: '公积金', baseAmount: 8000, ratio: 0.12, personalRatio: 0.12, companyAmount: 960, personalAmount: 960, updateTime: '2026-05-20 10:00:00' },
-  { id: 6, city: '上海', salaryMin: 3000, salaryMax: 5000, type: '社保', baseAmount: 5000, ratio: 0.26, personalRatio: 0.105, companyAmount: 1300, personalAmount: 525, updateTime: '2026-05-20 10:00:00' },
-  { id: 7, city: '上海', salaryMin: 5000, salaryMax: 10000, type: '社保', baseAmount: 8000, ratio: 0.26, personalRatio: 0.105, companyAmount: 2080, personalAmount: 840, updateTime: '2026-05-20 10:00:00' },
-  { id: 8, city: '上海', salaryMin: 5000, salaryMax: 10000, type: '公积金', baseAmount: 8000, ratio: 0.07, personalRatio: 0.07, companyAmount: 560, personalAmount: 560, updateTime: '2026-05-20 10:00:00' }
+  { id: 1, city: '北京', type: '社保', mode: '全额交纳', baseAmount: 5000, ratio: 0.165, personalRatio: 0.085, companyAmount: 825, personalAmount: 425, updateTime: '2026-05-20 10:00:00' },
+  { id: 2, city: '北京', type: '社保', mode: '按基数交纳', baseAmount: 8000, ratio: 0.165, personalRatio: 0.085, companyAmount: 1320, personalAmount: 680, updateTime: '2026-05-20 10:00:00' },
+  { id: 3, city: '北京', type: '公积金', mode: '全额交纳', baseAmount: 5000, ratio: 0.12, personalRatio: 0.12, companyAmount: 600, personalAmount: 600, updateTime: '2026-05-20 10:00:00' },
+  { id: 4, city: '北京', type: '公积金', mode: '按基数交纳', baseAmount: 8000, ratio: 0.12, personalRatio: 0.12, companyAmount: 960, personalAmount: 960, updateTime: '2026-05-20 10:00:00' },
+  { id: 5, city: '北京', type: '工伤险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
+  { id: 6, city: '北京', type: '雇主险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.015, personalRatio: 0, companyAmount: 75, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
+  { id: 7, city: '上海', type: '社保', mode: '全额交纳', baseAmount: 5000, ratio: 0.26, personalRatio: 0.105, companyAmount: 1300, personalAmount: 525, updateTime: '2026-05-20 10:00:00' },
+  { id: 8, city: '上海', type: '社保', mode: '按基数交纳', baseAmount: 8000, ratio: 0.26, personalRatio: 0.105, companyAmount: 2080, personalAmount: 840, updateTime: '2026-05-20 10:00:00' },
+  { id: 9, city: '上海', type: '公积金', mode: '全额交纳', baseAmount: 8000, ratio: 0.07, personalRatio: 0.07, companyAmount: 560, personalAmount: 560, updateTime: '2026-05-20 10:00:00' },
+  { id: 10, city: '上海', type: '工伤险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
+  { id: 11, city: '上海', type: '雇主险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.015, personalRatio: 0, companyAmount: 75, personalAmount: 0, updateTime: '2026-05-20 10:00:00' }
 ])
+
+// 类型标签映射
+const getTypeTagType = (type) => {
+  const map = {
+    '社保': 'primary',
+    '公积金': 'success',
+    '工伤险': 'warning',
+    '雇主险': 'danger'
+  }
+  return map[type] || 'info'
+}
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增基准')
 const isEdit = ref(false)
 const form = reactive({
   city: '',
-  salaryMin: 0,
-  salaryMax: 0,
-  type: 'security',
+  type: '社保',
+  mode: '全额交纳',
   baseAmount: 0,
   ratio: 0,
   personalRatio: 0
@@ -214,7 +230,7 @@ const handleReset = () => {
 const handleCreate = () => {
   dialogTitle.value = '新增基准'
   isEdit.value = false
-  Object.assign(form, { city: '', salaryMin: 0, salaryMax: 0, type: 'security', baseAmount: 0, ratio: 0, personalRatio: 0 })
+  Object.assign(form, { city: '', type: '社保', mode: '全额交纳', baseAmount: 0, ratio: 0, personalRatio: 0 })
   dialogVisible.value = true
 }
 

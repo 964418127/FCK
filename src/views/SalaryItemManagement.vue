@@ -473,16 +473,6 @@ const salaryItems = ref([
     cooperateMode: '劳务合作',
     calcLevel: 2,
     updateTime: '2026-01-18 11:00:00'
-  },
-  {
-    id: 10,
-    name: '兼职个税预扣',
-    type: '扣缴项',
-    postBelong: '通用',
-    targetPost: '推拿师',
-    cooperateMode: '劳务合作',
-    calcLevel: 2,
-    updateTime: '2026-01-19 08:00:00'
   }
 ])
 

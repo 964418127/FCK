@@ -48,6 +48,12 @@
       <el-table :data="filteredData" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="employeeId" label="员工编号" width="100" />
         <el-table-column prop="employeeName" label="姓名" width="100" />
+        <el-table-column prop="declarationEntity" label="申报主体" width="160">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary">{{ row.declarationEntity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="store" label="门店" width="120" />
         <el-table-column prop="grade" label="等级" width="80">
           <template #default="{ row }">
             {{ row.grade }}级
@@ -105,6 +111,22 @@
             <el-option label="张三 (E001)" value="E001" />
             <el-option label="李四 (E002)" value="E002" />
             <el-option label="王五 (E003)" value="E003" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="申报主体">
+          <el-select v-model="form.declarationEntity" placeholder="选择申报主体" style="width: 100%;">
+            <el-option label="北京推拿公司" value="北京推拿公司" />
+            <el-option label="上海推拿公司A店" value="上海推拿公司A店" />
+            <el-option label="上海推拿公司B店" value="上海推拿公司B店" />
+            <el-option label="深圳推拿公司" value="深圳推拿公司" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="门店">
+          <el-select v-model="form.store" placeholder="选择门店" style="width: 100%;">
+            <el-option label="北京旗舰店" value="北京旗舰店" />
+            <el-option label="上海A店" value="上海A店" />
+            <el-option label="上海B店" value="上海B店" />
+            <el-option label="深圳总店" value="深圳总店" />
           </el-select>
         </el-form-item>
         <el-form-item label="月份">
@@ -189,15 +211,14 @@ const searchForm = reactive({ keyword: '', month: '', recordType: '', dataSource
 const monthOptions = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']
 
 const records = ref([
-  { id: 1, employeeId: 'E001', employeeName: '张三', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 960, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-01-31 10:00:00' },
-  { id: 2, employeeId: 'E001', employeeName: '张三', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 960, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-02-28 10:00:00' },
-  { id: 3, employeeId: 'E001', employeeName: '张三', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 0, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '补缴', dataSource: '三方服务', adjustReason: '', createTime: '2026-02-28 10:05:00' },
-  { id: 4, employeeId: 'E001', employeeName: '张三', grade: '2', feeType: '滞纳金', baseAmount: 0, actualAmount: 25, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-03', recordType: '正常', dataSource: '三方服务', adjustReason: '逾期未缴产生滞纳金', createTime: '2026-03-10 10:00:00' },
-  { id: 5, employeeId: 'E002', employeeName: '李四', grade: '2', feeType: '公积金', baseAmount: 5000, actualAmount: 350, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-01-31 10:00:00' },
-  { id: 6, employeeId: 'E002', employeeName: '李四', grade: '2', feeType: '公积金', baseAmount: 5000, actualAmount: 350, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-02-28 10:00:00' },
-  { id: 7, employeeId: 'E002', employeeName: '李四', grade: '2', feeType: '公积金', baseAmount: 5000, actualAmount: 50, generateMonth: '2026-03', attrributionMonth: '2026-03', paymentMonth: '2026-03', recordType: '退缴', dataSource: '手动导入', adjustReason: '比例下调退缴', createTime: '2026-03-05 14:00:00' },
-  { id: 8, employeeId: 'E003', employeeName: '王五', grade: '3', feeType: '公积金', baseAmount: 10000, actualAmount: 500, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-01', recordType: '正常', dataSource: '手动导入', adjustReason: '三方未返回，手动导入', createTime: '2026-02-03 09:00:00' },
-  { id: 9, employeeId: 'E002', employeeName: '李四', grade: '2', feeType: '滞纳金', baseAmount: 0, actualAmount: 15, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-04', recordType: '正常', dataSource: '三方服务', adjustReason: '公积金逾期未缴产生滞纳金', createTime: '2026-04-08 09:00:00' }
+  // 公积金记录（全职单主体，1 合同主体 = 1 申报主体）
+  { id: 1, employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 960, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-01-31 10:00:00' },
+  { id: 2, employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 960, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '正常', dataSource: '三方服务', adjustReason: '', createTime: '2026-02-28 10:00:00' },
+  { id: 3, employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', grade: '2', feeType: '公积金', baseAmount: 8000, actualAmount: 0, generateMonth: '2026-02', attrributionMonth: '2026-02', paymentMonth: '2026-02', recordType: '补缴', dataSource: '三方服务', adjustReason: '', createTime: '2026-02-28 10:05:00' },
+  { id: 4, employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', grade: '2', feeType: '滞纳金', baseAmount: 0, actualAmount: 25, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-03', recordType: '正常', dataSource: '三方服务', adjustReason: '逾期未缴产生滞纳金', createTime: '2026-03-10 10:00:00' },
+  { id: 8, employeeId: 'E003', employeeName: '王五', declarationEntity: '深圳推拿公司', store: '深圳总店', grade: '3', feeType: '公积金', baseAmount: 10000, actualAmount: 500, generateMonth: '2026-01', attrributionMonth: '2026-01', paymentMonth: '2026-01', recordType: '正常', dataSource: '手动导入', adjustReason: '三方未返回，手动导入', createTime: '2026-02-03 09:00:00' }
+  // 注：李四（兼职）没有公积金
+  // 注：feeType='社保'/'个税' 的记录不应出现在公积金月度流水，应分别在 社保月度流水/个税月度流水
 ])
 
 const filteredData = computed(() => {
@@ -228,14 +249,14 @@ const dialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentEditId = ref(null)
-const form = reactive({ employeeId: '', month: '', baseAmount: 0, actualAmount: 0, recordType: '正常', dataSource: '三方服务', adjustReason: '' })
+const form = reactive({ employeeId: '', declarationEntity: '', store: '', month: '', baseAmount: 0, actualAmount: 0, recordType: '正常', dataSource: '三方服务', adjustReason: '' })
 const importForm = reactive({ month: '', recordType: '正常' })
 
 const handleReset = () => { searchForm.keyword = ''; searchForm.month = ''; searchForm.recordType = ''; searchForm.dataSource = '' }
 
 const openAddDialog = () => {
   isEdit.value = false
-  Object.assign(form, { employeeId: '', month: '', baseAmount: 0, actualAmount: 0, recordType: '正常', dataSource: '三方服务', adjustReason: '' })
+  Object.assign(form, { employeeId: '', declarationEntity: '', store: '', month: '', baseAmount: 0, actualAmount: 0, recordType: '正常', dataSource: '三方服务', adjustReason: '' })
   dialogVisible.value = true
 }
 

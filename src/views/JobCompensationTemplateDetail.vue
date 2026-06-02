@@ -146,6 +146,33 @@
         </div>
       </div>
 
+      <!-- 公司成本项 -->
+      <div class="card">
+        <div class="card-header">
+          <h3>公司成本项</h3>
+          <span class="item-count">共 {{ companyCostItems.length }} 项</span>
+        </div>
+        <el-table :data="companyCostItems" border style="width: 100%">
+          <el-table-column prop="name" label="项名称" min-width="160" />
+          <el-table-column prop="insuranceType" label="保险类型" width="140" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.insuranceType === '工伤险'" type="success" size="small">工伤险</el-tag>
+              <el-tag v-else type="warning" size="small">雇主险</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="burden" label="费用归属" width="120" align="center">
+            <template #default>
+              <el-tag type="info" size="small">公司全额</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="200">
+            <template #default>
+              <span class="remark-text">不参与工资条扣款，仅记录到员工福利保障明细</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
       <!-- 编辑操作 -->
       <div v-if="isEdit" class="edit-actions">
         <el-button @click="handleCancel">取消</el-button>
@@ -156,42 +183,48 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import { compensationTemplates } from '../mock/data.js'
 
 const route = useRoute()
 const router = useRouter()
 
 const isEdit = ref(false)
 
+// 根据模板ID获取模板数据
+const getTemplateById = (id) => {
+  return compensationTemplates.find(t => t.id === id) || compensationTemplates[0]
+}
+
 // 模板数据
-const templateData = ref({
-  id: '1109491319435526144',
-  name: '全职推拿师提成加班补贴常乐豆',
-  templateType: '标准',
-  belongTo: '业务',
-  position: '推拿师',
-  coopMode: '劳动合同-全职'
-})
+const templateData = ref(getTemplateById(route.params.id))
 
 // 薪酬项数据
-const incomeItems = ref([
-  { id: 1, category: '全职推拿师提成13', name: '计件提成', level: '1', isSystem: false },
-  { id: 2, category: '全职推拿师提成13', name: '超产值奖金', level: '1', isSystem: false },
-  { id: 3, category: '全职推拿师提成13', name: '超时加班费', level: '1', isSystem: false },
-  { id: 4, category: '全职推拿师提成13', name: '保底获豆', level: '2', isSystem: false }
-])
+const incomeItems = ref(templateData.value.incomeItems.map((item, index) => ({
+  id: index + 1,
+  category: templateData.value.name,
+  name: item.name,
+  level: item.level,
+  isSystem: item.level === '系统'
+})))
 
 // 扣缴项数据
-const deductItems = ref([
-  { id: 1, category: '全职推拿师提成13', name: '投诉扣款', level: '1', isSystem: false },
-  { id: 2, category: '全职推拿师提成13', name: '服务时长不足扣提成', level: '1', isSystem: false },
-  { id: 3, category: '全职推拿师提成13', name: '手动扣款', level: '1', isSystem: false },
-  { id: 5, category: '扣缴项', name: '代扣社保', level: '系统', isSystem: true },
-  { id: 6, category: '扣缴项', name: '代扣公积金', level: '系统', isSystem: true },
-  { id: 7, category: '扣缴项', name: '代扣个税', level: '系统', isSystem: true }
-])
+const deductItems = ref(templateData.value.deductItems.map((item, index) => ({
+  id: index + 1,
+  category: templateData.value.name,
+  name: item.name,
+  level: item.level,
+  isSystem: item.level === '系统'
+})))
+
+// 公司成本项数据
+const companyCostItems = ref(templateData.value.companyCostItems.map(item => ({
+  name: item.name,
+  insuranceType: item.insuranceType,
+  burden: item.burden
+})))
 
 // 返回列表
 const goBack = () => {

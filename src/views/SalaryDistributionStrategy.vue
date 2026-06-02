@@ -150,37 +150,70 @@ const searchForm = reactive({
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 3
+  total: 6
 })
 
 // 策略列表数据
 const strategyList = ref([
   {
-    id: '1109493788878143488',
-    name: '兼职推拿师收入发放 V28',
-    personCount: 54,
-    position: '推拿师',
-    templateName: '兼职推拿师提成奖金模板',
-    validityPeriod: '长期有效',
-    updateTime: '2026-05-20 14:52:13'
-  },
-  {
     id: '1109493788878143489',
-    name: '全职推拿师薪酬发放 V15',
-    personCount: 1686,
+    name: '全职推拿师发放策略（v1和v2具有营销折扣获豆和回头客补贴）',
+    personCount: 1080,
     position: '推拿师',
-    templateName: '全职推拿师提成加班补贴常乐豆',
+    templateName: '全职推拿师模板',
+    coopMode: '劳动合同-全职',
     validityPeriod: '长期有效',
     updateTime: '2026-05-19 10:30:00'
   },
   {
+    id: '1109493788878143500',
+    name: '全职推拿师发放策略（v3没有营销折扣获豆和回头客补贴）',
+    personCount: 606,
+    position: '推拿师',
+    templateName: '全职推拿师模板',
+    coopMode: '劳动合同-全职',
+    validityPeriod: '长期有效',
+    updateTime: '2026-05-19 10:32:00'
+  },
+  {
+    id: '1109493788878143491',
+    name: '非全日制推拿师发放策略（没有常乐豆）',
+    personCount: 86,
+    position: '推拿师',
+    templateName: '非全日制推拿师模板',
+    coopMode: '非全日制劳动合同',
+    validityPeriod: '长期有效',
+    updateTime: '2026-05-21 09:15:30'
+  },
+  {
+    id: '1109493788878143488',
+    name: '兼职推拿师发放策略（无常乐豆）',
+    personCount: 54,
+    position: '推拿师',
+    templateName: '兼职推拿师模板',
+    coopMode: '劳务合作-兼职',
+    validityPeriod: '长期有效',
+    updateTime: '2026-05-20 14:52:13'
+  },
+  {
     id: '1109493788878143490',
-    name: '客户经理劳务发放 V8',
+    name: '全职客户经理发放策略',
     personCount: 364,
     position: '客户经理',
-    templateName: '客户经理劳务合作模板',
+    templateName: '全职客户经理模板',
+    coopMode: '劳动合同-全职',
     validityPeriod: '2026-01-01 至 2026-12-31',
     updateTime: '2026-05-18 16:45:22'
+  },
+  {
+    id: '1109493788878143501',
+    name: '总部其他全职岗位发放策略',
+    personCount: 48,
+    position: '总部职能',
+    templateName: '全职总部岗位模板',
+    coopMode: '劳动合同-全职',
+    validityPeriod: '长期有效',
+    updateTime: '2026-05-17 11:30:00'
   }
 ])
 
@@ -228,6 +261,16 @@ const handleCreate = () => {
 const handleSave = () => {
   dialogVisible.value = false
   ElMessage.success('保存成功')
+}
+
+// 合作模式标签类型
+const getCoopModeTagType = (coopMode) => {
+  const map = {
+    '劳动合同-全职': 'success',
+    '非全日制劳动合同': 'warning',
+    '劳务合作-兼职': 'danger'
+  }
+  return map[coopMode] || 'default'
 }
 
 // 发起重算

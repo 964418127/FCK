@@ -2242,6 +2242,577 @@ export const users = [
   }
 ]
 
+// 薪酬模板数据
+export const compensationTemplates = [
+  {
+    id: '1109491319435526144',
+    name: '全职推拿师模板',
+    templateType: '标准',
+    position: '推拿师',
+    belongTo: '业务',
+    coopMode: '劳动合同-全职',
+    personCount: 12,
+    updateTime: '2026-05-20 14:42:24',
+    incomeItems: [
+      { name: '计件提成', level: '1', formula: '订单金额 × 提成比例' },
+      { name: '超产值奖金', level: '1', formula: '超出部分 × 奖励比例' },
+      { name: '超时加班费', level: '1', formula: '加班时长 × 单价' },
+      { name: '保底获豆', level: '2', formula: 'max(0, 最低工资 - 第1级收入)' }
+    ],
+    deductItems: [
+      { name: '投诉扣款', level: '1', formula: '投诉次数 × 单次扣款' },
+      { name: '代扣社保', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣公积金', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣个税', level: '系统', formula: '百旺服务计算' }
+    ],
+    companyCostItems: []
+  },
+  {
+    id: '1109491319435526147',
+    name: '非全日制推拿师模板',
+    templateType: '标准',
+    position: '推拿师',
+    belongTo: '业务',
+    coopMode: '非全日制劳动合同',
+    personCount: 6,
+    updateTime: '2026-05-21 09:15:30',
+    incomeItems: [
+      { name: '计件提成', level: '1', formula: '订单金额 × 提成比例' },
+      { name: '超产值奖金', level: '1', formula: '超出部分 × 奖励比例' },
+      { name: '超时加班费', level: '1', formula: '加班时长 × 单价' }
+    ],
+    deductItems: [
+      { name: '预扣个税', level: '系统', formula: '(收入-扣缴) × 3%' },
+      { name: '代扣个税', level: '系统', formula: '百旺服务计算（月末汇算）' }
+    ],
+    companyCostItems: [
+      { name: '工伤险', insuranceType: '工伤险', burden: '公司全额' }
+    ]
+  },
+  {
+    id: '1109491319435526145',
+    name: '兼职推拿师模板',
+    templateType: '标准',
+    position: '推拿师',
+    belongTo: '业务',
+    coopMode: '劳务合作-兼职',
+    personCount: 8,
+    updateTime: '2026-05-19 10:20:15',
+    incomeItems: [
+      { name: '计件提成', level: '1', formula: '订单金额 × 提成比例' },
+      { name: '超时加班费', level: '1', formula: '加班时长 × 单价' }
+    ],
+    deductItems: [
+      { name: '预扣个税', level: '系统', formula: '(收入-扣缴) × 3%' },
+      { name: '代扣个税', level: '系统', formula: '百旺服务计算（月末汇算）' }
+    ],
+    companyCostItems: [
+      { name: '雇主险', insuranceType: '雇主险', burden: '公司全额' }
+    ]
+  },
+  {
+    id: '1109491319435526148',
+    name: '全职客户经理模板',
+    templateType: '标准',
+    position: '客户经理',
+    belongTo: '业务',
+    coopMode: '劳动合同-全职',
+    personCount: 5,
+    updateTime: '2026-05-18 16:30:00',
+    incomeItems: [
+      { name: '计件提成', level: '1', formula: '订单金额 × 提成比例' },
+      { name: '超产值奖金', level: '1', formula: '超出部分 × 奖励比例' },
+      { name: '超时加班费', level: '1', formula: '加班时长 × 单价' },
+      { name: '保底获豆', level: '2', formula: 'max(0, 最低工资 - 第1级收入)' }
+    ],
+    deductItems: [
+      { name: '投诉扣款', level: '1', formula: '投诉次数 × 单次扣款' },
+      { name: '代扣社保', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣公积金', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣个税', level: '系统', formula: '百旺服务计算' }
+    ],
+    companyCostItems: []
+  },
+  {
+    id: '1109491319435526149',
+    name: '全职总部岗位模板',
+    templateType: '标准',
+    position: '总部职能',
+    belongTo: '职能',
+    coopMode: '劳动合同-全职',
+    personCount: 10,
+    updateTime: '2026-05-17 11:00:00',
+    incomeItems: [
+      { name: '基本工资', level: '1', formula: '固定金额' },
+      { name: '绩效奖金', level: '1', formula: '根据考核结果' },
+      { name: '加班费', level: '1', formula: '加班时长 × 单价' }
+    ],
+    deductItems: [
+      { name: '代扣社保', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣公积金', level: '系统', formula: '自动获取（城市基准系数）' },
+      { name: '代扣个税', level: '系统', formula: '百旺服务计算' }
+    ],
+    companyCostItems: []
+  }
+]
+
+// 薪酬发放策略数据源
+export const distributionStrategies = [
+  {
+    id: '1109493788878143489',
+    name: '全职推拿师发放策略（v1和v2具有营销折扣获豆和回头客补贴）',
+    business: '业务',
+    position: '推拿师',
+    templateId: '1109491319435526144',
+    templateName: '全职推拿师模板',
+    coopMode: '劳动合同-全职',
+    validityType: 'longterm',
+    validityPeriod: '长期有效',
+    dateRange: null,
+    personCount: 1080,
+    updateTime: '2026-05-19 10:30:00',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'fulltime' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '推拿师' },
+      { field: 'level', operator: '<', valueType: 'input', value: '3' }
+    ],
+    payrollSlips: [
+      {
+        name: '推拿师计件',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '计件收入',
+            items: [
+              { id: 1, displayName: '计件提成', category: '全职推拿师提成13', itemName: '计件提成' },
+              { id: 2, displayName: '超产奖金', category: '全职推拿师提成13', itemName: '超产值奖金' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣社保/公积金',
+            items: [
+              { id: 1, displayName: '代扣社保', category: '全职推拿师扣缴13', itemName: '代扣社保' },
+              { id: 2, displayName: '代扣公积金', category: '全职推拿师扣缴13', itemName: '代扣公积金' }
+            ]
+          }
+        ]
+      },
+      {
+        name: '推拿师加班',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月3日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '加班费',
+            items: [
+              { id: 1, displayName: '超时加班费', category: '全职推拿师提成13', itemName: '超时加班费' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣个税',
+            items: [
+              { id: 1, displayName: '代扣个税', category: '系统代扣13', itemName: '代扣个税' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: [
+      {
+        name: '常乐豆发放',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月30日',
+        paymentDate: '次月31日',
+        paymentEntity: '合同主体',
+        settlementAccount: '余额账户',
+        incomeGroups: [
+          {
+            name: '常乐豆',
+            items: [
+              { id: 1, displayName: '回头客补贴', category: '全职推拿师获豆13', itemName: '回头客补贴' },
+              { id: 2, displayName: '营销折扣补贴', category: '全职推拿师获豆13', itemName: '营销折扣补贴' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '扣豆',
+            items: [
+              { id: 1, displayName: '卫生扣豆', category: '扣豆项13', itemName: '卫生未打扫扣豆' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: '1109493788878143500',
+    name: '全职推拿师发放策略（v3没有营销折扣获豆和回头客补贴）',
+    business: '业务',
+    position: '推拿师',
+    templateId: '1109491319435526144',
+    templateName: '全职推拿师模板',
+    coopMode: '劳动合同-全职',
+    validityType: 'longterm',
+    validityPeriod: '长期有效',
+    dateRange: null,
+    personCount: 606,
+    updateTime: '2026-05-19 10:32:00',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'fulltime' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '推拿师' },
+      { field: 'level', operator: '>=', valueType: 'input', value: '3' }
+    ],
+    payrollSlips: [
+      {
+        name: '推拿师计件',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '计件收入',
+            items: [
+              { id: 1, displayName: '计件提成', category: '全职推拿师提成13', itemName: '计件提成' },
+              { id: 2, displayName: '超产奖金', category: '全职推拿师提成13', itemName: '超产值奖金' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣社保/公积金',
+            items: [
+              { id: 1, displayName: '代扣社保', category: '全职推拿师扣缴13', itemName: '代扣社保' },
+              { id: 2, displayName: '代扣公积金', category: '全职推拿师扣缴13', itemName: '代扣公积金' }
+            ]
+          }
+        ]
+      },
+      {
+        name: '推拿师加班',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月3日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '加班费',
+            items: [
+              { id: 1, displayName: '超时加班费', category: '全职推拿师提成13', itemName: '超时加班费' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣个税',
+            items: [
+              { id: 1, displayName: '代扣个税', category: '系统代扣13', itemName: '代扣个税' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: []
+  },
+  {
+    id: '1109493788878143491',
+    name: '非全日制推拿师发放策略（没有常乐豆）',
+    business: '业务',
+    position: '推拿师',
+    templateId: '1109491319435526147',
+    templateName: '非全日制推拿师模板',
+    coopMode: '非全日制劳动合同',
+    validityType: 'longterm',
+    validityPeriod: '长期有效',
+    dateRange: null,
+    personCount: 86,
+    updateTime: '2026-05-21 09:15:30',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'parttime' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '推拿师' }
+    ],
+    payrollSlips: [
+      {
+        name: '非全日制周工资',
+        frequency: '周',
+        calculateDate: '次周/1日',
+        dataDateStart: '本周/1日',
+        dataDateEnd: '本周/末日',
+        notifyDate: '次周/1日',
+        paymentDate: '次周/2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '业绩归属主体',
+        incomeGroups: [
+          {
+            name: '计件收入',
+            items: [
+              { id: 1, displayName: '计件提成', category: '非全日制推拿师提成13', itemName: '计件提成' }
+            ]
+          },
+          {
+            name: '加班费',
+            items: [
+              { id: 1, displayName: '超时加班费', category: '非全日制推拿师提成13', itemName: '超时加班费' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '预扣个税',
+            items: [
+              { id: 1, displayName: '预扣个税', category: '系统代扣13', itemName: '预扣个税（3%）' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: []
+  },
+  {
+    id: '1109493788878143488',
+    name: '兼职推拿师发放策略（无常乐豆）',
+    business: '业务',
+    position: '推拿师',
+    templateId: '1109491319435526145',
+    templateName: '兼职推拿师模板',
+    coopMode: '劳务合作-兼职',
+    validityType: 'longterm',
+    validityPeriod: '长期有效',
+    dateRange: null,
+    personCount: 54,
+    updateTime: '2026-05-20 14:52:13',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'flexible' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '推拿师' }
+    ],
+    payrollSlips: [
+      {
+        name: '兼职周结算',
+        frequency: '周',
+        calculateDate: '次周/1日',
+        dataDateStart: '本周/1日',
+        dataDateEnd: '本周/末日',
+        notifyDate: '次周/1日',
+        paymentDate: '次周/2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '业绩归属主体',
+        incomeGroups: [
+          {
+            name: '计件收入',
+            items: [
+              { id: 1, displayName: '计件提成', category: '兼职推拿师提成13', itemName: '计件提成' }
+            ]
+          },
+          {
+            name: '加班费',
+            items: [
+              { id: 1, displayName: '超时加班费', category: '兼职推拿师提成13', itemName: '超时加班费' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '预扣个税',
+            items: [
+              { id: 1, displayName: '预扣个税', category: '系统代扣13', itemName: '预扣个税（3%）' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: []
+  },
+  {
+    id: '1109493788878143490',
+    name: '全职客户经理发放策略',
+    business: '业务',
+    position: '客户经理',
+    templateId: '1109491319435526148',
+    templateName: '全职客户经理模板',
+    coopMode: '劳动合同-全职',
+    validityType: 'fixed',
+    validityPeriod: '2026-01-01 至 2026-12-31',
+    dateRange: ['2026-01-01', '2026-12-31'],
+    personCount: 364,
+    updateTime: '2026-05-18 16:45:22',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'fulltime' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '客户经理' }
+    ],
+    payrollSlips: [
+      {
+        name: '客户经理基本工资',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '基本工资',
+            items: [
+              { id: 1, displayName: '基本工资', category: '客户经理收入13', itemName: '基本工资' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣社保/公积金',
+            items: [
+              { id: 1, displayName: '代扣社保', category: '客户经理扣缴13', itemName: '代扣社保' },
+              { id: 2, displayName: '代扣公积金', category: '客户经理扣缴13', itemName: '代扣公积金' }
+            ]
+          }
+        ]
+      },
+      {
+        name: '客户经理提成',
+        frequency: '月',
+        calculateDate: '次月/15日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月10日',
+        paymentDate: '次月11日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '业绩提成',
+            items: [
+              { id: 1, displayName: '业绩提成', category: '客户经理收入13', itemName: '业绩提成' },
+              { id: 2, displayName: '超产奖金', category: '客户经理收入13', itemName: '超产奖金' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣个税',
+            items: [
+              { id: 1, displayName: '代扣个税', category: '系统代扣13', itemName: '代扣个税' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: [
+      {
+        name: '常乐豆发放',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月30日',
+        paymentDate: '次月31日',
+        paymentEntity: '合同主体',
+        settlementAccount: '余额账户',
+        incomeGroups: [
+          {
+            name: '常乐豆',
+            items: [
+              { id: 1, displayName: '管理津贴获豆', category: '客户经理获豆13', itemName: '管理津贴获豆' }
+            ]
+          }
+        ],
+        deductGroups: []
+      }
+    ]
+  },
+  {
+    id: '1109493788878143501',
+    name: '总部其他全职岗位发放策略',
+    business: '职能',
+    position: '总部职能',
+    templateId: '1109491319435526149',
+    templateName: '全职总部岗位模板',
+    coopMode: '劳动合同-全职',
+    validityType: 'longterm',
+    validityPeriod: '长期有效',
+    dateRange: null,
+    personCount: 48,
+    updateTime: '2026-05-17 11:30:00',
+    conditions: [
+      { field: 'employmentType', operator: '=', valueType: 'reference', value: 'fulltime' },
+      { field: 'position', operator: '=', valueType: 'reference', value: '总部职能' }
+    ],
+    payrollSlips: [
+      {
+        name: '总部岗位月工资',
+        frequency: '月',
+        calculateDate: '次月/10日',
+        dataDateStart: '本月/1日',
+        dataDateEnd: '本月/末日',
+        notifyDate: '次月1日',
+        paymentDate: '次月2日',
+        delayConfirm: '次日发放',
+        paymentEntity: '合同主体',
+        incomeGroups: [
+          {
+            name: '基本收入',
+            items: [
+              { id: 1, displayName: '基本工资', category: '总部岗位收入13', itemName: '基本工资' },
+              { id: 2, displayName: '绩效奖金', category: '总部岗位收入13', itemName: '绩效奖金' }
+            ]
+          },
+          {
+            name: '加班费',
+            items: [
+              { id: 1, displayName: '加班费', category: '总部岗位收入13', itemName: '加班费' }
+            ]
+          }
+        ],
+        deductGroups: [
+          {
+            name: '代扣社保/公积金',
+            items: [
+              { id: 1, displayName: '代扣社保', category: '总部岗位扣缴13', itemName: '代扣社保' },
+              { id: 2, displayName: '代扣公积金', category: '总部岗位扣缴13', itemName: '代扣公积金' }
+            ]
+          },
+          {
+            name: '代扣个税',
+            items: [
+              { id: 1, displayName: '代扣个税', category: '系统代扣13', itemName: '代扣个税' }
+            ]
+          }
+        ]
+      }
+    ],
+    beanSlips: []
+  }
+]
+
 // 生成并导出 workPosts（依赖 users、positions、budgetPlans）
 workPosts = _generateWorkPosts()
 

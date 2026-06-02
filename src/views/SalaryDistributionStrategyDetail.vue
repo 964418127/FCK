@@ -29,6 +29,14 @@
             <el-input v-else v-model="strategyData.name" style="width: 200px;" />
           </div>
           <div class="info-item">
+            <span class="info-label">合作模式</span>
+            <span class="info-value">
+              <el-tag :type="strategyData.coopMode === '劳动合同-全职' ? 'success' : 'warning'" size="small">
+                {{ strategyData.coopMode }}
+              </el-tag>
+            </span>
+          </div>
+          <div class="info-item">
             <span class="info-label">业务</span>
             <span class="info-value" v-if="!isEdit">{{ strategyData.business }}</span>
             <el-select v-else v-model="strategyData.business" style="width: 120px;">
@@ -49,9 +57,9 @@
             <span class="info-label">薪酬模板</span>
             <span class="info-value" v-if="!isEdit">{{ strategyData.templateName }}</span>
             <el-select v-else v-model="strategyData.templateId" style="width: 200px;">
-              <el-option label="兼职推拿师提成奖金模板" value="template1" />
-              <el-option label="全职推拿师提成加班补贴常乐豆" value="template2" />
-              <el-option label="客户经理劳务合作模板" value="template3" />
+              <el-option label="全职推拿师模板" value="template2" />
+              <el-option label="非全日制推拿师模板" value="template4" />
+              <el-option label="兼职推拿师模板" value="template1" />
             </el-select>
           </div>
           <div class="info-item">
@@ -369,7 +377,10 @@
                       <div class="info-item">
                         <span class="info-label">发放主体</span>
                         <span class="info-value" v-if="!isEdit">{{ currentPayrollSlip.paymentEntity }}</span>
-                        <el-input v-else v-model="currentPayrollSlip.paymentEntity" style="width: 100px;" />
+                        <el-select v-else v-model="currentPayrollSlip.paymentEntity" style="width: 130px;">
+                          <el-option label="合同主体" value="合同主体" />
+                          <el-option label="业绩归属主体" value="业绩归属主体" />
+                        </el-select>
                       </div>
                     </div>
                   </div>
@@ -382,8 +393,12 @@
           </el-tab-pane>
 
           <!-- 常乐豆映射 -->
-          <el-tab-pane label="常乐豆映射" name="bean">
-            <div class="mapping-section">
+          <el-tab-pane :label="hasBeanSlips ? '常乐豆映射' : '常乐豆映射（未配置）'" name="bean">
+            <div v-if="!hasBeanSlips" class="empty-tip" style="padding: 40px; text-align: center;">
+              <el-icon style="font-size: 32px; color: hsl(var(--muted-foreground));"><InfoFilled /></el-icon>
+              <p style="margin-top: 8px;">该合作模式下未配置常乐豆</p>
+            </div>
+            <div v-else class="mapping-section">
               <!-- 常乐豆配置 - 左右结构 -->
               <div class="payroll-mapping-layout">
                 <!-- 左侧：常乐豆单列表 -->
@@ -582,7 +597,10 @@
                       <div class="info-item">
                         <span class="info-label">发放主体</span>
                         <span class="info-value" v-if="!isEdit">{{ currentBeanSlip.paymentEntity }}</span>
-                        <el-input v-else v-model="currentBeanSlip.paymentEntity" style="width: 100px;" />
+                        <el-select v-else v-model="currentBeanSlip.paymentEntity" style="width: 130px;">
+                          <el-option label="合同主体" value="合同主体" />
+                          <el-option label="业绩归属主体" value="业绩归属主体" />
+                        </el-select>
                       </div>
                       <div class="info-item">
                         <span class="info-label">结算账户</span>
@@ -613,7 +631,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Close } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Close, InfoFilled } from '@element-plus/icons-vue'
+import { distributionStrategies } from '../mock/data.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -638,132 +657,30 @@ const editingGroupIndex = reactive({
   beanDeduct: -1
 })
 
-// 策略数据
-const strategyData = ref({
-  id: '1109493788878143488',
-  name: '兼职推拿师收入发放 V28',
-  business: '业务',
-  position: '推拿师',
-  templateId: 'template1',
-  templateName: '兼职推拿师提成奖金模板',
-  validityType: 'longterm',
-  validityPeriod: '长期有效',
-  dateRange: null,
-  conditions: [
-    { field: 'employmentType', operator: '=', valueType: 'reference', value: 'parttime' }
-  ]
-})
+// 根据策略ID获取策略数据
+const getStrategyById = (id) => {
+  return distributionStrategies.find(s => s.id === id) || distributionStrategies[0]
+}
 
-const matchedPersonCount = ref(54)
+const sourceStrategy = getStrategyById(route.params.id)
 
-// 工资单列表 - 每个工资单包含自己的基础配置和发放策略
+// 策略数据（深拷贝避免直接修改源数据）
+const strategyData = ref(JSON.parse(JSON.stringify(sourceStrategy)))
+
+// 工资单列表（独立拷贝，便于编辑时增删）
 const currentPayrollSlipIndex = ref(0)
-const payrollSlips = ref([
-  {
-    name: '推拿师计件',
-    frequency: '月',
-    calculateDate: '次月/10日',
-    dataDateStart: '本月/1日',
-    dataDateEnd: '本月/31日',
-    notifyDate: '次月1日',
-    paymentDate: '次月2日',
-    delayConfirm: '次日发放',
-    paymentEntity: '合同主体',
-    incomeGroups: [
-      {
-        name: '计件',
-        items: [
-          { id: 1, displayName: '计件', category: '全职推拿师提成13', itemName: '全职推拿师计件13' },
-          { id: 2, displayName: '超产奖金', category: '全职推拿师提成13', itemName: '超产值奖金' }
-        ]
-      }
-    ],
-    deductGroups: [
-      {
-        name: '社保扣款',
-        items: [
-          { id: 1, displayName: '社保', category: '全职推拿师社保13', itemName: '服务时长不足扣提成13' }
-        ]
-      }
-    ]
-  },
-  {
-    name: '推拿师加班',
-    frequency: '月',
-    calculateDate: '次月/10日',
-    dataDateStart: '本月/1日',
-    dataDateEnd: '本月/31日',
-    notifyDate: '次月1日',
-    paymentDate: '次月3日',
-    delayConfirm: '次日发放',
-    paymentEntity: '合同主体',
-    incomeGroups: [
-      {
-        name: '加班费',
-        items: [
-          { id: 1, displayName: '超时加班费', category: '全职推拿师提成13', itemName: '超时加班费' }
-        ]
-      }
-    ],
-    deductGroups: []
-  }
-])
+const payrollSlips = ref(JSON.parse(JSON.stringify(strategyData.value.payrollSlips || [])))
 
-// 常乐豆单列表 - 每个常乐豆单包含自己的基础配置和发放策略
+// 常乐豆单列表（独立拷贝，便于编辑时增删）
 const currentBeanSlipIndex = ref(0)
-const beanSlips = ref([
-  {
-    name: '回头获豆',
-    frequency: '月',
-    calculateDate: '次月/10日',
-    dataDateStart: '本月/1日',
-    dataDateEnd: '本月/31日',
-    notifyDate: '次月30日',
-    paymentDate: '次月31日',
-    paymentEntity: '合同主体',
-    settlementAccount: '余额账户',
-    incomeGroups: [
-      {
-        name: '回头获豆',
-        items: [
-          { id: 1, displayName: '回头客获豆', category: '全职推拿师获豆13', itemName: '推拿师回头客获豆13' }
-        ]
-      }
-    ],
-    deductGroups: [
-      {
-        name: '卫生扣豆',
-        items: [
-          { id: 1, displayName: '卫生扣豆', category: '扣豆项13', itemName: '离店卫生未打扫扣豆13' }
-        ]
-      }
-    ]
-  },
-  {
-    name: '营销获豆',
-    frequency: '月',
-    calculateDate: '次月/10日',
-    dataDateStart: '本月/1日',
-    dataDateEnd: '本月/31日',
-    notifyDate: '次月30日',
-    paymentDate: '次月31日',
-    paymentEntity: '合同主体',
-    settlementAccount: '余额账户',
-    incomeGroups: [
-      {
-        name: '营销获豆',
-        items: [
-          { id: 1, displayName: '营销获豆', category: '全职推拿师获豆13', itemName: '全职推拿师营销获豆13' }
-        ]
-      }
-    ],
-    deductGroups: []
-  }
-])
+const beanSlips = ref(JSON.parse(JSON.stringify(strategyData.value.beanSlips || [])))
+
+const matchedPersonCount = ref(sourceStrategy.personCount || 0)
 
 // 计算属性
 const currentPayrollSlip = computed(() => payrollSlips.value[currentPayrollSlipIndex.value])
 const currentBeanSlip = computed(() => beanSlips.value[currentBeanSlipIndex.value])
+const hasBeanSlips = computed(() => beanSlips.value.length > 0)
 
 // 返回列表
 const goBack = () => {

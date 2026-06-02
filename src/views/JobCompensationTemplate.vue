@@ -161,11 +161,7 @@
               <el-table-column prop="name" label="薪酬项名称" width="140" />
               <el-table-column prop="level" label="层级" width="100">
                 <template #default="{ row }">
-                  <el-select v-model="row.level" size="small" style="width: 80px;">
-                    <el-option label="第1级" value="1" />
-                    <el-option label="第2级" value="2" />
-                    <el-option label="系统项" value="系统" />
-                  </el-select>
+                  <el-tag size="small">第{{ row.level }}级</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="formula" label="计算公式" min-width="160" />
@@ -186,8 +182,9 @@
             <el-table :data="createForm.deductItems" size="small" border style="width: 100%; margin-top: 8px;">
               <el-table-column prop="name" label="扣缴项名称" width="140" />
               <el-table-column prop="level" label="层级" width="100">
-                <template #default>
-                  <el-tag size="small">第1级</el-tag>
+                <template #default="{ row }">
+                  <el-tag v-if="row.level === '系统'" type="warning" size="small">系统项</el-tag>
+                  <el-tag v-else size="small">第{{ row.level }}级</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="formula" label="计算公式" min-width="160" />
@@ -197,6 +194,38 @@
                 </template>
               </el-table-column>
             </el-table>
+          </div>
+
+          <!-- 公司成本项 -->
+          <div class="config-block company-cost-block" style="margin-top: 16px;">
+            <div class="config-block-header">
+              <span class="config-title">公司成本项</span>
+              <span class="config-hint">不进入薪酬计算，用于成本统计</span>
+            </div>
+            <el-table :data="createForm.companyCostItems" size="small" border style="width: 100%; margin-top: 8px;">
+              <el-table-column prop="name" label="项名称" width="140" />
+              <el-table-column prop="insuranceType" label="保险类型" width="140">
+                <template #default="{ row }">
+                  <el-select v-model="row.insuranceType" size="small" style="width: 120px;">
+                    <el-option label="工伤险" value="工伤险" />
+                    <el-option label="雇主险" value="雇主险" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column prop="burden" label="费用归属" width="120">
+                <template #default>
+                  <el-tag size="small" type="info">公司全额</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="60">
+                <template #default>
+                  <el-button type="danger" size="small" link>删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="company-cost-tip">
+              <span>公司成本项不参与工资条扣款计算，仅记录到员工福利保障明细中用于成本统计</span>
+            </div>
           </div>
         </div>
       </el-form>
@@ -234,7 +263,7 @@ const pagination = reactive({
 const templateList = ref([
   {
     id: '1109491319435526144',
-    name: '全职推拿师提成加班补贴常乐豆',
+    name: '全职推拿师模板',
     templateType: '标准',
     position: '推拿师',
     belongTo: '业务',
@@ -243,8 +272,18 @@ const templateList = ref([
     updateTime: '2026-05-20 14:42:24'
   },
   {
+    id: '1109491319435526147',
+    name: '非全日制推拿师模板',
+    templateType: '标准',
+    position: '推拿师',
+    belongTo: '业务',
+    coopMode: '非全日制劳动合同',
+    personCount: 6,
+    updateTime: '2026-05-21 09:15:30'
+  },
+  {
     id: '1109491319435526145',
-    name: '兼职推拿师提成奖金模板',
+    name: '兼职推拿师模板',
     templateType: '标准',
     position: '推拿师',
     belongTo: '业务',
@@ -253,14 +292,24 @@ const templateList = ref([
     updateTime: '2026-05-19 10:20:15'
   },
   {
-    id: '1109491319435526146',
-    name: '客户经理劳务合作模板',
-    templateType: '自定义',
+    id: '1109491319435526148',
+    name: '全职客户经理模板',
+    templateType: '标准',
     position: '客户经理',
     belongTo: '业务',
-    coopMode: '劳务合作-兼职',
+    coopMode: '劳动合同-全职',
     personCount: 5,
     updateTime: '2026-05-18 16:30:00'
+  },
+  {
+    id: '1109491319435526149',
+    name: '全职总部岗位模板',
+    templateType: '标准',
+    position: '总部职能',
+    belongTo: '职能',
+    coopMode: '劳动合同-全职',
+    personCount: 10,
+    updateTime: '2026-05-17 11:00:00'
   }
 ])
 
@@ -276,13 +325,17 @@ const createForm = reactive({
     { name: '计件提成', level: '1', formula: '订单金额 × 提成比例' },
     { name: '超产值奖金', level: '1', formula: '超出部分 × 奖励比例' },
     { name: '超时加班费', level: '1', formula: '加班时长 × 单价' },
-    { name: '保底获豆', level: '2', formula: 'max(0, 最低工资 - 第1级收入)' },
-    { name: '代扣社保', level: '系统', formula: '固定金额' },
-    { name: '代扣公积金', level: '系统', formula: '固定金额' },
-    { name: '代扣个税', level: '系统', formula: '百旺计算' }
+    { name: '保底获豆', level: '2', formula: 'max(0, 最低工资 - 第1级收入)' }
   ],
   deductItems: [
-    { name: '投诉扣款', level: '1', formula: '投诉次数 × 单次扣款' }
+    { name: '投诉扣款', level: '1', formula: '投诉次数 × 单次扣款' },
+    { name: '代扣社保', level: '系统', formula: '自动获取（城市基准系数）' },
+    { name: '代扣公积金', level: '系统', formula: '自动获取（城市基准系数）' },
+    { name: '代扣个税', level: '系统', formula: '百旺服务计算' }
+  ],
+  companyCostItems: [
+    { name: '工伤险', insuranceType: '工伤险', burden: '公司全额' },
+    { name: '雇主险', insuranceType: '雇主险', burden: '公司全额' }
   ]
 })
 
@@ -398,5 +451,16 @@ const handleSave = () => {
 .config-title {
   font-weight: 600;
   font-size: 14px;
+}
+
+.company-cost-block {
+  background: hsl(var(--warning) / 0.05);
+  border: 1px solid hsl(var(--warning) / 0.2);
+}
+
+.company-cost-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
 }
 </style>

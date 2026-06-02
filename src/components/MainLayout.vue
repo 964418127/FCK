@@ -303,7 +303,8 @@ const moduleSalaryMenu = [
     label: '模块薪酬',
     icon: Coin,
     children: [
-      { index: 'compensation-calculation-guide', label: '产品需求说明', icon: InfoFilled },
+      { index: 'compensation-calculation-guide', label: '产品需求v1', icon: InfoFilled },
+      { index: 'v2-product-guide', label: '产品需求v2', icon: InfoFilled },
       { index: 'salary-item-management', label: '薪酬项配置', icon: List },
       { index: 'job-compensation-template', label: '岗位薪酬模板', icon: Document },
       { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },

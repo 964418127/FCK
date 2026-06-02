@@ -43,6 +43,12 @@
       <el-table :data="summaryData" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="employeeId" label="员工编号" width="100" />
         <el-table-column prop="employeeName" label="姓名" width="100" />
+        <el-table-column prop="declarationEntity" label="申报主体" width="160">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary">{{ row.declarationEntity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="store" label="门店" width="100" />
         <el-table-column prop="position" label="岗位" width="100" />
         <el-table-column prop="city" label="城市" width="80" />
         <el-table-column prop="baseAmount" label="缴纳基数" width="100">
@@ -105,17 +111,16 @@ const searchForm = reactive({ keyword: '', month: '' })
 const monthOptions = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']
 
 const summaryData = ref([
-  { employeeId: 'E001', employeeName: '张三', position: '推拿师', city: '北京', baseAmount: 8000, normalAmount: 960, supplementAmount: 0, refundAmount: 0, totalAmount: 960, month: '2026-02' },
-  { employeeId: 'E001', employeeName: '张三', position: '推拿师', city: '北京', baseAmount: 8000, normalAmount: 960, supplementAmount: 0, refundAmount: 0, totalAmount: 960, month: '2026-01' },
-  { employeeId: 'E002', employeeName: '李四', position: '推拿师', city: '上海', baseAmount: 5000, normalAmount: 350, supplementAmount: 0, refundAmount: 50, totalAmount: 300, month: '2026-03' },
-  { employeeId: 'E002', employeeName: '李四', position: '推拿师', city: '上海', baseAmount: 5000, normalAmount: 350, supplementAmount: 0, refundAmount: 0, totalAmount: 350, month: '2026-02' },
-  { employeeId: 'E003', employeeName: '王五', position: '客户经理', city: '深圳', baseAmount: 10000, normalAmount: 500, supplementAmount: 0, refundAmount: 0, totalAmount: 500, month: '2026-01' }
+  // 公积金汇总（全职单主体，1 员工 1 合同主体 = 1 申报主体；非全日制/兼职无公积金）
+  { employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', position: '推拿师', city: '北京', baseAmount: 8000, normalAmount: 960, supplementAmount: 0, refundAmount: 0, totalAmount: 960, month: '2026-02' },
+  { employeeId: 'E001', employeeName: '张三', declarationEntity: '北京推拿公司', store: '北京旗舰店', position: '推拿师', city: '北京', baseAmount: 8000, normalAmount: 960, supplementAmount: 0, refundAmount: 0, totalAmount: 960, month: '2026-01' },
+  { employeeId: 'E003', employeeName: '王五', declarationEntity: '深圳推拿公司', store: '深圳总店', position: '客户经理', city: '深圳', baseAmount: 10000, normalAmount: 500, supplementAmount: 0, refundAmount: 0, totalAmount: 500, month: '2026-01' }
 ])
 
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 5
+  total: 3
 })
 
 const totalAmount = computed(() => summaryData.value.reduce((sum, item) => sum + item.totalAmount, 0))
