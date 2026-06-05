@@ -2,7 +2,7 @@
   <div class="city-salary-standard">
     <div class="page-header">
       <h1>城市基准系数配置</h1>
-      <p class="tip">💡 配置各城市下的社保、公积金、工伤险、雇主险缴纳标准。社保/公积金支持全额交纳模式（按实际工资）</p>
+      <p class="tip">💡 配置各城市下的<strong>社保（全）/ 社保（仅工伤保险）/ 公积金</strong>缴纳标准。<strong>v2 已移除"雇主险"项</strong>（归到【商业险】模块统一管理）。社保/公积金支持全额交纳模式（按实际工资）</p>
     </div>
 
     <div class="content-section">
@@ -18,11 +18,10 @@
             </el-select>
           </el-form-item>
           <el-form-item label="缴纳类型">
-            <el-select v-model="searchForm.type" placeholder="选择" clearable style="width: 120px;">
-              <el-option label="社保" value="社保" />
+            <el-select v-model="searchForm.type" placeholder="选择" clearable style="width: 140px;">
+              <el-option label="社保（全）" value="社保" />
+              <el-option label="社保（仅工伤）" value="社保(仅工伤)" />
               <el-option label="公积金" value="公积金" />
-              <el-option label="工伤险" value="工伤险" />
-              <el-option label="雇主险" value="雇主险" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -116,10 +115,9 @@
         </el-form-item>
         <el-form-item label="缴纳类型">
           <el-radio-group v-model="form.type">
-            <el-radio label="社保">社保</el-radio>
+            <el-radio label="社保">社保（全）</el-radio>
+            <el-radio label="社保(仅工伤)">社保（仅工伤）</el-radio>
             <el-radio label="公积金">公积金</el-radio>
-            <el-radio label="工伤险">工伤险</el-radio>
-            <el-radio label="雇主险">雇主险</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="交纳模式" v-if="form.type === '社保' || form.type === '公积金'">
@@ -128,7 +126,7 @@
             <el-radio label="按基数交纳">按基数交纳（有最低限制）</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="form.type === '工伤险' || form.type === '雇主险'" label="交纳模式">
+        <el-form-item v-if="form.type === '社保(仅工伤)'" label="交纳模式">
           <el-tag type="info">按基数交纳</el-tag>
         </el-form-item>
         <el-form-item label="缴纳基数">
@@ -190,13 +188,11 @@ const standardList = ref([
   { id: 2, city: '北京', type: '社保', mode: '按基数交纳', baseAmount: 8000, ratio: 0.165, personalRatio: 0.085, companyAmount: 1320, personalAmount: 680, updateTime: '2026-05-20 10:00:00' },
   { id: 3, city: '北京', type: '公积金', mode: '全额交纳', baseAmount: 5000, ratio: 0.12, personalRatio: 0.12, companyAmount: 600, personalAmount: 600, updateTime: '2026-05-20 10:00:00' },
   { id: 4, city: '北京', type: '公积金', mode: '按基数交纳', baseAmount: 8000, ratio: 0.12, personalRatio: 0.12, companyAmount: 960, personalAmount: 960, updateTime: '2026-05-20 10:00:00' },
-  { id: 5, city: '北京', type: '工伤险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
-  { id: 6, city: '北京', type: '雇主险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.015, personalRatio: 0, companyAmount: 75, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
+  { id: 5, city: '北京', type: '社保(仅工伤)', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
   { id: 7, city: '上海', type: '社保', mode: '全额交纳', baseAmount: 5000, ratio: 0.26, personalRatio: 0.105, companyAmount: 1300, personalAmount: 525, updateTime: '2026-05-20 10:00:00' },
   { id: 8, city: '上海', type: '社保', mode: '按基数交纳', baseAmount: 8000, ratio: 0.26, personalRatio: 0.105, companyAmount: 2080, personalAmount: 840, updateTime: '2026-05-20 10:00:00' },
   { id: 9, city: '上海', type: '公积金', mode: '全额交纳', baseAmount: 8000, ratio: 0.07, personalRatio: 0.07, companyAmount: 560, personalAmount: 560, updateTime: '2026-05-20 10:00:00' },
-  { id: 10, city: '上海', type: '工伤险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' },
-  { id: 11, city: '上海', type: '雇主险', mode: '按基数交纳', baseAmount: 5000, ratio: 0.015, personalRatio: 0, companyAmount: 75, personalAmount: 0, updateTime: '2026-05-20 10:00:00' }
+  { id: 10, city: '上海', type: '社保(仅工伤)', mode: '按基数交纳', baseAmount: 5000, ratio: 0.008, personalRatio: 0, companyAmount: 40, personalAmount: 0, updateTime: '2026-05-20 10:00:00' }
 ])
 
 // 类型标签映射
@@ -204,8 +200,7 @@ const getTypeTagType = (type) => {
   const map = {
     '社保': 'primary',
     '公积金': 'success',
-    '工伤险': 'warning',
-    '雇主险': 'danger'
+    '社保(仅工伤)': 'warning'
   }
   return map[type] || 'info'
 }

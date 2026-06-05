@@ -146,32 +146,7 @@
         </div>
       </div>
 
-      <!-- 公司成本项 -->
-      <div class="card">
-        <div class="card-header">
-          <h3>公司成本项</h3>
-          <span class="item-count">共 {{ companyCostItems.length }} 项</span>
-        </div>
-        <el-table :data="companyCostItems" border style="width: 100%">
-          <el-table-column prop="name" label="项名称" min-width="160" />
-          <el-table-column prop="insuranceType" label="保险类型" width="140" align="center">
-            <template #default="{ row }">
-              <el-tag v-if="row.insuranceType === '工伤险'" type="success" size="small">工伤险</el-tag>
-              <el-tag v-else type="warning" size="small">雇主险</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="burden" label="费用归属" width="120" align="center">
-            <template #default>
-              <el-tag type="info" size="small">公司全额</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="remark" label="备注" min-width="200">
-            <template #default>
-              <span class="remark-text">不参与工资条扣款，仅记录到员工福利保障明细</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
+      <!-- 公司成本项 已迁移到【岗位与福利保障】 -->
 
       <!-- 编辑操作 -->
       <div v-if="isEdit" class="edit-actions">
@@ -219,12 +194,8 @@ const deductItems = ref(templateData.value.deductItems.map((item, index) => ({
   isSystem: item.level === '系统'
 })))
 
-// 公司成本项数据
-const companyCostItems = ref(templateData.value.companyCostItems.map(item => ({
-  name: item.name,
-  insuranceType: item.insuranceType,
-  burden: item.burden
-})))
+// 公司成本项已迁移到【岗位与福利保障】
+const companyCostItems = ref([])
 
 // 返回列表
 const goBack = () => {

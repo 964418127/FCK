@@ -83,6 +83,14 @@ const routes = [
         }
       },
       {
+        path: 'job-welfare-config',
+        name: 'job-welfare-config',
+        component: () => import('../views/JobWelfareConfig.vue'),
+        meta: {
+          title: '岗位与福利保障'
+        }
+      },
+      {
         path: 'job-compensation-template/:id',
         name: 'job-compensation-template-detail',
         component: () => import('../views/JobCompensationTemplateDetail.vue'),
@@ -112,6 +120,14 @@ const routes = [
         component: () => import('../views/CitySalaryStandard.vue'),
         meta: {
           title: '城市基准系数配置'
+        }
+      },
+      {
+        path: 'commercial-insurance',
+        name: 'commercial-insurance',
+        component: () => import('../views/CommercialInsurance.vue'),
+        meta: {
+          title: '商业险管理'
         }
       },
       {
@@ -386,6 +402,14 @@ const routes = [
     component: () => import('../views/MobileScheduleLeave.vue'),
     meta: {
       title: '移动端排班排假'
+    }
+  },
+  {
+    path: '/mobile-salary-dashboard',
+    name: 'mobile-salary-dashboard',
+    component: () => import('../views/MobileSalaryDashboard.vue'),
+    meta: {
+      title: '薪酬看板'
     }
   },
   {

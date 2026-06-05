@@ -50,12 +50,19 @@
             </div>
             <div class="grid-title">挂店管理</div>
           </div>
-          
+
           <div class="grid-item" @click="goToScheduleLeave">
             <div class="grid-icon">
               <el-icon><Calendar /></el-icon>
             </div>
             <div class="grid-title">排班排假</div>
+          </div>
+
+          <div class="grid-item" @click="goToSalaryDashboard">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">薪酬看板</div>
           </div>
         </div>
       </div>
@@ -73,7 +80,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar } from '@element-plus/icons-vue'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -87,6 +94,10 @@ const goToStoreManagement = () => {
 
 const goToScheduleLeave = () => {
   router.push('/mobile-schedule-leave')
+}
+
+const goToSalaryDashboard = () => {
+  router.push('/mobile-salary-dashboard')
 }
 
 const handleLogout = () => {

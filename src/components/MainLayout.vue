@@ -264,6 +264,7 @@ const employeeWelfareMenu = [
     children: [
       { index: 'employee-welfare-guide', label: '福利保障说明', icon: InfoFilled },
       { index: 'city-salary-standard', label: '城市基准系数', icon: List },
+      { index: 'commercial-insurance', label: '商业险管理', icon: List },
       { index: 'employee-welfare-detail', label: '员工福利保障', icon: List },
       {
         index: 'social-security',
@@ -307,6 +308,7 @@ const moduleSalaryMenu = [
       { index: 'v2-product-guide', label: '产品需求v2', icon: InfoFilled },
       { index: 'salary-item-management', label: '薪酬项配置', icon: List },
       { index: 'job-compensation-template', label: '岗位薪酬模板', icon: Document },
+      { index: 'job-welfare-config', label: '岗位与福利保障', icon: Document },
       { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },
       {
         index: 'negative-wage',

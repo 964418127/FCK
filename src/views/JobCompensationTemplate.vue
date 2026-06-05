@@ -196,36 +196,8 @@
             </el-table>
           </div>
 
-          <!-- 公司成本项 -->
-          <div class="config-block company-cost-block" style="margin-top: 16px;">
-            <div class="config-block-header">
-              <span class="config-title">公司成本项</span>
-              <span class="config-hint">不进入薪酬计算，用于成本统计</span>
-            </div>
-            <el-table :data="createForm.companyCostItems" size="small" border style="width: 100%; margin-top: 8px;">
-              <el-table-column prop="name" label="项名称" width="140" />
-              <el-table-column prop="insuranceType" label="保险类型" width="140">
-                <template #default="{ row }">
-                  <el-select v-model="row.insuranceType" size="small" style="width: 120px;">
-                    <el-option label="工伤险" value="工伤险" />
-                    <el-option label="雇主险" value="雇主险" />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column prop="burden" label="费用归属" width="120">
-                <template #default>
-                  <el-tag size="small" type="info">公司全额</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="60">
-                <template #default>
-                  <el-button type="danger" size="small" link>删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            <div class="company-cost-tip">
-              <span>公司成本项不参与工资条扣款计算，仅记录到员工福利保障明细中用于成本统计</span>
-            </div>
+          <div class="welfare-tip">
+            <span>💡 福利保障相关配置（社保 / 公积金 / 商业险）请前往【<strong>模块薪酬 → 岗位与福利保障</strong>】维护</span>
           </div>
         </div>
       </el-form>
@@ -332,10 +304,6 @@ const createForm = reactive({
     { name: '代扣社保', level: '系统', formula: '自动获取（城市基准系数）' },
     { name: '代扣公积金', level: '系统', formula: '自动获取（城市基准系数）' },
     { name: '代扣个税', level: '系统', formula: '百旺服务计算' }
-  ],
-  companyCostItems: [
-    { name: '工伤险', insuranceType: '工伤险', burden: '公司全额' },
-    { name: '雇主险', insuranceType: '雇主险', burden: '公司全额' }
   ]
 })
 
@@ -453,14 +421,16 @@ const handleSave = () => {
   font-size: 14px;
 }
 
-.company-cost-block {
-  background: hsl(var(--warning) / 0.05);
-  border: 1px solid hsl(var(--warning) / 0.2);
-}
-
-.company-cost-tip {
-  margin-top: 8px;
-  font-size: 12px;
+.welfare-tip {
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: hsl(var(--primary) / 0.05);
+  border: 1px dashed hsl(var(--primary) / 0.3);
+  border-radius: 6px;
   color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>
