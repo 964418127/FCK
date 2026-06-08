@@ -1,11 +1,22 @@
 <template>
   <div class="compensation-guide">
-    <div class="page-header">
-      <div class="page-header-left">
-        <h1>产品需求v1</h1>
-        <p class="tip">💡 详细说明全职/兼职的薪酬项配置、计算节点、工资条组装流程</p>
+    <!-- 悬浮可折叠目录 -->
+    <FloatingToc :items="tocItems" />
+
+    <!-- 文档 Hero 区 -->
+    <div class="doc-hero">
+      <div class="doc-hero-icon">
+        <el-icon :size="28"><Document /></el-icon>
       </div>
-      <div class="page-header-right">
+      <div class="doc-hero-body">
+        <div class="doc-hero-title-row">
+          <h1 class="doc-hero-title">产品需求v1</h1>
+          <span class="doc-hero-version">v1.2</span>
+          <span class="doc-hero-date">2026-05-22</span>
+        </div>
+        <p class="doc-hero-tip">💡 详细说明全职/兼职的薪酬项配置、计算节点、工资条组装流程</p>
+      </div>
+      <div class="doc-hero-actions">
         <el-button @click="copyToClipboard">复制</el-button>
         <el-button type="primary" @click="exportToPdf">导出 PDF</el-button>
       </div>
@@ -14,10 +25,6 @@
     <div class="content-section">
       <!-- 版本日志 -->
       <div id="version" class="section version-log">
-        <div class="version-info">
-          <span class="version-tag">v1.2</span>
-          <span class="version-date">2026-05-22</span>
-        </div>
         <h3>核心调整</h3>
         <ul>
           <li><strong>新增薪酬项计算层级</strong>：第1级（基础收入/扣缴）、第2级（依赖第1级的补充项）、系统项（按月计算）</li>
@@ -36,21 +43,6 @@
           <li>兼职个税采用<strong>预扣+汇算</strong>模式，而非直接计算</li>
           <li>收入不足导致负数时，<strong>不交个税、不抵扣负工资</strong>，负数累加到余额</li>
           <li>离职正式员工工资条不够扣时，<strong>从常乐豆继续扣除</strong></li>
-        </ul>
-      </div>
-
-      <!-- 目录 -->
-      <div class="toc">
-        <h2>目录</h2>
-        <ul>
-          <li><a href="#version">版本日志</a></li>
-          <li><a href="#terms">名词解释</a></li>
-          <li><a href="#summary">一、整体概述</a></li>
-          <li><a href="#template">二、岗位薪酬模板</a></li>
-          <li><a href="#items">四、薪酬项范围</a></li>
-          <li><a href="#calculation">五、计算节点与时机</a></li>
-          <li><a href="#examples">六、计算示例</a></li>
-          <li><a href="#payroll">七、工资条组装</a></li>
         </ul>
       </div>
 
@@ -1008,6 +1000,21 @@
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import { ElMessage } from 'element-plus'
+import { Document } from '@element-plus/icons-vue'
+import FloatingToc from '../components/FloatingToc.vue'
+
+// ===== 悬浮目录 =====
+const tocItems = [
+  { id: 'version', label: '版本日志' },
+  { id: 'terms', label: '名词解释' },
+  { id: 'summary', label: '一、整体概述' },
+  { id: 'template', label: '二、岗位薪酬模板' },
+  { id: 'payslips', label: '三、工资条组成' },
+  { id: 'items', label: '四、薪酬项范围' },
+  { id: 'calculation', label: '五、计算节点与时机' },
+  { id: 'examples', label: '六、计算示例' },
+  { id: 'payroll', label: '七、工资条组装' }
+]
 
 const copyToClipboard = async () => {
   const element = document.querySelector('.content-section')
@@ -1077,42 +1084,106 @@ const exportToPdf = async () => {
 <style scoped>
 .compensation-guide {
   padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.page-header {
-  margin-bottom: 20px;
+.doc-hero {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, hsl(var(--primary) / 0.02) 100%);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 20px 0 24px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
-.page-header-left {
-  flex: 1;
+.doc-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 65%);
+  pointer-events: none;
 }
 
-.page-header-right {
+.doc-hero-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+  color: hsl(var(--primary-foreground));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-left: 20px;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  z-index: 1;
 }
 
-.page-header h1 {
+.doc-hero-body {
+  flex: 1;
+  min-width: 0;
+  z-index: 1;
+}
+
+.doc-hero-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.doc-hero-title {
   font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  font-weight: 700;
+  margin: 0;
   color: hsl(var(--foreground));
+  line-height: 1.2;
 }
 
-.page-header .tip {
+.doc-hero-version {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.doc-hero-date {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.doc-hero-tip {
+  margin: 0;
   color: hsl(var(--muted-foreground));
   font-size: 14px;
-  margin: 0;
+  line-height: 1.5;
+}
+
+.doc-hero-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  z-index: 1;
+  align-self: flex-start;
 }
 
 .content-section {
   background: hsl(var(--background));
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 24px 28px;
 }
 
 .section {
@@ -1150,27 +1221,6 @@ const exportToPdf = async () => {
   font-size: 18px;
   border-bottom: none;
   padding-bottom: 0;
-}
-
-.version-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.version-tag {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.version-date {
-  color: hsl(var(--muted-foreground));
-  font-size: 13px;
 }
 
 .version-log h3 {

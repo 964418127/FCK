@@ -87,7 +87,7 @@ const routes = [
         name: 'job-welfare-config',
         component: () => import('../views/JobWelfareConfig.vue'),
         meta: {
-          title: '岗位与福利保障'
+          title: '岗位福利保障'
         }
       },
       {
@@ -104,14 +104,6 @@ const routes = [
         component: () => import('../views/EmployeeWelfareDetail.vue'),
         meta: {
           title: '员工福利保障明细'
-        }
-      },
-      {
-        path: 'employee-welfare-guide',
-        name: 'employee-welfare-guide',
-        component: () => import('../views/EmployeeWelfareGuide.vue'),
-        meta: {
-          title: '员工福利保障说明'
         }
       },
       {
@@ -307,22 +299,6 @@ const routes = [
         }
       },
       {
-        path: 'compensation-calculation-guide',
-        name: 'compensation-calculation-guide',
-        component: () => import('../views/CompensationCalculationGuide.vue'),
-        meta: {
-          title: '产品需求说明'
-        }
-      },
-      {
-        path: 'v2-product-guide',
-        name: 'v2-product-guide',
-        component: () => import('../views/V2ProductGuide.vue'),
-        meta: {
-          title: 'V2产品说明'
-        }
-      },
-      {
         path: 'negative-wage-account',
         name: 'negative-wage-account',
         component: () => import('../views/NegativeWageAccount.vue'),
@@ -360,6 +336,14 @@ const routes = [
         component: () => import('../views/SalaryDistributionStrategyDetail.vue'),
         meta: {
           title: '发放策略详情'
+        }
+      },
+      {
+        path: 'personnel-salary-detail',
+        name: 'personnel-salary-detail',
+        component: () => import('../views/PersonnelSalaryDetail.vue'),
+        meta: {
+          title: '人员薪酬明细'
         }
       }
     ]
@@ -413,8 +397,76 @@ const routes = [
     }
   },
   {
+    path: '/mobile-part-time-salary-dashboard',
+    name: 'mobile-part-time-salary-dashboard',
+    component: () => import('../views/MobilePartTimeSalaryDashboard.vue'),
+    meta: {
+      title: '非全日制薪酬看板'
+    }
+  },
+  {
+    path: '/mobile-notification',
+    name: 'mobile-notification',
+    component: () => import('../views/MobileNotification.vue'),
+    meta: {
+      title: '通知'
+    }
+  },
+  {
     path: '/docs',
-    redirect: '/docs-h5/index.html'
+    name: 'docs',
+    component: () => import('../components/DocCenterLayout.vue'),
+    redirect: '/docs/product-v2',
+    meta: {
+      title: '文档中心'
+    },
+    children: [
+      {
+        path: 'product-v1',
+        name: 'doc-product-v1',
+        component: () => import('../views/CompensationCalculationGuide.vue'),
+        meta: {
+          title: '产品需求v1'
+        }
+      },
+      {
+        path: 'product-v2',
+        name: 'doc-product-v2',
+        component: () => import('../views/V2ProductGuide.vue'),
+        meta: {
+          title: '产品需求v2'
+        }
+      },
+      {
+        path: 'product-v2-phase1',
+        name: 'doc-product-v2-phase1',
+        component: () => import('../views/V2Phase1ProductGuide.vue'),
+        meta: {
+          title: '产品需求v2（阶段1）'
+        }
+      },
+      {
+        path: 'welfare-guide',
+        name: 'doc-welfare-guide',
+        component: () => import('../views/EmployeeWelfareGuide.vue'),
+        meta: {
+          title: '福利保障说明'
+        }
+      }
+    ]
+  },
+  // 向后兼容：旧路径重定向到文档中心
+  {
+    path: '/compensation-calculation-guide',
+    redirect: '/docs/product-v1'
+  },
+  {
+    path: '/v2-product-guide',
+    redirect: '/docs/product-v2'
+  },
+  {
+    path: '/employee-welfare-guide',
+    redirect: '/docs/welfare-guide'
   }
 ]
 

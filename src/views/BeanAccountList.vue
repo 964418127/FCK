@@ -72,7 +72,7 @@
               <el-table-column prop="monthlyConsumption" label="本月累计消费数量" />
               <el-table-column prop="totalWithdrawal" label="累计提现数量" />
               <el-table-column prop="totalConsumption" label="累计消费数量" />
-              <el-table-column label="操作" width="300">
+              <el-table-column label="操作" width="380">
                 <template #default="accountScope">
                   <el-button size="small" type="primary" @click="handleViewSettlement(scope.row, accountScope.row)">
                     <el-icon><Document /></el-icon>
@@ -85,6 +85,15 @@
                   <el-button size="small" type="info" @click="handleViewConsumption(scope.row, accountScope.row)">
                     <el-icon><ShoppingCart /></el-icon>
                     消费明细
+                  </el-button>
+                  <el-button
+                    v-if="canResignWithdrawal(scope.row, accountScope.row)"
+                    size="small"
+                    type="danger"
+                    @click="handleResignWithdrawal(scope.row, accountScope.row)"
+                  >
+                    <el-icon><Wallet /></el-icon>
+                    离职提现
                   </el-button>
                 </template>
               </el-table-column>
@@ -99,6 +108,13 @@
         <el-table-column prop="mainServiceStore" label="主服务门店" />
         <el-table-column prop="laborRelationStore" label="劳动关系门店" />
         <el-table-column prop="contractEntity" label="合同主体" />
+        <el-table-column prop="status" label="在职状态" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '离职' ? 'danger' : 'success'" disable-transitions>
+              {{ scope.row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="账户数量">
           <template #default="scope">
             {{ scope.row.accounts.length }}
@@ -129,9 +145,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Download, Search, Refresh, Document, ArrowUp, ShoppingCart } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, Search, Refresh, Document, ArrowUp, ShoppingCart, Wallet } from '@element-plus/icons-vue'
 
 const router = useRouter()
+
+// 当前操作员角色（演示用：实际项目从登录态/权限系统读取）
+const currentRole = ref(localStorage.getItem('bean-current-role') || 'hr_manager')
 
 // 响应式数据
 const searchForm = reactive({
@@ -162,6 +182,7 @@ const userList = ref([
     mainServiceStore: '',
     laborRelationStore: '北京总部',
     contractEntity: '北京常乐健康科技有限公司',
+    status: '在职',
     accounts: [
       {
         accountId: 'ACC1001001',
@@ -196,6 +217,7 @@ const userList = ref([
     mainServiceStore: '',
     laborRelationStore: '上海分公司',
     contractEntity: '上海常乐健康科技有限公司',
+    status: '在职',
     accounts: [
       {
         accountId: 'ACC1002001',
@@ -219,6 +241,7 @@ const userList = ref([
     mainServiceStore: '',
     laborRelationStore: '广州分公司',
     contractEntity: '广州常乐健康科技有限公司',
+    status: '离职',
     accounts: [
       {
         accountId: 'ACC1003001',
@@ -264,6 +287,7 @@ const userList = ref([
     mainServiceStore: '北京朝阳门店',
     laborRelationStore: '北京总部',
     contractEntity: '北京常乐健康科技有限公司',
+    status: '在职',
     accounts: [
       {
         accountId: 'ACC1004001',
@@ -287,6 +311,7 @@ const userList = ref([
     mainServiceStore: '上海浦东门店',
     laborRelationStore: '上海分公司',
     contractEntity: '上海常乐健康科技有限公司',
+    status: '离职',
     accounts: [
       {
         accountId: 'ACC1005001',
@@ -384,6 +409,38 @@ const handleViewConsumption = (user, account) => {
       accountType: account.accountType
     }
   })
+}
+
+// 是否展示离职提现按钮：仅人事经理 且 员工处于离职状态 且 账户仍有可用余额
+const canResignWithdrawal = (user, account) => {
+  if (currentRole.value !== 'hr_manager') return false
+  if (user.status !== '离职') return false
+  if (!account.availableBalance || account.availableBalance <= 0) return false
+  return true
+}
+
+// 离职提现：全额提取账户可用余额
+const handleResignWithdrawal = async (user, account) => {
+  const amount = account.availableBalance
+  try {
+    await ElMessageBox.confirm(
+      `员工【${user.name} / ${user.employeeId}】当前为离职状态。\n将对 ${getAccountTypeName(account.accountType)}（${account.accountId}）执行离职全额提现，金额：${amount} 豆。\n此操作不可撤销，是否继续？`,
+      '离职提现确认',
+      {
+        confirmButtonText: '确认提现',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  account.totalWithdrawal += amount
+  account.monthlyWithdrawal += amount
+  account.availableBalance = 0
+
+  ElMessage.success(`离职提现成功：${user.name} ${getAccountTypeName(account.accountType)} ${amount} 豆已全额提取`)
 }
 
 // 分页处理

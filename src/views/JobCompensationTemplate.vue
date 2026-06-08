@@ -32,9 +32,11 @@
             </el-select>
           </el-form-item>
           <el-form-item label="合作模式">
-            <el-select v-model="searchForm.coopMode" placeholder="选择" clearable style="width: 160px;">
-              <el-option label="劳动合同-全职" value="fulltime" />
-              <el-option label="劳务合作-兼职" value="parttime" />
+            <el-select v-model="searchForm.coopMode" placeholder="选择" clearable style="width: 180px;">
+              <el-option label="劳动合同-全日制" value="劳动合同-全日制" />
+              <el-option label="劳动合同-非全日制" value="劳动合同-非全日制" />
+              <el-option label="劳务合作-返聘" value="劳务合作-返聘" />
+              <el-option label="劳务合作-兼职" value="劳务合作-兼职" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -141,7 +143,9 @@
           <el-col :span="12">
             <el-form-item label="合作模式">
               <el-select v-model="createForm.coopMode" placeholder="选择" style="width: 100%;">
-                <el-option label="劳动合同-全职" value="劳动合同-全职" />
+                <el-option label="劳动合同-全日制" value="劳动合同-全日制" />
+                <el-option label="劳动合同-非全日制" value="劳动合同-非全日制" />
+                <el-option label="劳务合作-返聘" value="劳务合作-返聘" />
                 <el-option label="劳务合作-兼职" value="劳务合作-兼职" />
               </el-select>
             </el-form-item>
@@ -197,7 +201,7 @@
           </div>
 
           <div class="welfare-tip">
-            <span>💡 福利保障相关配置（社保 / 公积金 / 商业险）请前往【<strong>模块薪酬 → 岗位与福利保障</strong>】维护</span>
+            <span>💡 福利保障相关配置（社保 / 公积金 / 商业险）请前往【<strong>模块薪酬 → 岗位福利保障</strong>】维护</span>
           </div>
         </div>
       </el-form>
@@ -239,7 +243,7 @@ const templateList = ref([
     templateType: '标准',
     position: '推拿师',
     belongTo: '业务',
-    coopMode: '劳动合同-全职',
+    coopMode: '劳动合同-全日制',
     personCount: 12,
     updateTime: '2026-05-20 14:42:24'
   },
@@ -249,7 +253,7 @@ const templateList = ref([
     templateType: '标准',
     position: '推拿师',
     belongTo: '业务',
-    coopMode: '非全日制劳动合同',
+    coopMode: '劳动合同-非全日制',
     personCount: 6,
     updateTime: '2026-05-21 09:15:30'
   },
@@ -264,12 +268,22 @@ const templateList = ref([
     updateTime: '2026-05-19 10:20:15'
   },
   {
+    id: '1109491319435526150',
+    name: '返聘推拿师模板',
+    templateType: '标准',
+    position: '推拿师',
+    belongTo: '业务',
+    coopMode: '劳务合作-返聘',
+    personCount: 3,
+    updateTime: '2026-05-22 14:08:50'
+  },
+  {
     id: '1109491319435526148',
     name: '全职客户经理模板',
     templateType: '标准',
     position: '客户经理',
     belongTo: '业务',
-    coopMode: '劳动合同-全职',
+    coopMode: '劳动合同-全日制',
     personCount: 5,
     updateTime: '2026-05-18 16:30:00'
   },
@@ -279,7 +293,7 @@ const templateList = ref([
     templateType: '标准',
     position: '总部职能',
     belongTo: '职能',
-    coopMode: '劳动合同-全职',
+    coopMode: '劳动合同-全日制',
     personCount: 10,
     updateTime: '2026-05-17 11:00:00'
   }

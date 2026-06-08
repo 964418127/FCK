@@ -13,24 +13,6 @@
       </div>
     </div>
 
-    <div class="welcome-actions">
-      <el-card class="action-card" shadow="hover">
-        <div class="action-content">
-          <div class="action-icon">
-            <el-icon size="48" color="#67C23A"><Calendar /></el-icon>
-          </div>
-          <div class="action-text">
-            <h3>月差异确认</h3>
-            <p>查看与确认周期内的差异数据，决定是否继续发放工资</p>
-          </div>
-          <el-button type="primary" @click="goToDiffConfirm" size="large">
-            进入数据校验
-            <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-card>
-    </div>
-
     <div class="welcome-footer">
       <div class="footer-info">
         <el-row :gutter="20">
@@ -59,14 +41,7 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { HomeFilled, Calendar, ArrowRight, Clock, Lock, Headset } from '@element-plus/icons-vue'
-
-const router = useRouter()
-
-const goToDiffConfirm = () => {
-  router.push({ name: 'monthly-diff-confirm' })
-}
+import { HomeFilled, Clock, Lock, Headset } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>
@@ -117,51 +92,6 @@ const goToDiffConfirm = () => {
   opacity: 0.9;
 }
 
-.welcome-actions {
-  width: 100%;
-  max-width: 800px;
-  margin-bottom: 60px;
-}
-
-.action-card {
-  border-radius: 16px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.action-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
-
-.action-content {
-  display: flex;
-  align-items: center;
-  padding: 40px;
-  background: white;
-  gap: 30px;
-}
-
-.action-icon {
-  flex-shrink: 0;
-}
-
-.action-text {
-  flex: 1;
-}
-
-.action-text h3 {
-  margin: 0 0 10px 0;
-  font-size: 24px;
-  color: #303133;
-}
-
-.action-text p {
-  margin: 0;
-  color: #606266;
-  line-height: 1.5;
-}
-
 .welcome-footer {
   width: 100%;
   max-width: 600px;
@@ -192,16 +122,6 @@ const goToDiffConfirm = () => {
 
   .welcome-subtitle {
     font-size: 18px;
-  }
-
-  .action-content {
-    flex-direction: column;
-    text-align: center;
-    padding: 30px 20px;
-  }
-
-  .action-text h3 {
-    font-size: 20px;
   }
 
   .footer-info {

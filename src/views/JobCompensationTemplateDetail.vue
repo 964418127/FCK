@@ -146,7 +146,7 @@
         </div>
       </div>
 
-      <!-- 公司成本项 已迁移到【岗位与福利保障】 -->
+      <!-- 公司成本项 已迁移到【岗位福利保障】 -->
 
       <!-- 编辑操作 -->
       <div v-if="isEdit" class="edit-actions">
@@ -194,7 +194,7 @@ const deductItems = ref(templateData.value.deductItems.map((item, index) => ({
   isSystem: item.level === '系统'
 })))
 
-// 公司成本项已迁移到【岗位与福利保障】
+// 公司成本项已迁移到【岗位福利保障】
 const companyCostItems = ref([])
 
 // 返回列表

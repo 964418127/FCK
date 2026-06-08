@@ -1,7 +1,7 @@
 <template>
   <div class="job-welfare-config">
     <div class="page-header">
-      <h1>岗位与福利保障配置</h1>
+      <h1>岗位福利保障配置</h1>
       <p class="tip">💡 按 <strong>(岗位 × 用工类型 × 城市)</strong> 维度维护员工入职时继承的福利标准：<strong>社保 / 公积金 / 商业险</strong>。员工入职后从该配置继承，HR 可在【员工福利保障明细】中个体微调。</p>
     </div>
 
@@ -233,7 +233,7 @@ const commercialInsuranceLibrary = ref([
   { id: 7, name: '医疗补充险-高端版', cities: '全国', premium: 200, costUnit: '月' }
 ])
 
-// 岗位与福利保障配置数据
+// 岗位福利保障配置数据
 const configList = ref([
   {
     id: 'JWC001', position: '推拿师', workerType: '全职', cities: ['北京', '上海'],

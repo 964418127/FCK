@@ -90,7 +90,14 @@
             <el-tag type="info">{{ scope.row.currentAvailableBalance }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300">
+        <el-table-column prop="status" label="在职状态" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '离职' ? 'danger' : 'success'" disable-transitions>
+              {{ scope.row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="400">
           <template #default="scope">
             <el-button size="small" type="primary" @click="handleViewSettlement(scope.row)">
               <el-icon><Document /></el-icon>
@@ -103,6 +110,15 @@
             <el-button size="small" type="info" @click="handleViewConsumption(scope.row)">
               <el-icon><ShoppingCart /></el-icon>
               消费明细
+            </el-button>
+            <el-button
+              v-if="canResignWithdrawal(scope.row)"
+              size="small"
+              type="danger"
+              @click="handleResignWithdrawal(scope.row)"
+            >
+              <el-icon><Wallet /></el-icon>
+              离职提现
             </el-button>
           </template>
         </el-table-column>
@@ -126,9 +142,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Download, Search, Refresh, Calendar, Document, ArrowUp, ShoppingCart } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, Search, Refresh, Calendar, Document, ArrowUp, ShoppingCart, Wallet } from '@element-plus/icons-vue'
 
 const router = useRouter()
+
+// 当前操作员角色（演示用：实际项目从登录态/权限系统读取）
+const currentRole = ref(localStorage.getItem('bean-current-role') || 'hr_manager')
 
 // 搜索表单
 const searchForm = reactive({
@@ -169,7 +189,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 500,
       withdrawalSuccessAmount: 450,
       currentConsumption: 200,
-      currentAvailableBalance: 5000
+      currentAvailableBalance: 5000,
+      status: '在职'
     },
     {
       month: '2026-03',
@@ -188,7 +209,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 300,
       withdrawalSuccessAmount: 280,
       currentConsumption: 150,
-      currentAvailableBalance: 3000
+      currentAvailableBalance: 3000,
+      status: '在职'
     },
     {
       month: '2026-03',
@@ -207,7 +229,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 1000,
       withdrawalSuccessAmount: 920,
       currentConsumption: 300,
-      currentAvailableBalance: 7500
+      currentAvailableBalance: 7500,
+      status: '离职'
     },
     {
       month: '2026-03',
@@ -226,7 +249,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 150,
-      currentAvailableBalance: 4150
+      currentAvailableBalance: 4150,
+      status: '在职'
     },
     {
       month: '2026-03',
@@ -245,7 +269,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 450,
       withdrawalSuccessAmount: 400,
       currentConsumption: 180,
-      currentAvailableBalance: 4470
+      currentAvailableBalance: 4470,
+      status: '离职'
     }
   ],
   '2026-02': [
@@ -265,7 +290,8 @@ const accountMonthlyByMonth = {
       availableBalance: 5100,
       currentWithdrawal: 400,
       currentConsumption: 0,
-      currentAvailableBalance: 4700
+      currentAvailableBalance: 4700,
+      status: '在职'
     },
     {
       month: '2026-02',
@@ -283,7 +309,8 @@ const accountMonthlyByMonth = {
       availableBalance: 3050,
       currentWithdrawal: 400,
       currentConsumption: 0,
-      currentAvailableBalance: 2650
+      currentAvailableBalance: 2650,
+      status: '在职'
     },
     {
       month: '2026-02',
@@ -302,7 +329,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 700,
       withdrawalSuccessAmount: 650,
       currentConsumption: 0,
-      currentAvailableBalance: 7300
+      currentAvailableBalance: 7300,
+      status: '离职'
     },
     {
       month: '2026-02',
@@ -321,7 +349,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 350,
       withdrawalSuccessAmount: 320,
       currentConsumption: 150,
-      currentAvailableBalance: 3500
+      currentAvailableBalance: 3500,
+      status: '在职'
     },
     {
       month: '2026-02',
@@ -340,7 +369,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 150,
-      currentAvailableBalance: 4050
+      currentAvailableBalance: 4050,
+      status: '离职'
     }
   ],
   '2026-01': [
@@ -361,7 +391,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 0,
-      currentAvailableBalance: 4200
+      currentAvailableBalance: 4200,
+      status: '在职'
     },
     {
       month: '2026-01',
@@ -380,7 +411,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 0,
-      currentAvailableBalance: 2200
+      currentAvailableBalance: 2200,
+      status: '在职'
     },
     {
       month: '2026-01',
@@ -399,7 +431,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 500,
       withdrawalSuccessAmount: 480,
       currentConsumption: 0,
-      currentAvailableBalance: 6800
+      currentAvailableBalance: 6800,
+      status: '离职'
     },
     {
       month: '2026-01',
@@ -418,7 +451,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 300,
       withdrawalSuccessAmount: 280,
       currentConsumption: 200,
-      currentAvailableBalance: 3000
+      currentAvailableBalance: 3000,
+      status: '在职'
     },
     {
       month: '2026-01',
@@ -437,7 +471,8 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 350,
       withdrawalSuccessAmount: 320,
       currentConsumption: 150,
-      currentAvailableBalance: 3600
+      currentAvailableBalance: 3600,
+      status: '离职'
     }
   ]
 }
@@ -541,6 +576,37 @@ const handleViewConsumption = (row) => {
       type: 'consumption'
     }
   })
+}
+
+// 是否展示离职提现按钮：仅人事经理 且 员工处于离职状态 且 实时可用余额>0
+const canResignWithdrawal = (row) => {
+  if (currentRole.value !== 'hr_manager') return false
+  if (row.status !== '离职') return false
+  if (!row.currentAvailableBalance || row.currentAvailableBalance <= 0) return false
+  return true
+}
+
+// 离职提现：全额提取账户实时可用余额
+const handleResignWithdrawal = async (row) => {
+  const amount = row.currentAvailableBalance
+  try {
+    await ElMessageBox.confirm(
+      `员工【${row.name} / ${row.employeeId}】当前为离职状态。\n将对【余额账户】执行离职全额提现，金额：${amount} 豆。\n此操作不可撤销，是否继续？`,
+      '离职提现确认',
+      {
+        confirmButtonText: '确认提现',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  row.currentWithdrawal = (row.currentWithdrawal || 0) + amount
+  row.currentAvailableBalance = 0
+
+  ElMessage.success(`离职提现成功：${row.name} 余额账户 ${amount} 豆已全额提取`)
 }
 
 // 分页处理

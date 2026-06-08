@@ -1,36 +1,22 @@
 <template>
   <div class="welfare-guide">
     <!-- 悬浮可折叠目录 -->
-    <div class="floating-toc" :class="{ collapsed: !tocExpanded }">
-      <button class="toc-toggle-btn" :title="tocExpanded ? '收起目录' : '展开目录'" @click="tocExpanded = !tocExpanded">
-        <el-icon :size="18">
-          <component :is="tocExpanded ? Fold : Expand" />
-        </el-icon>
-        <span v-show="tocExpanded" class="toc-toggle-label">目录</span>
-      </button>
-      <transition name="toc-slide">
-        <div v-show="tocExpanded" class="toc-panel">
-          <ul class="toc-list">
-            <li
-              v-for="item in tocItems"
-              :key="item.id"
-              :class="{ active: activeId === item.id }"
-            >
-              <a :href="'#' + item.id" @click.prevent="scrollToSection(item.id)">
-                {{ item.label }}
-              </a>
-            </li>
-          </ul>
-        </div>
-      </transition>
-    </div>
+    <FloatingToc :items="tocItems" />
 
-    <div class="page-header">
-      <div class="page-header-left">
-        <h1>员工福利保障产品需求说明</h1>
-        <p class="tip">💡 说明城市基准系数、岗位薪酬模板、员工福利保障、薪酬计算之间的关系</p>
+    <!-- 文档 Hero 区 -->
+    <div class="doc-hero">
+      <div class="doc-hero-icon">
+        <el-icon :size="28"><Document /></el-icon>
       </div>
-      <div class="page-header-right">
+      <div class="doc-hero-body">
+        <div class="doc-hero-title-row">
+          <h1 class="doc-hero-title">员工福利保障产品需求说明</h1>
+          <span class="doc-hero-version">v2.0</span>
+          <span class="doc-hero-date">2026-06-02</span>
+        </div>
+        <p class="doc-hero-tip">💡 说明城市基准系数、岗位薪酬模板、员工福利保障、薪酬计算之间的关系</p>
+      </div>
+      <div class="doc-hero-actions">
         <el-button @click="copyToClipboard">复制</el-button>
         <el-button type="primary" @click="exportToPdf">导出 PDF</el-button>
       </div>
@@ -39,10 +25,6 @@
     <div class="content-section">
       <!-- 版本日志 -->
       <div id="version" class="section version-log">
-        <div class="version-info">
-          <span class="version-tag">v2.0</span>
-          <span class="version-date">2026-06-02</span>
-        </div>
         <h3>核心调整（v1 → v2）</h3>
         <ul>
           <li><strong>废除薪资区间机制</strong>：v1 按"城市+薪资区间"配置基准系数的方式作废，v2 改为<strong>按每月实际收入</strong>申报（浮动基数，每月重新计算）</li>
@@ -61,22 +43,6 @@
           <li>城市基准系数只维护<strong>法定比例</strong>（公司/个人），不再维护"基数"</li>
           <li>每月结算时基数 = 当月应发总和，调岗调薪不触发"重新计算基数"（因为每月都重算）</li>
           <li>三方服务未返回时支持手动导入，月度缴费明细需标记数据来源</li>
-        </ul>
-      </div>
-
-      <!-- 目录 -->
-      <div class="toc">
-        <h2>目录</h2>
-        <ul>
-          <li><a href="#version">版本日志</a></li>
-          <li><a href="#terms">名词解释</a></li>
-          <li><a href="#architecture">一、整体架构</a></li>
-          <li><a href="#city-standard">二、城市基准系数</a></li>
-          <li><a href="#commercial-insurance">三、商业险</a></li>
-          <li><a href="#template">四、岗位薪酬模板与福利关联</a></li>
-          <li><a href="#employee-welfare">五、员工福利保障</a></li>
-          <li><a href="#monthly-detail">六、月度缴费明细</a></li>
-          <li><a href="#data-flow">七、数据流总览</a></li>
         </ul>
       </div>
 
@@ -968,57 +934,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Fold, Expand } from '@element-plus/icons-vue'
+import { Document } from '@element-plus/icons-vue'
+import FloatingToc from '../components/FloatingToc.vue'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 
 // ===== 悬浮目录 =====
-const tocExpanded = ref(false)
-const activeId = ref('version')
 const tocItems = [
   { id: 'version', label: '版本日志' },
   { id: 'terms', label: '名词解释' },
   { id: 'architecture', label: '一、整体架构' },
   { id: 'city-standard', label: '二、城市基准系数' },
-  { id: 'template', label: '三、岗位薪酬模板与福利关联' },
-  { id: 'employee-welfare', label: '四、员工福利保障' },
-  { id: 'monthly-detail', label: '五、月度缴费明细' },
-  { id: 'data-flow', label: '六、数据流总览' }
+  { id: 'commercial-insurance', label: '三、商业险' },
+  { id: 'template', label: '四、岗位薪酬模板与福利关联' },
+  { id: 'employee-welfare', label: '五、员工福利保障' },
+  { id: 'monthly-detail', label: '六、月度缴费明细' },
+  { id: 'data-flow', label: '七、数据流总览' }
 ]
-
-let observer = null
-onMounted(() => {
-  observer = new IntersectionObserver((entries) => {
-    const visible = entries
-      .filter(e => e.isIntersecting)
-      .map(e => ({ id: e.target.id, top: e.boundingClientRect.top }))
-      .sort((a, b) => a.top - b.top)
-    if (visible.length > 0) {
-      activeId.value = visible[0].id
-    }
-  }, {
-    rootMargin: '-10% 0px -70% 0px',
-    threshold: 0
-  })
-  tocItems.forEach(item => {
-    const el = document.getElementById(item.id)
-    if (el) observer.observe(el)
-  })
-})
-
-onUnmounted(() => {
-  if (observer) observer.disconnect()
-})
-
-const scrollToSection = (id) => {
-  const el = document.getElementById(id)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    activeId.value = id
-  }
-}
 
 const copyToClipboard = async () => {
   const element = document.querySelector('.content-section')
@@ -1076,173 +1009,107 @@ const exportToPdf = async () => {
 <style scoped>
 .welfare-guide {
   padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* ===== 悬浮可折叠目录 ===== */
-.floating-toc {
-  position: fixed;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 100;
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+/* ===== 文档 Hero 区 ===== */
+.doc-hero {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, hsl(var(--primary) / 0.02) 100%);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 20px 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
   overflow: hidden;
 }
 
-.floating-toc.collapsed {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: hsl(var(--primary));
-  border-color: hsl(var(--primary));
-}
-
-.floating-toc:not(.collapsed) {
+.doc-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
   width: 240px;
-  max-width: calc(100vw - 40px);
+  height: 240px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 65%);
+  pointer-events: none;
 }
 
-.toc-toggle-btn {
+.doc-hero-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+  color: hsl(var(--primary-foreground));
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;
-  height: 44px;
-  padding: 0 12px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  transition: all 0.2s;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  z-index: 1;
 }
 
-.floating-toc.collapsed .toc-toggle-btn {
-  color: hsl(var(--primary-foreground));
-  padding: 0;
-}
-
-.floating-toc:not(.collapsed) .toc-toggle-btn {
-  border-bottom: 1px solid hsl(var(--border));
-  color: hsl(var(--primary));
-}
-
-.toc-toggle-btn:hover {
-  opacity: 0.85;
-}
-
-.toc-toggle-label {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.toc-panel {
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
-.toc-list {
-  list-style: none;
-  padding: 6px 0;
-  margin: 0;
-}
-
-.toc-list li {
-  margin: 0;
-}
-
-.toc-list li a {
-  display: block;
-  padding: 7px 16px 7px 14px;
-  color: hsl(var(--muted-foreground));
-  text-decoration: none;
-  font-size: 13px;
-  line-height: 1.4;
-  border-left: 2px solid transparent;
-  transition: all 0.15s ease;
-  cursor: pointer;
-}
-
-.toc-list li a:hover {
-  background: hsl(var(--muted) / 0.4);
-  color: hsl(var(--foreground));
-}
-
-.toc-list li.active a {
-  color: hsl(var(--primary));
-  border-left-color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.06);
-  font-weight: 500;
-}
-
-.toc-panel::-webkit-scrollbar { width: 4px; }
-.toc-panel::-webkit-scrollbar-track { background: transparent; }
-.toc-panel::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
-.toc-panel::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
-
-.toc-slide-enter-active, .toc-slide-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-.toc-slide-enter-from, .toc-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
-@media (max-width: 1200px) {
-  .floating-toc:not(.collapsed) {
-    width: 200px;
-  }
-}
-@media (max-width: 768px) {
-  .floating-toc {
-    right: 12px;
-    top: 50%;
-  }
-  .floating-toc:not(.collapsed) {
-    width: 180px;
-  }
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.page-header-left {
+.doc-hero-body {
   flex: 1;
+  min-width: 0;
+  z-index: 1;
 }
 
-.page-header-right {
+.doc-hero-title-row {
   display: flex;
-  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
-.page-header h1 {
+.doc-hero-title {
   font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  font-weight: 700;
+  margin: 0;
   color: hsl(var(--foreground));
+  line-height: 1.2;
 }
 
-.page-header .tip {
+.doc-hero-version {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.doc-hero-date {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.doc-hero-tip {
+  margin: 0;
   color: hsl(var(--muted-foreground));
   font-size: 14px;
-  margin: 0;
+  line-height: 1.5;
+}
+
+.doc-hero-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  z-index: 1;
+  align-self: flex-start;
 }
 
 .content-section {
   background: hsl(var(--background));
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 24px 28px;
 }
 
 .section {
@@ -1267,27 +1134,6 @@ const exportToPdf = async () => {
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 24px;
-}
-
-.version-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.version-tag {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.version-date {
-  color: hsl(var(--muted-foreground));
-  font-size: 13px;
 }
 
 .version-log h3 {

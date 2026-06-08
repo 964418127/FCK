@@ -16,12 +16,12 @@
       </div>
     </div>
 
-    <!-- 门店切换 -->
-    <div class="store-selector" @click="showStoreSheet = true">
+    <!-- 门店切换（全日制单门店，隐藏切换器；保留数据/弹层以便后续扩展） -->
+    <!-- <div class="store-selector" @click="showStoreSheet = true">
       <el-icon class="store-icon"><Shop /></el-icon>
       <span class="store-label">{{ currentStoreLabel }}</span>
       <el-icon class="store-arrow"><ArrowDown /></el-icon>
-    </div>
+    </div> -->
 
     <!-- Tab 栏 -->
     <div class="tab-bar">
@@ -126,9 +126,9 @@
             </div>
             <div class="record-row2">
               <span class="record-service">{{ item.service || item.desc }}</span>
+              <span v-if="item.isRepeatCustomer" class="repeat-tag">回头客</span>
               <el-icon v-if="item.expandable" class="record-arrow"><ArrowRight /></el-icon>
             </div>
-            <div v-if="item.bean" class="record-bean">常乐豆：{{ item.bean }}</div>
             <div class="record-time">{{ item.time }}</div>
           </div>
           <div v-if="filteredSummaryItems.length === 0" class="empty-tip">
@@ -245,6 +245,34 @@
           </div>
         </div>
       </div>
+
+      <!-- 公积金公司补助 -->
+      <div class="month-section-card housing-fund-card">
+        <div class="section-title">{{ monthData.housingFund.title }}</div>
+        <div class="hf-main-row">
+          <div class="hf-main-label">公司补助</div>
+          <div class="hf-main-value">
+            ¥ {{ monthData.housingFund.companySubsidy }}
+            <span class="hf-main-unit">({{ monthData.housingFund.unit }})</span>
+          </div>
+        </div>
+        <div class="hf-divider"></div>
+        <div class="hf-breakdown">
+          <div class="hf-breakdown-row">
+            <span class="hf-row-label">公积金员工总缴额</span>
+            <span class="hf-row-value">¥ {{ monthData.housingFund.totalAmount }} {{ monthData.housingFund.unit }}</span>
+          </div>
+          <div class="hf-breakdown-row">
+            <span class="hf-row-label">个人扣款</span>
+            <span class="hf-row-value hf-row-deduct">¥ {{ monthData.housingFund.individualDeduction }} {{ monthData.housingFund.unit }}</span>
+          </div>
+          <div class="hf-breakdown-row">
+            <span class="hf-row-label">公司补助</span>
+            <span class="hf-row-value hf-row-subsidy">¥ {{ monthData.housingFund.companySubsidy }} {{ monthData.housingFund.unit }}</span>
+          </div>
+        </div>
+        <div class="hf-tip">※ 公司补助 = 公积金员工总缴额 - 个人扣款</div>
+      </div>
     </div>
 
     <!-- ==================== 到账情况 ==================== -->
@@ -320,7 +348,10 @@
                   <div class="summary-time">
                     {{ currentOrderDetail.startTime }} | {{ currentOrderDetail.endTime }}
                   </div>
-                  <div class="summary-service">{{ currentOrderDetail.service }}</div>
+                  <div class="summary-service-row">
+                    <span class="summary-service">{{ currentOrderDetail.service }}</span>
+                    <span v-if="currentOrderDetail.isRepeatCustomer" class="repeat-tag inline">回头客</span>
+                  </div>
                   <div class="summary-orderno">
                     <span class="orderno-text">订单编号：{{ currentOrderDetail.orderNo }}</span>
                     <el-button type="text" size="small" @click.stop="copyOrderNo" class="copy-btn">
@@ -348,35 +379,16 @@
                   </div>
                 </div>
 
-                <!-- 其他收入（预估） -->
+                <!-- 优惠金额 -->
                 <div class="detail-section-card">
                   <div class="section-title-line">
                     <span class="title-bar"></span>
-                    <span class="title-text">其他收入(预估)</span>
+                    <span class="title-text">优惠金额</span>
                   </div>
                   <div class="section-content">
                     <div class="content-line">
-                      <span class="content-label">促销补贴</span>
-                      <span class="content-value">{{ currentOrderDetail.subsidy }}<span class="value-unit"> 元</span></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 常乐豆（预估） -->
-                <div class="detail-section-card">
-                  <div class="section-title-line">
-                    <span class="title-bar"></span>
-                    <span class="title-text">常乐豆(预估)</span>
-                  </div>
-                  <div class="section-content">
-                    <div class="content-line bean-line">
-                      <span class="content-label">离店未打扫卫生扣豆</span>
-                      <span class="content-value bean-deduct">{{ currentOrderDetail.deductBean }}</span>
-                      <el-button v-if="currentOrderDetail.deductBean !== 0" type="primary" plain size="small" round @click.stop="handleAppeal">申诉</el-button>
-                    </div>
-                    <div class="content-line">
-                      <span class="content-label">调理师客户回头赠送常乐豆</span>
-                      <span class="content-value bean-gift">+{{ currentOrderDetail.giftBean }}</span>
+                      <span class="content-label">本单已使用优惠</span>
+                      <span class="content-value discount-value">¥{{ currentOrderDetail.originalPrice - currentOrderDetail.actualPayment }}</span>
                     </div>
                   </div>
                 </div>
@@ -454,21 +466,10 @@ const tabs = [
   { key: 'arrival', label: '到账情况' }
 ]
 
-// 门店切换
-// 排序规则：按本月预告收入倒序，相同时按今日预估倒序；默认选中排序后第一项（收入最高）
+// 门店（全日制：单门店）
 const storeList = ref([
-  { key: 'danzishi', label: '弹子石老街店', monthlyForecast: 8420, dailyForecast: 197.8 },
-  { key: 'chengdu', label: '成都印象城店', monthlyForecast: 6230, dailyForecast: 156.4 },
-  { key: 'beicheng', label: '北城天街店', monthlyForecast: 4890, dailyForecast: 89.2 },
-  { key: 'jiefangbei', label: '解放碑店', monthlyForecast: 3210, dailyForecast: 45.6 }
+  { key: 'danzishi', label: '弹子石老街店', monthlyForecast: 8420, dailyForecast: 197.8 }
 ])
-// 排序
-storeList.value.sort((a, b) => {
-  if (b.monthlyForecast !== a.monthlyForecast) {
-    return b.monthlyForecast - a.monthlyForecast
-  }
-  return b.dailyForecast - a.dailyForecast
-})
 const selectedStore = ref(storeList.value[0].key)
 const showStoreSheet = ref(false)
 const currentStoreLabel = computed(() => {
@@ -499,8 +500,7 @@ const dayData = reactive({
     categories: [
       { key: 'piecework', label: '计件提成', value: 95.4, unit: '元' },
       { key: 'overtime', label: '加班工资', value: 15.4, unit: '元' },
-      { key: 'subsidy', label: '补贴', value: 0.0, unit: '元' },
-      { key: 'bean', label: '常乐豆', value: 10, unit: '豆' }
+      { key: 'subsidy', label: '补贴', value: 0.0, unit: '元' }
     ],
     items: [
       {
@@ -511,7 +511,7 @@ const dayData = reactive({
         service: '整脊踩背40分钟',
         time: '2025-08-01 21:20:00',
         amount: 29.7,
-        bean: 0,
+        isRepeatCustomer: false,
         expandable: true,
         detail: {
           storeName: '弹子石老街店',
@@ -525,9 +525,7 @@ const dayData = reactive({
           originalPrice: 79,
           actualPayment: 59,
           pieceworkCommission: 29.7,
-          subsidy: 0,
-          deductBean: 0,
-          giftBean: 0
+          isRepeatCustomer: false
         }
       },
       {
@@ -537,18 +535,17 @@ const dayData = reactive({
         desc: '中秋节优秀员工津贴',
         time: '2025-08-01',
         amount: 44.7,
-        bean: 0,
         expandable: false
       },
       {
         id: 3,
-        type: 'bean',
+        type: 'piecework',
         storeKey: 'danzishi',
         store: '弹子石老街店',
         service: '睡眠调理60分钟',
         time: '2025-08-01 20:20:00',
         amount: 44.7,
-        bean: 17,
+        isRepeatCustomer: true,
         expandable: true,
         detail: {
           storeName: '弹子石老街店',
@@ -562,20 +559,18 @@ const dayData = reactive({
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 44.7,
-          subsidy: 0,
-          deductBean: 0,
-          giftBean: 17
+          isRepeatCustomer: true
         }
       },
       {
         id: 4,
-        type: 'bean',
+        type: 'piecework',
         storeKey: 'danzishi',
         store: '弹子石老街店',
         service: '睡眠调理60分钟',
         time: '2025-08-01 16:50:00',
         amount: 44.7,
-        bean: 17,
+        isRepeatCustomer: true,
         expandable: true,
         detail: {
           storeName: '弹子石老街店',
@@ -589,21 +584,8 @@ const dayData = reactive({
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 44.7,
-          subsidy: 0,
-          deductBean: 0,
-          giftBean: 17
+          isRepeatCustomer: true
         }
-      },
-      {
-        id: 5,
-        type: 'bean',
-        storeKey: 'chengdu',
-        store: '成都印象城店',
-        title: '常乐豆收入',
-        time: '2025-08-01 00:00:00',
-        amount: 34,
-        bean: 0,
-        expandable: false
       },
       {
         id: 6,
@@ -613,7 +595,7 @@ const dayData = reactive({
         service: '头颈肩痛60分钟',
         time: '2025-08-01 12:10:00',
         amount: 48.3,
-        bean: 0,
+        isRepeatCustomer: true,
         expandable: true,
         detail: {
           storeName: '成都印象城店',
@@ -627,9 +609,7 @@ const dayData = reactive({
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 48.3,
-          subsidy: 5.4,
-          deductBean: -2,
-          giftBean: 15
+          isRepeatCustomer: true
         }
       }
     ]
@@ -640,8 +620,7 @@ const dayData = reactive({
       { key: 'complaint', label: '投诉扣款', value: 95.4, unit: '元' },
       { key: 'refund', label: '退单扣款', value: 95.4, unit: '元' },
       { key: 'social', label: '代扣社保', value: 0.0, unit: '元' },
-      { key: 'tax', label: '代扣个税', value: 0.0, unit: '元' },
-      { key: 'expiredBean', label: '失效常乐豆', value: 0.0, unit: '豆' }
+      { key: 'tax', label: '代扣个税', value: 0.0, unit: '元' }
     ],
     items: [
       {
@@ -667,8 +646,7 @@ const monthData = reactive({
     categories: [
       { key: 'piecework', label: '计件提成', value: 95.4, unit: '元' },
       { key: 'overtime', label: '加班工资', value: 15.4, unit: '元' },
-      { key: 'subsidy', label: '补贴', value: 0.0, unit: '元' },
-      { key: 'bean', label: '常乐豆', value: 10, unit: '豆' }
+      { key: 'subsidy', label: '补贴', value: 0.0, unit: '元' }
     ]
   },
   expense: {
@@ -678,8 +656,15 @@ const monthData = reactive({
       { key: 'serviceTime', label: '服务时间不足扣提成', value: 95.4, unit: '元' },
       { key: 'social', label: '代扣社保', value: 0.0, unit: '元' },
       { key: 'tax', label: '代扣个税', value: 0.0, unit: '元' },
-      { key: 'expiredBean', label: '失效常乐豆', value: -95.4, unit: '豆' }
+      { key: 'housingFund', label: '公积金个人扣款', value: -200, unit: '元' }
     ]
+  },
+  housingFund: {
+    title: '8月公积金',
+    totalAmount: 1200,
+    individualDeduction: 200,
+    companySubsidy: 1000,
+    unit: '元'
   }
 })
 
@@ -784,6 +769,16 @@ const goBack = () => {
   min-height: 100vh;
   background: #f5f5f5;
   padding-bottom: 20px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ========== 顶部导航 ========== */
@@ -1227,17 +1222,30 @@ const goBack = () => {
 .record-service {
   font-size: 13px;
   color: #999;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .record-arrow {
   font-size: 12px;
   color: #ccc;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
-.record-bean {
-  font-size: 13px;
+.repeat-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
   color: #a40035;
-  margin-top: 4px;
+  background: #fff5f8;
+  border: 1px solid #ffd6e2;
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-left: 6px;
+  line-height: 1.4;
 }
 
 .record-time {
@@ -1260,6 +1268,82 @@ const goBack = () => {
   padding: 16px;
   margin-bottom: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.housing-fund-card {
+  background: linear-gradient(135deg, #fff5f7 0%, #ffffff 100%);
+  border: 1px solid #f5c2d0;
+}
+
+.hf-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0 12px;
+}
+
+.hf-main-label {
+  font-size: 15px;
+  color: #666;
+  font-weight: 500;
+}
+
+.hf-main-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #a40035;
+}
+
+.hf-main-unit {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
+  margin-left: 2px;
+}
+
+.hf-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 4px 0 12px;
+}
+
+.hf-breakdown {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.hf-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 4px 0;
+  color: #666;
+}
+
+.hf-row-label {
+  color: #999;
+}
+
+.hf-row-value {
+  color: #333;
+  font-weight: 500;
+}
+
+.hf-row-deduct {
+  color: #a40035;
+}
+
+.hf-row-subsidy {
+  color: #a40035;
+  font-weight: 600;
+}
+
+.hf-tip {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #999;
 }
 
 .section-title {
@@ -1557,6 +1641,22 @@ const goBack = () => {
   margin-bottom: 8px;
 }
 
+.summary-service-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.summary-service-row .summary-service {
+  margin-bottom: 0;
+}
+
+.repeat-tag.inline {
+  margin-left: 0;
+  line-height: 1.4;
+}
+
 .summary-orderno {
   display: flex;
   align-items: center;
@@ -1645,7 +1745,7 @@ const goBack = () => {
   padding: 4px 0;
 }
 
-.content-line.bean-line {
+.content-line.discount-line {
   padding: 4px 0;
 }
 
@@ -1668,11 +1768,8 @@ const goBack = () => {
   margin-left: 1px;
 }
 
-.bean-deduct {
+.discount-value {
   color: #a40035;
-}
-
-.bean-gift {
-  color: #a40035;
+  font-size: 16px;
 }
 </style>

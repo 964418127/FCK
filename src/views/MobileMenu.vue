@@ -62,7 +62,22 @@
             <div class="grid-icon">
               <el-icon><DataLine /></el-icon>
             </div>
-            <div class="grid-title">薪酬看板</div>
+            <div class="grid-title">全职薪酬看板</div>
+          </div>
+
+          <div class="grid-item" @click="goToPartTimeSalaryDashboard">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">非全日制薪酬看板</div>
+          </div>
+
+          <div class="grid-item" @click="goToNotification">
+            <div class="grid-icon">
+              <el-icon><Bell /></el-icon>
+            </div>
+            <div class="grid-title">通知</div>
+            <span v-if="unreadNoticeCount > 0" class="grid-badge">{{ unreadNoticeCount }}</span>
           </div>
         </div>
       </div>
@@ -80,9 +95,12 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine } from '@element-plus/icons-vue'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell } from '@element-plus/icons-vue'
+import { ref } from 'vue'
 
 const router = useRouter()
+
+const unreadNoticeCount = ref(19)
 
 const goToStoreHanging = () => {
   router.push('/mobile-store-hanging')
@@ -98,6 +116,14 @@ const goToScheduleLeave = () => {
 
 const goToSalaryDashboard = () => {
   router.push('/mobile-salary-dashboard')
+}
+
+const goToPartTimeSalaryDashboard = () => {
+  router.push('/mobile-part-time-salary-dashboard')
+}
+
+const goToNotification = () => {
+  router.push('/mobile-notification')
 }
 
 const handleLogout = () => {
@@ -182,6 +208,27 @@ const handleLogout = () => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
+  position: relative;
+}
+
+.grid-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  background: #ff4d4f;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  line-height: 1;
+  border: 2px solid white;
+  box-sizing: content-box;
 }
 
 .grid-icon {
