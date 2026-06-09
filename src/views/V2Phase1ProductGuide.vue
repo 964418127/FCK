@@ -14,13 +14,16 @@
           <span class="doc-hero-version">v2.1-phase1</span>
           <span class="doc-hero-date">2026-06-06</span>
         </div>
-        <p class="doc-hero-tip">💡 基于 v2 完整版裁剪的开发资源可控版本：模块化升级 + 常乐豆 + 负工资 + 多轮报税；福利保障数据<strong>取老系统</strong>，商业险采用<strong>默认机制</strong></p>
+        <p class="doc-hero-tip">💡 基于 v2 完整版裁剪的开发资源可控版本：模块化升级 + 常乐豆 + 负工资 + 多轮报税；福利保障数据<strong>取老系统</strong>，商业险<strong>暂不进入系统（线下购买，成本归公司）</strong></p>
       </div>
       <div class="doc-hero-actions">
         <el-button @click="copyToClipboard">复制</el-button>
         <el-button type="primary" @click="exportToPdf">导出 PDF</el-button>
       </div>
     </div>
+
+    <!-- V2 阶段1 功能架构脑图（精简版） -->
+    <MindmapHero :tree="v2Phase1Tree" />
 
     <div class="content-section">
       <!-- 版本日志 -->
@@ -38,18 +41,18 @@
           </thead>
           <tbody>
             <tr>
-              <td rowspan="7"><strong>v2.1<br/>phase1</strong></td>
-              <td rowspan="7">2026-06-06</td>
+              <td rowspan="8"><strong>v2.1<br/>phase1</strong></td>
+              <td rowspan="8">2026-06-06</td>
               <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
               <td><strong>模块化薪酬（4 种用工类型）</strong>：劳动合同-全日制 / 劳务协议-非全日制 / 劳务合作-兼职 / 劳务合作-退休返聘；按用工类型独立岗位薪酬模板</td>
             </tr>
             <tr>
               <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-              <td><strong>常乐豆规则（全部保留）</strong>：仅全职享有；<strong>只抵扣公积金</strong>（公司部分 + 个人部分），<strong>不抵扣社保/商业险</strong>；4 级优先级——① 抵公积金公司部分 → ② 抵公积金个人部分 → ③ 现金补扣【公积金个人扣款】 → ④ 消费；<strong>不计入应税收入</strong></td>
+              <td><strong>常乐豆规则（4 步）</strong>：仅全职享有；<strong>优先抵扣公积金公司部分</strong>；<strong>剩余可继续抵扣公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，不足由<strong>员工现金补差</strong>，工资条「代扣公积金」<strong>仍按全额</strong>显示）；用于代缴个人部分的常乐豆<strong>以「绩效补贴」名义入第 1 个工资条</strong>，<strong>计入应税收入</strong>（作为 1 级收入项）；<strong>不抵扣社保/商业险</strong>；<strong>常乐豆本身不计入应税收入</strong></td>
             </tr>
             <tr>
               <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-              <td><strong>【公积金个人扣款】动态项</strong>：常乐豆余额不足以抵扣公积金个人部分时，从工资单<strong>现金</strong>扣减；仅全职可触发</td>
+              <td><strong>【绩效补贴】动态项</strong>（常乐豆代缴公积金个人部分时的名义收入，<strong>仅全职</strong>）：<strong>触发条件</strong>——常乐豆优先抵公司部分后，剩余继续抵个人部分且实际抵掉金额 &gt; 0；<strong>金额</strong>= 常乐豆实际抵个人部分的金额（最高不超过个人公积金总额，如 1200）；<strong>位置</strong>——<strong>第 1 个工资条</strong>的一个收入项；工资条上「代扣公积金」<strong>按老系统接口读取的全额显示</strong>（不动态计算扣除金额），员工<strong>现金补差 = 全额 − 常乐豆代缴金额</strong>；<strong>计入应税收入</strong>（作为 1 级收入项），保持工资条净到手 = 员工实收</td>
             </tr>
             <tr>
               <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
@@ -65,7 +68,11 @@
             </tr>
             <tr>
               <td><span style="color: hsl(var(--warning)); font-weight: 600;">裁剪</span></td>
-              <td><strong>商业险 → 默认机制</strong>：<strong>不开发</strong>商业险库配置页、不做城市/险种选择；全员默认有 1 份商业险（具体险种后台硬编码），公司全额，<strong>不进员工工资条</strong>，<strong>不显示在福利明细</strong></td>
+              <td><strong>商业险暂不进入系统</strong>：由<strong>线下</strong>完成购买，<strong>成本归公司</strong>（不在新系统中做配置、记账、显示）</td>
+            </tr>
+            <tr>
+              <td><span style="color: hsl(var(--warning)); font-weight: 600;">升级</span></td>
+              <td><strong>关联模块数据源切换</strong>：6 个下游模块（<strong>付款单、凭证生成、计提生成、个税申报、社保清单、公积金</strong>）底层取值统一从「业绩表」切换为「<strong>模块化薪酬</strong>」</td>
             </tr>
           </tbody>
         </table>
@@ -93,15 +100,15 @@
             </tr>
             <tr>
               <td><strong>常乐豆使用优先级</strong></td>
-              <td>① 抵<strong>公积金公司部分</strong> → ② 抵<strong>公积金个人部分</strong> → ③ 现金补扣【公积金个人扣款】 → ④ 消费（<strong>只抵扣公积金</strong>，不抵扣社保/商业险）</td>
+              <td>① 抵<strong>公积金公司部分</strong> → ② 抵<strong>公积金个人部分</strong>（不足员工现金补差，「代扣公积金」按全额显示）→ ③ 用于代缴个人部分的常乐豆<strong>以「绩效补贴」名义入第 1 个工资条，计入应税收入</strong> → ④ 剩余可消费 / 离职提现（<strong>不抵扣社保/商业险</strong>）</td>
             </tr>
             <tr>
               <td><strong>福利保障数据来源</strong></td>
-              <td>社保/公积金个人部分 ← <strong>老系统接口（只读）</strong>；商业险 ← <strong>默认机制</strong>（后台硬编码，不进工资条）；不开发员工福利保障页</td>
+              <td>社保/公积金个人部分 ← <strong>老系统接口（只读）</strong>；商业险 ← <strong>暂不进入系统（线下购买，成本归公司）</strong>；不开发员工福利保障页</td>
             </tr>
             <tr>
-              <td><strong>商业险（默认机制）</strong></td>
-              <td>公司全额、<strong>不参与工资计算</strong>、<strong>不进员工工资条</strong>、<strong>不显示在福利明细</strong>；具体险种/保额/保费由后端配置</td>
+              <td><strong>商业险（线下购买）</strong></td>
+              <td><strong>线下完成购买</strong>，<strong>成本归公司</strong>；<strong>不参与工资计算</strong>、<strong>不进员工工资条</strong>、<strong>不显示在福利明细</strong></td>
             </tr>
             <tr>
               <td><strong>工资条分组</strong></td>
@@ -117,7 +124,7 @@
             </tr>
             <tr>
               <td><strong>移动端薪酬看板</strong></td>
-              <td>2 个独立看板：<strong>全职薪酬看板</strong>（3 tabs：日/月/到账，含【公积金个人扣款】+【公积金】块）vs <strong>非全日制薪酬看板</strong>（4 tabs：日/周/月/到账，4 个分类筛选 + 回头客标记 + 多门店切换）</td>
+              <td>2 个独立看板：<strong>全职薪酬看板</strong>（3 tabs：日/月/到账，月支出含<strong>代扣公积金（员工足额自付部分）</strong>）vs <strong>非全日制薪酬看板</strong>（4 tabs：日/周/月/到账，4 个分类筛选 + 回头客标记 + 多门店切换）</td>
             </tr>
             <tr>
               <td><strong>通知（含门店 / 主体）</strong></td>
@@ -162,7 +169,7 @@
               </tr>
               <tr>
                 <td><strong>应税收入</strong></td>
-                <td><strong>第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）</strong>，即提交报税的收入基数（详见「应税收入计算规则」）。注意：<strong>第2级扣款（个税预扣）不参与应税收入</strong>（预扣是<strong>真正的个税</strong>，仅用于个税汇算；预扣所在工资条已发放，不可回溯修改）</td>
+                <td><strong>第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）</strong>，即提交报税的收入基数（详见「应税收入计算规则」）。<strong>常乐豆本身不计入应税收入</strong>；当常乐豆代缴公积金个人部分时，公司以<strong>「绩效补贴」名义</strong>在第 1 个工资条增加等额收入，<strong>作为 1 级收入项计入应税收入</strong>。注意：<strong>第2级扣款（个税预扣）不参与应税收入</strong>（预扣是<strong>真正的个税</strong>，仅用于个税汇算；预扣所在工资条已发放，不可回溯修改）</td>
               </tr>
               <tr>
                 <td><strong>预扣个税</strong></td>
@@ -178,11 +185,11 @@
               </tr>
               <tr>
                 <td><strong>公积金（个人部分）</strong></td>
-                <td>员工个人承担部分；<strong>v2-1 阶段</strong>金额由<strong>老系统接口</strong>提供，新系统<strong>只读引用</strong>作为工资条代扣项；可被<strong>常乐豆</strong>优先抵扣</td>
+                <td>员工个人承担部分；<strong>v2-1 阶段</strong>金额由<strong>老系统接口</strong>提供，新系统<strong>只读引用</strong>作为工资条代扣项；<strong>员工足额自付</strong>，<strong>不依赖常乐豆</strong></td>
               </tr>
               <tr>
-                <td><strong>商业险（默认机制）</strong></td>
-                <td>v2-1 不开发商业险库配置页、不做城市/险种选择；全员默认有 1 份商业险（具体险种/保额/保费由后端硬编码）；公司全额，<strong>不进员工工资条</strong>，<strong>不显示在福利明细</strong></td>
+                <td><strong>商业险（线下购买）</strong></td>
+                <td>v2-1 商业险<strong>暂不进入系统</strong>，由<strong>线下</strong>完成购买，<strong>成本归公司</strong>；<strong>不进员工工资条</strong>，<strong>不显示在福利明细</strong></td>
               </tr>
               <tr>
                 <td><strong>门店</strong></td>
@@ -201,10 +208,6 @@
                 <td>第三方税务服务，能根据应税收入获得应纳个税。v2-1 阶段全职/返聘 1 次/月，非全日制/兼职 N 次/月（多主体每主体 1 次，可能跳档）</td>
               </tr>
               <tr>
-                <td><strong>【公积金个人扣款】</strong></td>
-                <td>动态补扣项——常乐豆不足以抵扣公积金个人部分时，从工资单现金扣减；<strong>仅全职</strong>可触发（其他用工类型无公积金或无常乐豆）</td>
-              </tr>
-              <tr>
                 <td><strong>营销折扣获豆 / 回头客补贴</strong></td>
                 <td>以常乐豆形式发放，<strong>仅全职推拿师 Lv3 以下员工</strong>享有；非全日制/兼职/返聘<strong>均无任何常乐豆</strong>（与 Lv 等级无关，仅与用工类型相关）</td>
               </tr>
@@ -219,7 +222,13 @@
 
       <!-- 应税收入计算规则（正式定义） -->
       <div id="taxable-income-rule" class="section" style="margin-top: 24px;">
-        <h2>应税收入计算规则（正式定义）</h2>
+        <div class="section-header">
+          <h2 style="margin: 0;">应税收入计算规则（正式定义）</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('taxable-income-rule')" class="copy-section-btn">
+            <el-icon style="margin-right: 4px;"><DocumentCopy v-if="false" /><span>📋</span></el-icon>
+            复制章节
+          </el-button>
+        </div>
         <p>本节给出 v2-1 系统中"应税收入"的<strong>正式公式与边界规则</strong>，作为工资条、个税计算、汇算等所有环节的口径基准。</p>
 
         <!-- 1. 公式 -->
@@ -343,21 +352,21 @@
         <!-- 6. 常乐豆与公积金的认知补充 -->
         <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
           <h3>⑥ 常乐豆与公积金 / 工资单的关系（关键认知）</h3>
-          <p>常乐豆<strong>仅全职</strong>享有，<strong>只用于抵扣公积金</strong>（公司部分 / 个人部分），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>不计入应税收入</strong>。当常乐豆余额不足以抵扣公积金<strong>个人部分</strong>时，需要从对应<strong>工资单现金</strong>中补扣，扣款项的<strong>固定名称</strong>为【<strong>公积金个人扣款</strong>】。</p>
+          <p>常乐豆<strong>仅全职</strong>享有，<strong>优先抵扣公积金公司部分</strong>，<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由员工现金补差），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>常乐豆本身不计入应税收入</strong>。公积金<strong>个人部分</strong>在工资条上按<strong>全额</strong>显示，金额由<strong>老系统接口读取</strong>；当常乐豆代缴了部分个人公积金时，公司会以<strong>「绩效补贴」或类似名义</strong>在<strong>第 1 个工资条</strong>中增加等额收入，<strong>该「绩效补贴」计入应税收入</strong>（作为 1 级收入项）。</p>
           <table class="data-table">
             <thead>
               <tr><th style="width: 200px;">场景</th><th>处理方式</th><th>对应应税收入计算</th></tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>常乐豆优先抵扣（仅公积金）</strong></td>
-                <td>① 抵<strong>公积金公司部分</strong> → ② 抵<strong>公积金个人部分</strong><br/>（<strong>不抵扣</strong>社保公司部分、社保个人部分、商业险公司部分）</td>
+                <td><strong>常乐豆优先抵扣公积金公司部分</strong></td>
+                <td>抵<strong>公积金公司部分</strong>（公司部分由老系统记账，<strong>不进员工工资条</strong>）</td>
                 <td>常乐豆<strong>不参与应税收入</strong>（既不计入收入，也不冲减收入）</td>
               </tr>
               <tr>
-                <td><strong>常乐豆不足</strong>（公积金个人部分）→ 工资单现金补扣</td>
-                <td>从对应工资单现金部分扣减【<strong>公积金个人扣款</strong>】</td>
-                <td>【公积金个人扣款】作为<strong>扣缴项</strong>，<strong>不参与应税收入</strong>（与代扣公积金个人部分逻辑一致）</td>
+                <td><strong>常乐豆剩余继续抵扣公积金个人部分</strong></td>
+                <td>① 抵<strong>公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，如 1200；<strong>不修改</strong>工资条上「代扣公积金」显示金额，仍按<strong>全额</strong>显示）<br/>② 抵掉的部分<strong>以「绩效补贴」名义</strong>作为收入项加入<strong>第 1 个工资条</strong><br/>③ 不足部分由<strong>员工现金补差</strong>（= 1200 − 常乐豆代缴金额）</td>
+                <td><strong>「绩效补贴」计入应税收入</strong>（作为 1 级收入项；金额 = 常乐豆实际抵个人部分的金额，最高 1200）</td>
               </tr>
               <tr>
                 <td><strong>常乐豆有剩余</strong>（仅全职）</td>
@@ -366,25 +375,25 @@
               </tr>
               <tr>
                 <td><strong>社保 / 商业险</strong>（不在常乐豆抵扣范围）</td>
-                <td>· 社保公司部分 + 商业险公司部分：<strong>公司全额现金承担</strong>（不进员工工资条）<br/>· 社保个人部分：通过<strong>代扣社保</strong>从工资单现金扣减（与代扣公积金逻辑同，但名称独立）</td>
+                <td>· 社保公司部分 + 商业险公司部分：<strong>公司全额现金承担</strong>（不进员工工资条）<br/>· 社保个人部分：通过<strong>代扣社保</strong>从工资单现金扣减</td>
                 <td>· 公司部分：<strong>不参与应税收入</strong>（不进入员工工资条）<br/>· 社保个人部分：作为<strong>扣缴项</strong>，<strong>不参与应税收入</strong></td>
-              </tr>
-              <tr>
-                <td><strong>返聘工资单</strong>（无常乐豆/无社保/无公积金）</td>
-                <td>无【公积金个人扣款】触发场景（无常乐豆+无公积金）<br/>商业险公司部分公司全额现金承担</td>
-                <td>—</td>
               </tr>
             </tbody>
           </table>
           <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning)); margin-top: 8px;">
-            <strong>⚠ 关键：</strong>【公积金个人扣款】<strong>仅是工资单上的一个固定名称扣缴项</strong>，其本质与"代扣公积金个人部分"等同——都属于"个税申报时税局自动减除"项，<strong>不进入应税收入公式</strong>。换言之：<strong>应税收入公式不受常乐豆抵扣行为影响</strong>，常乐豆只是改变"工资单的现金流出方向"（且只针对公积金）。
+            <strong>⚠ 关键：</strong>① 常乐豆<strong>本身</strong>不计入应税收入；② 当常乐豆代缴公积金个人部分时，<strong>「绩效补贴」名义等额收入计入应税收入</strong>——本质是公司替员工承担的公积金个人部分，属于员工的隐性收入，应当计入应税基数；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，与常乐豆无关；④ <strong>「绩效补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现。
           </div>
         </div>
       </div>
 
       <!-- 一、整体概述 -->
       <div id="summary" class="section">
-        <h2>一、整体概述</h2>
+        <div class="section-header">
+          <h2>一、整体概述</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('summary')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <!-- 核心流程（9 步全链路） -->
         <div class="card architecture-card">
@@ -416,19 +425,19 @@
                   <div style="font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 6px;">全职模板（劳动合同，单一主体）</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第1级：计件提成、超产值奖金、超时加班费、投诉扣款</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第2级：保底获豆</div>
-                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：<strong>代扣社保（金额从老系统接口读取）</strong>｜<strong>代扣公积金（老系统读取 + 常乐豆抵扣升级：剩余部分记为【公积金个人扣款】）</strong>｜代扣个税（综合所得月度累计预扣）</div>
+                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：<strong>代扣社保（金额从老系统接口读取）</strong>｜<strong>代扣公积金（老系统读取，<strong>个人部分员工足额自付</strong>；常乐豆只抵公司部分，<strong>不进工资条</strong>）</strong>｜代扣个税（综合所得月度累计预扣）</div>
                 </div>
                 <div style="margin-bottom: 8px; padding: 8px 10px; background: hsl(var(--primary) / 0.05); border: 1px solid hsl(var(--primary) / 0.15); border-radius: 4px;">
                   <div style="font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 6px;">非全日制模板（劳务协议，多主体）</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第1级：计件提成、超时加班费、投诉扣款</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第2级：个税预扣（每条 3%）</div>
-                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：代扣个税（月末汇算）｜商业险（默认机制，<strong>不进工资条</strong>）</div>
+                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：代扣个税（月末汇算）｜商业险（暂不进入系统）</div>
                 </div>
                 <div style="padding: 8px 10px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.25); border-radius: 4px;">
                   <div style="font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 6px;">兼职模板（劳务合作，多主体）</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第1级：计件提成、超时加班费、投诉扣款</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 4px;">第2级：个税预扣（每条 3%）</div>
-                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：代扣个税（月末汇算，<strong>多主体倒序申报</strong>）｜商业险（默认机制，<strong>不进工资条</strong>）</div>
+                  <div style="font-size: 12px; color: hsl(var(--muted-foreground));">系统项：代扣个税（月末汇算，<strong>多主体倒序申报</strong>）｜商业险（暂不进入系统）</div>
                 </div>
               </div>
             </div>
@@ -512,7 +521,7 @@
                 <div style="padding: 8px 10px; background: hsl(var(--primary) / 0.05); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px;">
                   <div style="font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 6px;">③ 系统升级计算（<span style="color: hsl(var(--primary));">v2-1 核心新增</span>）</div>
                   <div style="font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.8;">
-                    · <strong>公积金抵扣升级</strong>（全职）：常乐豆优先抵扣公积金个人部分 → 剩余部分在工资条记为【<strong>公积金个人扣款</strong>】（与代扣公积金个人部分等同，不参与应税收入）<br/>
+                    · <strong>常乐豆抵扣（独立流程）</strong>（全职）：常乐豆<strong>只抵扣公积金公司部分</strong>（公司部分由老系统记账，<strong>不进员工工资条</strong>）；不足时由<strong>公司现金补足</strong>；<strong>【公积金个人扣款】动态项已取消</strong>——员工个人部分由<strong>足额自付</strong><br/>
                     · <strong>全职工种个税累计预扣</strong>：<strong>系统按公式</strong>（综合所得月度累计预扣法：当月应纳税所得额 × 税率 - 速算扣除数 - 累计已预扣）计算<br/>
                     · <strong>非全日制 / 兼职个税</strong>：每条 3% 预扣（系统按规则，来自 step 6 第2级）+ 月末汇算（<strong>百旺服务返回</strong>实际税额 → 多退少补）<br/>
                     · <strong>兼职多主体报税升级</strong>：跨多主体的员工，<strong>按业绩归属主体倒序依次调用百旺申报</strong>（百旺 1 次仅支持 1 主体），每主体 1 次调用
@@ -728,7 +737,7 @@
               </tr>
               <tr>
                 <td>离职正式员工</td>
-                <td>优先使用常乐豆（<strong>只抵扣公积金</strong>）：① 抵<strong>公积金公司部分</strong> → ② 抵<strong>公积金个人部分</strong> → ③ 不够时从对应工资单<strong>现金</strong>扣【公积金个人扣款】；最终剩余常乐豆全部提现</td>
+                <td>优先使用常乐豆（<strong>只抵扣公积金公司部分</strong>）：① 抵<strong>公积金公司部分</strong> → ② 剩余可消费/提现（<strong>【公积金个人扣款】动态项已取消</strong>；个人部分始终由员工足额自付）；最终剩余常乐豆全部提现</td>
               </tr>
             </tbody>
           </table>
@@ -740,7 +749,12 @@
 
       <!-- 二、福利数据来源（老系统） -->
       <div id="welfare-data-source" class="section">
-        <h2>二、福利数据来源（老系统）</h2>
+        <div class="section-header">
+          <h2>二、福利数据来源（老系统）</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('welfare-data-source')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
         <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 阶段1 关键裁剪：</strong>v2 完整版中独立的【员工福利保障】模块在 v2-1 阶段<strong>整体不开发</strong>。本节明确说明福利数据<strong>从哪来</strong>、<strong>不开发什么</strong>、<strong>商业险怎么处理</strong>。
         </div>
@@ -776,8 +790,8 @@
               <tr>
                 <td><strong>公积金</strong><br/>个人部分</td>
                 <td><strong>老系统接口（只读）</strong></td>
-                <td>每结算周期调用接口读取；可被常乐豆优先抵扣</td>
-                <td>代扣公积金（金额 = 老系统返回值 - 常乐豆抵扣）</td>
+                <td>每结算周期调用接口读取；<strong>员工足额自付</strong>，<strong>不参与常乐豆抵扣</strong></td>
+                <td>代扣公积金（金额 = 老系统返回值，<strong>个人部分</strong>）</td>
                 <td>全职</td>
               </tr>
               <tr>
@@ -789,9 +803,9 @@
               </tr>
               <tr>
                 <td><strong>商业险</strong></td>
-                <td><strong>默认机制（不开发配置页）</strong></td>
-                <td>全员默认有 1 份商业险（后台硬编码）</td>
-                <td>—（<strong>不进员工工资条</strong>，公司全额现金承担）</td>
+                <td><strong>暂不进入系统（线下购买）</strong></td>
+                <td>由<strong>线下</strong>完成购买，<strong>成本归公司</strong></td>
+                <td>—（<strong>不进员工工资条</strong>）</td>
                 <td>全员</td>
               </tr>
               <tr>
@@ -804,7 +818,7 @@
             </tbody>
           </table>
           <div class="note">
-            <strong>关键结论：</strong>v2-1 阶段本系统<strong>只读取 2 类数据</strong>：① 社保/公积金个人部分金额（来自老系统接口） ② 商业险默认配置（硬编码）；其余福利数据（公司部分、城市基准系数、月度流水、Override 等）<strong>全部由老系统维护</strong>。
+            <strong>关键结论：</strong>v2-1 阶段本系统<strong>只读取 2 类数据</strong>：① 社保/公积金个人部分金额（来自老系统接口） ② 商业险线下购买（不进系统）；其余福利数据（公司部分、城市基准系数、月度流水、Override 等）<strong>全部由老系统维护</strong>。
           </div>
         </div>
 
@@ -850,10 +864,10 @@
           </div>
         </div>
 
-        <!-- 3. 商业险默认机制 -->
+        <!-- 3. 商业险线下购买（暂不进入系统） -->
         <div class="card" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning));">
-          <h3>③ 商业险默认机制</h3>
-          <p>v2-1 阶段商业险<strong>不开发</strong>商业险库配置页、不做城市/险种选择、不做入职时选商业险流程。采取<strong>默认机制</strong>：</p>
+          <h3>③ 商业险线下购买（暂不进入系统）</h3>
+          <p>v2-1 阶段商业险<strong>暂不进入新系统</strong>，由<strong>线下</strong>完成购买，<strong>成本归公司</strong>。本系统不开发商业险库配置页、不做城市/险种选择、不做入职时选商业险流程、不显示在工资条/福利明细中。</p>
           <table class="data-table">
             <thead>
               <tr>
@@ -864,27 +878,17 @@
             </thead>
             <tbody>
               <tr>
-                <td>险种</td>
-                <td><strong>1 份默认险种</strong></td>
-                <td>具体险种/保额/保费由<strong>后端硬编码</strong>，不暴露给用户/HR</td>
+                <td>购买方式</td>
+                <td><strong>线下完成</strong></td>
+                <td>由公司<strong>线下</strong>统一购买，<strong>不进新系统</strong></td>
               </tr>
               <tr>
-                <td>适用对象</td>
-                <td>全员（全职/非全日制/兼职/返聘）</td>
-                <td>默认全员有 1 份商业险，无需在入职/分配时选择</td>
+                <td>成本承担</td>
+                <td><strong>公司全额</strong></td>
+                <td>成本归公司，<strong>不计入员工工资</strong>、<strong>不进员工工资条</strong></td>
               </tr>
               <tr>
-                <td>城市筛选</td>
-                <td><strong>不筛选</strong></td>
-                <td>默认险种全国适用</td>
-              </tr>
-              <tr>
-                <td>公司部分金额</td>
-                <td>公司全额现金承担</td>
-                <td>由老系统/财务单独记账（<strong>不进员工工资条</strong>）</td>
-              </tr>
-              <tr>
-                <td>员工部分金额</td>
+                <td>员工个人部分</td>
                 <td>—</td>
                 <td>员工<strong>不缴</strong>，<strong>无代扣</strong></td>
               </tr>
@@ -901,12 +905,12 @@
               <tr>
                 <td>续保提醒</td>
                 <td>—</td>
-                <td>v2-1 不实现，到期后由业务方手动续保</td>
+                <td>v2-1 不实现，到期后由业务方线下续保</td>
               </tr>
             </tbody>
           </table>
           <div class="note">
-            <strong>关键：</strong>商业险在 v2-1 阶段对员工/HR/工资条<strong>完全不可见</strong>，是<strong>后端静默处理</strong>的一项公司成本。<strong>未来升级路径</strong>：v2-2 阶段再开发商业险库配置页、入职选商业险流程、月度福利明细、续保提醒等。
+            <strong>关键：</strong>商业险在 v2-1 阶段对员工/HR/工资条<strong>完全不可见</strong>，由<strong>线下完成购买</strong>，<strong>成本归公司</strong>。<strong>未来升级路径</strong>：v2-2 阶段再开发商业险库配置页、入职选商业险流程、月度福利明细、续保提醒等。
           </div>
         </div>
 
@@ -970,13 +974,13 @@
               </tr>
               <tr>
                 <td>商业险库（险种/城市/保额/保费/续保）</td>
-                <td><strong>不开发</strong>，采用默认机制</td>
-                <td>见上文 ③ 商业险默认机制</td>
+                <td><strong>不开发</strong>，<strong>线下购买</strong></td>
+                <td>见上文 ③ 商业险（暂不进入系统）</td>
               </tr>
               <tr>
                 <td>入职时选商业险流程</td>
                 <td><strong>不开发</strong></td>
-                <td>默认机制下无选择</td>
+                <td>线下购买，<strong>无需选择</strong></td>
               </tr>
               <tr>
                 <td>保护模式选择（全额 vs 按基数）</td>
@@ -1053,9 +1057,14 @@
         </div>
       </div>
 
-      <!-- 三、常乐豆规则 -->
+      <!-- 三、常乐豆 -->
       <div id="bean" class="section">
-        <h2>三、常乐豆规则</h2>
+        <div class="section-header">
+          <h2>三、常乐豆</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('bean')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <div class="card">
           <h3>常乐豆适用范围</h3>
@@ -1093,29 +1102,38 @@
         </div>
 
         <div class="card">
+          <h3>常乐豆小程序可见范围</h3>
+          <div class="note">
+            <strong>常乐豆小程序中，不展示获豆明细</strong>，通过模块化薪酬<strong>只结算抵扣公积金后剩余的入账记录</strong>，以及<strong>使用这个余额产生的京东消费记录</strong>。
+          </div>
+        </div>
+
+        <div class="card">
           <h3>常乐豆使用规则（优先级）</h3>
           <div class="note">
-            <strong>核心规则：</strong>获得的常乐豆，<strong>只用于抵扣公积金</strong>（公司部分 / 个人部分），<strong>不抵扣社保、不抵扣商业险</strong>。按以下优先级顺序使用：
+            <strong>核心规则：</strong>获得的常乐豆，<strong>优先抵扣公积金公司部分</strong>，<strong>剩余可继续抵扣公积金个人部分（最高不超过个人公积金总额）</strong>（不足部分由员工现金补差）；<strong>不抵扣社保、不抵扣商业险</strong>。使用顺序：
             <ol style="margin: 10px 0 0 20px; line-height: 2;">
-              <li><strong>抵扣公积金公司部分</strong>：常乐豆优先抵扣公积金中公司承担的部分</li>
-              <li><strong>抵扣公积金个人部分</strong>：常乐豆继续抵扣公积金中员工个人承担的部分</li>
-              <li><strong>现金补扣【公积金个人扣款】</strong>：若常乐豆余额仍不足，从对应<strong>工资单现金</strong>部分抵扣，扣款项<strong>固定名称</strong>为【<strong>公积金个人扣款</strong>】</li>
-              <li><strong>消费</strong>：若抵扣后仍有剩余，仅可用于消费，不可提现</li>
+              <li><strong>抵扣公积金公司部分</strong>：常乐豆优先抵扣公积金中公司承担的部分（<strong>公司部分金额由老系统记账</strong>，<strong>不进员工工资条</strong>）。若常乐豆<strong>不足</strong>公司部分，差额由<strong>公司现金补足</strong></li>
+              <li><strong>抵扣公积金个人部分</strong>：抵完公司部分后若有剩余，<strong>可继续抵扣公积金个人部分</strong>，<strong>最高不超过个人公积金总额</strong>（如个人 1200）——但<strong>不修改</strong>工资条上「代扣公积金」的显示金额（仍按<strong>全额</strong>显示，用于个税免税扣除）；不足部分由<strong>员工现金补差</strong></li>
+              <li><strong>转「绩效补贴」名义入第 1 个工资条</strong>：用于抵扣个人部分的常乐豆（即第 ② 步实际抵掉金额，<strong>最高 = 个人公积金总额</strong>），<strong>以「绩效补贴」或类似名义</strong>（与公积金/常乐豆无关的名称）作为<strong>收入项</strong>加入<strong>第 1 个工资条</strong>，<strong>计入应税收入</strong>——保持工资条净到手与员工实收一致</li>
+              <li><strong>消费 / 提现</strong>：若以上抵扣后仍有剩余，<strong>在职时仅可用于消费</strong>；<strong>离职时全额提现</strong></li>
             </ol>
+            <strong style="display: block; margin-top: 8px;">⚠ 重要：</strong>公积金<strong>个人部分</strong>的<strong>显示金额</strong>仍由<strong>老系统接口读取全额</strong>，与常乐豆无关——工资条保留<strong>「代扣公积金」</strong>扣减项。<strong>员工实际现金补差 = 全额 - 常乐豆代缴金额</strong>。
           </div>
         </div>
 
         <div class="card">
           <h3>常乐豆与应税收入</h3>
           <div class="note">
-            <strong>重要说明：</strong>常乐豆<strong>不参与个税应税金额计算</strong>——无论是抵扣公司部分、抵扣个人部分、用于消费，均不计入应税收入。
+            <strong>重要说明：</strong>常乐豆<strong>不参与个税应税金额计算</strong>——常乐豆本身既不计入收入也不冲减收入。<br/><br/>
+            <strong>特殊场景：常乐豆代缴公积金个人部分时</strong>，为保持工资条净到手与员工实收一致，公司会<strong>以「绩效补贴」名义</strong>在第 1 个工资条中增加一笔等额收入，<strong>该「绩效补贴」计入应税收入</strong>（作为 1 级收入项）——本质是公司替员工承担的公积金个人部分，<strong>属于员工的隐性收入</strong>，应当计入应税基数。
           </div>
         </div>
 
         <div class="card">
           <h3>离职提现</h3>
           <div class="note">
-            全职员工离职时，按<strong>使用规则</strong>优先完成当期福利保障的抵扣（公司部分 → 个人部分 → 现金补扣【公积金个人扣款】），<strong>最终剩余的常乐豆余额全部提现</strong>。<br/><br/>
+            全职员工离职时，按<strong>使用规则</strong>优先完成当期福利保障的抵扣（<strong>公司部分 + 个人部分（最高 1200）</strong>），<strong>最终剩余的常乐豆余额全部提现</strong>。<br/><br/>
             <strong>提现功能：</strong>将在<strong>推拿之家-常乐豆账户体系</strong>提供提现入口，提现报税主体即为该员工的合同主体。
           </div>
         </div>
@@ -1129,15 +1147,23 @@
         </div>
 
         <div class="callout" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
-          <strong>💡 v2-1 阶段变化点：</strong>常乐豆使用规则在 v2-1 阶段<strong>完全保留</strong>，未做任何裁剪。<strong>唯一变化</strong>：公积金个人部分金额从【老系统接口读取】，抵扣方向不变（公司部分 → 个人部分 → 现金补扣【公积金个人扣款】）。
+          <strong>💡 v2-1 阶段变化点：</strong>常乐豆使用规则在 v2-1 阶段<strong>从 1 步扩展为 4 步</strong>——① 抵公司部分 → ② 抵个人部分（<strong>最高 1200</strong>）→ ③ 抵掉部分以「绩效补贴」名义入第 1 个工资条计入应税收入 → ④ 剩余消费/提现。<strong>【公积金个人扣款】动态项随之取消</strong>，工资条上「代扣公积金」<strong>始终按全额显示</strong>，员工<strong>现金补差 = 1200 - 常乐豆代缴金额</strong>。
         </div>
       </div>
 
       <!-- 四、岗位薪酬模板 -->
       <div id="template" class="section">
-        <h2>四、岗位薪酬模板</h2>
+        <div class="section-header">
+          <h2>四、岗位薪酬模板</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('template')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
         <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
-          <strong>📌 职责边界：</strong>岗位薪酬模板<strong>只管工资条项</strong>（薪酬项 + 扣缴项 + 系统项）。福利保障项（社保 / 公积金 / 商业险）<strong>不配置在薪酬模板中</strong>——社保/公积金个人部分金额由<strong>老系统接口</strong>读取，商业险采用<strong>默认机制</strong>。
+          <strong>📌 职责边界：</strong>岗位薪酬模板<strong>只管工资条项</strong>（薪酬项 + 扣缴项 + 系统项）。其中<strong>系统项</strong>包含<strong>代扣社保 / 代扣公积金 / 代扣个税</strong>，金额由<strong>老系统接口 / 百旺服务</strong>返回（个人部分从老系统接口读取、个税由百旺按月计算）；<strong>商业险</strong><strong>暂不进入系统</strong>（由线下购买，成本归公司），也不在薪酬模板里配置。
+        </div>
+        <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+          <strong>⚠ 2 级薪酬项配置规则：</strong>第 2 级薪酬项是<strong>自定义配置</strong>（与 1 级独立），但配置内容<strong>只能使用第 1 级薪酬项、元数据和配置参数</strong>，<strong>不可引用</strong>其他 2 级或更低层级数据。
         </div>
 
         <div class="card">
@@ -1169,7 +1195,7 @@
               </tr>
               <tr>
                 <td>代扣公积金</td>
-                <td>公积金扣缴（全职），员工个人部分；<strong>金额 = 老系统接口返回值 - 常乐豆抵扣</strong></td>
+                <td>公积金扣缴（全职），员工<strong>个人部分</strong>；<strong>金额 = 老系统接口返回值</strong>（员工<strong>足额自付</strong>，<strong>不参与常乐豆抵扣</strong>）</td>
                 <td>✅ 是</td>
               </tr>
               <tr>
@@ -1187,7 +1213,7 @@
           <div class="note">
             <strong>已移除的旧版"公司成本项"：</strong>原 V1 模板中的"公司成本项"分类（商业险等）在 V2 已<strong>整体拆出</strong>，v2-1 阶段<strong>不引入薪酬模板</strong>——理由：
             <ul style="margin: 4px 0 0 16px; line-height: 1.8;">
-              <li>社保 / 公积金 / 商业险<strong>本质是福利保障</strong>，v2-1 由老系统/默认机制处理，不在本系统维护</li>
+              <li>社保 / 公积金 / 商业险<strong>本质是福利保障</strong>，v2-1 由线下购买处理，不在本系统维护</li>
               <li>福利项<strong>不参与工资条扣款</strong>，与薪酬项的"按月计算按条分配"逻辑不同源</li>
             </ul>
           </div>
@@ -1243,7 +1269,7 @@
               <tr>
                 <td>代扣公积金</td>
                 <td>代扣公积金</td>
-                <td>末级（金额 = 老系统接口 - 常乐豆）</td>
+                <td>末级（金额 = 老系统接口，<strong>个人部分</strong>）</td>
               </tr>
               <tr>
                 <td>代扣个税</td>
@@ -1255,7 +1281,7 @@
           <div class="note">
             <strong>系统项：</strong>代扣社保、代扣公积金、代扣个税（按月计算，按工资条分配）<br/>
             <strong>无预扣个税：</strong>全职个税直接使用百旺服务计算，不再预扣<br/>
-            <strong>福利保障：</strong>社保（全）+ 公积金 <strong>从老系统接口读取个人部分金额</strong>；商业险<strong>默认机制</strong>（不进工资条）
+            <strong>福利保障：</strong>社保（全）+ 公积金 <strong>从老系统接口读取个人部分金额</strong>（员工<strong>足额自付</strong>，不参与常乐豆抵扣）；商业险<strong>暂不进入系统</strong>（不进工资条）
           </div>
         </div>
 
@@ -1304,7 +1330,7 @@
             </tbody>
           </table>
           <div class="note">
-            <strong>福利保障：</strong>社保（仅工伤保险）由<strong>老系统单独记账</strong>，<strong>不进入员工工资条</strong>；商业险采用<strong>默认机制</strong>（不进入工资条）<br/>
+            <strong>福利保障：</strong>社保（仅工伤保险）由<strong>老系统单独记账</strong>，<strong>不进入员工工资条</strong>；商业险<strong>暂不进入系统</strong>（线下购买）<br/>
             <strong>无社保/无公积金代扣项：</strong>非全日制模板中<strong>不包含</strong>代扣社保/代扣公积金系统项——因为公司全额承担，个人不缴
           </div>
         </div>
@@ -1354,7 +1380,7 @@
             </tbody>
           </table>
           <div class="note">
-            <strong>福利保障：</strong>商业险采用<strong>默认机制</strong>（公司全额，不进工资条）<br/>
+            <strong>福利保障：</strong>商业险<strong>暂不进入系统</strong>（线下购买，成本归公司）<br/>
             <strong>多主体申报：</strong>按应税金额大的先报，可能跳档
           </div>
         </div>
@@ -1398,7 +1424,7 @@
             </tbody>
           </table>
           <div class="note">
-            <strong>福利保障：</strong>无社保（达到退休年龄不再缴纳）、无公积金、<strong>商业险默认机制</strong>（不进工资条）<br/>
+            <strong>福利保障：</strong>无社保（达到退休年龄不再缴纳）、无公积金、<strong>商业险（暂不进入系统）</strong>（不进工资条）<br/>
             <strong>无常乐豆：</strong>返聘员工不享有常乐豆<br/>
             <strong>无预扣个税：</strong>返聘无周薪，个税直接由百旺服务按月计算（参考全职逻辑）
           </div>
@@ -1407,7 +1433,12 @@
 
       <!-- 四·附录：动态薪酬项 / 扣缴项（业务流转产生，非模板固定配置） -->
       <div id="dynamic-items" class="section">
-        <h2>四·附录：动态薪酬项 / 扣缴项（业务流转产生）</h2>
+        <div class="section-header">
+          <h2>四·附录：动态薪酬项 / 扣缴项（业务流转产生）</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('dynamic-items')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
         <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 与"模板固定项"的区别：</strong>上一节【岗位薪酬模板】列出的薪酬项 / 扣缴项是<strong>HR 预先在模板中配置</strong>的。本节列出的项是<strong>在业务执行/计算流转过程中，按条件动态产生</strong>的——<strong>不固定配置在模板中</strong>，而是<strong>触发式动态项</strong>。
         </div>
@@ -1426,12 +1457,6 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>【公积金个人扣款】</strong></td>
-                <td>常乐豆余额不足以抵扣公积金<strong>个人部分</strong>时（个人部分金额从老系统接口读取），从工资单<strong>现金</strong>部分扣减</td>
-                <td>全职</td>
-                <td>对应工资单（全职=当月任一工资条）</td>
-              </tr>
-              <tr>
                 <td><strong>个税补缴</strong></td>
                 <td>月末百旺汇算：实际税额 &gt; 已预扣合计（多退少补中的"补"）</td>
                 <td>非全日制 / 兼职</td>
@@ -1448,6 +1473,12 @@
                 <td>工资条<strong>应发 &gt; 0</strong> 且员工存在<strong>负工资余额</strong>时触发</td>
                 <td>全职 / 非全日制 / 兼职 / 返聘（所有类型）</td>
                 <td>任意可触发的工资条（<strong>可叠加多条</strong>）</td>
+              </tr>
+              <tr>
+                <td><strong>绩效补贴</strong>（常乐豆代缴公积金个人部分的名义收入）</td>
+                <td>常乐豆<strong>优先抵公司部分后，剩余继续抵个人部分</strong>，且实际抵掉金额 &gt; 0 时触发；金额 = 常乐豆代缴个人部分金额</td>
+                <td><strong>仅全职</strong></td>
+                <td><strong>第 1 个工资条</strong>的一个收入项；与「代扣公积金」按全额显示相配合，<strong>保持工资条净到手 = 员工实收</strong></td>
               </tr>
             </tbody>
           </table>
@@ -1468,13 +1499,15 @@
               <tr>
                 <td><strong>全职</strong></td>
                 <td>
-                  · 【<strong>公积金个人扣款</strong>】（常乐豆不足时）<br/>
                   · <strong>负工资抵扣</strong>（应发 &gt; 0 且有余额时）<br/>
-                  · <em>无个税补缴/退税</em>（个税直接由百旺按月计算，不预扣）
+                  · <strong>绩效补贴</strong>（常乐豆代缴公积金个人部分时触发；仅全职）<br/>
+                  · <em>无个税补缴/退税</em>（个税直接由百旺按月计算，不预扣）<br/>
+                  · <em>无【公积金个人扣款】</em>（v2-1 已取消；工资条上「代扣公积金」按老系统接口读取的全额显示，员工现金补差 = 全额 − 常乐豆代缴金额）
                 </td>
                 <td>
-                  ① 工资单组装 → 常乐豆抵扣（公司 → 个人）→ 现金补扣【公积金个人扣款】<br/>
-                  ② 工资条应发计算 → 应发 &gt; 0 触发负工资抵扣
+                  ① 工资条应发计算 → 应发 &gt; 0 触发负工资抵扣<br/>
+                  ② 常乐豆<strong>优先抵公积金公司部分</strong>（公司侧独立资金流，<strong>不进员工工资条</strong>）<br/>
+                  ③ 常乐豆<strong>剩余继续抵公积金个人部分</strong> → 触发<strong>「绩效补贴」动态项</strong>（作为收入项加入<strong>第 1 个工资条</strong>，<strong>计入应税收入</strong>）
                 </td>
               </tr>
               <tr>
@@ -1482,7 +1515,7 @@
                 <td>
                   · <strong>个税补缴</strong> 或 <strong>个税退税</strong>（月末汇算）<br/>
                   · <strong>负工资抵扣</strong>（应发 &gt; 0 且有余额时）<br/>
-                  · <em>无【公积金个人扣款】</em>（无常乐豆）
+                  · <em>无常乐豆</em>
                 </td>
                 <td>
                   ① 每周预扣个税 → 累计已预扣合计<br/>
@@ -1495,7 +1528,7 @@
                 <td>
                   · <strong>个税补缴</strong> 或 <strong>个税退税</strong>（月末多主体倒序汇算）<br/>
                   · <strong>负工资抵扣</strong>（每主体独立）<br/>
-                  · <em>无【公积金个人扣款】</em>
+                  · <em>无常乐豆</em>
                 </td>
                 <td>
                   ① 每周每主体预扣个税<br/>
@@ -1506,12 +1539,12 @@
               <tr>
                 <td><strong>返聘</strong></td>
                 <td>
-                  · <em>无【公积金个人扣款】</em>（无常乐豆 + 无公积金个人部分，<strong>无任何触发场景</strong>）<br/>
                   · <strong>负工资抵扣</strong>（应发 &gt; 0 且有余额时）<br/>
-                  · <em>无个税补缴/退税</em>（无周薪无预扣）
+                  · <em>无个税补缴/退税</em>（无周薪无预扣）<br/>
+                  · <em>无社保/无公积金/无常乐豆</em>
                 </td>
                 <td>
-                  ① 无社保/无公积金/无常乐豆 + 商业险默认机制（不进工资条）→ <strong>无任何【公积金个人扣款】触发场景</strong><br/>
+                  ① 无社保/无公积金/无常乐豆 + 商业险（暂不进入系统）（不进工资条）<br/>
                   ② 工资条应发 &gt; 0 触发负工资抵扣
                 </td>
               </tr>
@@ -1539,7 +1572,7 @@
               <tr>
                 <td>名称</td>
                 <td>HR 自定义（如：投诉扣款、计件提成）</td>
-                <td><strong>系统固定名称</strong>（如：【公积金个人扣款】、负工资抵扣、个税补缴/退税）</td>
+                <td><strong>系统固定名称</strong>（如：负工资抵扣、个税补缴/退税）</td>
               </tr>
               <tr>
                 <td>出现时机</td>
@@ -1550,18 +1583,19 @@
                 <td>是否影响应税收入</td>
                 <td>第 1 级 + 第 2 级（非预扣）→ 计入应税收入<br/>预扣个税 → 不计入</td>
                 <td>
-                  · 【公积金个人扣款】→ <strong>不计入</strong>（与代扣公积金个人部分等同）<br/>
                   · 负工资抵扣 → <strong>不计入</strong>（动态项，不是收入）<br/>
-                  · 个税补缴/退税 → <strong>不计入</strong>（个税汇算结果）
+                  · 个税补缴/退税 → <strong>不计入</strong>（个税汇算结果）<br/>
+                  · <strong>绩效补贴 → 计入应税收入</strong>（作为 1 级收入项；常乐豆代缴公积金个人部分的名义收入）<br/>
+                  · <em>【公积金个人扣款】v2-1 已取消</em>
                 </td>
               </tr>
               <tr>
                 <td>与应发的关系</td>
                 <td>直接参与应发计算（+/- 应发）</td>
                 <td>
-                  · 【公积金个人扣款】→ 减少应发（扣缴项）<br/>
                   · 负工资抵扣 → 减少应发（触发时抵扣）<br/>
-                  · 个税补缴 → 减少应发 ｜ 个税退税 → 增加应发
+                  · 个税补缴 → 减少应发 ｜ 个税退税 → 增加应发<br/>
+                  · <strong>绩效补贴 → 增加应发</strong>（收入项）
                 </td>
               </tr>
             </tbody>
@@ -1571,7 +1605,12 @@
 
       <!-- 五、薪酬项范围 -->
       <div id="items" class="section">
-        <h2>五、薪酬项范围</h2>
+        <div class="section-header">
+          <h2>五、薪酬项范围</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('items')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <!-- 全职 -->
         <div class="card">
@@ -1622,7 +1661,7 @@
               <tr>
                 <td>代扣公积金</td>
                 <td>代扣公积金</td>
-                <td><strong>老系统接口返回值 - 常乐豆抵扣</strong></td>
+                <td><strong>老系统接口返回值（个人部分，员工足额自付）</strong></td>
               </tr>
               <tr>
                 <td>代扣个税</td>
@@ -1765,7 +1804,12 @@
 
       <!-- 六、计算节点与时机 -->
       <div id="calculation" class="section">
-        <h2>六、计算节点与时机</h2>
+        <div class="section-header">
+          <h2>六、计算节点与时机</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('calculation')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <!-- 全职 -->
         <div class="card">
@@ -1805,11 +1849,12 @@
                 <p><strong>时机：</strong>所有薪酬项计算后</p>
                 <p><strong>参与项：</strong></p>
                 <ul>
-                  <li>代扣社保（<strong>老系统接口读取</strong>）</li>
-                  <li>代扣公积金（<strong>老系统接口读取 - 常乐豆抵扣</strong>）</li>
+                  <li>代扣社保（<strong>老系统接口读取，个人部分</strong>）</li>
+                  <li>代扣公积金（<strong>老系统接口读取，个人部分</strong>，员工足额自付）</li>
                   <li>代扣个税（百旺服务）</li>
                 </ul>
-                <p><strong>说明：</strong>3项都每月只计算一次（示例），按工资条分配</p>
+                <p><strong>说明：</strong>3项都每月只计算一次（示例），按工资条分配。<strong>公积金公司部分</strong>由老系统记账，<strong>不进员工工资条</strong>。</p>
+                <p><strong>常乐豆抵扣（独立流程）：</strong>常乐豆<strong>只抵公积金公司部分</strong>，作为公司侧的独立资金流，<strong>不进入员工工资条</strong>，<strong>不影响应发计算</strong>。</p>
               </div>
             </div>
             <div class="flow-arrow">→</div>
@@ -1996,7 +2041,12 @@
 
       <!-- 七、计算示例 -->
       <div id="examples" class="section">
-        <h2>七、计算示例</h2>
+        <div class="section-header">
+          <h2>七、计算示例</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('examples')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
         <div class="card" style="background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.3);">
           <div style="font-size: 13px; line-height: 1.8;">
             <strong>说明：</strong>以下示例中的薪酬项、金额、计算结果、工资条数量、门店数等均<strong>为典型业务场景下的示例</strong>，用于演示计算逻辑。实际业务中，<strong>所有数字、项数、分配方式均可灵活配置</strong>。<br/>
@@ -2006,7 +2056,7 @@
 
         <!-- 全职示例 A -->
         <div class="card">
-          <h3>全职示例 A：常乐豆<strong>充足</strong> → 公积金个人扣款 = 0（含负工资抵扣）</h3>
+          <h3>全职示例 A：常乐豆<strong>充足（覆盖公司+部分个人）</strong> → 抵公司 1200，剩余抵个人 800，触发「绩效补贴」800（含负工资抵扣）</h3>
           <div class="example">
             <p><strong>员工当月数据：</strong></p>
             <table class="data-table">
@@ -2019,20 +2069,21 @@
                 <tr><td>超时加班费</td><td>+500</td><td>第1级收入</td></tr>
                 <tr><td>投诉扣款</td><td>-200</td><td>第1级扣缴</td></tr>
                 <tr><td>保底获豆</td><td>+0</td><td>第2级收入（第1级已超最低工资）</td></tr>
-                <tr><td>公积金<strong>个人部分</strong>（老系统接口）</td><td>600</td><td><strong>老系统接口读取</strong>；常乐豆优先抵<strong>公司部分</strong> → 再抵<strong>个人部分</strong>（本例被完全抵扣）</td></tr>
+                <tr><td>公积金<strong>公司部分</strong>（老系统记账）</td><td><strong>-1200</strong></td><td><strong>老系统记账</strong>（公司侧支出），<strong>不进员工工资条</strong>；本期<strong>由常乐豆完全抵扣</strong></td></tr>
+                <tr><td>公积金<strong>个人部分</strong>（老系统接口）</td><td><strong>-1200</strong></td><td><strong>老系统接口读取</strong>（员工扣款方向）；<strong>工资条保留「代扣公积金」-1200 扣减项</strong>（按全额显示）；常乐豆代缴 800，员工<strong>现金补差 = 1200 − 800 = 400</strong></td></tr>
                 <tr><td>代扣社保（老系统接口）</td><td>-800</td><td><strong>老系统接口读取</strong>，个人部分，<strong>不在常乐豆抵扣范围</strong></td></tr>
-                <tr><td>代扣个税</td><td>-57</td><td>百旺按 8300 计算</td></tr>
-                <tr><td><strong>常乐豆余额</strong></td><td><strong>2000</strong></td><td><strong>只用于抵扣公积金</strong>，本期<strong>充足</strong></td></tr>
+                <tr><td>代扣个税</td><td>-180</td><td>百旺按 9100 计算</td></tr>
+                <tr><td><strong>常乐豆余额</strong></td><td><strong>+2000</strong></td><td>资产方向（员工账户余额）；优先抵公司 1200；剩余 800 继续抵个人（<strong>最高 1200</strong>）；触发<strong>「绩效补贴」800</strong>；正好用完</td></tr>
                 <tr><td>负工资余额</td><td>-2000</td><td>历史欠款</td></tr>
               </tbody>
             </table>
-            <p><strong>应税收入：</strong>8500 - 投诉扣款(200) = <strong>8300</strong>（社保/公积金/常乐豆<strong>均不参与应税收入</strong>）</p>
-            <p><strong>常乐豆使用（4 级优先级，公积金个人部分金额从老系统读取）：</strong></p>
+            <p><strong>应税收入：</strong>(6000+2000+500+800 绩效补贴) - 投诉扣款(200) = <strong>9100</strong>（社保/公积金<strong>不参与应税收入</strong>；「绩效补贴」计入 1 级收入）</p>
+            <p><strong>常乐豆使用（v2-1 4 步，公司+个人都覆盖的场景）：</strong></p>
             <ul class="calc-steps">
-              <li>① 抵公积金<strong>公司部分</strong>（金额由老系统记账，本系统不显示） → 2000 - 公司部分 = <strong>剩余</strong></li>
-              <li>② 抵公积金<strong>个人部分</strong> 600 → 继续抵扣 → <strong>完全抵完</strong></li>
-              <li>③ 公积金个人部分已被完全抵扣 → <strong>【公积金个人扣款】= 0</strong>（无现金补扣）</li>
-              <li>④ 剩余常乐豆 → 进入<strong>消费</strong>环节</li>
+              <li>① 抵公积金<strong>公司部分</strong> 1200（老系统记账金额，<strong>不进员工工资条</strong>）→ 2000 - 1200 = <strong>剩余 800</strong></li>
+              <li>② 抵公积金<strong>个人部分</strong> 800（<strong>最高 1200</strong>，剩余 800 <strong>不超出</strong>个人部分上限）→ 800 - 800 = <strong>剩余 0</strong></li>
+              <li>③ 用于代缴个人部分的常乐豆 800 → 以<strong>「绩效补贴」名义</strong>作为收入项加入<strong>第 1 个工资条</strong>，<strong>计入应税收入</strong></li>
+              <li>④ 剩余常乐豆 0 → 不进入消费环节</li>
             </ul>
             <p><strong>N 个工资条完整组成（示例：3个，发放主体=合同主体）：</strong></p>
             <table class="data-table">
@@ -2042,43 +2093,43 @@
               <tbody>
                 <tr>
                   <td>工资条1（计件）</td>
-                  <td>计件提成 +6000</td>
+                  <td>计件提成 +6000；<strong>绩效补贴 +800</strong>（常乐豆代缴个人部分 800 的名义收入）</td>
                   <td>投诉扣款 -200；代扣社保 -800</td>
                   <td>负工资抵扣 -2000（应发 &gt; 0 触发）</td>
-                  <td>+3000</td>
-                  <td><strong>3000</strong></td>
+                  <td>+3800</td>
+                  <td><strong>+3800</strong></td>
                 </tr>
                 <tr>
                   <td>工资条2（奖金）</td>
                   <td>超产值奖金 +2000；超时加班费 +500</td>
-                  <td><s>代扣公积金 -600</s> → <strong>0</strong>（已被常乐豆完全抵扣）</td>
-                  <td>—（<strong>无【公积金个人扣款】</strong>，常乐豆已抵公积金个人部分）</td>
-                  <td>+2500</td>
-                  <td><strong>2500</strong></td>
+                  <td>代扣公积金 <strong>-1200</strong>（按老系统接口读取的全额显示；员工现金补差 400）</td>
+                  <td>—（<strong>公司部分由常乐豆抵完，不进工资条</strong>）</td>
+                  <td>+1300</td>
+                  <td><strong>+1300</strong></td>
                 </tr>
                 <tr>
-                  <td>工资条3（保底+个税）</td>
+                  <td>工资条3（个税）</td>
                   <td>保底获豆 +0</td>
-                  <td>代扣个税 -57</td>
+                  <td>代扣个税 -180</td>
                   <td>—</td>
-                  <td>-57（应发 &lt; 0，负数累加）</td>
+                  <td>-180（应发 &lt; 0，负数累加）</td>
                   <td><strong>0</strong></td>
                 </tr>
                 <tr>
                   <td colspan="4"><strong>合计</strong></td>
-                  <td colspan="2"><strong>实发 5500，剩余负工资余额 57</strong></td>
+                  <td colspan="2"><strong>实发 +5100，剩余负工资余额 -180</strong></td>
                 </tr>
               </tbody>
             </table>
             <div class="note">
-              <strong>说明：</strong>① 系统项（社保/公积金/个税）按月一次计算，按工资单配置分配到 N 个工资条（示例：3个）；<strong>社保/公积金金额来自老系统接口</strong>；② <strong>常乐豆充足时</strong>：公积金个人部分 600 <strong>完全由常乐豆抵扣</strong>，工资条 2 的"代扣公积金"为 0，<strong>【公积金个人扣款】不出现</strong>（= 0）；③ 负工资抵扣是触发式动态项；④ 应发 &lt; 0 时负数累加到下次负工资余额；⑤ <strong>商业险不显示</strong>（默认机制下不进工资条）。
+              <strong>说明：</strong>① 系统项（社保/公积金/个税）按月一次计算，按工资单配置分配到 N 个工资条（示例：3个）；<strong>社保/公积金金额来自老系统接口</strong>；② <strong>常乐豆 4 步：</strong>① 抵公司部分（不进工资条）→ ② 抵个人部分（<strong>最高 1200</strong>，<strong>不修改</strong>显示金额）→ ③ 抵掉部分<strong>以「绩效补贴」名义入第 1 个工资条计入应税收入</strong> → ④ 剩余消费/提现；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，员工<strong>现金补差 = 1200 − 常乐豆代缴 800 = 400</strong>；④ <strong>「绩效补贴」金额 = 常乐豆实际抵个人部分的金额</strong>（本例 800），不超过个人公积金总额 1200；⑤ v2-1 阶段<strong>【公积金个人扣款】动态项已取消</strong>；⑥ 负工资抵扣是触发式动态项；⑦ 应发 &lt; 0 时负数累加到下次负工资余额；⑧ <strong>商业险暂不进入系统</strong>（线下购买，成本归公司，不进工资条）。
             </div>
           </div>
         </div>
 
         <!-- 全职示例 B -->
         <div class="card">
-          <h3>全职示例 B：常乐豆<strong>不足</strong> → 触发【公积金个人扣款】（含负工资抵扣）</h3>
+          <h3>全职示例 B：常乐豆<strong>不足抵公司部分</strong> → 公司部分差额由公司现金补足，<strong>无剩余抵个人部分</strong>，<strong>不触发「绩效补贴」</strong>（含负工资抵扣）</h3>
           <div class="example">
             <p><strong>员工当月数据：</strong></p>
             <table class="data-table">
@@ -2090,19 +2141,20 @@
                 <tr><td>超时加班费</td><td>+0</td><td>第1级收入</td></tr>
                 <tr><td>投诉扣款</td><td>-3000</td><td>第1级扣缴（大额扣款）</td></tr>
                 <tr><td>保底获豆</td><td>+7000</td><td>第2级收入（最低工资8000 - 第1级1000）</td></tr>
-                <tr><td>公积金<strong>个人部分</strong>（老系统接口）</td><td>600</td><td><strong>老系统接口读取</strong>；本例常乐豆<strong>不足抵扣</strong>，触发【公积金个人扣款】</td></tr>
+                <tr><td>公积金<strong>公司部分</strong>（老系统记账）</td><td><strong>-1200</strong></td><td><strong>老系统记账</strong>（公司侧支出），<strong>不进员工工资条</strong>；本期<strong>常乐豆仅抵 300</strong>，剩余 900 由<strong>公司现金补足</strong></td></tr>
+                <tr><td>公积金<strong>个人部分</strong>（老系统接口）</td><td><strong>-1200</strong></td><td><strong>老系统接口读取</strong>（员工扣款方向）；工资条保留「代扣公积金」-1200 扣减项（按全额显示）；<strong>常乐豆已用完，无法代缴个人部分，员工现金补差 = 1200</strong></td></tr>
                 <tr><td>代扣社保（老系统接口）</td><td>-800</td><td><strong>老系统接口读取</strong>，个人部分，<strong>不在常乐豆抵扣范围</strong></td></tr>
-                <tr><td>代扣个税</td><td>-90</td><td>百旺按 5000 计算</td></tr>
-                <tr><td><strong>常乐豆余额</strong></td><td><strong>300</strong></td><td><strong>只用于抵扣公积金</strong>，本期<strong>不足</strong></td></tr>
+                <tr><td>代扣个税</td><td>-90</td><td>百旺按累计应税 9000 计算</td></tr>
+                <tr><td><strong>常乐豆余额</strong></td><td><strong>+300</strong></td><td>资产方向（员工账户余额）；优先抵公司部分 → 抵 300 后<strong>已用完</strong>；公司部分差额 900 由<strong>公司现金补足</strong>；无剩余抵个人部分，<strong>不触发「绩效补贴」</strong></td></tr>
                 <tr><td>负工资余额</td><td>-500</td><td>历史欠款</td></tr>
               </tbody>
             </table>
-            <p><strong>应税收入：</strong>(1000+7000) - 投诉扣款(3000) = <strong>5000</strong></p>
-            <p><strong>常乐豆使用（4 级优先级）：</strong></p>
+            <p><strong>应税收入：</strong>(1000+7000) - 投诉扣款(3000) = <strong>5000</strong>（无「绩效补贴」触发；社保/公积金<strong>不参与应税收入</strong>）</p>
+            <p><strong>常乐豆使用（v2-1 4 步，公司部分不足时公司现金补足）：</strong></p>
             <ul class="calc-steps">
-              <li>① 抵公积金<strong>公司部分</strong>（老系统记账金额）→ 300 &lt; 公司部分 → <strong>常乐豆用完</strong></li>
-              <li>② 抵公积金<strong>个人部分</strong> 600 → 常乐豆余额=0 → <strong>不能抵</strong></li>
-              <li>③ 公积金个人部分 600 <strong>未全部被常乐豆抵</strong> → 触发<strong>现金补扣【公积金个人扣款】= 600</strong>（从工资单现金扣）</li>
+              <li>① 抵公积金<strong>公司部分</strong> 1200（老系统记账金额）→ 常乐豆 300 <strong>全部消耗</strong>，仅抵 300；剩余 900 由<strong>公司现金补足</strong>（不进入员工工资条）</li>
+              <li>② 公积金<strong>个人部分</strong> 1200 → 常乐豆<strong>已用完</strong>，<strong>不触发</strong>第 ② 步抵扣；员工<strong>现金补差 = 1200</strong>（工资条上「代扣公积金」按全额 1200 显示）</li>
+              <li>③ <strong>跳过</strong>——无代缴个人部分，无「绩效补贴」</li>
               <li>④ 常乐豆已用完，不进入消费环节</li>
             </ul>
             <p><strong>N 个工资条完整组成（示例：3个，发放主体=合同主体）：</strong></p>
@@ -2115,16 +2167,16 @@
                   <td>工资条1（计件）</td>
                   <td>计件提成 +1000</td>
                   <td>投诉扣款 -3000；代扣社保 -800</td>
-                  <td>—（应税收入 ≤ 0，无个税）</td>
+                  <td>—（常乐豆已用完，无「绩效补贴」）</td>
                   <td>-2800</td>
                   <td><strong>0</strong></td>
                 </tr>
                 <tr>
                   <td>工资条2（奖金）</td>
                   <td>超时加班费 +0</td>
-                  <td><s>代扣公积金 -600</s> → <strong>0</strong>（被常乐豆+【公积金个人扣款】完全覆盖）</td>
-                  <td><strong>【公积金个人扣款】-600</strong>（常乐豆不足触发，现金补扣）</td>
-                  <td>-600</td>
+                  <td>代扣公积金 <strong>-1200</strong>（按老系统接口读取的全额显示；员工现金补差 1200）</td>
+                  <td>—（<strong>公司部分差额 900 由公司现金补足，不进工资条</strong>）</td>
+                  <td>-1200</td>
                   <td><strong>0</strong></td>
                 </tr>
                 <tr>
@@ -2133,16 +2185,89 @@
                   <td>代扣个税 -90</td>
                   <td>负工资抵扣 -3900（按可抵扣最大值）</td>
                   <td>+3010</td>
-                  <td><strong>3010</strong></td>
+                  <td><strong>+3010</strong></td>
                 </tr>
                 <tr>
                   <td colspan="4"><strong>合计</strong></td>
-                  <td colspan="2"><strong>实发 3010，剩余负工资余额 0</strong></td>
+                  <td colspan="2"><strong>实发 +3010，剩余负工资余额 0</strong></td>
                 </tr>
               </tbody>
             </table>
             <div class="note">
-              <strong>说明：</strong>① 应税收入 ≤ 0 时无个税；② 应发 ≤ 0 的工资条负数计入"待抵扣总额"；③ <strong>常乐豆不足时</strong>触发【公积金个人扣款】= 600 现金补扣，<strong>该动态项出现在工资条 2</strong>；④ 工资条3 应发 &gt; 0 时按"可抵扣最大值"一次性扣除；⑤ 抵扣后剩余负工资 0；⑥ <strong>总实发不变</strong>（3000+0+0 = 3010），但【公积金个人扣款】作为<strong>动态项</strong>标识了"现金补扣"语义。
+              <strong>说明：</strong>① 应发 ≤ 0 的工资条负数计入"待抵扣总额"；② <strong>常乐豆 4 步：</strong>本例常乐豆 300 抵完公司部分（仅抵 300，差额 900 公司现金补足）后已用完，<strong>无剩余抵个人部分</strong>，<strong>不触发「绩效补贴」</strong>；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，员工<strong>现金补差 = 1200</strong>（无常乐豆代缴）；④ v2-1 阶段<strong>【公积金个人扣款】动态项已取消</strong>；⑤ 工资条3 应发 &gt; 0 时按"可抵扣最大值"一次性扣除；⑥ 抵扣后剩余负工资 0；⑦ <strong>总实发 3010</strong>。
+            </div>
+          </div>
+        </div>
+
+        <!-- 全职示例 C：常乐豆正好够公司部分 -->
+        <div class="card">
+          <h3>全职示例 C：常乐豆<strong>正好够抵公司部分</strong> → 公司部分 1200 全部由常乐豆抵扣，<strong>无剩余抵个人部分</strong>，<strong>不触发「绩效补贴」</strong>（员工个人 1200 全自付）</h3>
+          <div class="example">
+            <p><strong>员工当月数据：</strong></p>
+            <table class="data-table">
+              <thead>
+                <tr><th>项目</th><th>金额</th><th>说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>计件提成</td><td>+6000</td><td>第1级收入</td></tr>
+                <tr><td>超产值奖金</td><td>+1500</td><td>第1级收入</td></tr>
+                <tr><td>超时加班费</td><td>+500</td><td>第1级收入</td></tr>
+                <tr><td>投诉扣款</td><td>-100</td><td>第1级扣缴</td></tr>
+                <tr><td>保底获豆</td><td>+0</td><td>第2级收入</td></tr>
+                <tr><td>公积金<strong>公司部分</strong>（老系统记账）</td><td><strong>-1200</strong></td><td><strong>老系统记账</strong>（公司侧支出），<strong>不进员工工资条</strong>；本期<strong>由常乐豆 1200 完全抵扣</strong></td></tr>
+                <tr><td>公积金<strong>个人部分</strong>（老系统接口）</td><td><strong>-1200</strong></td><td><strong>老系统接口读取</strong>（员工扣款方向）；工资条保留「代扣公积金」-1200 扣减项（按全额显示）；<strong>常乐豆已用完，无法代缴个人部分，员工现金补差 = 1200</strong></td></tr>
+                <tr><td>代扣社保（老系统接口）</td><td>-800</td><td><strong>老系统接口读取</strong>，个人部分，<strong>不在常乐豆抵扣范围</strong></td></tr>
+                <tr><td>代扣个税</td><td>-90</td><td>百旺按应税 7900 计算</td></tr>
+                <tr><td><strong>常乐豆余额</strong></td><td><strong>+1200</strong></td><td>资产方向（员工账户余额）；优先抵公司部分 1200 → 正好用完；<strong>无剩余抵个人部分，不触发「绩效补贴」</strong></td></tr>
+                <tr><td>负工资余额</td><td>0</td><td>无历史欠款</td></tr>
+              </tbody>
+            </table>
+            <p><strong>应税收入：</strong>(6000+1500+500) - 投诉扣款(100) = <strong>7900</strong>（无「绩效补贴」触发；社保/公积金<strong>不参与应税收入</strong>）</p>
+            <p><strong>常乐豆使用（v2-1 4 步，正好用完场景）：</strong></p>
+            <ul class="calc-steps">
+              <li>① 抵公积金<strong>公司部分</strong> 1200（老系统记账金额，<strong>不进员工工资条</strong>）→ 1200 - 1200 = <strong>剩余 0</strong></li>
+              <li>② <strong>跳过</strong>——常乐豆已用完，无法抵个人部分；员工<strong>现金补差 = 1200</strong>（工资条上「代扣公积金」按全额 1200 显示）</li>
+              <li>③ <strong>跳过</strong>——无代缴个人部分，无「绩效补贴」</li>
+              <li>④ 剩余常乐豆 0，不进入消费环节</li>
+            </ul>
+            <p><strong>N 个工资条完整组成（示例：3个，发放主体=合同主体）：</strong></p>
+            <table class="data-table">
+              <thead>
+                <tr><th>工资条</th><th>收入项</th><th>扣缴项</th><th>动态项</th><th>应发</th><th>实发</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>工资条1（计件）</td>
+                  <td>计件提成 +6000</td>
+                  <td>投诉扣款 -100；代扣社保 -800</td>
+                  <td>—（无「绩效补贴」）</td>
+                  <td>+5100</td>
+                  <td><strong>+5100</strong></td>
+                </tr>
+                <tr>
+                  <td>工资条2（奖金）</td>
+                  <td>超产值奖金 +1500；超时加班费 +500</td>
+                  <td>代扣公积金 <strong>-1200</strong>（按老系统接口读取的全额显示；员工现金补差 1200）</td>
+                  <td>—（<strong>公司部分由常乐豆抵完，不进工资条</strong>）</td>
+                  <td>+800</td>
+                  <td><strong>+800</strong></td>
+                </tr>
+                <tr>
+                  <td>工资条3（个税）</td>
+                  <td>保底获豆 +0</td>
+                  <td>代扣个税 -90</td>
+                  <td>—</td>
+                  <td>-90</td>
+                  <td><strong>0</strong></td>
+                </tr>
+                <tr>
+                  <td colspan="4"><strong>合计</strong></td>
+                  <td colspan="2"><strong>实发 +5900，剩余负工资余额 -90</strong></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="note">
+              <strong>说明：</strong>① <strong>常乐豆 4 步：</strong>本例常乐豆 1200 正好抵完公司部分，<strong>无剩余抵个人部分</strong>，<strong>不触发「绩效补贴」</strong>；② 工资条上「代扣公积金」<strong>始终按全额显示</strong>，员工<strong>现金补差 = 1200</strong>（无任何常乐豆代缴）；③ <strong>与示例 A 的关键差异：</strong>本例常乐豆只覆盖公司部分，员工<strong>无「绩效补贴」</strong>；示例 A 常乐豆覆盖公司+部分个人，员工有「绩效补贴」。
             </div>
           </div>
         </div>
@@ -2206,7 +2331,7 @@
               </tbody>
             </table>
             <div class="note">
-              <strong>说明：</strong>① 每周工资条各自计算预扣个税（应税收入 × 3%）；② 月末百旺算出实际税额后，"个税补缴/退税"作为<strong>最后一个工资条</strong>的一个扣缴项出现（不单独生成汇算工资条）；③ 汇算补缴直接从最后一周实发里扣，不累积为负工资余额；④ <strong>无社保/无公积金代扣项</strong>（公司全额承担，由老系统单独记账）；⑤ <strong>无【公积金个人扣款】</strong>触发场景（无常乐豆）；⑥ <strong>商业险不显示</strong>。
+              <strong>说明：</strong>① 每周工资条各自计算预扣个税（应税收入 × 3%）；② 月末百旺算出实际税额后，"个税补缴/退税"作为<strong>最后一个工资条</strong>的一个扣缴项出现（不单独生成汇算工资条）；③ 汇算补缴直接从最后一周实发里扣，不累积为负工资余额；④ <strong>无社保/无公积金代扣项</strong>（公司全额承担，由老系统单独记账）；⑤ <strong>商业险不显示</strong>。
             </div>
           </div>
         </div>
@@ -2324,7 +2449,7 @@
 
         <!-- 返聘示例 -->
         <div class="card">
-          <h3>返聘示例：单月 1 个工资条（无社保/无公积金/无常乐豆/商业险默认机制）</h3>
+          <h3>返聘示例：单月 1 个工资条（无社保/无公积金/无常乐豆/商业险（暂不进入系统））</h3>
           <div class="example">
             <p><strong>员工当月数据：</strong></p>
             <table class="data-table">
@@ -2350,7 +2475,7 @@
                   <td>工资条（综合）</td>
                   <td>计件提成 +4000；超时加班费 +200</td>
                   <td>投诉扣款 -50；代扣个税 -30</td>
-                  <td>—（无社保/无公积金/无常乐豆，无【公积金个人扣款】）</td>
+                  <td>—（无社保/无公积金/无常乐豆）</td>
                   <td>+4120</td>
                   <td><strong>4120</strong></td>
                 </tr>
@@ -2361,7 +2486,7 @@
               </tbody>
             </table>
             <div class="note">
-              <strong>说明：</strong>① 返聘<strong>无社保/无公积金/无常乐豆</strong>，工资条结构最简；② <strong>商业险采用默认机制</strong>，<strong>不进员工工资条</strong>，由老系统/财务单独记账；③ 返聘<strong>无任何【公积金个人扣款】触发场景</strong>（无常乐豆 + 无公积金个人部分 + 商业险不进工资单）；④ 本例无负工资余额，无负工资抵扣；⑤ <strong>无个税补缴/退税</strong>（返聘无周薪，无预扣环节）。
+              <strong>说明：</strong>① 返聘<strong>无社保/无公积金/无常乐豆</strong>，工资条结构最简；② <strong>商业险暂不进入系统（线下购买）</strong>，<strong>不进员工工资条</strong>，由老系统/财务单独记账；③ 本例无负工资余额，无负工资抵扣；④ <strong>无个税补缴/退税</strong>（返聘无周薪，无预扣环节）。
             </div>
           </div>
         </div>
@@ -2369,7 +2494,12 @@
 
       <!-- 八、工资条组装 -->
       <div id="payroll" class="section">
-        <h2>八、工资条组装</h2>
+        <div class="section-header">
+          <h2>八、工资条组装</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('payroll')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
         <div class="card" style="background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.3);">
           <div style="font-size: 13px; line-height: 1.8;">
             <strong>说明：</strong>本节展示的工资条数量和分配方式为典型示例，<strong>实际系统支持灵活配置任意数量工资条、任意薪酬项分配方式</strong>，业务方可根据用工类型、岗位特点、合规要求等自由组合。
@@ -2402,8 +2532,8 @@
             <tbody>
               <tr>
                 <td>工资条1（计件工资条）</td>
-                <td>计件提成 + 投诉扣款(部分) + 代扣社保(部分，<strong>老系统读取</strong>)</td>
-                <td>系统项按比例分配</td>
+                <td>计件提成 + <strong>绩效补贴</strong>（常乐豆代缴公积金个人部分的名义收入，<strong>仅全职</strong>） + 投诉扣款(部分) + 代扣社保(部分，<strong>老系统读取</strong>)</td>
+                <td>系统项按比例分配；<strong>「绩效补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现</td>
               </tr>
               <tr>
                 <td>工资条2（奖金工资条）</td>
@@ -2411,9 +2541,9 @@
                 <td>系统项按比例分配</td>
               </tr>
               <tr>
-                <td>工资条3（常乐豆工资条）</td>
-                <td>保底获豆 + 代扣个税 + <strong>【公积金个人扣款】</strong>（公积金个人部分常乐豆不足时）</td>
-                <td>代扣个税由百旺服务计算；【公积金个人扣款】为常乐豆<strong>仅抵扣公积金</strong>（公司/个人部分）后仍不足时的固定名称补扣项</td>
+                <td>工资条3（保底+个税）</td>
+                <td>保底获豆 + 代扣个税 + 代扣公积金（<strong>个人部分</strong>，老系统读取）</td>
+                <td>代扣个税由百旺服务计算；代扣公积金为员工<strong>个人部分</strong>，由员工<strong>足额自付</strong>，<strong>与常乐豆无关</strong></td>
               </tr>
             </tbody>
           </table>
@@ -2422,8 +2552,9 @@
           </div>
           <div class="note">
             <strong>验证：</strong>5000 + 1843 + 0 = 6843（总净工资）✅<br/>
-            <strong>常乐豆抵扣范围：</strong>常乐豆<strong>只抵扣公积金</strong>（公司/个人部分，<strong>公司部分由老系统记账</strong>），<strong>不抵扣社保/商业险</strong>。当常乐豆余额不足以抵扣<strong>公积金个人部分</strong>时（个人部分金额从老系统读取），从对应工资单<strong>现金</strong>部分扣减，扣款项固定名称为【<strong>公积金个人扣款</strong>】（仅全职场景）<br/>
-            <strong>商业险：</strong>默认机制，<strong>不进工资条</strong>，<strong>不显示</strong><br/>
+            <strong>常乐豆抵扣范围：</strong>常乐豆<strong>优先抵扣公积金公司部分</strong>（<strong>公司部分由老系统记账</strong>，<strong>不进员工工资条</strong>）；<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由<strong>员工现金补差</strong>，<strong>不修改</strong>工资条上「代扣公积金」显示金额）。<strong>不抵扣社保/商业险</strong>。<br/>
+            <strong>「绩效补贴」项（仅全职）：</strong>当常乐豆代缴了部分个人公积金时，公司<strong>以「绩效补贴」名义</strong>在<strong>第 1 个工资条</strong>增加等额收入，<strong>计入应税收入</strong>——保持工资条净到手与员工实收一致<br/>
+            <strong>商业险：</strong>暂不进入系统（线下购买，成本归公司），<strong>不进工资条</strong>，<strong>不显示</strong><br/>
             <strong>离职常乐豆：</strong>全职员工离职时，该合同主体名下的常乐豆余额全部提现
           </div>
         </div>
@@ -2431,7 +2562,7 @@
         <!-- 返聘工资条 -->
         <div class="card">
           <h3>返聘工资条（每月）</h3>
-          <p>退休返聘人员不享有常乐豆、不交社保、不交公积金、<strong>商业险采用默认机制（不进工资条）</strong>。每月计算1次，生成N个工资条（示例：1个）：</p>
+          <p>退休返聘人员不享有常乐豆、不交社保、不交公积金、<strong>商业险暂不进入系统（线下购买）（不进工资条）</strong>。每月计算1次，生成N个工资条（示例：1个）：</p>
           <table class="data-table">
             <thead>
               <tr><th>工资条</th><th>包含薪酬项</th><th>说明</th></tr>
@@ -2440,12 +2571,12 @@
               <tr>
                 <td>工资条（综合）</td>
                 <td>计件提成 + 超时加班费 + 投诉扣款 + 代扣个税</td>
-                <td><strong>无【公积金个人扣款】</strong>——返聘无常乐豆 + 无公积金个人部分，<strong>无任何触发场景</strong>；商业险<strong>默认机制（不显示）</strong></td>
+                <td>返聘<strong>无常乐豆</strong>，<strong>无公积金代扣</strong>（<strong>无个人部分</strong>，达到退休年龄不再缴纳）；商业险<strong>暂不进入系统（不显示）</strong></td>
               </tr>
             </tbody>
           </table>
           <div class="note" style="background: hsl(var(--muted) / 0.3);">
-            <strong>说明：</strong>返聘工资单结构最简，<strong>实际可灵活配置任意数量工资条</strong>。返聘场景下无任何【公积金个人扣款】触发（无常乐豆 + 无公积金个人部分）；商业险<strong>默认机制（不进工资条）</strong>。
+            <strong>说明：</strong>返聘工资单结构最简，<strong>实际可灵活配置任意数量工资条</strong>。返聘场景下<strong>无常乐豆</strong>、<strong>无公积金代扣</strong>（达到退休年龄不再缴纳）；商业险<strong>暂不进入系统（不进工资条）</strong>。
           </div>
         </div>
 
@@ -2476,7 +2607,7 @@
             </tbody>
           </table>
           <div class="note" style="background: hsl(var(--muted) / 0.3);">
-            <strong>说明：</strong>结算周期和工资条数量为典型示例，<strong>实际可灵活配置任意结算周期（日/周/旬/月）、任意数量工资条</strong>。个税汇算结果<strong>始终归属于当月最后一条工资条</strong>，不单独生成汇算工资条。商业险<strong>默认机制（不显示）</strong>。
+            <strong>说明：</strong>结算周期和工资条数量为典型示例，<strong>实际可灵活配置任意结算周期（日/周/旬/月）、任意数量工资条</strong>。个税汇算结果<strong>始终归属于当月最后一条工资条</strong>，不单独生成汇算工资条。商业险<strong>暂不进入系统（不显示）</strong>。
           </div>
         </div>
 
@@ -2573,7 +2704,7 @@
           <div class="note">
             <strong>发放规则：</strong>每个发放主体（全职/返聘=合同主体，非全日制/兼职=业绩归属主体，1 门店 = 1 主体）下的工资分别发放。周薪制要求两笔工资间隔≤15天。<br/>
             <strong>汇算规则：</strong>个税汇算结果（补缴/退税）<strong>作为每门店最后一条工资条的一个扣缴/收入项</strong>出现，不单独生成"汇算工资条"。<br/>
-            <strong>无社保/无公积金代扣项</strong>；<strong>商业险默认机制（不显示）</strong>。
+            <strong>无社保/无公积金代扣项</strong>；<strong>商业险（暂不进入系统）（不显示）</strong>。
           </div>
         </div>
 
@@ -2591,11 +2722,6 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>【公积金个人扣款】</strong></td>
-                <td>仅<strong>全职</strong>工资条3（常乐豆工资条）<br/><em>返聘：无此动态项（无常乐豆 + 无公积金个人部分）</em></td>
-                <td>常乐豆<strong>只抵扣公积金</strong>，不足以抵扣<strong>公积金个人部分</strong>时触发（个人部分金额从老系统接口读取）<br/>（社保/商业险公司部分由公司全额现金承担，<strong>不触发此动态项</strong>）</td>
-              </tr>
-              <tr>
                 <td><strong>个税补缴</strong></td>
                 <td>非全日制/兼职 / 多主体：<strong>每主体当月最后一条工资条</strong></td>
                 <td>月末百旺汇算：实际税额 &gt; 已预扣合计</td>
@@ -2610,17 +2736,27 @@
                 <td><strong>任意可触发的工资条</strong>（可叠加多条）</td>
                 <td>工资条<strong>应发 &gt; 0</strong> 且员工存在<strong>负工资余额</strong>时触发</td>
               </tr>
+              <tr>
+                <td><strong>绩效补贴</strong>（常乐豆代缴公积金个人部分的名义收入）</td>
+                <td><strong>全职 / 第 1 个工资条</strong>（计件工资条）</td>
+                <td>常乐豆<strong>抵完公司部分后，剩余继续抵个人部分</strong>且实际抵掉金额 &gt; 0 时触发；金额 = 常乐豆代缴个人部分金额</td>
+              </tr>
             </tbody>
           </table>
           <div class="note">
-            <strong>核心原则：</strong>动态项<strong>不固定配置在模板中</strong>，是业务执行/计算流转过程中按条件产生的扣缴/收入项。<strong>不参与应税收入计算</strong>。
+            <strong>核心原则：</strong>动态项<strong>不固定配置在模板中</strong>，是业务执行/计算流转过程中按条件产生的扣缴/收入项。<strong>不参与应税收入计算</strong>（<strong>例外：绩效补贴计入应税收入</strong>，作为 1 级收入项）。
           </div>
         </div>
       </div>
 
       <!-- 九、典型业务场景决策树 -->
       <div id="scenarios" class="section">
-        <h2>九、典型业务场景决策树</h2>
+        <div class="section-header">
+          <h2>九、典型业务场景决策树</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('scenarios')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <div class="card">
           <h3>用工类型选择</h3>
@@ -2631,7 +2767,7 @@
               <div class="tree-children">
                 <div class="tree-leaf primary">✓ 是 → 非全日制用工（劳务协议）</div>
                 <div class="tree-leaf-sub">  └ <strong>社保（仅工伤保险）</strong>由老系统单独记账（公司全额，不进工资条）</div>
-                <div class="tree-leaf-sub">  └ <strong>商业险默认机制</strong>（不显示）</div>
+                <div class="tree-leaf-sub">  └ <strong>商业险（暂不进入系统）</strong>（不显示）</div>
                 <div class="tree-leaf-sub">  └ 多主体（1 门店 = 1 主体）：每主体独立结算，按各主体发薪</div>
                 <div class="tree-leaf-sub">  └ 无常乐豆、无社保（全）、无公积金</div>
                 <div class="tree-leaf muted">  ✗ 否 ↓</div>
@@ -2640,7 +2776,7 @@
               <div class="tree-children">
                 <div class="tree-leaf primary">✓ 是 → 全职用工（劳动合同）</div>
                 <div class="tree-leaf-sub">  └ <strong>社保（全）+ 公积金</strong>：<strong>个人部分金额从老系统接口读取</strong>（公司部分由老系统记账）</div>
-                <div class="tree-leaf-sub">  └ <strong>商业险默认机制</strong>（公司全额，不参与工资计算；不显示）</div>
+                <div class="tree-leaf-sub">  └ <strong>商业险（暂不进入系统）</strong>（公司全额，不参与工资计算；不显示）</div>
                 <div class="tree-leaf-sub">  └ 单一合同主体，不能挂店</div>
                 <div class="tree-leaf-sub">  └ 有常乐豆（仅消费，离职时全部提现）</div>
                 <div class="tree-leaf muted">  ✗ 否 ↓</div>
@@ -2648,7 +2784,7 @@
               <div class="tree-question">Q3: 临时/项目制用工？</div>
               <div class="tree-children">
                 <div class="tree-leaf primary">✓ 是 → 兼职用工（劳务合作）</div>
-                <div class="tree-leaf-sub">  └ <strong>商业险默认机制</strong>（公司全额，不参与工资计算；不显示）</div>
+                <div class="tree-leaf-sub">  └ <strong>商业险（暂不进入系统）</strong>（公司全额，不参与工资计算；不显示）</div>
                 <div class="tree-leaf-sub">  └ 多主体倒序申报（应税金额大者先报，可能跳档）</div>
                 <div class="tree-leaf-sub">  └ 无常乐豆、无社保、无公积金</div>
                 <div class="tree-leaf muted">  ✗ 否 ↓</div>
@@ -2656,10 +2792,9 @@
               <div class="tree-question">Q4: 退休返聘（已达法定退休年龄）？</div>
               <div class="tree-children">
                 <div class="tree-leaf primary">✓ 是 → 返聘用工（劳务合作-退休返聘）</div>
-                <div class="tree-leaf-sub">  └ <strong>商业险默认机制</strong>（公司全额，不参与工资计算；不显示）</div>
+                <div class="tree-leaf-sub">  └ <strong>商业险（暂不进入系统）</strong>（公司全额，不参与工资计算；不显示）</div>
                 <div class="tree-leaf-sub">  └ 单一劳务合作主体，不能挂店</div>
                 <div class="tree-leaf-sub">  └ 无常乐豆、无社保（达到退休年龄不再缴纳）、无公积金</div>
-                <div class="tree-leaf-sub">  └ <strong>无【公积金个人扣款】</strong>触发场景</div>
                 <div class="tree-leaf muted">  ✗ 否 → 全职用工（默认）</div>
               </div>
             </div>
@@ -2704,12 +2839,17 @@
 
       <!-- 十、金额流转泳道图 -->
       <div id="money-flow" class="section">
-        <h2>十、金额流转泳道图</h2>
+        <div class="section-header">
+          <h2>十、金额流转泳道图</h2>
+          <el-button size="small" plain @click="copySectionAsHtml('money-flow')" class="copy-section-btn">
+            <span style="margin-right: 4px;">📋</span>复制章节
+          </el-button>
+        </div>
 
         <div class="card">
           <h3>月度金额流转全景（v2-1）</h3>
           <div class="note" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning)); margin-bottom: 16px; font-size: 13px;">
-            <strong>v2-1 变化点：</strong>社保/公积金<strong>金额从老系统接口读取</strong>（图中用<strong>橙色</strong>标注），商业险<strong>默认机制不显示</strong>，<strong>无员工福利保障关系建立</strong>环节。
+            <strong>v2-1 变化点：</strong>社保/公积金<strong>金额从老系统接口读取</strong>（图中用<strong>橙色</strong>标注），商业险<strong>暂不进入系统（线下购买）</strong>，<strong>无员工福利保障关系建立</strong>环节。
           </div>
           <div class="swimlane-container">
             <div class="swimlane-row">
@@ -2743,7 +2883,7 @@
                 <div class="flow-step-inline">→ 第三方（代扣个税，月末汇算补退）</div>
                 <div class="flow-step-inline"><span style="color: hsl(var(--warning)); font-weight: 600;">→ 第三方（代扣社保/公积金，个人部分，从老系统接口读取）</span></div>
                 <div class="flow-step-inline muted">→ 主体公司（公司部分社保/公积金，由老系统记账，不进员工工资条）</div>
-                <div class="flow-step-inline muted">→ 第三方（商业险，默认机制，由老系统/财务单独记账，不进员工工资条）</div>
+                <div class="flow-step-inline muted">→ 第三方（商业险，<strong>暂不进入系统</strong>，由线下购买，成本归公司）</div>
                 <div class="flow-step-inline muted">→ 负工资账户（应发 &gt; 0 时抵扣；应发 &lt; 0 时累加到余额）</div>
                 <div class="flow-step-inline muted">→ 常乐豆账户（仅全职，保底获豆入账 / 离职提现）</div>
               </div>
@@ -2766,7 +2906,7 @@
                 </div>
                 <div class="split-item">
                   <div class="split-title">保险公司</div>
-                  <div class="split-desc">商业险（默认机制，公司全额，老系统/财务记账）</div>
+                  <div class="split-desc">商业险（<strong>暂不进入系统</strong>，线下购买，成本归公司）</div>
                 </div>
                 <div class="split-item">
                   <div class="split-title">百旺服务</div>
@@ -2783,7 +2923,7 @@
               <li>工资条上的"<strong>代扣</strong>"是员工负担部分（社保/公积金个人部分<strong>从老系统接口读取</strong>，从实发中扣除）</li>
               <li><strong>代扣个税</strong>通过百旺服务计算：全职直接算当月（按月度应税收入），非全日制/兼职按累计应税收入（<strong>不含已预扣</strong>，否则会重复计税）算累计应纳 - 已预扣合计 = 补缴/退税</li>
               <li><strong>常乐豆</strong>仅全职员工有；发放 → 消费 → 离职提现，全链路不进工资条扣款</li>
-              <li><strong>商业险</strong>采用默认机制，<strong>不进入员工工资条</strong>，<strong>不显示在福利明细</strong>（v2-1 不开发福利明细页）</li>
+              <li><strong>商业险</strong>暂不进入系统（线下购买，成本归公司），<strong>不进入员工工资条</strong>，<strong>不显示在福利明细</strong>（v2-1 不开发福利明细页）</li>
             </ul>
           </div>
         </div>
@@ -2844,6 +2984,8 @@ import jsPDF from 'jspdf'
 import { ElMessage } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import FloatingToc from '../components/FloatingToc.vue'
+import MindmapHero from '../docs/mindmap/MindmapHero.vue'
+import { v2Phase1Tree } from '../docs/mindmap/trees/v2-phase1.js'
 
 // ===== 悬浮目录 =====
 const tocItems = [
@@ -2889,6 +3031,39 @@ const copyToClipboard = async () => {
   }
 }
 
+const copySectionAsHtml = async (sectionId) => {
+  const el = document.getElementById(sectionId)
+  if (!el) {
+    ElMessage.error('复制失败：未找到章节')
+    return
+  }
+  const buttons = el.querySelectorAll('.copy-section-btn')
+  const prevDisplay = []
+  buttons.forEach((b, i) => {
+    prevDisplay[i] = b.style.display
+    b.style.display = 'none'
+  })
+  try {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    const sel = window.getSelection()
+    sel.removeAllRanges()
+    sel.addRange(range)
+    const ok = document.execCommand('copy')
+    sel.removeAllRanges()
+    if (ok) {
+      ElMessage.success('章节已复制为富文本，可粘贴到飞书/Notion/Word')
+    } else {
+      ElMessage.warning('浏览器不支持富文本复制，请手动选中后 Ctrl+C')
+    }
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('复制失败：' + (error.message || '未知错误'))
+  } finally {
+    buttons.forEach((b, i) => { b.style.display = prevDisplay[i] || '' })
+  }
+}
+
 const exportToPdf = async () => {
   const element = document.querySelector('.content-section')
   if (!element) {
@@ -2925,6 +3100,16 @@ const exportToPdf = async () => {
 
 <style scoped>
 .v2-phase1-guide { padding: 0; max-width: 1400px; margin: 0 auto; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-header h2 { margin: 0; }
+.copy-section-btn { flex-shrink: 0; }
 
 /* ===== 文档 Hero 区 ===== */
 .doc-hero {

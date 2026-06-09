@@ -121,12 +121,14 @@
             @click="handleItemClick(item)"
           >
             <div class="record-row1">
-              <span class="record-store">{{ item.store || item.title }}</span>
+              <div class="record-title-group">
+                <span class="record-store">{{ item.store || item.title }}</span>
+                <span v-if="item.isRepeatCustomer" class="repeat-tag">回头客</span>
+              </div>
               <span class="record-amount">预计收入：{{ item.amount }}</span>
             </div>
             <div class="record-row2">
               <span class="record-service">{{ item.service || item.desc }}</span>
-              <span v-if="item.isRepeatCustomer" class="repeat-tag">回头客</span>
               <el-icon v-if="item.expandable" class="record-arrow"><ArrowRight /></el-icon>
             </div>
             <div class="record-time">{{ item.time }}</div>
@@ -246,33 +248,8 @@
         </div>
       </div>
 
-      <!-- 公积金公司补助 -->
-      <div class="month-section-card housing-fund-card">
-        <div class="section-title">{{ monthData.housingFund.title }}</div>
-        <div class="hf-main-row">
-          <div class="hf-main-label">公司补助</div>
-          <div class="hf-main-value">
-            ¥ {{ monthData.housingFund.companySubsidy }}
-            <span class="hf-main-unit">({{ monthData.housingFund.unit }})</span>
-          </div>
-        </div>
-        <div class="hf-divider"></div>
-        <div class="hf-breakdown">
-          <div class="hf-breakdown-row">
-            <span class="hf-row-label">公积金员工总缴额</span>
-            <span class="hf-row-value">¥ {{ monthData.housingFund.totalAmount }} {{ monthData.housingFund.unit }}</span>
-          </div>
-          <div class="hf-breakdown-row">
-            <span class="hf-row-label">个人扣款</span>
-            <span class="hf-row-value hf-row-deduct">¥ {{ monthData.housingFund.individualDeduction }} {{ monthData.housingFund.unit }}</span>
-          </div>
-          <div class="hf-breakdown-row">
-            <span class="hf-row-label">公司补助</span>
-            <span class="hf-row-value hf-row-subsidy">¥ {{ monthData.housingFund.companySubsidy }} {{ monthData.housingFund.unit }}</span>
-          </div>
-        </div>
-        <div class="hf-tip">※ 公司补助 = 公积金员工总缴额 - 个人扣款</div>
-      </div>
+      <!-- 公积金公司补助 已移除：公积金个人扣款（含公司补助部分）已在 8 月支出中展示 -->
+
     </div>
 
     <!-- ==================== 到账情况 ==================== -->
@@ -360,8 +337,16 @@
                   </div>
                   <div class="summary-payment">
                     <span class="payment-label">实付款：</span>
-                    <span class="payment-actual">¥{{ currentOrderDetail.actualPayment }}</span>
-                    <s class="payment-original">¥{{ currentOrderDetail.originalPrice }}</s>
+                    <span class="payment-formula">
+                      <span class="payment-original">¥{{ currentOrderDetail.originalPrice }}</span>
+                      <span class="formula-op">−</span>
+                      <span class="formula-discount">
+                        ¥{{ currentOrderDetail.originalPrice - currentOrderDetail.actualPayment }}
+                        <span class="discount-tag">优惠</span>
+                      </span>
+                      <span class="formula-op">=</span>
+                      <span class="payment-actual">¥{{ currentOrderDetail.actualPayment }}</span>
+                    </span>
                   </div>
                 </div>
 
@@ -375,20 +360,6 @@
                     <div class="content-line">
                       <span class="content-label">项目提成</span>
                       <span class="content-value">{{ currentOrderDetail.pieceworkCommission }}<span class="value-unit"> 元</span></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 优惠金额 -->
-                <div class="detail-section-card">
-                  <div class="section-title-line">
-                    <span class="title-bar"></span>
-                    <span class="title-text">优惠金额</span>
-                  </div>
-                  <div class="section-content">
-                    <div class="content-line">
-                      <span class="content-label">本单已使用优惠</span>
-                      <span class="content-value discount-value">¥{{ currentOrderDetail.originalPrice - currentOrderDetail.actualPayment }}</span>
                     </div>
                   </div>
                 </div>
@@ -656,7 +627,7 @@ const monthData = reactive({
       { key: 'serviceTime', label: '服务时间不足扣提成', value: 95.4, unit: '元' },
       { key: 'social', label: '代扣社保', value: 0.0, unit: '元' },
       { key: 'tax', label: '代扣个税', value: 0.0, unit: '元' },
-      { key: 'housingFund', label: '公积金个人扣款', value: -200, unit: '元' }
+      { key: 'housingFund', label: '公积金个人扣款', value: -1200, unit: '元' }
     ]
   },
   housingFund: {
@@ -1203,6 +1174,14 @@ const goBack = () => {
   font-weight: 500;
 }
 
+.record-title-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
 .record-amount {
   font-size: 13px;
   color: #666;
@@ -1685,6 +1664,39 @@ const goBack = () => {
   gap: 8px;
   padding-top: 8px;
   border-top: 1px dashed #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.payment-formula {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 14px;
+  color: #999;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.formula-op {
+  color: #999;
+  font-weight: 500;
+}
+
+.formula-discount {
+  color: #999;
+  font-weight: 500;
+}
+
+.discount-tag {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 0 4px;
+  font-size: 10px;
+  color: #fff;
+  background: #f0a8be;
+  border-radius: 3px;
+  font-weight: 500;
+  vertical-align: 1px;
 }
 
 .payment-label {
@@ -1699,8 +1711,9 @@ const goBack = () => {
 }
 
 .payment-original {
-  font-size: 12px;
-  color: #ccc;
+  font-size: 14px;
+  color: #999;
+  font-weight: 500;
 }
 
 /* 分项卡 */
@@ -1745,10 +1758,6 @@ const goBack = () => {
   padding: 4px 0;
 }
 
-.content-line.discount-line {
-  padding: 4px 0;
-}
-
 .content-label {
   color: #666;
   flex: 1;
@@ -1766,10 +1775,5 @@ const goBack = () => {
   color: #999;
   font-weight: normal;
   margin-left: 1px;
-}
-
-.discount-value {
-  color: #a40035;
-  font-size: 16px;
 }
 </style>

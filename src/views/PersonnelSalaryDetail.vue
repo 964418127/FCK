@@ -29,6 +29,9 @@
           <el-form-item label="门店">
             <el-input v-model="searchForm.store" placeholder="门店搜索" clearable style="width: 140px;" />
           </el-form-item>
+          <el-form-item label="合作主体">
+            <el-input v-model="searchForm.cooperateEntity" placeholder="合作主体搜索" clearable style="width: 180px;" />
+          </el-form-item>
           <el-form-item label="日期">
             <el-date-picker
               v-model="searchForm.dateRange"
@@ -65,6 +68,7 @@
         <el-table-column prop="cityName" label="城市名称" width="100" />
         <el-table-column prop="storeCode" label="门店编码" width="110" align="center" />
         <el-table-column prop="storeName" label="门店名称" min-width="150" />
+        <el-table-column prop="cooperateEntity" label="合作主体" min-width="180" />
         <el-table-column prop="employeeNo" label="工号" width="100" align="center" />
         <el-table-column prop="name" label="姓名" width="90" />
         <el-table-column prop="position" label="岗位" width="90" />
@@ -147,6 +151,7 @@ const searchForm = reactive({
   position: '',
   city: '',
   store: '',
+  cooperateEntity: '',
   dateRange: [],
   calcDate: ''
 })
@@ -159,6 +164,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102095',
     storeName: '悠方店',
+    cooperateEntity: '成都悠方健康管理有限公司',
     employeeNo: '135161',
     name: '王苏茂',
     position: '调理师',
@@ -177,6 +183,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102046',
     storeName: '大悦城店',
+    cooperateEntity: '成都大悦城健康管理有限公司',
     employeeNo: '134922',
     name: '喻亮',
     position: '调理师',
@@ -195,6 +202,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102044',
     storeName: '成都来福士店',
+    cooperateEntity: '成都来福士健康管理有限公司',
     employeeNo: '135158',
     name: '邓佳伟',
     position: '调理师',
@@ -213,6 +221,7 @@ const tableData = ref([
     cityName: '重庆市',
     storeCode: '102118',
     storeName: '龙湖源著天街店',
+    cooperateEntity: '重庆龙湖源著健康管理有限公司',
     employeeNo: '135212',
     name: '彭仕伟',
     position: '调理师',
@@ -231,6 +240,7 @@ const tableData = ref([
     cityName: '北京市',
     storeCode: '102349',
     storeName: '正大中心',
+    cooperateEntity: '北京正大中心健康管理有限公司',
     employeeNo: '134870',
     name: '徐志佳',
     position: '调理师',
@@ -249,6 +259,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102101',
     storeName: '汇锦街店',
+    cooperateEntity: '成都汇锦街健康管理有限公司',
     employeeNo: '135171',
     name: '彭怀翼',
     position: '调理师',
@@ -267,6 +278,7 @@ const tableData = ref([
     cityName: '深圳市',
     storeCode: '102113',
     storeName: '深圳来福士店',
+    cooperateEntity: '深圳来福士健康管理有限公司',
     employeeNo: '135186',
     name: '龙攀峰',
     position: '调理师',
@@ -285,6 +297,7 @@ const tableData = ref([
     cityName: '重庆市',
     storeCode: '102108',
     storeName: '嘉州SKLP店（原新光天地店）',
+    cooperateEntity: '重庆嘉州新光天地健康管理有限公司',
     employeeNo: '135164',
     name: '岳伦松',
     position: '调理师',
@@ -303,6 +316,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102128',
     storeName: '成都龙湖滨江天街店',
+    cooperateEntity: '成都龙湖滨江健康管理有限公司',
     employeeNo: '135301',
     name: '郭海龙',
     position: '调理师',
@@ -321,6 +335,7 @@ const tableData = ref([
     cityName: '成都市',
     storeCode: '102106',
     storeName: '成都环球中心店',
+    cooperateEntity: '成都环球中心健康管理有限公司',
     employeeNo: '135219',
     name: '候窬珊',
     position: '调理师',
@@ -344,6 +359,7 @@ const filteredList = computed(() => {
     if (kw.position && row.position !== kw.position) return false
     if (kw.city && !row.cityName.includes(kw.city) && !row.cityCode.includes(kw.city)) return false
     if (kw.store && !row.storeName.includes(kw.store) && !row.storeCode.includes(kw.store)) return false
+    if (kw.cooperateEntity && !row.cooperateEntity.includes(kw.cooperateEntity)) return false
     return true
   })
 })
@@ -369,6 +385,7 @@ const handleReset = () => {
   searchForm.position = ''
   searchForm.city = ''
   searchForm.store = ''
+  searchForm.cooperateEntity = ''
   searchForm.dateRange = []
   searchForm.calcDate = ''
   pagination.total = tableData.value.length

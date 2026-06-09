@@ -376,11 +376,7 @@
                       </div>
                       <div class="info-item">
                         <span class="info-label">发放主体</span>
-                        <span class="info-value" v-if="!isEdit">{{ currentPayrollSlip.paymentEntity }}</span>
-                        <el-select v-else v-model="currentPayrollSlip.paymentEntity" style="width: 130px;">
-                          <el-option label="合同主体" value="合同主体" />
-                          <el-option label="业绩归属主体" value="业绩归属主体" />
-                        </el-select>
+                        <span class="info-value">合作主体</span>
                       </div>
                     </div>
                   </div>
@@ -596,11 +592,7 @@
                       </div>
                       <div class="info-item">
                         <span class="info-label">发放主体</span>
-                        <span class="info-value" v-if="!isEdit">{{ currentBeanSlip.paymentEntity }}</span>
-                        <el-select v-else v-model="currentBeanSlip.paymentEntity" style="width: 130px;">
-                          <el-option label="合同主体" value="合同主体" />
-                          <el-option label="业绩归属主体" value="业绩归属主体" />
-                        </el-select>
+                        <span class="info-value">合作主体</span>
                       </div>
                       <div class="info-item">
                         <span class="info-label">结算账户</span>
@@ -738,7 +730,7 @@ const addPayrollSlip = () => {
     notifyDate: '次月1日',
     paymentDate: '次月2日',
     delayConfirm: '次日发放',
-    paymentEntity: '合同主体',
+    paymentEntity: '合作主体',
     incomeGroups: [],
     deductGroups: []
   })
@@ -767,7 +759,7 @@ const addBeanSlip = () => {
     dataDateEnd: '本月/31日',
     notifyDate: '次月30日',
     paymentDate: '次月31日',
-    paymentEntity: '合同主体',
+    paymentEntity: '合作主体',
     settlementAccount: '余额账户',
     incomeGroups: [],
     deductGroups: []

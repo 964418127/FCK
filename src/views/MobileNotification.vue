@@ -53,9 +53,9 @@
               <span class="item-title">{{ item.title }}</span>
             </div>
             <div class="item-body">
-              <div v-if="item.store" class="item-line">
-                <span class="line-label">门 店：</span>
-                <span class="line-value">{{ item.store }}</span>
+              <div v-if="item.entity" class="item-line">
+                <span class="line-label">主 体：</span>
+                <span class="line-value">{{ item.entity }}</span>
               </div>
               <div class="item-line">
                 <span class="line-label">描 述：</span>
@@ -272,8 +272,7 @@ const notifications = reactive([
       income: {
         title: '计件提成',
         items: [
-          { label: '提成金额', value: '6435.12' },
-          { label: '上期负数', value: '-269.14', isDeduct: true }
+          { label: '提成金额', value: '6435.12' }
         ],
         subtotal: '6435.12'
       },
@@ -282,14 +281,14 @@ const notifications = reactive([
         items: [
           { label: '代扣社保', value: '-269.14' },
           { label: '投诉扣款', value: '-269.14' },
-          { label: '服务时间不足扣提成', value: '-269.14' }
+          { label: '服务时间不足扣提成', value: '-269.14' },
+          { label: '负工资抵扣', value: '-269.14' }
         ],
         subtotal: '-538.28'
       },
       summary: {
         title: '汇总',
         items: [
-          { label: '发薪门店', value: '弹子石老街店' },
           { label: '发薪主体', value: '重庆弹子石推拿有限公司' },
           { label: '收款人', value: '张小华' },
           { label: '卡号', value: '12121121212121212121' },
@@ -323,22 +322,21 @@ const notifications = reactive([
       income: {
         title: '加班工资',
         items: [
-          { label: '加班工资', value: '1435.12' },
-          { label: '上期负数余数', value: '-30.00', isDeduct: true }
+          { label: '加班工资', value: '1435.12' }
         ],
         subtotal: '1435.12'
       },
       deduction: {
         title: '扣缴',
         items: [
-          { label: '代扣个税', value: '-239.14' }
+          { label: '代扣个税', value: '-239.14' },
+          { label: '负工资抵扣', value: '-30.00' }
         ],
         subtotal: '-269.14'
       },
       summary: {
         title: '汇总',
         items: [
-          { label: '发薪门店', value: '成都印象城店' },
           { label: '发薪主体', value: '成都印象城健康管理有限公司' },
           { label: '收款人', value: '张小华' },
           { label: '卡号', value: '12121121212121212121' },
@@ -374,15 +372,20 @@ const notifications = reactive([
         items: [
           { label: '超产值补贴金额', value: '1435.12' },
           { label: '客户打赏', value: '1435.12' },
-          { label: '退单补贴', value: '1435.12' },
-          { label: '上期负数余数', value: '-1269.14', isDeduct: true }
+          { label: '退单补贴', value: '1435.12' }
         ],
         subtotal: '1435.12'
+      },
+      deduction: {
+        title: '扣缴',
+        items: [
+          { label: '负工资抵扣', value: '-1269.14' }
+        ],
+        subtotal: '-1269.14'
       },
       summary: {
         title: '汇总',
         items: [
-          { label: '发薪门店', value: '北城天街店' },
           { label: '发薪主体', value: '重庆北城天街推拿有限公司' },
           { label: '收款人', value: '张小华' },
           { label: '卡号', value: '12121121212121212121' },
@@ -427,7 +430,6 @@ const notifications = reactive([
       summary: {
         title: '汇总',
         items: [
-          { label: '发薪门店', value: '解放碑店' },
           { label: '发薪主体', value: '重庆解放碑推拿有限公司' }
         ]
       },

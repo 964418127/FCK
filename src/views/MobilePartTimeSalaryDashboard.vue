@@ -92,12 +92,14 @@
           @click="handleOpenOrder(item)"
         >
           <div class="order-row1">
-            <span class="order-store">{{ item.store }}</span>
+            <div class="order-title-group">
+              <span class="order-store">{{ item.store }}</span>
+              <span v-if="item.isRepeatCustomer" class="repeat-tag inline">回头客</span>
+            </div>
             <span class="order-amount">预计收入:{{ item.amount.toFixed(2) }}</span>
           </div>
           <div class="order-row2">
             <span class="order-service">{{ item.service }}</span>
-            <span v-if="item.isRepeatCustomer" class="repeat-tag inline">回头客</span>
             <el-icon class="order-chevron"><ArrowRight /></el-icon>
           </div>
           <div class="order-row3">
@@ -171,7 +173,7 @@
                   </div>
                   <div class="summary-service-row">
                     <span class="summary-service">{{ currentOrderDetail.service }}</span>
-                    <span v-if="currentOrderDetail.isRepeatCustomer" class="repeat-tag inline">回头客</span>
+                    <span v-if="currentOrderDetail.isRepeatCustomer" class="repeat-tag inline">第 {{ currentOrderDetail.repeatCount }} 次回头</span>
                   </div>
                   <div class="summary-orderno">
                     <span class="orderno-text">订单编号：{{ currentOrderDetail.orderNo }}</span>
@@ -201,7 +203,7 @@
                   </div>
                   <div class="section-content">
                     <div class="content-line">
-                      <span class="content-label">回头客奖励金额</span>
+                      <span class="content-label">第 {{ currentOrderDetail.repeatCount }} 次回头奖励</span>
                       <span class="content-value repeat-value">¥{{ currentOrderDetail.repeatBonus }}</span>
                     </div>
                   </div>
@@ -328,20 +330,20 @@ const handleStoreSelect = (key) => {
 // ==================== Mock 订单数据 ====================
 const allOrders = ref([
   { id: 1, storeKey: 'yintai', store: 'in99银泰中心店', service: '脊柱调整60分钟', time: '2026-06-05 12:20:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 2, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-05 11:04:00', amount: 220.34, type: 'piecework', isRepeatCustomer: true },
+  { id: 2, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-05 11:04:00', amount: 220.34, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
   { id: 3, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 17:50:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 4, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 14:30:00', amount: 143.7, type: 'piecework', isRepeatCustomer: true },
+  { id: 4, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 14:30:00', amount: 143.7, type: 'piecework', isRepeatCustomer: true, repeatCount: 3 },
   { id: 5, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 13:20:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 6, storeKey: 'yintai', store: 'in99银泰中心店', service: '运动拉伸60分钟', time: '2026-06-04 12:09:00', amount: 182.02, type: 'piecework', isRepeatCustomer: true },
+  { id: 6, storeKey: 'yintai', store: 'in99银泰中心店', service: '运动拉伸60分钟', time: '2026-06-04 12:09:00', amount: 182.02, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
   { id: 7, storeKey: 'yintai', store: 'in99银泰中心店', service: '足疗40分钟', time: '2026-06-04 10:30:00', amount: 156.0, type: 'piecework', isRepeatCustomer: false },
-  { id: 8, storeKey: 'yintai', store: 'in99银泰中心店', service: '头疗30分钟', time: '2026-06-04 09:15:00', amount: 98.5, type: 'piecework', isRepeatCustomer: true },
+  { id: 8, storeKey: 'yintai', store: 'in99银泰中心店', service: '头疗30分钟', time: '2026-06-04 09:15:00', amount: 98.5, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
   // 弹子石老街店
   { id: 9, storeKey: 'danzishi', store: '弹子石老街店', service: '足疗40分钟', time: '2026-06-05 09:30:00', amount: 168.0, type: 'piecework', isRepeatCustomer: false },
-  { id: 10, storeKey: 'danzishi', store: '弹子石老街店', service: '肩颈调理30分钟', time: '2026-06-04 16:20:00', amount: 138.0, type: 'piecework', isRepeatCustomer: true },
+  { id: 10, storeKey: 'danzishi', store: '弹子石老街店', service: '肩颈调理30分钟', time: '2026-06-04 16:20:00', amount: 138.0, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
   // 成都印象城店
   { id: 11, storeKey: 'chengdu', store: '成都印象城店', service: '中式推拿60分钟', time: '2026-06-04 19:00:00', amount: 198.0, type: 'piecework', isRepeatCustomer: false },
   // 北城天街店
-  { id: 12, storeKey: 'beicheng', store: '北城天街店', service: '精油开背60分钟', time: '2026-06-05 10:00:00', amount: 188.0, type: 'piecework', isRepeatCustomer: true }
+  { id: 12, storeKey: 'beicheng', store: '北城天街店', service: '精油开背60分钟', time: '2026-06-05 10:00:00', amount: 188.0, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 }
 ])
 
 // 按门店过滤的订单
@@ -448,6 +450,7 @@ const handleOpenOrder = (item) => {
     endTime: item.time.replace(/\d{2}$/, '00'),
     orderNo: 'DD2026060' + String(item.id).padStart(4, '0'),
     isRepeatCustomer: isRepeat,
+    repeatCount: item.repeatCount || 1,
     pieceworkCommission: item.amount.toFixed(2),
     repeatBonus: isRepeat ? (item.amount * 0.1).toFixed(2) : 0
   }
@@ -785,6 +788,14 @@ const goBack = () => {
   font-size: 15px;
   font-weight: 600;
   color: #333;
+}
+
+.order-title-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .order-amount {

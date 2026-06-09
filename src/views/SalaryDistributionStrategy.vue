@@ -36,7 +36,9 @@
       <!-- 操作按钮 -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <el-button type="primary" @click="handleCreate">+ 新增发放策略</el-button>
+          <el-tooltip content="当前版本暂不支持新增发放策略" placement="top">
+            <el-button type="primary" disabled>+ 新增发放策略</el-button>
+          </el-tooltip>
         </div>
       </div>
 

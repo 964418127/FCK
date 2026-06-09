@@ -2386,7 +2386,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月2日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '计件收入',
@@ -2415,7 +2415,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月3日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '加班费',
@@ -2443,7 +2443,7 @@ export const distributionStrategies = [
         dataDateEnd: '本月/末日',
         notifyDate: '次月30日',
         paymentDate: '次月31日',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         settlementAccount: '余额账户',
         incomeGroups: [
           {
@@ -2493,7 +2493,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月2日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '计件收入',
@@ -2522,7 +2522,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月3日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '加班费',
@@ -2570,7 +2570,7 @@ export const distributionStrategies = [
         notifyDate: '次周/1日',
         paymentDate: '次周/2日',
         delayConfirm: '次日发放',
-        paymentEntity: '业绩归属主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '计件收入',
@@ -2624,7 +2624,7 @@ export const distributionStrategies = [
         notifyDate: '次周/1日',
         paymentDate: '次周/2日',
         delayConfirm: '次日发放',
-        paymentEntity: '业绩归属主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '计件收入',
@@ -2678,7 +2678,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月2日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '基本工资',
@@ -2706,7 +2706,7 @@ export const distributionStrategies = [
         notifyDate: '次月10日',
         paymentDate: '次月11日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '业绩提成',
@@ -2735,7 +2735,7 @@ export const distributionStrategies = [
         dataDateEnd: '本月/末日',
         notifyDate: '次月30日',
         paymentDate: '次月31日',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         settlementAccount: '余额账户',
         incomeGroups: [
           {
@@ -2776,7 +2776,7 @@ export const distributionStrategies = [
         notifyDate: '次月1日',
         paymentDate: '次月2日',
         delayConfirm: '次日发放',
-        paymentEntity: '合同主体',
+        paymentEntity: '合作主体',
         incomeGroups: [
           {
             name: '基本收入',

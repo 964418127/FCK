@@ -16,11 +16,9 @@
             <el-input v-model="searchForm.department" placeholder="请输入部门" clearable style="width: 120px;" />
           </el-form-item>
           <el-form-item label="余额范围">
-            <el-select v-model="searchForm.balanceType" placeholder="选择" clearable style="width: 120px;">
-              <el-option label="全部" value="" />
-              <el-option label="有欠款" value="negative" />
-              <el-option label="无欠款" value="zero" />
-            </el-select>
+            <el-input-number v-model="searchForm.balanceMin" :max="0" :step="100" placeholder="最小（≤0）" controls-position="right" style="width: 130px;" />
+            <span style="margin: 0 6px; color: hsl(var(--muted-foreground));">至</span>
+            <el-input-number v-model="searchForm.balanceMax" :max="0" :step="100" placeholder="最大（≤0）" controls-position="right" style="width: 130px;" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">查询</el-button>
@@ -161,7 +159,8 @@ const router = useRouter()
 const searchForm = reactive({
   keyword: '',
   department: '',
-  balanceType: ''
+  balanceMin: null,
+  balanceMax: null
 })
 
 // 员工列表（模拟数据）
@@ -242,12 +241,10 @@ const filteredData = computed(() => {
       item.employeeId.includes(searchForm.keyword) ||
       item.employeeName.includes(searchForm.keyword)
     const matchDepartment = !searchForm.department || item.department.includes(searchForm.department)
-    let matchBalance = true
-    if (searchForm.balanceType === 'negative') {
-      matchBalance = item.currentBalance < 0
-    } else if (searchForm.balanceType === 'zero') {
-      matchBalance = item.currentBalance >= 0
-    }
+    const matchBalance = (
+      (searchForm.balanceMin === null || item.currentBalance >= searchForm.balanceMin) &&
+      (searchForm.balanceMax === null || item.currentBalance <= searchForm.balanceMax)
+    )
     return matchKeyword && matchDepartment && matchBalance
   })
 })
@@ -272,7 +269,8 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.keyword = ''
   searchForm.department = ''
-  searchForm.balanceType = ''
+  searchForm.balanceMin = null
+  searchForm.balanceMax = null
 }
 
 // 查看流水

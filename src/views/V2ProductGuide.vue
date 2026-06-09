@@ -22,6 +22,9 @@
       </div>
     </div>
 
+    <!-- V2 功能架构脑图（完整版） -->
+    <MindmapHero :tree="v2FullTree" />
+
     <div class="content-section">
       <!-- 版本日志 -->
       <div id="version" class="section version-log">
@@ -38,8 +41,8 @@
           </thead>
           <tbody>
             <tr>
-              <td rowspan="8"><strong>v2.1</strong></td>
-              <td rowspan="8">2026-06-05</td>
+              <td rowspan="9"><strong>v2.1</strong></td>
+              <td rowspan="9">2026-06-05</td>
               <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
               <td><strong>返聘用工类型</strong>：第 4 种用工类型——<strong>劳务合作-退休返聘</strong>；无社保 / 无公积金 / 无常乐豆；商业险必选；单一劳务合作主体，不能挂店；月度结算，1 个工资条/月</td>
             </tr>
@@ -70,6 +73,10 @@
             <tr>
               <td><span style="color: hsl(var(--warning)); font-weight: 600;">升级</span></td>
               <td><strong>岗位薪酬模板</strong>：<strong>4 种合作模式</strong>——<strong>劳动合同-全日制</strong>、<strong>劳动合同-非全日制</strong>、<strong>劳务合作-返聘</strong>、<strong>劳务合作-兼职</strong></td>
+            </tr>
+            <tr>
+              <td><span style="color: hsl(var(--warning)); font-weight: 600;">升级</span></td>
+              <td><strong>关联模块数据源切换</strong>：6 个下游模块底层取值从「业绩表」切换为「<strong>模块化薪酬</strong>」——<strong>付款单、凭证、计提、个税申报表、社保清单、公积金清单</strong></td>
             </tr>
             <tr>
               <td rowspan="9"><strong>v2.0</strong></td>
@@ -3099,6 +3106,8 @@ import jsPDF from 'jspdf'
 import { ElMessage } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import FloatingToc from '../components/FloatingToc.vue'
+import MindmapHero from '../docs/mindmap/MindmapHero.vue'
+import { v2FullTree } from '../docs/mindmap/trees/v2-full.js'
 
 // ===== 悬浮目录 =====
 const tocItems = [
