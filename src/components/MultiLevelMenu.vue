@@ -32,7 +32,7 @@
                 v-if="!isCollapsed"
                 class="menu-group-header"
                 :class="{ expanded: expandedGroups.has(child.index) }"
-                @click="toggleGroup(child.index)"
+                @click="handleGroupHeaderClick(child)"
               >
                 <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
                 <span class="menu-label">{{ child.label }}</span>
@@ -166,16 +166,15 @@ const floatMenuTitle = ref('')
 const floatMenuChildren = ref([])
 let floatMenuTimeout = null
 
-// 初始化：根据当前路由设置激活菜单和展开的分组
-const initActiveMenu = () => {
-  activeMenu.value = route.name || 'welcome'
-  // 默认展开当前激活菜单的父级分组
+// 根据当前 activeMenu 展开对应的父级分组
+const expandGroupsForActive = () => {
   props.menuData.forEach(item => {
     if (item.children) {
       item.children.forEach(child => {
         if (child.children) {
-          const hasActiveChild = child.children.some(g => g.index === activeMenu.value)
-          if (hasActiveChild) {
+          // 2级分组项：active 是分组本身（路由到该分组页）或是其子孙
+          if (child.index === activeMenu.value ||
+              child.children.some(g => g.index === activeMenu.value)) {
             expandedGroups.value.add(item.index)
             expandedGroups.value.add(child.index)
           }
@@ -187,10 +186,17 @@ const initActiveMenu = () => {
   })
 }
 
+// 初始化：根据当前路由设置激活菜单和展开的分组
+const initActiveMenu = () => {
+  activeMenu.value = route.name || 'welcome'
+  expandGroupsForActive()
+}
+
 initActiveMenu()
 
 watch(() => route.name, (newName) => {
   activeMenu.value = newName || 'welcome'
+  expandGroupsForActive()
 })
 
 // 切换分组的展开/收起状态
@@ -200,6 +206,14 @@ const toggleGroup = (index) => {
   } else {
     expandedGroups.value.add(index)
   }
+}
+
+// 2 级分组项点击：跳转（如果 to 存在）+ 切换展开
+const handleGroupHeaderClick = (item) => {
+  if (item.to) {
+    router.push(item.to)
+  }
+  toggleGroup(item.index)
 }
 
 // 显示悬浮菜单
@@ -392,12 +406,16 @@ const handleSelect = (index) => {
   font-size: 14px;
 }
 
-/* 3级页面 */
+/* 3级页面：字号更小、不显示 icon */
 .level-3-item {
-  height: 40px;
-  line-height: 40px;
+  height: 36px;
+  line-height: 36px;
   padding-left: 56px;
-  font-size: 14px;
+  font-size: 13px;
+}
+
+.level-3-item .el-icon {
+  display: none;
 }
 
 .menu-label {

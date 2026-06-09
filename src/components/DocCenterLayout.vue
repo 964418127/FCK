@@ -31,7 +31,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MultiLevelMenu from './MultiLevelMenu.vue'
-import { Fold, Expand, Back, Document, InfoFilled, Reading } from '@element-plus/icons-vue'
+import { Fold, Expand, Back } from '@element-plus/icons-vue'
+import { docMenu } from '../docs/menu.js'
 
 const router = useRouter()
 const isCollapsed = ref(false)
@@ -44,28 +45,6 @@ const toggleSidebar = () => {
 const goBack = () => {
   router.push('/welcome')
 }
-
-// 文档菜单（多级结构）
-const docMenu = [
-  {
-    index: 'doc-product',
-    label: '模块化薪酬',
-    icon: Document,
-    children: [
-      { index: 'doc-product-v2-phase1', label: '产品需求v2（阶段1）', icon: Reading },
-      { index: 'doc-product-v2', label: '产品需求v2', icon: Reading },
-      { index: 'doc-product-v1', label: '产品需求v1', icon: Reading }
-    ]
-  },
-  {
-    index: 'doc-welfare',
-    label: '福利保障',
-    icon: Document,
-    children: [
-      { index: 'doc-welfare-guide', label: '福利保障说明', icon: InfoFilled }
-    ]
-  }
-]
 </script>
 
 <style scoped>

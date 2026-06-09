@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { ViteSSG } from 'vite-ssg'
 import './style.css'
 import App from './App.vue'
 
@@ -12,28 +12,39 @@ import './styles/theme.css'
 // 引入Element Plus图标
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
-// 引入路由配置
-import router from './router'
+// 引入纯数据路由配置（不含 createWebHistory，SSR 安全）
+import { routes } from './router/routes.js'
 
 // 引入权限指令
 import { setupPermissionDirective } from './composables/usePermission'
 
-// 创建Vue应用
-const app = createApp(App)
+// vite-ssg 约定的导出形式：dev / build / generate 都会调用
+export const createApp = ViteSSG(
+  App,
+  { routes },
+  ({ app, isClient, router, initialState }) => {
+    // 注册Element Plus图标
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+      app.component(key, component)
+    }
 
-// 注册Element Plus图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
-}
+    // 使用Element Plus组件库
+    app.use(ElementPlus)
 
-// 使用Element Plus组件库
-app.use(ElementPlus)
+    // 设置权限指令
+    setupPermissionDirective(app)
 
-// 使用路由
-app.use(router)
-
-// 设置权限指令
-setupPermissionDirective(app)
-
-// 挂载应用
-app.mount('#app')
+    // 客户端 hydration 之后才会执行的逻辑
+    if (isClient) {
+      // 动态导入 router 实例（client-only），叠加客户端守卫
+      import('./router').then(({ default: clientRouter }) => {
+        clientRouter.beforeEach((to, from, next) => {
+          if (typeof document !== 'undefined') {
+            document.title = to.meta.title || '权限管理系统'
+          }
+          next()
+        })
+      })
+    }
+  }
+)
