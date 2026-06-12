@@ -21,7 +21,7 @@ import { setupPermissionDirective } from './composables/usePermission'
 // vite-ssg 约定的导出形式：dev / build / generate 都会调用
 export const createApp = ViteSSG(
   App,
-  { routes },
+  { routes, base: import.meta.env.BASE_URL },
   ({ app, isClient, router, initialState }) => {
     // 注册Element Plus图标
     for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
