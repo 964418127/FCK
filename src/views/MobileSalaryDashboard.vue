@@ -281,8 +281,8 @@
         </div>
       </div>
       <div class="arrival-note">
-        <div class="note-line">※ 上期负数 = 上月未结清负数</div>
-        <div class="note-line">※ 应发金额 = 合计金额 - 上期负数 - 扣缴</div>
+        <div class="note-line">※ 负工资抵扣 = 上月未结清负数</div>
+        <div class="note-line">※ 应发金额 = 合计金额 - 负工资抵扣 - 扣缴</div>
         <div class="note-line">※ 实发/已发金额 = 已打到员工账户的金额</div>
       </div>
     </div>
@@ -647,7 +647,7 @@ const arrivalData = reactive({
       unit: '元',
       items: [
         { label: '合计金额', value: 1195.4, isFinal: true },
-        { label: '上期负数', value: -10.0, isFinal: false },
+        { label: '负工资抵扣', value: -10.0, isFinal: false },
         { label: '扣缴', value: -10.0, isFinal: false },
         { label: '应发金额', value: 1185.4, isFinal: true },
         { label: '实发金额', value: 1185.4, isFinal: true }
@@ -658,7 +658,7 @@ const arrivalData = reactive({
       unit: '元',
       items: [
         { label: '合计金额', value: 195.4, isFinal: true },
-        { label: '上期负数余数', value: -10.0, isFinal: false },
+        { label: '负工资抵扣', value: -10.0, isFinal: false },
         { label: '扣缴', value: -15.0, isFinal: false },
         { label: '应发金额', value: 180.4, isFinal: true },
         { label: '已发金额', value: 180.4, isFinal: true }
@@ -669,7 +669,7 @@ const arrivalData = reactive({
       unit: '元',
       items: [
         { label: '合计金额', value: 1195.4, isFinal: true },
-        { label: '上期负数余数', value: -10.0, isFinal: false },
+        { label: '负工资抵扣', value: -10.0, isFinal: false },
         { label: '扣缴', value: -15.0, isFinal: false },
         { label: '应发金额', value: 1180.4, isFinal: true },
         { label: '已发金额', value: 1180.4, isFinal: true }

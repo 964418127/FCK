@@ -40,7 +40,11 @@ export const docMenu = [
       {
         index: 'doc-product-v2',
         label: '产品需求v2',
-        icon: Reading
+        icon: Reading,
+        to: '/docs/product-v2',
+        children: [
+          { index: 'doc-product-v2-financial-voucher', label: '十一、财务计提凭证' }
+        ]
       },
       {
         index: 'doc-product-v1',

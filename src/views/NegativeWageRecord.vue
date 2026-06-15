@@ -42,6 +42,11 @@
               <el-option label="工资条抵扣" value="wage_deduct" />
             </el-select>
           </el-form-item>
+          <el-form-item label="主体">
+            <el-select v-model="searchForm.entity" placeholder="请选择主体" clearable style="width: 180px;">
+              <el-option v-for="opt in entityOptions" :key="opt" :label="opt" :value="opt" />
+            </el-select>
+          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
@@ -80,6 +85,7 @@
             {{ getSourceTypeText(row.sourceType) }}
           </template>
         </el-table-column>
+        <el-table-column prop="entity" label="主体" width="180" />
         <el-table-column prop="remark" label="说明" min-width="200" />
         <el-table-column prop="amount" label="金额" width="120" align="right">
           <template #default="{ row }">
@@ -128,8 +134,18 @@ const activeTab = ref('all')
 // 搜索表单
 const searchForm = reactive({
   dateRange: [],
-  sourceType: ''
+  sourceType: '',
+  entity: ''
 })
+
+// 主体选项（1 门店 = 1 主体）
+const entityOptions = [
+  '北京推拿公司',
+  '上海推拿公司A店',
+  '上海推拿公司B店',
+  '深圳推拿公司',
+  '广州推拿公司'
+]
 
 // 汇总数据
 const currentBalance = ref(-1500)
@@ -143,6 +159,7 @@ const recordData = ref([
     employeeId: 'E001',
     type: 'source',
     sourceType: 'wage_negative',
+    entity: '北京推拿公司',
     amount: -600,
     balanceBefore: 0,
     balanceAfter: -600,
@@ -155,6 +172,7 @@ const recordData = ref([
     employeeId: 'E001',
     type: 'source',
     sourceType: 'advance',
+    entity: '北京推拿公司',
     amount: -1000,
     balanceBefore: -600,
     balanceAfter: -1600,
@@ -167,6 +185,7 @@ const recordData = ref([
     employeeId: 'E001',
     type: 'deduct',
     sourceType: 'wage_deduct',
+    entity: '北京推拿公司',
     amount: 500,
     balanceBefore: -1600,
     balanceAfter: -1100,
@@ -179,6 +198,7 @@ const recordData = ref([
     employeeId: 'E001',
     type: 'source',
     sourceType: 'penalty',
+    entity: '北京推拿公司',
     amount: -400,
     balanceBefore: -1100,
     balanceAfter: -1500,
@@ -202,6 +222,11 @@ const filteredData = computed(() => {
   // 类型过滤
   if (searchForm.sourceType) {
     data = data.filter(d => d.sourceType === searchForm.sourceType)
+  }
+
+  // 主体过滤
+  if (searchForm.entity) {
+    data = data.filter(d => d.entity === searchForm.entity)
   }
 
   // 时间过滤
@@ -256,6 +281,7 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.dateRange = []
   searchForm.sourceType = ''
+  searchForm.entity = ''
 }
 
 // 返回

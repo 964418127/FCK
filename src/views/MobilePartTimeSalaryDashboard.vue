@@ -393,7 +393,7 @@ const arrivalWeeks = reactive([
     unit: '元',
     items: [
       { label: '合计金额', value: 2921.9 },
-      { label: '上期负数', value: 0 },
+      { label: '负工资抵扣', value: 0 },
       { label: '扣缴', value: 87.66 },
       { label: '应发金额', value: 2834.24 },
       { label: '实发金额', value: 0 }
@@ -404,7 +404,7 @@ const arrivalWeeks = reactive([
     unit: '元',
     items: [
       { label: '合计金额', value: 0 },
-      { label: '上期负数', value: 0 },
+      { label: '负工资抵扣', value: 0 },
       { label: '扣缴', value: 0 },
       { label: '应发金额', value: 0 },
       { label: '实发金额', value: 0 }
@@ -415,7 +415,7 @@ const arrivalWeeks = reactive([
     unit: '元',
     items: [
       { label: '合计金额', value: 0 },
-      { label: '上期负数', value: 0 },
+      { label: '负工资抵扣', value: 0 },
       { label: '扣缴', value: 0 },
       { label: '应发金额', value: 0 },
       { label: '实发金额', value: 0 }
@@ -426,7 +426,7 @@ const arrivalWeeks = reactive([
     unit: '元',
     items: [
       { label: '合计金额', value: 0 },
-      { label: '上期负数', value: 0 },
+      { label: '负工资抵扣', value: 0 },
       { label: '扣缴', value: 0 },
       { label: '应发金额', value: 0 },
       { label: '实发金额', value: 0 }

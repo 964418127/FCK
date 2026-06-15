@@ -176,6 +176,18 @@
 
           <!-- 员工福利保障分组 -->
           <MultiLevelMenu :menu-data="employeeWelfareMenu" :is-collapsed="isSidebarCollapsed" />
+
+          <!-- 财务计提分组 -->
+          <el-sub-menu index="finance-accrual">
+            <template #title>
+              <el-icon><Money /></el-icon>
+              <span>财务计提</span>
+            </template>
+            <el-menu-item index="voucher-list">
+              <el-icon><Document /></el-icon>
+              <span>凭证列表</span>
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </nav>
     </aside>

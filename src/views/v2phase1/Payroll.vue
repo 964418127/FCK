@@ -41,8 +41,8 @@
             <tbody>
               <tr>
                 <td>工资条1（计件工资条）</td>
-                <td>计件提成 + <strong>绩效补贴</strong>（常乐豆代缴公积金个人部分的名义收入，<strong>仅全职</strong>） + 投诉扣款(部分) + 代扣社保(部分，<strong>老系统读取</strong>)</td>
-                <td>系统项按比例分配；<strong>「绩效补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现</td>
+                <td>计件提成 + <strong>激励补贴</strong>（常乐豆代缴公积金个人部分的名义收入，<strong>仅全职</strong>） + 投诉扣款(部分) + 代扣社保(部分，<strong>老系统读取</strong>)</td>
+                <td>系统项按比例分配；<strong>「激励补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现</td>
               </tr>
               <tr>
                 <td>工资条2（奖金工资条）</td>
@@ -62,7 +62,7 @@
           <div class="note">
             <strong>验证：</strong>5000 + 1843 + 0 = 6843（总净工资）✅<br/>
             <strong>常乐豆抵扣范围：</strong>常乐豆<strong>优先抵扣公积金公司部分</strong>（<strong>公司部分由老系统记账</strong>，<strong>不进员工工资条</strong>）；<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由<strong>员工现金补差</strong>，<strong>不修改</strong>工资条上「代扣公积金」显示金额）。<strong>不抵扣社保/商业险</strong>。<br/>
-            <strong>「绩效补贴」项（仅全职）：</strong>当常乐豆代缴了部分个人公积金时，公司<strong>以「绩效补贴」名义</strong>在<strong>第 1 个工资条</strong>增加等额收入，<strong>计入应税收入</strong>——保持工资条净到手与员工实收一致<br/>
+            <strong>「激励补贴」项（仅全职）：</strong>当常乐豆代缴了部分个人公积金时，公司<strong>以「激励补贴」名义</strong>在<strong>第 1 个工资条</strong>增加等额收入，<strong>计入应税收入</strong>——保持工资条净到手与员工实收一致<br/>
             <strong>商业险：</strong>暂不进入系统（线下购买，成本归公司），<strong>不进工资条</strong>，<strong>不显示</strong><br/>
             <strong>离职常乐豆：</strong>全职员工离职时，该合同主体名下的常乐豆余额全部提现
           </div>
@@ -246,14 +246,14 @@
                 <td>工资条<strong>应发 &gt; 0</strong> 且员工存在<strong>负工资余额</strong>时触发</td>
               </tr>
               <tr>
-                <td><strong>绩效补贴</strong>（常乐豆代缴公积金个人部分的名义收入）</td>
+                <td><strong>激励补贴</strong>（常乐豆代缴公积金个人部分的名义收入）</td>
                 <td><strong>全职 / 第 1 个工资条</strong>（计件工资条）</td>
                 <td>常乐豆<strong>抵完公司部分后，剩余继续抵个人部分</strong>且实际抵掉金额 &gt; 0 时触发；金额 = 常乐豆代缴个人部分金额</td>
               </tr>
             </tbody>
           </table>
           <div class="note">
-            <strong>核心原则：</strong>动态项<strong>不固定配置在模板中</strong>，是业务执行/计算流转过程中按条件产生的扣缴/收入项。<strong>不参与应税收入计算</strong>（<strong>例外：绩效补贴计入应税收入</strong>，作为 1 级收入项）。
+            <strong>核心原则：</strong>动态项<strong>不固定配置在模板中</strong>，是业务执行/计算流转过程中按条件产生的扣缴/收入项。<strong>不参与应税收入计算</strong>（<strong>例外：激励补贴计入应税收入</strong>，作为 1 级收入项）。
           </div>
         </div>
     </div>

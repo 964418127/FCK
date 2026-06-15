@@ -118,7 +118,7 @@
               @click="handleResignWithdrawal(scope.row)"
             >
               <el-icon><Wallet /></el-icon>
-              离职提现
+              离职补偿
             </el-button>
           </template>
         </el-table-column>
@@ -578,7 +578,7 @@ const handleViewConsumption = (row) => {
   })
 }
 
-// 是否展示离职提现按钮：仅人事经理 且 员工处于离职状态 且 实时可用余额>0
+// 是否展示离职补偿按钮：仅人事经理 且 员工处于离职状态 且 实时可用余额>0
 const canResignWithdrawal = (row) => {
   if (currentRole.value !== 'hr_manager') return false
   if (row.status !== '离职') return false
@@ -586,15 +586,15 @@ const canResignWithdrawal = (row) => {
   return true
 }
 
-// 离职提现：全额提取账户实时可用余额
+// 离职补偿：全额发放账户实时可用余额
 const handleResignWithdrawal = async (row) => {
   const amount = row.currentAvailableBalance
   try {
     await ElMessageBox.confirm(
-      `员工【${row.name} / ${row.employeeId}】当前为离职状态。\n将对【余额账户】执行离职全额提现，金额：${amount} 豆。\n此操作不可撤销，是否继续？`,
-      '离职提现确认',
+      `员工【${row.name} / ${row.employeeId}】当前为离职状态。\n将对【余额账户】发放离职补偿，金额：${amount} 豆。\n此操作不可撤销，是否继续？`,
+      '离职补偿确认',
       {
-        confirmButtonText: '确认提现',
+        confirmButtonText: '确认补偿',
         cancelButtonText: '取消',
         type: 'warning'
       }
@@ -606,7 +606,7 @@ const handleResignWithdrawal = async (row) => {
   row.currentWithdrawal = (row.currentWithdrawal || 0) + amount
   row.currentAvailableBalance = 0
 
-  ElMessage.success(`离职提现成功：${row.name} 余额账户 ${amount} 豆已全额提取`)
+  ElMessage.success(`离职补偿成功：${row.name} 余额账户 ${amount} 豆已补偿发放`)
 }
 
 // 分页处理

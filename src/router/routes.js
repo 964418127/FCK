@@ -352,6 +352,22 @@ export const routes = [
         meta: {
           title: '人员薪酬明细'
         }
+      },
+      {
+        path: 'personnel-salary-bill-detail/:billNo',
+        name: 'personnel-salary-bill-detail',
+        component: () => import('../views/PersonnelSalaryBillDetail.vue'),
+        meta: {
+          title: '工资单详情'
+        }
+      },
+      {
+        path: 'voucher-list',
+        name: 'voucher-list',
+        component: () => import('../views/VoucherList.vue'),
+        meta: {
+          title: '凭证列表'
+        }
       }
     ]
   },
@@ -442,6 +458,14 @@ export const routes = [
         component: () => import('../views/V2ProductGuide.vue'),
         meta: {
           title: '产品需求v2'
+        }
+      },
+      {
+        path: 'product-v2/financial-voucher',
+        name: 'doc-product-v2-financial-voucher',
+        component: () => import('../views/v2-product-guide/sections/FinancialVoucher.vue'),
+        meta: {
+          title: '产品需求v2 / 十一、财务计提凭证'
         }
       },
       {

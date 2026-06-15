@@ -15,6 +15,11 @@
           <el-form-item label="部门">
             <el-input v-model="searchForm.department" placeholder="请输入部门" clearable style="width: 120px;" />
           </el-form-item>
+          <el-form-item label="主体">
+            <el-select v-model="searchForm.entities" placeholder="请选择主体（可多选）" multiple collapse-tags collapse-tags-tooltip clearable style="width: 200px;">
+              <el-option v-for="opt in entityOptions" :key="opt" :label="opt" :value="opt" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="余额范围">
             <el-input-number v-model="searchForm.balanceMin" :max="0" :step="100" placeholder="最小（≤0）" controls-position="right" style="width: 130px;" />
             <span style="margin: 0 6px; color: hsl(var(--muted-foreground));">至</span>
@@ -40,6 +45,13 @@
         <el-table-column prop="employeeName" label="姓名" width="100" />
         <el-table-column prop="department" label="部门" width="120" />
         <el-table-column prop="position" label="岗位" width="100" />
+        <el-table-column prop="entities" label="主体" width="200">
+          <template #default="{ row }">
+            <el-tag v-for="ent in row.entities" :key="ent" size="small" type="info" style="margin-right: 4px;">
+              {{ ent }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="cooperationType" label="类型" width="80">
           <template #default="{ row }">
             <el-tag :type="row.cooperationType === '全职' ? 'primary' : 'warning'" size="small">
@@ -159,9 +171,19 @@ const router = useRouter()
 const searchForm = reactive({
   keyword: '',
   department: '',
+  entities: [],
   balanceMin: null,
   balanceMax: null
 })
+
+// 主体选项（1 门店 = 1 主体）
+const entityOptions = [
+  '北京推拿公司',
+  '上海推拿公司A店',
+  '上海推拿公司B店',
+  '深圳推拿公司',
+  '广州推拿公司'
+]
 
 // 员工列表（模拟数据）
 const employeeList = ref([
@@ -194,6 +216,7 @@ const accountData = ref([
     employeeName: '张三',
     department: '按摩部',
     position: '推拿师',
+    entities: ['北京推拿公司'],
     cooperationType: '全职',
     currentBalance: -1500,
     totalSource: -2000,
@@ -205,6 +228,7 @@ const accountData = ref([
     employeeName: '李四',
     department: '按摩部',
     position: '推拿师',
+    entities: ['上海推拿公司A店'],
     cooperationType: '全职',
     currentBalance: -3200,
     totalSource: -5000,
@@ -216,6 +240,7 @@ const accountData = ref([
     employeeName: '王五',
     department: '客服部',
     position: '客户经理',
+    entities: ['上海推拿公司A店', '上海推拿公司B店'],
     cooperationType: '兼职',
     currentBalance: 0,
     totalSource: -800,
@@ -227,6 +252,7 @@ const accountData = ref([
     employeeName: '赵六',
     department: '按摩部',
     position: '推拿师',
+    entities: ['深圳推拿公司'],
     cooperationType: '全职',
     currentBalance: -500,
     totalSource: -500,
@@ -241,11 +267,13 @@ const filteredData = computed(() => {
       item.employeeId.includes(searchForm.keyword) ||
       item.employeeName.includes(searchForm.keyword)
     const matchDepartment = !searchForm.department || item.department.includes(searchForm.department)
+    const matchEntity = !searchForm.entities.length ||
+      item.entities.some(ent => searchForm.entities.includes(ent))
     const matchBalance = (
       (searchForm.balanceMin === null || item.currentBalance >= searchForm.balanceMin) &&
       (searchForm.balanceMax === null || item.currentBalance <= searchForm.balanceMax)
     )
-    return matchKeyword && matchDepartment && matchBalance
+    return matchKeyword && matchDepartment && matchEntity && matchBalance
   })
 })
 
@@ -269,6 +297,7 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.keyword = ''
   searchForm.department = ''
+  searchForm.entities = []
   searchForm.balanceMin = null
   searchForm.balanceMax = null
 }

@@ -139,6 +139,9 @@
                     · <strong>全职工种个税累计预扣</strong>：<strong>系统按公式</strong>（综合所得月度累计预扣法：当月应纳税所得额 × 税率 - 速算扣除数 - 累计已预扣）计算<br/>
                     · <strong>非全日制 / 兼职个税</strong>：每条 3% 预扣（系统按规则，来自 step 6 第2级）+ 月末汇算（<strong>百旺服务返回</strong>实际税额 → 多退少补）<br/>
                     · <strong>兼职多主体报税升级</strong>：跨多主体的员工，<strong>按业绩归属主体倒序依次调用百旺申报</strong>（百旺 1 次仅支持 1 主体），每主体 1 次调用
+                    <div style="margin: 4px 0 0 24px; padding: 6px 10px; font-size: 11px; color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / 0.35); border-left: 2px solid hsl(var(--muted-foreground) / 0.4); border-radius: 3px; line-height: 1.7;">
+                      📝 <strong>备注：</strong>目前实际报税服务是<strong>按主体下全部员工一次报税</strong>，<strong>未</strong>单独按员工维度排序后再依次申报；<strong>实际开发先尝试原方案是否存在问题后，再行补充是否优化</strong>。
+                    </div>
                   </div>
                 </div>
               </div>
@@ -171,7 +174,7 @@
                   <span style="font-weight: 600;">② 付款单生成</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 在工资单 <strong>应发金额 &gt; 0</strong> 的工资条范围内按<strong>去重维度</strong>聚合；记录字段：<strong>银行实发金额</strong>（数据完整性用），实际打款仍按实发执行</span>
                 </div>
                 <div style="padding: 8px 12px; background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.2); border-radius: 4px;">
-                  <span style="font-weight: 600;">③ 付款单去重维度（5 字段）</span>
+                  <span style="font-weight: 600;">③ 付款单去重维度（6 字段）</span>
                 </div>
                 <table class="data-table" style="margin: 8px 0 8px 16px; width: calc(100% - 16px); font-size: 12px;">
                   <thead>
@@ -196,6 +199,10 @@
                     <tr>
                       <td><strong>合同主体</strong></td>
                       <td>1 门店 = 1 主体；兼职跨多门店时，<strong>每主体 1 条付款单</strong></td>
+                    </tr>
+                    <tr>
+                      <td><strong>合作模式</strong></td>
+                      <td><strong>4 种</strong>：<strong>劳动合同-全日制</strong> / <strong>劳动合同-非全日制</strong> / <strong>劳务合作-返聘</strong> / <strong>劳务合作-兼职</strong>，同员工多合作模式时按合作模式分别出付款单</td>
                     </tr>
                     <tr>
                       <td><strong>薪酬周期</strong></td>

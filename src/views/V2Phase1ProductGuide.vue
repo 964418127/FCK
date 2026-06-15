@@ -53,11 +53,11 @@
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>常乐豆规则（4 步）</strong>：仅全职享有；<strong>优先抵扣公积金公司部分</strong>；<strong>剩余可继续抵扣公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，不足由<strong>员工现金补差</strong>，工资条「代扣公积金」<strong>仍按全额</strong>显示）；用于代缴个人部分的常乐豆<strong>以「绩效补贴」名义入第 1 个工资条</strong>，<strong>计入应税收入</strong>（作为 1 级收入项）；<strong>不抵扣社保/商业险</strong>；<strong>常乐豆本身不计入应税收入</strong></td>
+            <td><strong>常乐豆规则（4 步）</strong>：仅全职享有；<strong>优先抵扣公积金公司部分</strong>；<strong>剩余可继续抵扣公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，不足由<strong>员工现金补差</strong>，工资条「代扣公积金」<strong>仍按全额</strong>显示）；用于代缴个人部分的常乐豆<strong>以「激励补贴」名义入第 1 个工资条</strong>，<strong>计入应税收入</strong>（作为 1 级收入项）；<strong>不抵扣社保/商业险</strong>；<strong>常乐豆本身不计入应税收入</strong></td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>【绩效补贴】动态项</strong>（常乐豆代缴公积金个人部分时的名义收入，<strong>仅全职</strong>）：<strong>触发条件</strong>——常乐豆优先抵公司部分后，剩余继续抵个人部分且实际抵掉金额 &gt; 0；<strong>金额</strong>= 常乐豆实际抵个人部分的金额（最高不超过个人公积金总额，如 1200）；<strong>位置</strong>——<strong>第 1 个工资条</strong>的一个收入项；工资条上「代扣公积金」<strong>按老系统接口读取的全额显示</strong>（不动态计算扣除金额），员工<strong>现金补差 = 全额 − 常乐豆代缴金额</strong>；<strong>计入应税收入</strong>（作为 1 级收入项），保持工资条净到手 = 员工实收</td>
+            <td><strong>【激励补贴】动态项</strong>（常乐豆代缴公积金个人部分时的名义收入，<strong>仅全职</strong>）：<strong>触发条件</strong>——常乐豆优先抵公司部分后，剩余继续抵个人部分且实际抵掉金额 &gt; 0；<strong>金额</strong>= 常乐豆实际抵个人部分的金额（最高不超过个人公积金总额，如 1200）；<strong>位置</strong>——<strong>第 1 个工资条</strong>的一个收入项；工资条上「代扣公积金」<strong>按老系统接口读取的全额显示</strong>（不动态计算扣除金额），员工<strong>现金补差 = 全额 − 常乐豆代缴金额</strong>；<strong>计入应税收入</strong>（作为 1 级收入项），保持工资条净到手 = 员工实收</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
@@ -105,7 +105,7 @@
           </tr>
           <tr>
             <td><strong>常乐豆使用优先级</strong></td>
-            <td>① 抵<strong>公积金公司部分</strong><br/>② 抵<strong>公积金个人部分</strong>（不足员工现金补差，「代扣公积金」按全额显示）<br/>③ 用于代缴个人部分的常乐豆<strong>以「绩效补贴」名义入第 1 个工资条，计入应税收入</strong><br/>④ 剩余可消费 / 离职提现（<strong>不抵扣社保/商业险</strong>）</td>
+            <td>① 抵<strong>公积金公司部分</strong><br/>② 抵<strong>公积金个人部分</strong>（不足员工现金补差，「代扣公积金」按全额显示）<br/>③ 用于代缴个人部分的常乐豆<strong>以「激励补贴」名义入第 1 个工资条，计入应税收入</strong><br/>④ 剩余可消费 / 离职提现（<strong>不抵扣社保/商业险</strong>）</td>
           </tr>
           <tr>
             <td><strong>福利保障数据来源</strong></td>
@@ -170,7 +170,7 @@
             </tr>
             <tr>
               <td><strong>应税收入</strong></td>
-              <td><strong>第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）</strong>，即提交报税的收入基数（详见「应税收入计算规则」）。<strong>常乐豆本身不计入应税收入</strong>；当常乐豆代缴公积金个人部分时，公司以<strong>「绩效补贴」名义</strong>在第 1 个工资条增加等额收入，<strong>作为 1 级收入项计入应税收入</strong>。注意：<strong>第2级扣款（个税预扣）不参与应税收入</strong>（预扣是<strong>真正的个税</strong>，仅用于个税汇算；预扣所在工资条已发放，不可回溯修改）</td>
+              <td><strong>第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）</strong>，即提交报税的收入基数（详见「应税收入计算规则」）。<strong>常乐豆本身不计入应税收入</strong>；当常乐豆代缴公积金个人部分时，公司以<strong>「激励补贴」名义</strong>在第 1 个工资条增加等额收入，<strong>作为 1 级收入项计入应税收入</strong>。注意：<strong>第2级扣款（个税预扣）不参与应税收入</strong>（预扣是<strong>真正的个税</strong>，仅用于个税汇算；预扣所在工资条已发放，不可回溯修改）</td>
             </tr>
             <tr>
               <td><strong>预扣个税</strong></td>
@@ -344,7 +344,7 @@
 
       <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
         <h3>⑥ 常乐豆与公积金 / 工资单的关系（关键认知）</h3>
-        <p>常乐豆<strong>仅全职</strong>享有，<strong>优先抵扣公积金公司部分</strong>，<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由员工现金补差），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>常乐豆本身不计入应税收入</strong>。公积金<strong>个人部分</strong>在工资条上按<strong>全额</strong>显示，金额由<strong>老系统接口读取</strong>；当常乐豆代缴了部分个人公积金时，公司会以<strong>「绩效补贴」或类似名义</strong>在<strong>第 1 个工资条</strong>中增加等额收入，<strong>该「绩效补贴」计入应税收入</strong>（作为 1 级收入项）。</p>
+        <p>常乐豆<strong>仅全职</strong>享有，<strong>优先抵扣公积金公司部分</strong>，<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由员工现金补差），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>常乐豆本身不计入应税收入</strong>。公积金<strong>个人部分</strong>在工资条上按<strong>全额</strong>显示，金额由<strong>老系统接口读取</strong>；当常乐豆代缴了部分个人公积金时，公司会以<strong>「激励补贴」或类似名义</strong>在<strong>第 1 个工资条</strong>中增加等额收入，<strong>该「激励补贴」计入应税收入</strong>（作为 1 级收入项）。</p>
         <table class="data-table">
           <thead>
             <tr><th style="width: 200px;">场景</th><th>处理方式</th><th>对应应税收入计算</th></tr>
@@ -357,8 +357,8 @@
             </tr>
             <tr>
               <td><strong>常乐豆剩余继续抵扣公积金个人部分</strong></td>
-              <td>① 抵<strong>公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，如 1200；<strong>不修改</strong>工资条上「代扣公积金」显示金额，仍按<strong>全额</strong>显示）<br/>② 抵掉的部分<strong>以「绩效补贴」名义</strong>作为收入项加入<strong>第 1 个工资条</strong><br/>③ 不足部分由<strong>员工现金补差</strong>（= 1200 − 常乐豆代缴金额）</td>
-              <td><strong>「绩效补贴」计入应税收入</strong>（作为 1 级收入项；金额 = 常乐豆实际抵个人部分的金额，最高 1200）</td>
+              <td>① 抵<strong>公积金个人部分</strong>（<strong>最高不超过个人公积金总额</strong>，如 1200；<strong>不修改</strong>工资条上「代扣公积金」显示金额，仍按<strong>全额</strong>显示）<br/>② 抵掉的部分<strong>以「激励补贴」名义</strong>作为收入项加入<strong>第 1 个工资条</strong><br/>③ 不足部分由<strong>员工现金补差</strong>（= 1200 − 常乐豆代缴金额）</td>
+              <td><strong>「激励补贴」计入应税收入</strong>（作为 1 级收入项；金额 = 常乐豆实际抵个人部分的金额，最高 1200）</td>
             </tr>
             <tr>
               <td><strong>常乐豆有剩余</strong>（仅全职）</td>
@@ -373,7 +373,7 @@
           </tbody>
         </table>
         <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning)); margin-top: 8px;">
-          <strong>⚠ 关键：</strong>① 常乐豆<strong>本身</strong>不计入应税收入；② 当常乐豆代缴公积金个人部分时，<strong>「绩效补贴」名义等额收入计入应税收入</strong>——本质是公司替员工承担的公积金个人部分，属于员工的隐性收入，应当计入应税基数；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，与常乐豆无关；④ <strong>「绩效补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现。
+          <strong>⚠ 关键：</strong>① 常乐豆<strong>本身</strong>不计入应税收入；② 当常乐豆代缴公积金个人部分时，<strong>「激励补贴」名义等额收入计入应税收入</strong>——本质是公司替员工承担的公积金个人部分，属于员工的隐性收入，应当计入应税基数；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，与常乐豆无关；④ <strong>「激励补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现。
         </div>
       </div>
     </div>

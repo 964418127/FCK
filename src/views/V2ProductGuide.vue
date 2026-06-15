@@ -190,6 +190,7 @@
           <li><a href="#payroll">八、工资条组装</a></li>
           <li><a href="#scenarios">九、典型业务场景决策树</a></li>
           <li><a href="#money-flow">十、金额流转泳道图</a></li>
+          <li><a href="/docs/product-v2/financial-voucher" target="_self">十一、财务计提凭证 <span style="font-size: 11px; color: hsl(var(--primary));">（子页面）</span></a></li>
         </ul>
       </div>
 

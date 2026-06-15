@@ -142,7 +142,11 @@
 
 <script setup>
 import { ref, computed, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+// ==================== 路由 ====================
+const router = useRouter()
 
 // ==================== 搜索表单 ====================
 const searchForm = reactive({
@@ -403,7 +407,7 @@ const handleExport = () => {
 }
 
 const handleViewPayroll = (row) => {
-  ElMessage.info(`查看 ${row.name} 工资单：第四周收入 ${row.weekIncome}`)
+  router.push({ name: 'personnel-salary-bill-detail', params: { billNo: `demo-${row.talentId || row.employeeNo}` } })
 }
 
 const handleViewBeanBill = (row) => {
