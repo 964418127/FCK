@@ -101,5 +101,14 @@ export const v2phase1Chapters = [
     routeName: 'doc-product-v2-phase1-money-flow',
     path: '/docs/product-v2-phase1/money-flow',
     file: 'MoneyFlow.vue'
+  },
+  {
+    id: 'supplementary',
+    order: '十一',
+    title: '补充需求',
+    subtitle: '模块化薪酬重算 / 离职员工常乐豆处理',
+    routeName: 'doc-product-v2-phase1-supplementary',
+    path: '/docs/product-v2-phase1/supplementary',
+    file: 'Supplementary.vue'
   }
 ]
