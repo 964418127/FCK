@@ -368,6 +368,22 @@ export const routes = [
         meta: {
           title: '凭证列表'
         }
+      },
+      {
+        path: 'voucher-list-2',
+        name: 'voucher-list-2',
+        component: () => import('../views/VoucherList2.vue'),
+        meta: {
+          title: '工资表'
+        }
+      },
+      {
+        path: 'voucher-list-2/slip/:slipNo',
+        name: 'voucher-list-2-slip-detail',
+        component: () => import('../views/VoucherList2SlipDetail.vue'),
+        meta: {
+          title: '工资单详情（v2）'
+        }
       }
     ]
   },
@@ -404,6 +420,22 @@ export const routes = [
     }
   },
   {
+    path: '/mobile-store-self-offline',
+    name: 'mobile-store-self-offline',
+    component: () => import('../views/MobileStoreSelfOffline.vue'),
+    meta: {
+      title: '移动端自主下线'
+    }
+  },
+  {
+    path: '/mobile-store-hanging-new',
+    name: 'mobile-store-hanging-new',
+    component: () => import('../views/MobileStoreHangingNew.vue'),
+    meta: {
+      title: '移动端新挂店管理'
+    }
+  },
+  {
     path: '/mobile-schedule-leave',
     name: 'mobile-schedule-leave',
     component: () => import('../views/MobileScheduleLeave.vue'),
@@ -420,11 +452,59 @@ export const routes = [
     }
   },
   {
+    path: '/mobile-salary-dashboard-2',
+    name: 'mobile-salary-dashboard-2',
+    component: () => import('../views/MobileSalaryDashboard2.vue'),
+    meta: {
+      title: '全职薪酬看板2'
+    }
+  },
+  {
     path: '/mobile-part-time-salary-dashboard',
     name: 'mobile-part-time-salary-dashboard',
     component: () => import('../views/MobilePartTimeSalaryDashboard.vue'),
     meta: {
       title: '非全日制薪酬看板'
+    }
+  },
+  {
+    path: '/mobile-part-time-salary-dashboard-2',
+    name: 'mobile-part-time-salary-dashboard-2',
+    component: () => import('../views/MobilePartTimeSalaryDashboard2.vue'),
+    meta: {
+      title: '非全日制薪酬看板2'
+    }
+  },
+  {
+    path: '/mobile-account-manager-salary-dashboard',
+    name: 'mobile-account-manager-salary-dashboard',
+    component: () => import('../views/MobileAccountManagerSalaryDashboard.vue'),
+    meta: {
+      title: '客户经理薪酬看板'
+    }
+  },
+  {
+    path: '/mobile-bean-account',
+    name: 'mobile-bean-account',
+    component: () => import('../views/MobileBeanAccount.vue'),
+    meta: {
+      title: '常乐豆账户'
+    }
+  },
+  {
+    path: '/mobile-bean-settlement',
+    name: 'mobile-bean-settlement',
+    component: () => import('../views/MobileBeanSettlement.vue'),
+    meta: {
+      title: '结算记录'
+    }
+  },
+  {
+    path: '/mobile-bean-consumption-detail',
+    name: 'mobile-bean-consumption-detail',
+    component: () => import('../views/MobileBeanConsumptionDetail.vue'),
+    meta: {
+      title: '消费记录'
     }
   },
   {

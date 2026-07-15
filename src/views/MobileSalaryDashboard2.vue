@@ -1,5 +1,5 @@
 <template>
-  <div class="mobile-salary-dashboard">
+  <div class="mobile-salary-dashboard-2">
     <!-- 顶部导航 -->
     <div class="top-nav">
       <el-button type="text" @click="goBack" style="color: white;">
@@ -16,13 +16,6 @@
       </div>
     </div>
 
-    <!-- 门店切换（全日制单门店，隐藏切换器；保留数据/弹层以便后续扩展） -->
-    <!-- <div class="store-selector" @click="showStoreSheet = true">
-      <el-icon class="store-icon"><Shop /></el-icon>
-      <span class="store-label">{{ currentStoreLabel }}</span>
-      <el-icon class="store-arrow"><ArrowDown /></el-icon>
-    </div> -->
-
     <!-- Tab 栏 -->
     <div class="tab-bar">
       <div
@@ -34,13 +27,13 @@
       >
         {{ tab.label }}
       </div>
-      <div class="date-selector" @click="showDatePicker = true">
+      <div class="date-selector" @click="handleDatePicker">
         {{ currentDateLabel }}
         <el-icon class="date-arrow"><ArrowDown /></el-icon>
       </div>
     </div>
 
-    <!-- 数据延迟提示（仅日/周/月统计显示） -->
+    <!-- 数据延迟提示（仅日/月统计显示，到账情况不显示） -->
     <div v-if="activeTab !== 'arrival'" class="delay-tip">
       <el-icon class="tip-icon"><WarningFilled /></el-icon>
       <div class="tip-content">
@@ -92,6 +85,7 @@
           <div class="toggle-label">
             今日汇总
             <el-icon v-if="viewMode === 'summary'" class="toggle-arrow"><ArrowDown /></el-icon>
+            <el-icon v-else class="toggle-arrow"><ArrowRight /></el-icon>
           </div>
         </div>
         <div
@@ -103,11 +97,12 @@
           <div class="toggle-label">
             今日支出
             <el-icon v-if="viewMode === 'expense'" class="toggle-arrow"><ArrowDown /></el-icon>
+            <el-icon v-else class="toggle-arrow"><ArrowRight /></el-icon>
           </div>
         </div>
       </div>
 
-      <!-- 分类子 Tab + 列表 -->
+      <!-- 分类子 Tab + 列表（汇总） -->
       <div v-show="viewMode === 'summary'" class="category-block">
         <div class="category-tabs">
           <div
@@ -154,6 +149,7 @@
         </div>
       </div>
 
+      <!-- 分类子 Tab + 列表（支出） -->
       <div v-show="viewMode === 'expense'" class="category-block">
         <div class="category-tabs">
           <div
@@ -196,13 +192,13 @@
       </div>
     </div>
 
-    <!-- ==================== 月统计 ==================== -->
-    <div v-show="activeTab === 'month'" class="tab-content">
+    <!-- ==================== 月统计（按工资单拆分） ==================== -->
+    <div v-show="activeTab === 'month'" class="tab-content month-content">
       <!-- 实际产值卡 -->
       <div class="output-card">
-        <div class="output-title">本月实际产值{{ monthData.output.actual }}</div>
+        <div class="output-title">本月实际产值{{ monthOutput.actual }}</div>
         <el-progress
-          :percentage="(monthData.output.actual / monthData.output.target) * 100"
+          :percentage="(monthOutput.actual / monthOutput.target) * 100"
           :stroke-width="6"
           :show-text="false"
           color="#a40035"
@@ -213,7 +209,7 @@
             <div class="label-text">产值</div>
           </div>
           <div class="label-right">
-            <div class="label-value">{{ monthData.output.target }}</div>
+            <div class="label-value">{{ monthOutput.target }}</div>
             <div class="label-text">
               月目标
               <el-icon class="info-icon"><InfoFilled /></el-icon>
@@ -222,49 +218,69 @@
         </div>
       </div>
 
-      <!-- 汇总 -->
-      <div class="month-section-card">
-        <div class="section-title">{{ monthData.summary.title }}</div>
-        <div class="month-category-grid">
+      <!-- 收入分类 Tab 横向切换（轻量切换器，不套白卡） -->
+      <div class="bills-switcher">
+        <div class="bills-switcher-header">
+          <span class="bills-switcher-title">收入分类</span>
+          <span class="bills-switcher-count">共 {{ monthBills.length }} 张</span>
+        </div>
+        <div class="bill-tabs">
           <div
-            v-for="cat in monthData.summary.categories"
-            :key="cat.key"
-            class="month-cat-item"
+            v-for="(bill, idx) in monthBills"
+            :key="bill.id"
+            class="bill-tab"
+            :class="{ active: selectedBillIndex === idx }"
+            @click="selectedBillIndex = idx"
           >
-            <div class="month-cat-value">
-              {{ cat.value }}<span class="month-cat-unit">({{ cat.unit }})</span>
-            </div>
-            <div class="month-cat-label">
-              {{ cat.label }}
-              <el-icon class="cat-chevron"><ArrowRight /></el-icon>
-            </div>
+            <div class="bill-tab-name">{{ bill.name }}</div>
+            <div class="bill-tab-period">{{ bill.period }}</div>
           </div>
         </div>
       </div>
 
-      <!-- 支出 -->
-      <div class="month-section-card">
-        <div class="section-title">{{ monthData.expense.title }}</div>
-        <div class="month-category-grid">
-          <div
-            v-for="cat in monthData.expense.categories"
-            :key="cat.key"
-            class="month-cat-item"
-            :class="{ 'negative': cat.value < 0 }"
-          >
-            <div class="month-cat-value">
-              {{ cat.value }}<span class="month-cat-unit">({{ cat.unit }})</span>
-            </div>
-            <div class="month-cat-label">
-              {{ cat.label }}
-              <el-icon class="cat-chevron"><ArrowRight /></el-icon>
+        <!-- 预估收入 = 当前选中工资单的薪酬项 -->
+        <div class="month-section-card">
+          <div class="section-title">预估收入</div>
+          <div v-if="selectedBill && selectedBill.incomeItems.length > 0" class="month-category-grid">
+            <div
+              v-for="(item, idx) in selectedBill.incomeItems"
+              :key="`income-${idx}`"
+              class="month-cat-item"
+              @click="handleIncomeItemClick(item)"
+            >
+              <div class="month-cat-value">
+                {{ formatAmount(item.value) }}<span class="month-cat-unit">({{ unitOf(item) }})</span>
+              </div>
+              <div class="month-cat-label">
+                {{ item.label }}
+                <el-icon class="cat-chevron"><ArrowRight /></el-icon>
+              </div>
             </div>
           </div>
+          <div v-else class="empty-tip">该工资单暂无薪酬项</div>
         </div>
-      </div>
 
-      <!-- 公积金公司补助 已移除：公积金个人扣款（含公司补助部分）已在 8 月支出中展示 -->
-
+        <!-- 预估支出 = 当前选中工资单的扣缴项 -->
+        <div class="month-section-card">
+          <div class="section-title">预估支出</div>
+          <div v-if="selectedBill && selectedBill.deductionItems.length > 0" class="month-category-grid">
+            <div
+              v-for="(item, idx) in selectedBill.deductionItems"
+              :key="`deduction-${idx}`"
+              class="month-cat-item"
+              :class="{ 'negative': item.value < 0 }"
+            >
+              <div class="month-cat-value">
+                {{ formatAmount(item.value) }}<span class="month-cat-unit">({{ unitOf(item) }})</span>
+              </div>
+              <div class="month-cat-label">
+                {{ item.label }}
+                <el-icon class="cat-chevron"><ArrowRight /></el-icon>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-tip">该工资单暂无扣缴项</div>
+        </div>
     </div>
 
     <!-- ==================== 到账情况 ==================== -->
@@ -312,10 +328,8 @@
         >
           <transition name="order-modal-slide" appear>
             <div v-if="orderDetailVisible" class="order-modal">
-              <!-- 顶部把手 -->
               <div class="order-modal-handle"></div>
 
-              <!-- 头部 -->
               <div class="order-modal-header">
                 <span class="modal-title">订单收入</span>
                 <el-button type="text" @click="handleCloseDetail" class="modal-close">
@@ -323,9 +337,7 @@
                 </el-button>
               </div>
 
-              <!-- 内容 -->
               <div v-if="currentOrderDetail" class="order-modal-body">
-                <!-- 订单汇总卡 -->
                 <div class="detail-summary-card">
                   <div class="summary-row1">
                     <div class="summary-store">
@@ -365,7 +377,6 @@
                   </div>
                 </div>
 
-                <!-- 订单提成 -->
                 <div class="detail-section-card">
                   <div class="section-title-line">
                     <span class="title-bar"></span>
@@ -380,7 +391,6 @@
                 </div>
               </div>
 
-              <!-- 底部 -->
               <div class="order-modal-footer" @click="handleAppeal">
                 <el-icon class="footer-icon"><QuestionFilled /></el-icon>
                 <span>对该笔收入有疑惑</span>
@@ -390,57 +400,100 @@
         </div>
       </transition>
     </teleport>
-  </div>
 
-  <!-- ==================== 门店选择下拉（底部上滑） ==================== -->
-  <teleport to="body">
-    <transition name="order-modal-fade">
-      <div
-        v-if="showStoreSheet"
-        class="order-modal-overlay"
-        @click.self="showStoreSheet = false"
-      >
-        <transition name="order-modal-slide" appear>
-          <div v-if="showStoreSheet" class="order-modal store-sheet">
-            <div class="order-modal-handle"></div>
-            <div class="order-modal-header">
-              <span class="modal-title">选择门店</span>
-              <el-button type="text" @click="showStoreSheet = false" class="modal-close">
-                <el-icon :size="20"><Close /></el-icon>
-              </el-button>
-            </div>
-            <div class="order-modal-body store-sheet-body">
-              <div
-                v-for="(store, idx) in storeList"
-                :key="store.key"
-                class="store-sheet-item"
-                :class="{ active: selectedStore === store.key }"
-                @click="handleStoreSelect(store.key)"
-              >
-                <div class="store-sheet-rank">{{ idx + 1 }}</div>
-                <div class="store-sheet-info">
-                  <div class="store-sheet-label">{{ store.label }}</div>
-                  <div class="store-sheet-daily">今日预估 ¥{{ store.dailyForecast.toLocaleString() }}</div>
+    <!-- ==================== 门店选择 Sheet（单门店，预留） ==================== -->
+    <!-- ==================== 月份选择 Sheet（月统计 Tab） ==================== -->
+    <teleport to="body">
+      <transition name="order-modal-fade">
+        <div
+          v-if="showDatePicker"
+          class="order-modal-overlay"
+          @click.self="showDatePicker = false"
+        >
+          <transition name="order-modal-slide" appear>
+            <div v-if="showDatePicker" class="order-modal month-sheet">
+              <div class="order-modal-handle"></div>
+              <div class="order-modal-header">
+                <span class="modal-title">选择月份</span>
+                <el-button type="text" @click="showDatePicker = false" class="modal-close">
+                  <el-icon :size="20"><Close /></el-icon>
+                </el-button>
+              </div>
+              <div class="order-modal-body month-sheet-body">
+                <div
+                  v-for="ym in availableMonths"
+                  :key="ym"
+                  class="month-sheet-item"
+                  :class="{ active: selectedMonth === ym }"
+                  @click="handleMonthSelect(ym)"
+                >
+                  <div class="month-sheet-label">{{ formatMonthLabel(ym) }}</div>
+                  <div class="month-sheet-count">
+                    共 {{ (monthBillsMap[ym] || []).length }} 张工资单
+                  </div>
+                  <el-icon v-if="selectedMonth === ym" class="month-sheet-check"><Check /></el-icon>
                 </div>
-                <div class="store-sheet-amount">
-                  <div class="amount-label">本月预告收入</div>
-                  <div class="amount-value">¥{{ store.monthlyForecast.toLocaleString() }}</div>
-                </div>
-                <el-icon v-if="selectedStore === store.key" class="store-sheet-check"><Check /></el-icon>
               </div>
             </div>
+          </transition>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ==================== 收入明细弹层（按工资单+按薪酬类筛选） ==================== -->
+    <teleport to="body">
+      <div
+        v-if="incomeItemSheetVisible"
+        class="order-modal-overlay"
+        @click.self="handleCloseIncomeItemSheet"
+      >
+        <div class="order-modal income-item-sheet">
+          <div class="order-modal-handle"></div>
+          <div class="order-modal-header">
+            <span class="modal-title">{{ currentIncomeLabel }} - {{ selectedBill ? selectedBill.name : '' }}</span>
+            <el-button type="text" @click="handleCloseIncomeItemSheet" class="modal-close">
+              <el-icon :size="20"><Close /></el-icon>
+            </el-button>
           </div>
-        </transition>
+
+          <div class="order-modal-body income-item-sheet-body">
+            <div v-if="incomeItemOrders.length > 0" class="income-item-subtotal">
+              合计 {{ incomeItemOrders.length }} 笔，共
+              <span class="subtotal-value">{{ formatAmount(incomeItemSubtotal) }} 元</span>
+            </div>
+
+            <div v-if="incomeItemOrders.length > 0" class="order-list income-orders-list">
+              <div v-for="item in incomeItemOrders" :key="item.id" class="order-item" @click="handleOpenOrderFromIncome(item)">
+                <div class="order-row1">
+                  <div class="order-title-group">
+                    <span class="order-store">{{ item.store }}</span>
+                    <span v-if="item.isRepeatCustomer" class="repeat-tag inline">回头客</span>
+                  </div>
+                  <span class="order-amount">预计收入:{{ item.amount.toFixed(2) }}</span>
+                </div>
+                <div class="order-row2">
+                  <span class="order-service">{{ item.service }}</span>
+                  <el-icon class="order-chevron"><ArrowRight /></el-icon>
+                </div>
+                <div class="order-row3">
+                  <span class="order-time">{{ item.time }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="empty-tip">该工资单暂无该类明细</div>
+          </div>
+        </div>
       </div>
-    </transition>
-  </teleport>
+    </teleport>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Close, MoreFilled, ArrowDown, ArrowRight, InfoFilled, CopyDocument, QuestionFilled, Shop, Check, WarningFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Close, MoreFilled, ArrowDown, ArrowRight, InfoFilled, CopyDocument, QuestionFilled, WarningFilled, DocumentRemove } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -448,32 +501,43 @@ const router = useRouter()
 const activeTab = ref('day')
 const tabs = [
   { key: 'day', label: '日统计' },
-  { key: 'month', label: '月统计' },
+  { key: 'month', label: '预估收入' },
   { key: 'arrival', label: '到账情况' }
 ]
 
-// 门店（全日制：单门店）
-const storeList = ref([
-  { key: 'danzishi', label: '弹子石老街店', monthlyForecast: 8420, dailyForecast: 197.8 }
-])
-const selectedStore = ref(storeList.value[0].key)
-const showStoreSheet = ref(false)
-const currentStoreLabel = computed(() => {
-  return storeList.value.find(s => s.key === selectedStore.value)?.label || ''
-})
-const handleStoreSelect = (key) => {
-  selectedStore.value = key
-  showStoreSheet.value = false
-  ElMessage.success(`已切换到：${storeList.value.find(s => s.key === key)?.label}`)
-}
-
 // 日期选择（mock）
 const showDatePicker = ref(false)
-const selectedDay = ref('2025-08-01')
-const selectedMonth = ref('2025-08')
+const selectedDay = ref('2026-07-08')
+const selectedMonth = ref('2026-07')
+
+// 月份可选项（与 monthBillsMap 的 key 对齐）
+const availableMonths = computed(() => Object.keys(monthBillsMap).sort())
+
+// 'YYYY-MM' → '26年07月'
+const formatMonthLabel = (ym) => {
+  const [y, m] = ym.split('-')
+  return `${y.slice(2)}年${m}月`
+}
+
 const currentDateLabel = computed(() => {
-  return activeTab.value === 'day' ? selectedDay.value : selectedMonth.value
+  if (activeTab.value === 'day') return selectedDay.value
+  if (activeTab.value === 'month') return formatMonthLabel(selectedMonth.value)
+  return ''
 })
+
+const handleDatePicker = () => {
+  if (activeTab.value === 'month') {
+    showDatePicker.value = true
+  } else {
+    ElMessage.info('日期选择器 - 当前为 mock 数据')
+  }
+}
+
+const handleMonthSelect = (ym) => {
+  selectedMonth.value = ym
+  showDatePicker.value = false
+  ElMessage.success(`已切换到：${formatMonthLabel(ym)}`)
+}
 
 // ==================== 日统计 mock ====================
 const dayData = reactive({
@@ -495,7 +559,7 @@ const dayData = reactive({
         storeKey: 'danzishi',
         store: '弹子石老街店',
         service: '整脊踩背40分钟',
-        time: '2025-08-01 21:20:00',
+        time: '2026-07-08 21:20:00',
         amount: 29.7,
         isRepeatCustomer: false,
         expandable: true,
@@ -505,9 +569,9 @@ const dayData = reactive({
           customerPhone: '138****0295',
           customerInfo: '002536(女)',
           status: '已完成',
-          startTime: '08月01日21:20',
-          endTime: '08月01日22:00',
-          orderNo: '6102162202508012120000000123',
+          startTime: '07月08日21:20',
+          endTime: '07月08日22:00',
+          orderNo: '6102162202607082120000000123',
           originalPrice: 79,
           actualPayment: 59,
           pieceworkCommission: 29.7,
@@ -519,7 +583,7 @@ const dayData = reactive({
         type: 'subsidy',
         title: '优秀员工节日津贴',
         desc: '中秋节优秀员工津贴',
-        time: '2025-08-01',
+        time: '2026-07-08',
         amount: 44.7,
         expandable: false
       },
@@ -529,7 +593,7 @@ const dayData = reactive({
         storeKey: 'danzishi',
         store: '弹子石老街店',
         service: '睡眠调理60分钟',
-        time: '2025-08-01 20:20:00',
+        time: '2026-07-08 20:20:00',
         amount: 44.7,
         isRepeatCustomer: true,
         expandable: true,
@@ -539,9 +603,9 @@ const dayData = reactive({
           customerPhone: '139****8821',
           customerInfo: '008912(男)',
           status: '已完成',
-          startTime: '08月01日19:20',
-          endTime: '08月01日20:20',
-          orderNo: '6102162202508012020000000456',
+          startTime: '07月08日19:20',
+          endTime: '07月08日20:20',
+          orderNo: '6102162202607082020000000456',
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 44.7,
@@ -554,7 +618,7 @@ const dayData = reactive({
         storeKey: 'danzishi',
         store: '弹子石老街店',
         service: '睡眠调理60分钟',
-        time: '2025-08-01 16:50:00',
+        time: '2026-07-08 16:50:00',
         amount: 44.7,
         isRepeatCustomer: true,
         expandable: true,
@@ -564,9 +628,9 @@ const dayData = reactive({
           customerPhone: '186****1102',
           customerInfo: '003045(女)',
           status: '已完成',
-          startTime: '08月01日15:50',
-          endTime: '08月01日16:50',
-          orderNo: '6102162202508011650000000789',
+          startTime: '07月08日15:50',
+          endTime: '07月08日16:50',
+          orderNo: '6102162202607081650000000789',
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 44.7,
@@ -579,7 +643,7 @@ const dayData = reactive({
         storeKey: 'chengdu',
         store: '成都印象城店',
         service: '头颈肩痛60分钟',
-        time: '2025-08-01 12:10:00',
+        time: '2026-07-08 12:10:00',
         amount: 48.3,
         isRepeatCustomer: true,
         expandable: true,
@@ -589,9 +653,9 @@ const dayData = reactive({
           customerPhone: '138****0295',
           customerInfo: '002536(女)',
           status: '已完成',
-          startTime: '08月01日11:10',
-          endTime: '08月01日12:10',
-          orderNo: '6102162202509625658390227783680',
+          startTime: '07月08日11:10',
+          endTime: '07月08日12:10',
+          orderNo: '6102162202607081210000000789',
           originalPrice: 179,
           actualPayment: 161,
           pieceworkCommission: 48.3,
@@ -613,7 +677,7 @@ const dayData = reactive({
         id: 1,
         type: 'complaint',
         title: '投诉扣款',
-        time: '2025-08-01 00:00:00',
+        time: '2026-07-08 00:00:00',
         amount: -15,
         expandable: true
       }
@@ -621,38 +685,242 @@ const dayData = reactive({
   }
 })
 
-// ==================== 月统计 mock ====================
-const monthData = reactive({
-  output: {
-    actual: 13311,
-    target: 18000
-  },
-  summary: {
-    title: '8月汇总',
-    categories: [
-      { key: 'piecework', label: '计件提成', value: 95.4, unit: '元' },
-      { key: 'overtime', label: '加班工资', value: 15.4, unit: '元' },
-      { key: 'subsidy', label: '补贴', value: 0.0, unit: '元' }
-    ]
-  },
-  expense: {
-    title: '8月支出',
-    categories: [
-      { key: 'complaint', label: '投诉扣款', value: 95.4, unit: '元' },
-      { key: 'serviceTime', label: '服务时间不足扣提成', value: 95.4, unit: '元' },
-      { key: 'social', label: '代扣社保', value: 0.0, unit: '元' },
-      { key: 'tax', label: '代扣个税', value: 0.0, unit: '元' },
-      { key: 'housingFund', label: '公积金个人扣款', value: -1200, unit: '元' }
-    ]
-  },
-  housingFund: {
-    title: '8月公积金',
-    totalAmount: 1200,
-    individualDeduction: 200,
-    companySubsidy: 1000,
-    unit: '元'
-  }
+// ==================== 月统计：发放策略 + 按月份工资单 mock ====================
+const strategy = {
+  id: '1109493788878143500',
+  name: '全职推拿师发放策略（v3没有营销折扣获豆和回头客补贴）',
+  templateName: '全职推拿师模板',
+  position: '推拿师',
+  coopMode: '劳动合同-全职'
+}
+
+// 本月实际产值（按月份区分）
+const monthOutputMap = {
+  '2026-07': { actual: 13311, target: 18000 },
+  '2026-06': { actual: 14820, target: 18000 },
+  '2026-05': { actual: 12050, target: 18000 }
+}
+const monthOutput = computed(() => monthOutputMap[selectedMonth.value] || { actual: 0, target: 18000 })
+
+// 键 = 'YYYY-MM'。每月 3 张工资单：计件提成 / 加班工资 / 补贴
+const monthBillsMap = {
+  '2026-07': [
+    {
+      id: 'BILL-2026-07-PIECE',
+      billNo: 'GZD-202607-001',
+      name: '计件提成',
+      period: '7月1日 - 7月31日',
+      status: '已发放',
+      payTime: '2026-07-31 18:00',
+      incomeItems: [
+        { type: 'piecework', label: '计件提成', value: 1180.0 }
+      ],
+      deductionItems: [
+        { type: 'complaint', label: '投诉扣款', value: -50 },
+        { type: 'social', label: '代扣社保', value: -120 },
+        { type: 'tax', label: '代扣个税', value: -45.5 }
+      ]
+    },
+    {
+      id: 'BILL-2026-07-OVERTIME',
+      billNo: 'GZD-202607-002',
+      name: '加班补偿',
+      period: '7月1日 - 7月31日',
+      status: '已发放',
+      payTime: '2026-07-31 18:00',
+      incomeItems: [
+        { type: 'overtime', label: '加班工资', value: 195.4 }
+      ],
+      deductionItems: [
+        { type: 'social', label: '代扣社保', value: -20 },
+        { type: 'tax', label: '代扣个税', value: -12.3 }
+      ]
+    },
+    {
+      id: 'BILL-2026-07-SUBSIDY',
+      billNo: 'GZD-202607-003',
+      name: '节日福利',
+      period: '7月1日 - 7月31日',
+      status: '待发放',
+      payTime: '2026-08-05 18:00',
+      incomeItems: [
+        { type: 'subsidy', label: '高温补贴', value: 200 },
+        { type: 'subsidy', label: '餐补', value: 150 }
+      ],
+      deductionItems: [
+        { type: 'social', label: '代扣社保', value: -35 },
+        { type: 'tax', label: '代扣个税', value: -10 }
+      ]
+    }
+  ],
+  '2026-06': [
+    {
+      id: 'BILL-2026-06-PIECE',
+      billNo: 'GZD-202606-001',
+      name: '业绩激励',
+      period: '6月1日 - 6月30日',
+      status: '已发放',
+      payTime: '2026-06-30 18:00',
+      incomeItems: [
+        { type: 'piecework', label: '计件提成', value: 980.0 }
+      ],
+      deductionItems: [
+        { type: 'social', label: '代扣社保', value: -98 },
+        { type: 'tax', label: '代扣个税', value: -32 }
+      ]
+    },
+    {
+      id: 'BILL-2026-06-OVERTIME',
+      billNo: 'GZD-202606-002',
+      name: '延时工时',
+      period: '6月1日 - 6月30日',
+      status: '已发放',
+      payTime: '2026-06-30 18:00',
+      incomeItems: [
+        { type: 'overtime', label: '加班工资', value: 88.0 }
+      ],
+      deductionItems: [
+        { type: 'tax', label: '代扣个税', value: -3 }
+      ]
+    },
+    {
+      id: 'BILL-2026-06-SUBSIDY',
+      billNo: 'GZD-202606-003',
+      name: '全勤奖',
+      period: '6月1日 - 6月30日',
+      status: '已发放',
+      payTime: '2026-06-30 18:00',
+      incomeItems: [
+        { type: 'subsidy', label: '全勤奖', value: 300 }
+      ],
+      deductionItems: []
+    }
+  ],
+  '2026-05': [
+    {
+      id: 'BILL-2026-05-PIECE',
+      billNo: 'GZD-202605-001',
+      name: '基础计件',
+      period: '5月1日 - 5月31日',
+      status: '已发放',
+      payTime: '2026-05-31 18:00',
+      incomeItems: [
+        { type: 'piecework', label: '计件提成', value: 860.0 }
+      ],
+      deductionItems: [
+        { type: 'complaint', label: '投诉扣款', value: -30 },
+        { type: 'social', label: '代扣社保', value: -83 },
+        { type: 'tax', label: '代扣个税', value: -22 }
+      ]
+    }
+  ]
+}
+
+// 当前月份工资单
+const monthBills = computed(() => monthBillsMap[selectedMonth.value] || [])
+
+// ==================== 收入明细订单 mock（按 billKey+type 关联） ====================
+const billOrders = ref([
+  // 7月计件提成工资单
+  { id: 1, billKey: 'BILL-2026-07-PIECE', store: '弹子石老街店', service: '整脊踩背40分钟', time: '2026-07-08 21:20:00', amount: 29.7, type: 'piecework', isRepeatCustomer: false },
+  { id: 2, billKey: 'BILL-2026-07-PIECE', store: '弹子石老街店', service: '睡眠调理60分钟', time: '2026-07-08 20:20:00', amount: 44.7, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
+  { id: 3, billKey: 'BILL-2026-07-PIECE', store: '弹子石老街店', service: '睡眠调理60分钟', time: '2026-07-08 16:50:00', amount: 44.7, type: 'piecework', isRepeatCustomer: true, repeatCount: 3 },
+  { id: 4, billKey: 'BILL-2026-07-PIECE', store: '成都印象城店', service: '头颈肩痛60分钟', time: '2026-07-08 12:10:00', amount: 48.3, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
+  { id: 5, billKey: 'BILL-2026-07-PIECE', store: 'in99银泰中心店', service: '脊柱调整60分钟', time: '2026-07-07 15:00:00', amount: 56.4, type: 'piecework', isRepeatCustomer: false },
+  { id: 6, billKey: 'BILL-2026-07-PIECE', store: '弹子石老街店', service: '足疗40分钟', time: '2026-07-06 18:00:00', amount: 38.0, type: 'piecework', isRepeatCustomer: false },
+
+  // 7月加班补贴工资单
+  { id: 7, billKey: 'BILL-2026-07-OVERTIME', store: '弹子石老街店', service: '延时加班（4小时）', time: '2026-07-08 23:00:00', amount: 65.2, type: 'overtime', isRepeatCustomer: false },
+  { id: 8, billKey: 'BILL-2026-07-OVERTIME', store: '弹子石老街店', service: '延时加班（3小时）', time: '2026-07-05 22:30:00', amount: 48.9, type: 'overtime', isRepeatCustomer: false },
+  { id: 9, billKey: 'BILL-2026-07-OVERTIME', store: '成都印象城店', service: '延时加班（2.5小时）', time: '2026-07-03 22:00:00', amount: 40.7, type: 'overtime', isRepeatCustomer: false },
+
+  // 7月奖励福利工资单
+  { id: 10, billKey: 'BILL-2026-07-SUBSIDY', store: '总部', service: '高温补贴', time: '2026-07-15 09:00:00', amount: 200.0, type: 'subsidy', isRepeatCustomer: false },
+  { id: 11, billKey: 'BILL-2026-07-SUBSIDY', store: '总部', service: '餐补', time: '2026-07-15 09:00:00', amount: 150.0, type: 'subsidy', isRepeatCustomer: false },
+
+  // 6月计件提成工资单
+  { id: 12, billKey: 'BILL-2026-06-PIECE', store: '弹子石老街店', service: '整脊踩背40分钟', time: '2026-06-30 20:00:00', amount: 32.5, type: 'piecework', isRepeatCustomer: false },
+  { id: 13, billKey: 'BILL-2026-06-PIECE', store: '弹子石老街店', service: '睡眠调理60分钟', time: '2026-06-28 19:30:00', amount: 46.2, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
+  { id: 14, billKey: 'BILL-2026-06-PIECE', store: '弹子石老街店', service: '足疗40分钟', time: '2026-06-25 18:00:00', amount: 38.0, type: 'piecework', isRepeatCustomer: false },
+  { id: 15, billKey: 'BILL-2026-06-PIECE', store: '成都印象城店', service: '头疗30分钟', time: '2026-06-22 14:00:00', amount: 28.5, type: 'piecework', isRepeatCustomer: false },
+
+  // 6月加班补贴工资单
+  { id: 16, billKey: 'BILL-2026-06-OVERTIME', store: '弹子石老街店', service: '延时加班（2小时）', time: '2026-06-20 22:00:00', amount: 32.6, type: 'overtime', isRepeatCustomer: false },
+  { id: 17, billKey: 'BILL-2026-06-OVERTIME', store: '弹子石老街店', service: '延时加班（1.5小时）', time: '2026-06-15 22:30:00', amount: 24.4, type: 'overtime', isRepeatCustomer: false },
+
+  // 6月奖励福利工资单
+  { id: 18, billKey: 'BILL-2026-06-SUBSIDY', store: '总部', service: '全勤奖', time: '2026-06-30 09:00:00', amount: 300.0, type: 'subsidy', isRepeatCustomer: false },
+
+  // 5月计件提成工资单
+  { id: 19, billKey: 'BILL-2026-05-PIECE', store: '弹子石老街店', service: '整脊踩背40分钟', time: '2026-05-30 20:00:00', amount: 30.0, type: 'piecework', isRepeatCustomer: false },
+  { id: 20, billKey: 'BILL-2026-05-PIECE', store: '弹子石老街店', service: '睡眠调理60分钟', time: '2026-05-28 19:00:00', amount: 42.0, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
+  { id: 21, billKey: 'BILL-2026-05-PIECE', store: '弹子石老街店', service: '足疗40分钟', time: '2026-05-25 18:00:00', amount: 36.0, type: 'piecework', isRepeatCustomer: false },
+  { id: 22, billKey: 'BILL-2026-05-PIECE', store: '成都印象城店', service: '中式推拿60分钟', time: '2026-05-20 15:00:00', amount: 45.0, type: 'piecework', isRepeatCustomer: false }
+])
+
+// 选中工资单索引（切换月份时重置为 0）
+const selectedBillIndex = ref(0)
+const selectedBill = computed(() => monthBills.value[selectedBillIndex.value] || null)
+
+// 切月份时重置选中工资单为第一张
+watch(selectedMonth, () => {
+  selectedBillIndex.value = 0
 })
+
+// 金额格式化
+const formatAmount = (val) => {
+  if (typeof val !== 'number') return val
+  return val.toFixed(2)
+}
+
+// 项单位（薪酬/扣缴统一"元"）
+const unitOf = (_item) => '元'
+
+// ==================== 收入明细弹层（按工资单+按薪酬类筛选） ====================
+const incomeItemSheetVisible = ref(false)
+const currentIncomeLabel = ref('')
+const currentIncomeType = ref('')
+
+const incomeItemOrders = computed(() => {
+  if (!selectedBill.value || !currentIncomeType.value) return []
+  return billOrders.value.filter(o =>
+    o.billKey === selectedBill.value.id && o.type === currentIncomeType.value
+  )
+})
+
+const incomeItemSubtotal = computed(() => {
+  return incomeItemOrders.value.reduce((s, o) => s + o.amount, 0)
+})
+
+const handleIncomeItemClick = (item) => {
+  currentIncomeLabel.value = item.label
+  currentIncomeType.value = item.type
+  incomeItemSheetVisible.value = true
+}
+
+const handleCloseIncomeItemSheet = () => {
+  incomeItemSheetVisible.value = false
+}
+
+const handleOpenOrderFromIncome = (item) => {
+  incomeItemSheetVisible.value = false
+  // 构造订单详情（与日统计订单详情弹层结构一致）
+  currentOrderDetail.value = {
+    storeName: item.store,
+    service: item.service,
+    customerPhone: '138****8888',
+    customerInfo: '男 / 30岁',
+    status: '已完成',
+    startTime: item.time,
+    endTime: item.time.replace(/\d{2}$/, '00'),
+    orderNo: 'GZD' + (item.id + 1000000),
+    originalPrice: Math.round(item.amount * 4),
+    actualPayment: Math.round(item.amount * 3.6),
+    pieceworkCommission: item.amount.toFixed(2),
+    isRepeatCustomer: !!item.isRepeatCustomer
+  }
+  orderDetailVisible.value = true
+}
 
 // ==================== 到账情况 mock ====================
 const arrivalData = reactive({
@@ -698,17 +966,15 @@ const viewMode = ref('summary')
 const summaryFilter = ref('all')
 const expenseFilter = ref('all')
 
-// 列表过滤（先按门店过滤，再按类型过滤）
+// 列表过滤（全职单门店：直接按类型过滤）
 const filteredSummaryItems = computed(() => {
   let items = dayData.summary.items
-  items = items.filter(item => item.storeKey === selectedStore.value || !item.storeKey)
   if (summaryFilter.value === 'all') return items
   return items.filter(item => item.type === summaryFilter.value)
 })
 
 const filteredExpenseItems = computed(() => {
   let items = dayData.expense.items
-  items = items.filter(item => item.storeKey === selectedStore.value || !item.storeKey)
   if (expenseFilter.value === 'all') return items
   return items.filter(item => item.type === expenseFilter.value)
 })
@@ -771,7 +1037,7 @@ const goBack = () => {
 </script>
 
 <style scoped>
-.mobile-salary-dashboard {
+.mobile-salary-dashboard-2 {
   min-height: 100vh;
   background: #f5f5f5;
   padding-bottom: 20px;
@@ -785,6 +1051,7 @@ const goBack = () => {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 12px;
 }
 
 /* ========== 顶部导航 ========== */
@@ -795,6 +1062,7 @@ const goBack = () => {
   align-items: center;
   justify-content: space-between;
   color: white;
+  position: relative;
 }
 
 .nav-title {
@@ -810,151 +1078,17 @@ const goBack = () => {
   position: absolute;
   right: 8px;
   top: 8px;
+  gap: 4px;
 }
 
-/* ========== 门店切换（单行下拉选择器） ========== */
-.store-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  font-size: 15px;
-  color: #333;
-  font-weight: 500;
+.nav-actions :deep(.el-button) {
+  margin-left: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 4px 8px;
+  min-height: 28px;
 }
 
-.store-icon {
-  color: #a40035;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.store-label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.store-arrow {
-  color: #999;
-  font-size: 14px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
-}
-
-.store-selector:active .store-arrow {
-  transform: translateY(1px);
-}
-
-/* ========== 门店选择 Sheet ========== */
-.store-sheet .order-modal-header {
-  padding-bottom: 8px;
-}
-
-.store-sheet-body {
-  padding: 4px 12px 16px;
-}
-
-.store-sheet-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 8px;
-  border-bottom: 1px solid #f5f5f5;
-  cursor: pointer;
-  transition: background 0.15s;
-  border-radius: 6px;
-  position: relative;
-}
-
-.store-sheet-item:last-child {
-  border-bottom: none;
-}
-
-.store-sheet-item:active {
-  background: #fafafa;
-}
-
-.store-sheet-item.active {
-  background: #fff5f8;
-}
-
-.store-sheet-rank {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #f0f0f0;
-  color: #999;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.store-sheet-item:nth-child(1) .store-sheet-rank {
-  background: #a40035;
-  color: white;
-}
-
-.store-sheet-item.active .store-sheet-rank {
-  background: #a40035;
-  color: white;
-}
-
-.store-sheet-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.store-sheet-label {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 2px;
-}
-
-.store-sheet-item.active .store-sheet-label {
-  color: #a40035;
-  font-weight: 600;
-}
-
-.store-sheet-daily {
-  font-size: 11px;
-  color: #999;
-}
-
-.store-sheet-amount {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.amount-label {
-  font-size: 10px;
-  color: #999;
-  margin-bottom: 2px;
-}
-
-.amount-value {
-  font-size: 15px;
-  font-weight: 700;
-  color: #a40035;
-}
-
-.store-sheet-check {
-  color: #a40035;
-  font-size: 18px;
-  flex-shrink: 0;
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-}
 
 /* ========== Tab 栏 ========== */
 .tab-bar {
@@ -975,6 +1109,8 @@ const goBack = () => {
   color: #333;
   position: relative;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-item.active {
@@ -996,6 +1132,7 @@ const goBack = () => {
 
 .date-selector {
   margin-left: auto;
+  padding: 14px 0;
   font-size: 14px;
   color: #666;
   display: flex;
@@ -1006,11 +1143,6 @@ const goBack = () => {
 
 .date-arrow {
   font-size: 12px;
-}
-
-/* ========== 通用 Tab 内容 ========== */
-.tab-content {
-  padding: 12px;
 }
 
 /* ========== 数据延迟提示 ========== */
@@ -1182,11 +1314,18 @@ const goBack = () => {
 
 .category-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 12px;
   margin-bottom: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .category-tab {
@@ -1195,6 +1334,8 @@ const goBack = () => {
   cursor: pointer;
   position: relative;
   padding-bottom: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .category-tab.active {
@@ -1331,88 +1472,91 @@ const goBack = () => {
 }
 
 /* ========== 月统计 ========== */
+.month-content {
+  padding: 12px;
+}
+
+/* 工资单 Tab 轻量切换器（不套白卡） */
+.bills-switcher {
+  margin-bottom: 12px;
+}
+
+.bills-switcher-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+}
+
+.bills-switcher-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.bills-switcher-count {
+  font-size: 12px;
+  color: #999;
+}
+
+.bill-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 0 4px;
+}
+
+.bill-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.bill-tab {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #f0f0f0;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.bill-tab.active {
+  background: #fff5f8;
+  border-color: #a40035;
+}
+
+.bill-tab-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.bill-tab.active .bill-tab-name {
+  color: #a40035;
+}
+
+.bill-tab-period {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.bill-tab.active .bill-tab-period {
+  color: #a40035;
+}
+
+/* 汇总/支出卡（与原版 month-section-card 1:1 一致） */
 .month-section-card {
   background: white;
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-.housing-fund-card {
-  background: linear-gradient(135deg, #fff5f7 0%, #ffffff 100%);
-  border: 1px solid #f5c2d0;
-}
-
-.hf-main-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 4px 0 12px;
-}
-
-.hf-main-label {
-  font-size: 15px;
-  color: #666;
-  font-weight: 500;
-}
-
-.hf-main-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: #a40035;
-}
-
-.hf-main-unit {
-  font-size: 12px;
-  color: #999;
-  font-weight: normal;
-  margin-left: 2px;
-}
-
-.hf-divider {
-  height: 1px;
-  background: #f0f0f0;
-  margin: 4px 0 12px;
-}
-
-.hf-breakdown {
-  background: #fafafa;
-  border-radius: 6px;
-  padding: 10px 12px;
-}
-
-.hf-breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  padding: 4px 0;
-  color: #666;
-}
-
-.hf-row-label {
-  color: #999;
-}
-
-.hf-row-value {
-  color: #333;
-  font-weight: 500;
-}
-
-.hf-row-deduct {
-  color: #a40035;
-}
-
-.hf-row-subsidy {
-  color: #a40035;
-  font-weight: 600;
-}
-
-.hf-tip {
-  margin-top: 8px;
-  font-size: 11px;
-  color: #999;
 }
 
 .section-title {
@@ -1422,6 +1566,7 @@ const goBack = () => {
   margin-bottom: 16px;
 }
 
+/* 原版 4 列网格（汇总/支出共用） */
 .month-category-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1465,6 +1610,218 @@ const goBack = () => {
   color: #ccc;
 }
 
+.bill-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.bill-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.bill-tab {
+  flex-shrink: 0;
+  min-width: 110px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bill-tab.active {
+  background: #fff5f8;
+  border-color: #a40035;
+}
+
+.bill-tab-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bill-tab.active .bill-tab-name {
+  color: #a40035;
+}
+
+.bill-tab-period {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.bill-subsection {
+  margin-bottom: 14px;
+}
+
+.bill-subsection:last-child {
+  margin-bottom: 0;
+}
+
+.bill-subsection-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.red-bar {
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  background: #a40035;
+  border-radius: 2px;
+}
+
+.bill-line-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.bill-line:last-child {
+  border-bottom: none;
+}
+
+.bill-line-label {
+  color: #666;
+}
+
+.bill-line-value {
+  font-weight: 600;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+}
+
+.income-value {
+  color: #a40035;
+}
+
+.deduction-value {
+  color: #666;
+}
+
+.value-unit {
+  font-size: 11px;
+  color: #999;
+  font-weight: normal;
+  margin-left: 1px;
+}
+
+.bill-subsection {
+  margin-bottom: 14px;
+}
+
+.bill-subsection:last-child {
+  margin-bottom: 0;
+}
+
+.bill-subsection-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.red-bar {
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  background: #a40035;
+  border-radius: 2px;
+}
+
+.bill-line-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.bill-line:last-child {
+  border-bottom: none;
+}
+
+.bill-line-label {
+  color: #666;
+}
+
+.bill-line-value {
+  font-weight: 600;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+}
+
+.income-value {
+  color: #a40035;
+}
+
+.deduction-value {
+  color: #666;
+}
+
+.value-unit {
+  font-size: 11px;
+  color: #999;
+  font-weight: normal;
+  margin-left: 1px;
+}
+
+/* ========== 月统计占位 ========== */
+.empty-state-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 0;
+  color: #ccc;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.empty-state-large .el-icon {
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state-large .empty-text {
+  font-size: 14px;
+  color: #ccc;
+}
+
 /* ========== 到账情况 ========== */
 .arrival-card {
   background: white;
@@ -1497,10 +1854,6 @@ const goBack = () => {
 .arrival-item {
   text-align: left;
   cursor: pointer;
-}
-
-.arrival-item.is-final {
-  /* 应发/实发/已发加粗 */
 }
 
 .arrival-amount {
@@ -1543,6 +1896,98 @@ const goBack = () => {
 
 .note-line:last-child {
   margin-bottom: 0;
+}
+
+/* ========== 收入明细弹层 ========== */
+.income-item-sheet {
+  max-height: 85vh;
+}
+
+.income-item-sheet-body {
+  padding: 0 12px 12px;
+}
+
+.income-item-subtotal {
+  font-size: 13px;
+  color: #666;
+  padding: 8px 4px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 4px;
+}
+
+.income-item-subtotal .subtotal-value {
+  color: #a40035;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
+
+.income-orders-list {
+  padding: 0;
+}
+
+.income-orders-list .order-item {
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+}
+
+.income-orders-list .order-store {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.income-orders-list .order-amount {
+  font-size: 14px;
+  color: #a40035;
+  font-weight: 600;
+}
+
+.income-orders-list .order-service {
+  font-size: 13px;
+  color: #999;
+}
+
+.income-orders-list .order-chevron {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.income-orders-list .order-time {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.income-orders-list .order-title-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.income-orders-list .order-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.income-orders-list .order-row2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.income-orders-list .order-row3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* ========== 订单详情弹层（底部上滑） ========== */
@@ -1629,7 +2074,6 @@ const goBack = () => {
   font-size: 14px;
 }
 
-/* 动画：背景淡入 + 弹层上滑 */
 .order-modal-fade-enter-active,
 .order-modal-fade-leave-active {
   transition: opacity 0.25s ease;
@@ -1650,7 +2094,6 @@ const goBack = () => {
   transform: translateY(100%);
 }
 
-/* 订单汇总卡 */
 .detail-summary-card {
   background: white;
   border-radius: 8px;
@@ -1806,7 +2249,6 @@ const goBack = () => {
   font-weight: 500;
 }
 
-/* 分项卡 */
 .detail-section-card {
   background: white;
   border-radius: 8px;
@@ -1866,4 +2308,64 @@ const goBack = () => {
   font-weight: normal;
   margin-left: 1px;
 }
+
+/* ========== 月份选择 Sheet ========== */
+.month-sheet {
+  max-height: 70vh;
+}
+
+.month-sheet-body {
+  padding: 0 0 12px;
+}
+
+.month-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  position: relative;
+}
+
+.month-sheet-item:last-child {
+  border-bottom: none;
+}
+
+.month-sheet-item:active {
+  background: #fafafa;
+}
+
+.month-sheet-item.active {
+  background: #fff5f8;
+}
+
+.month-sheet-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.month-sheet-item.active .month-sheet-label {
+  color: #a40035;
+}
+
+.month-sheet-count {
+  font-size: 12px;
+  color: #999;
+  margin-right: 24px;
+}
+
+.month-sheet-check {
+  color: #a40035;
+  font-size: 18px;
+  flex-shrink: 0;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ========== 门店选择 Sheet（已移除：全职单门店，无需切换） ========== */
 </style>

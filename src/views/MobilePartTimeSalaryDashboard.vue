@@ -40,6 +40,21 @@
       </div>
     </div>
 
+    <!-- 数据延迟提示（仅日/周/月统计显示） -->
+    <div v-if="activeTab !== 'arrival'" class="delay-tip">
+      <el-icon class="tip-icon"><WarningFilled /></el-icon>
+      <div class="tip-content">
+        <div class="tip-row tip-row-main">
+          数据截至 <span class="tip-time">{{ cutoffTime }}</span>
+          <span class="tip-divider">·</span>
+          下次更新 <span class="tip-time">{{ nextRefreshTime }}</span>
+        </div>
+        <div class="tip-row tip-row-sub">
+          预估数据仅作参考，以最终实发为准
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== 日/周/月统计（共用结构） ==================== -->
     <div v-show="activeTab !== 'arrival'" class="tab-content">
       <!-- 双数字卡（收入 + 支出） -->
@@ -181,6 +196,19 @@
                       <el-icon :size="14"><CopyDocument /></el-icon>
                     </el-button>
                   </div>
+                  <div class="summary-payment">
+                    <span class="payment-label">实付款：</span>
+                    <span class="payment-formula">
+                      <span class="payment-original">¥{{ currentOrderDetail.originalPrice }}</span>
+                      <span class="formula-op">−</span>
+                      <span class="formula-discount">
+                        ¥{{ formatAmount(currentOrderDetail.originalPrice - currentOrderDetail.actualPayment) }}
+                        <span class="discount-tag">优惠</span>
+                      </span>
+                      <span class="formula-op">=</span>
+                      <span class="payment-actual">¥{{ currentOrderDetail.actualPayment }}</span>
+                    </span>
+                  </div>
                 </div>
 
                 <div class="detail-section-card">
@@ -266,10 +294,10 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ArrowDown, ArrowRight, Close, MoreFilled, CopyDocument, QuestionFilled, Shop, Check } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowDown, ArrowRight, Close, MoreFilled, CopyDocument, QuestionFilled, Shop, Check, WarningFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -329,21 +357,21 @@ const handleStoreSelect = (key) => {
 
 // ==================== Mock 订单数据 ====================
 const allOrders = ref([
-  { id: 1, storeKey: 'yintai', store: 'in99银泰中心店', service: '脊柱调整60分钟', time: '2026-06-05 12:20:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 2, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-05 11:04:00', amount: 220.34, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
-  { id: 3, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 17:50:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 4, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 14:30:00', amount: 143.7, type: 'piecework', isRepeatCustomer: true, repeatCount: 3 },
-  { id: 5, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 13:20:00', amount: 220.34, type: 'piecework', isRepeatCustomer: false },
-  { id: 6, storeKey: 'yintai', store: 'in99银泰中心店', service: '运动拉伸60分钟', time: '2026-06-04 12:09:00', amount: 182.02, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
-  { id: 7, storeKey: 'yintai', store: 'in99银泰中心店', service: '足疗40分钟', time: '2026-06-04 10:30:00', amount: 156.0, type: 'piecework', isRepeatCustomer: false },
-  { id: 8, storeKey: 'yintai', store: 'in99银泰中心店', service: '头疗30分钟', time: '2026-06-04 09:15:00', amount: 98.5, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
+  { id: 1, storeKey: 'yintai', store: 'in99银泰中心店', service: '脊柱调整60分钟', time: '2026-06-05 12:20:00', amount: 220.34, originalPrice: 498, actualPayment: 440.68, type: 'piecework', isRepeatCustomer: false },
+  { id: 2, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-05 11:04:00', amount: 220.34, originalPrice: 498, actualPayment: 396, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
+  { id: 3, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 17:50:00', amount: 220.34, originalPrice: 498, actualPayment: 440.68, type: 'piecework', isRepeatCustomer: false },
+  { id: 4, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 14:30:00', amount: 143.7, originalPrice: 498, actualPayment: 287.4, type: 'piecework', isRepeatCustomer: true, repeatCount: 3 },
+  { id: 5, storeKey: 'yintai', store: 'in99银泰中心店', service: '骨盆·调整60分钟', time: '2026-06-04 13:20:00', amount: 220.34, originalPrice: 498, actualPayment: 440.68, type: 'piecework', isRepeatCustomer: false },
+  { id: 6, storeKey: 'yintai', store: 'in99银泰中心店', service: '运动拉伸60分钟', time: '2026-06-04 12:09:00', amount: 182.02, originalPrice: 398, actualPayment: 364.04, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
+  { id: 7, storeKey: 'yintai', store: 'in99银泰中心店', service: '足疗40分钟', time: '2026-06-04 10:30:00', amount: 156.0, originalPrice: 328, actualPayment: 298, type: 'piecework', isRepeatCustomer: false },
+  { id: 8, storeKey: 'yintai', store: 'in99银泰中心店', service: '头疗30分钟', time: '2026-06-04 09:15:00', amount: 98.5, originalPrice: 198, actualPayment: 188, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 },
   // 弹子石老街店
-  { id: 9, storeKey: 'danzishi', store: '弹子石老街店', service: '足疗40分钟', time: '2026-06-05 09:30:00', amount: 168.0, type: 'piecework', isRepeatCustomer: false },
-  { id: 10, storeKey: 'danzishi', store: '弹子石老街店', service: '肩颈调理30分钟', time: '2026-06-04 16:20:00', amount: 138.0, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
+  { id: 9, storeKey: 'danzishi', store: '弹子石老街店', service: '足疗40分钟', time: '2026-06-05 09:30:00', amount: 168.0, originalPrice: 358, actualPayment: 336, type: 'piecework', isRepeatCustomer: false },
+  { id: 10, storeKey: 'danzishi', store: '弹子石老街店', service: '肩颈调理30分钟', time: '2026-06-04 16:20:00', amount: 138.0, originalPrice: 288, actualPayment: 248, type: 'piecework', isRepeatCustomer: true, repeatCount: 2 },
   // 成都印象城店
-  { id: 11, storeKey: 'chengdu', store: '成都印象城店', service: '中式推拿60分钟', time: '2026-06-04 19:00:00', amount: 198.0, type: 'piecework', isRepeatCustomer: false },
+  { id: 11, storeKey: 'chengdu', store: '成都印象城店', service: '中式推拿60分钟', time: '2026-06-04 19:00:00', amount: 198.0, originalPrice: 398, actualPayment: 376, type: 'piecework', isRepeatCustomer: false },
   // 北城天街店
-  { id: 12, storeKey: 'beicheng', store: '北城天街店', service: '精油开背60分钟', time: '2026-06-05 10:00:00', amount: 188.0, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 }
+  { id: 12, storeKey: 'beicheng', store: '北城天街店', service: '精油开背60分钟', time: '2026-06-05 10:00:00', amount: 188.0, originalPrice: 398, actualPayment: 338, type: 'piecework', isRepeatCustomer: true, repeatCount: 1 }
 ])
 
 // 按门店过滤的订单
@@ -449,6 +477,8 @@ const handleOpenOrder = (item) => {
     startTime: item.time,
     endTime: item.time.replace(/\d{2}$/, '00'),
     orderNo: 'DD2026060' + String(item.id).padStart(4, '0'),
+    originalPrice: item.originalPrice,
+    actualPayment: item.actualPayment,
     isRepeatCustomer: isRepeat,
     repeatCount: item.repeatCount || 1,
     pieceworkCommission: item.amount.toFixed(2),
@@ -478,6 +508,26 @@ const handleIncomeExplain = () => {
 const handleExpenseClick = () => {
   ElMessage.info('支出明细 - 跳转页面待实现')
 }
+
+// ==================== 数据截止与下次刷新时间（按整点规则） ====================
+const now = ref(new Date())
+let refreshTimer = null
+onMounted(() => {
+  refreshTimer = setInterval(() => { now.value = new Date() }, 60_000)
+})
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
+const formatDateHour = (d) => {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:00`
+}
+const cutoffTime = computed(() => formatDateHour(now.value))
+const nextRefreshTime = computed(() => {
+  const d = new Date(now.value)
+  d.setHours(d.getHours() + 1)
+  return formatDateHour(d)
+})
 
 // ==================== 返回 ====================
 const goBack = () => {
@@ -625,6 +675,61 @@ const goBack = () => {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ========== 数据延迟提示 ========== */
+.delay-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  margin: 12px 12px 0;
+  font-size: 12px;
+  color: #876800;
+  line-height: 1.4;
+}
+
+.tip-icon {
+  font-size: 14px;
+  color: #faad14;
+  flex-shrink: 0;
+}
+
+.tip-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tip-row {
+  line-height: 1.4;
+}
+
+.tip-row-main {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tip-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #a40035;
+  margin: 0 2px;
+}
+
+.tip-divider {
+  color: #d4b75e;
+  margin: 0 6px;
+}
+
+.tip-row-sub {
+  font-size: 11px;
+  opacity: 0.85;
 }
 
 /* ========== 统计卡 ========== */
@@ -1041,26 +1146,61 @@ const goBack = () => {
 
 .summary-payment {
   display: flex;
+  justify-content: flex-end;
   align-items: baseline;
   gap: 8px;
-  font-size: 14px;
   padding-top: 8px;
   border-top: 1px dashed #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.payment-formula {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 14px;
+  color: #999;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.formula-op {
+  color: #999;
+  font-weight: 500;
+}
+
+.formula-discount {
+  color: #999;
+  font-weight: 500;
+}
+
+.discount-tag {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 0 4px;
+  font-size: 10px;
+  color: #fff;
+  background: #f0a8be;
+  border-radius: 3px;
+  font-weight: 500;
+  vertical-align: 1px;
 }
 
 .payment-label {
-  color: #666;
+  font-size: 12px;
+  color: #999;
 }
 
 .payment-actual {
-  color: #a40035;
+  font-size: 20px;
   font-weight: 700;
-  font-size: 16px;
+  color: #a40035;
 }
 
 .payment-original {
-  color: #bbb;
-  font-size: 12px;
+  font-size: 14px;
+  color: #999;
+  font-weight: 500;
 }
 
 .detail-section-card {

@@ -187,6 +187,10 @@
               <el-icon><Document /></el-icon>
               <span>凭证列表</span>
             </el-menu-item>
+            <el-menu-item index="voucher-list-2">
+              <el-icon><Tickets /></el-icon>
+              <span>发薪核对</span>
+            </el-menu-item>
           </el-sub-menu>
         </el-menu>
       </nav>

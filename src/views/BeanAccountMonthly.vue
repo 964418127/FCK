@@ -97,29 +97,29 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="400">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleViewSettlement(scope.row)">
-              <el-icon><Document /></el-icon>
-              结算明细
-            </el-button>
-            <el-button size="small" type="warning" @click="handleViewWithdrawal(scope.row)">
-              <el-icon><ArrowUp /></el-icon>
-              提现明细
-            </el-button>
-            <el-button size="small" type="info" @click="handleViewConsumption(scope.row)">
-              <el-icon><ShoppingCart /></el-icon>
-              消费明细
-            </el-button>
-            <el-button
-              v-if="canResignWithdrawal(scope.row)"
-              size="small"
-              type="danger"
-              @click="handleResignWithdrawal(scope.row)"
-            >
-              <el-icon><Wallet /></el-icon>
-              离职补偿
-            </el-button>
+            <div class="row-actions">
+              <div class="row-actions-secondary">
+                <el-button link size="small" @click="handleViewSettlement(scope.row)">结算明细</el-button>
+                <el-button link size="small" @click="handleViewWithdrawal(scope.row)">提现明细</el-button>
+                <el-button link size="small" @click="handleViewConsumption(scope.row)">消费明细</el-button>
+              </div>
+              <div class="row-actions-primary">
+                <el-button
+                  v-if="canInitiateResign(scope.row)"
+                  size="small"
+                  type="primary"
+                  @click="openResignDialog(scope.row)"
+                >发起离职补偿</el-button>
+                <el-button
+                  v-if="canSignNewContract(scope.row)"
+                  size="small"
+                  type="primary"
+                  @click="openNewContractDialog(scope.row)"
+                >发起新合同</el-button>
+              </div>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -136,11 +136,162 @@
         />
       </div>
     </el-card>
+
+    <!-- 弹层 A：发起离职补偿（在职员工） -->
+    <el-dialog
+      v-model="resignVisible"
+      title="发起离职补偿"
+      width="520px"
+      destroy-on-close
+      @close="closeResignDialog"
+    >
+      <div v-if="resignTarget" class="resign-tip">
+        <el-icon class="tip-icon"><Document /></el-icon>
+        <div>
+          员工【{{ resignTarget.name }}（{{ resignTarget.employeeId }}）】当前为<strong>在职</strong>。
+          发起后将自动推送签订《解除劳动合同》。
+        </div>
+      </div>
+
+      <div v-if="resignTarget" class="resign-section">
+        <div class="section-title">合同附件预览</div>
+        <a class="contract-link" href="javascript:void(0)" @click="onPreviewContract">
+          <el-icon><Document /></el-icon>
+          <span>解除劳动合同.pdf</span>
+        </a>
+      </div>
+
+      <template #footer>
+        <el-button @click="closeResignDialog">取消</el-button>
+        <el-button type="danger" :loading="resignSubmitting" @click="submitResign">
+          确认发起离职
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 弹层 B：发起新合同（离职员工） -->
+    <el-dialog
+      v-model="newContractVisible"
+      :title="newContractSigned ? '新合同已发起' : '发起新合同'"
+      width="560px"
+      destroy-on-close
+      @close="closeNewContractDialog"
+    >
+      <div v-if="newContractTarget">
+        <!-- 表单态 -->
+        <template v-if="!newContractSigned">
+          <div class="resign-tip">
+            <el-icon class="tip-icon"><Document /></el-icon>
+            <div>
+              员工【{{ newContractTarget.name }}（{{ newContractTarget.employeeId }}）】当前为<strong>离职</strong>。
+              请在下方配置新合同主体与合同期间。
+            </div>
+          </div>
+
+          <el-form
+            ref="newContractFormRef"
+            :model="newContractForm"
+            label-width="96px"
+            class="resign-form"
+          >
+            <el-form-item label="原合同主体">
+              <span class="readonly-text">{{ newContractTarget.laborContractEntity }}</span>
+            </el-form-item>
+            <el-form-item label="新合同主体" required>
+              <el-select
+                v-model="newContractForm.newEntity"
+                placeholder="选择新合同主体（不可与原主体相同）"
+                filterable
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="e in newContractEntityOptions"
+                  :key="e"
+                  :label="e"
+                  :value="e"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="合同开始" required>
+              <el-date-picker
+                v-model="newContractForm.startDate"
+                type="date"
+                placeholder="选择日期"
+                value-format="YYYY-MM-DD"
+                style="width: 100%;"
+              />
+            </el-form-item>
+            <el-form-item label="合同结束" required>
+              <el-date-picker
+                v-model="newContractForm.endDate"
+                type="date"
+                placeholder="选择日期"
+                value-format="YYYY-MM-DD"
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-form>
+        </template>
+
+        <!-- 已签订态 -->
+        <template v-else>
+          <div class="signed-banner">
+            <el-icon class="signed-banner-icon"><Document /></el-icon>
+            <div>
+              <div class="signed-banner-title">新合同已发起</div>
+              <div class="signed-banner-sub">新合同已独立记录</div>
+            </div>
+          </div>
+
+          <div class="signed-card">
+            <div class="signed-row">
+              <span class="signed-label">员工</span>
+              <span class="signed-value">{{ newContractTarget.name }}（{{ newContractTarget.employeeId }}）</span>
+            </div>
+            <div class="signed-row">
+              <span class="signed-label">原合同主体</span>
+              <span class="signed-value signed-old">{{ newContractSigned.oldEntity }}</span>
+              <el-tag size="small" type="info">已解除</el-tag>
+            </div>
+            <div class="signed-row">
+              <span class="signed-label">新合同主体</span>
+              <span class="signed-value signed-new">{{ newContractSigned.newEntity }}</span>
+            </div>
+            <div class="signed-row">
+              <span class="signed-label">合同期间</span>
+              <span class="signed-value">{{ newContractSigned.startDate }} ~ {{ newContractSigned.endDate }}</span>
+            </div>
+            <div class="signed-row">
+              <span class="signed-label">发起时间</span>
+              <span class="signed-value">{{ newContractSigned.signedAt }}</span>
+            </div>
+            <div class="signed-row">
+              <span class="signed-label">新合同编号</span>
+              <span class="signed-value mono">{{ newContractSigned.slipNo }}</span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <template #footer>
+        <template v-if="!newContractSigned">
+          <el-button @click="closeNewContractDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="newContractSubmitting"
+            @click="submitNewContract"
+          >确认发起新合同</el-button>
+        </template>
+        <template v-else>
+          <el-button type="primary" @click="closeNewContractDialog">完成</el-button>
+        </template>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Search, Refresh, Calendar, Document, ArrowUp, ShoppingCart, Wallet } from '@element-plus/icons-vue'
@@ -578,35 +729,97 @@ const handleViewConsumption = (row) => {
   })
 }
 
-// 是否展示离职补偿按钮：仅人事经理 且 员工处于离职状态 且 实时可用余额>0
-const canResignWithdrawal = (row) => {
+// ============ 步骤 1：发起离职补偿（仅在职） ============
+const canInitiateResign = (row) => {
   if (currentRole.value !== 'hr_manager') return false
-  if (row.status !== '离职') return false
-  if (!row.currentAvailableBalance || row.currentAvailableBalance <= 0) return false
-  return true
+  return row.status === '在职'
 }
 
-// 离职补偿：全额发放账户实时可用余额
-const handleResignWithdrawal = async (row) => {
-  const amount = row.currentAvailableBalance
-  try {
-    await ElMessageBox.confirm(
-      `员工【${row.name} / ${row.employeeId}】当前为离职状态。\n将对【余额账户】发放离职补偿，金额：${amount} 豆。\n此操作不可撤销，是否继续？`,
-      '离职补偿确认',
-      {
-        confirmButtonText: '确认补偿',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch {
+// ============ 步骤 2：发起新合同（仅离职） ============
+// 业务上前置条件依赖步骤 1；原型上仅按状态显示
+const canSignNewContract = (row) => {
+  if (currentRole.value !== 'hr_manager') return false
+  return row.status === '离职'
+}
+
+// 弹层 A：发起离职补偿
+const resignVisible = ref(false)
+const resignTarget = ref(null)
+const resignSubmitting = ref(false)
+
+const openResignDialog = (row) => {
+  resignTarget.value = row
+  resignVisible.value = true
+}
+const closeResignDialog = () => {
+  resignVisible.value = false
+  resignTarget.value = null
+}
+const submitResign = () => {
+  resignSubmitting.value = true
+  resignTarget.value.status = '离职'
+  ElMessage.success(`离职流程已发起：${resignTarget.value.name}（旧合同解除）`)
+  resignSubmitting.value = false
+  closeResignDialog()
+}
+
+// 弹层 B：发起新合同
+const newContractVisible = ref(false)
+const newContractTarget = ref(null)
+const newContractSubmitting = ref(false)
+const newContractSigned = ref(null)
+const newContractForm = reactive({
+  newEntity: '',
+  startDate: '',
+  endDate: ''
+})
+const newContractFormRef = ref(null)
+
+const entityOptionsAll = [
+  '上海推拿之家健康管理有限公司',
+  '成都推拿之家健康管理有限公司',
+  '杭州推拿之家健康管理有限公司'
+]
+const newContractEntityOptions = computed(() => {
+  if (!newContractTarget.value) return []
+  return entityOptionsAll.filter(e => e !== newContractTarget.value.laborContractEntity)
+})
+
+const openNewContractDialog = (row) => {
+  newContractTarget.value = row
+  newContractSigned.value = null
+  Object.assign(newContractForm, { newEntity: '', startDate: '', endDate: '' })
+  newContractVisible.value = true
+}
+const closeNewContractDialog = () => {
+  newContractVisible.value = false
+  newContractTarget.value = null
+  newContractSigned.value = null
+}
+const submitNewContract = () => {
+  if (!newContractForm.newEntity || !newContractForm.startDate || !newContractForm.endDate) {
+    ElMessage.warning('请完整填写新合同主体与合同期间')
     return
   }
+  if (newContractForm.newEntity === newContractTarget.value.laborContractEntity) {
+    ElMessage.warning('新合同主体不可与原合同主体相同')
+    return
+  }
+  newContractSubmitting.value = true
+  newContractSigned.value = {
+    slipNo: 'NEW-' + Date.now(),
+    oldEntity: newContractTarget.value.laborContractEntity,
+    newEntity: newContractForm.newEntity,
+    startDate: newContractForm.startDate,
+    endDate: newContractForm.endDate,
+    signedAt: new Date().toLocaleString('zh-CN')
+  }
+  ElMessage.success(`新合同已发起：${newContractTarget.value.name}`)
+  newContractSubmitting.value = false
+}
 
-  row.currentWithdrawal = (row.currentWithdrawal || 0) + amount
-  row.currentAvailableBalance = 0
-
-  ElMessage.success(`离职补偿成功：${row.name} 余额账户 ${amount} 豆已补偿发放`)
+const onPreviewContract = () => {
+  ElMessage.info('已生成《解除劳动合同》预览（mock）')
 }
 
 // 分页处理
@@ -645,5 +858,171 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 离职发起弹层 */
+.resign-tip {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: #fff8fa;
+  border: 1px solid #f5d0da;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5a3a44;
+  margin-bottom: 18px;
+}
+.resign-tip .tip-icon {
+  color: #a40035;
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.resign-section {
+  margin-bottom: 18px;
+}
+.resign-section .section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #909399;
+  margin-bottom: 8px;
+}
+.contract-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  color: #303133;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.contract-link:hover {
+  background: #ebeef5;
+  color: #a40035;
+}
+
+.resign-form {
+  margin-top: 4px;
+}
+
+.readonly-text {
+  color: #606266;
+  font-size: 13px;
+}
+
+/* 已签订态 */
+.signed-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f0f9eb;
+  border: 1px solid #d4e8c2;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.signed-banner-icon {
+  color: #67c23a;
+  font-size: 24px;
+}
+.signed-banner-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+.signed-banner-sub {
+  font-size: 12px;
+  color: #606266;
+  margin-top: 2px;
+}
+
+.signed-card {
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.signed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.signed-row:last-child {
+  border-bottom: none;
+}
+
+.signed-label {
+  width: 92px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.signed-value {
+  flex: 1;
+  color: #303133;
+}
+
+.signed-old {
+  text-decoration: line-through;
+  color: #909399;
+}
+
+.signed-new {
+  color: #a40035;
+  font-weight: 600;
+}
+
+.mono {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #606266;
+}
+
+/* ============ 表格操作列：分层排版 ============ */
+.row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  line-height: 1;
+}
+.row-actions-secondary {
+  display: flex;
+  gap: 4px;
+}
+.row-actions-secondary :deep(.el-button) {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: #fff;
+  border-color: #dcdfe6;
+  color: #606266;
+  border-radius: 4px;
+}
+.row-actions-secondary :deep(.el-button:hover) {
+  color: #a40035;
+  border-color: #a40035;
+  background: #fff;
+}
+.row-actions-primary :deep(.el-button) {
+  font-size: 12px;
+  padding: 5px 12px;
+}
+
+/* 覆盖主按钮为品牌色（默认 primary 是蓝） */
+.row-actions-primary :deep(.el-button.el-button--primary) {
+  background: #a40035;
+  border-color: #a40035;
+}
+.row-actions-primary :deep(.el-button.el-button--primary:hover) {
+  background: #8a002d;
+  border-color: #8a002d;
 }
 </style>

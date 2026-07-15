@@ -32,8 +32,18 @@
         <el-form-item label="门店">
           <el-input v-model="searchForm.store" placeholder="门店搜索" clearable style="width: 130px;" />
         </el-form-item>
-        <el-form-item label="技师姓名">
-          <el-input v-model="searchForm.therapistName" placeholder="姓名搜索" clearable style="width: 130px;" />
+        <el-form-item label="月份">
+          <el-date-picker
+            v-model="searchForm.month"
+            type="month"
+            placeholder="选择月份"
+            value-format="YYYY-MM"
+            clearable
+            style="width: 140px;"
+          />
+        </el-form-item>
+        <el-form-item label="员工">
+          <el-input v-model="searchForm.employeeKeyword" placeholder="提示姓名或工号" clearable style="width: 160px;" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -78,7 +88,10 @@
             <el-table-column prop="laborContractEntity" label="劳动合同单位" min-width="180" />
             <el-table-column prop="employeeNo" label="工号" min-width="100" />
             <el-table-column prop="idCard" label="身份证号码" min-width="180" />
-            <el-table-column prop="therapistName" label="技师姓名" min-width="100" fixed />
+            <el-table-column prop="therapistName" label="姓名" min-width="100" fixed />
+            <el-table-column prop="period" label="薪酬周期" min-width="100">
+              <template #default="{ row }">{{ formatPeriod(row.period) }}</template>
+            </el-table-column>
             <el-table-column prop="employmentStatus" label="任职状态" min-width="90" />
             <el-table-column prop="level" label="等级" min-width="70" />
             <el-table-column prop="modeLabel" label="合作模式" min-width="160" />
@@ -350,7 +363,8 @@ const searchForm = reactive({
   template: '',
   city: '',
   store: '',
-  therapistName: ''
+  month: '',
+  employeeKeyword: ''
 })
 
 // 默认显示"全部"——用第一个模板的结构做基线展示（用户可下拉切换）
@@ -382,7 +396,7 @@ const rawData = [
     position: '推拿师',
     talentId: '1116914240949403726', cityName: '上海', storeCode: 'SH001', storeName: '上海徐汇店',
     laborContractEntity: '上海推拿之家健康管理有限公司', employeeNo: 'T00676', idCard: '310**********1234',
-    therapistName: '张三', employmentStatus: '在职', level: 'T3',
+    therapistName: '张三', employmentStatus: '在职', level: 'T3', period: '2026-06',
     pieceworkCommission: 6000, overtimePay: 500, incentiveSubsidy: 800, tips: 200,
     complaintDeduction: 100, refundDeduction: 50, serviceTimeShortageDeduction: 0,
     socialSecurityPersonal: 800, fundPersonal: 1200, tax: 90,
@@ -402,7 +416,7 @@ const rawData = [
     position: '推拿师',
     talentId: '1116914240949403728', cityName: '上海', storeCode: 'SH001', storeName: '上海徐汇店',
     laborContractEntity: '上海推拿之家健康管理有限公司', employeeNo: 'T00680', idCard: '310**********5678',
-    therapistName: '王五', employmentStatus: '在职', level: 'T4',
+    therapistName: '王五', employmentStatus: '在职', level: 'T4', period: '2026-06',
     pieceworkCommission: 7200, overtimePay: 300, incentiveSubsidy: 1000, tips: 350,
     complaintDeduction: 0, refundDeduction: 0, serviceTimeShortageDeduction: 50,
     socialSecurityPersonal: 800, fundPersonal: 1200, tax: 165,
@@ -422,7 +436,7 @@ const rawData = [
     position: '推拿师',
     talentId: '1116914240949403729', cityName: '北京', storeCode: 'BJ002', storeName: '北京朝阳店',
     laborContractEntity: '北京推拿之家健康管理有限公司', employeeNo: 'B02145', idCard: '110**********5678',
-    therapistName: '李四', employmentStatus: '在职', level: 'P2',
+    therapistName: '李四', employmentStatus: '在职', level: 'P2', period: '2026-05',
     pieceworkCommission: 4500, overtimePay: 200, incentiveSubsidy: 0, tips: 100,
     complaintDeduction: 50, refundDeduction: 0, serviceTimeShortageDeduction: 0,
     socialSecurityPersonal: 0, fundPersonal: 0, tax: 135,
@@ -443,7 +457,7 @@ const rawData = [
     position: '推拿师',
     talentId: '1116914240949403730', cityName: '北京', storeCode: 'BJ002', storeName: '北京朝阳店',
     laborContractEntity: '北京推拿之家健康管理有限公司', employeeNo: 'B02199', idCard: '110**********9012',
-    therapistName: '赵六', employmentStatus: '在职', level: 'R1',
+    therapistName: '赵六', employmentStatus: '在职', level: 'R1', period: '2026-05',
     pieceworkCommission: 3800, overtimePay: 0, incentiveSubsidy: 0, tips: 50,
     complaintDeduction: 0, refundDeduction: 0, serviceTimeShortageDeduction: 0,
     socialSecurityPersonal: 0, fundPersonal: 0, tax: 115.5,
@@ -463,7 +477,7 @@ const rawData = [
     position: '推拿师',
     talentId: '1116914240949403731', cityName: '上海', storeCode: 'SH003', storeName: '上海浦东店',
     laborContractEntity: '上海推拿之家健康管理有限公司', employeeNo: 'F00128', idCard: '310**********7890',
-    therapistName: '钱七', employmentStatus: '兼职', level: 'J1',
+    therapistName: '钱七', employmentStatus: '兼职', level: 'J1', period: '2026-04',
     pieceworkCommission: 2200, overtimePay: 0, incentiveSubsidy: 0, tips: 0,
     complaintDeduction: 0, refundDeduction: 0, serviceTimeShortageDeduction: 0,
     socialSecurityPersonal: 0, fundPersonal: 0, tax: 66,
@@ -486,7 +500,13 @@ const filteredData = computed(() => {
     if (searchForm.template && r.mode !== searchForm.template) return false
     if (searchForm.city && !r.cityName.includes(searchForm.city)) return false
     if (searchForm.store && !r.storeName.includes(searchForm.store)) return false
-    if (searchForm.therapistName && !r.therapistName.includes(searchForm.therapistName)) return false
+    if (searchForm.month && r.period !== searchForm.month) return false
+    if (searchForm.employeeKeyword) {
+      const kw = searchForm.employeeKeyword.trim()
+      const matchName = r.therapistName && r.therapistName.includes(kw)
+      const matchNo = r.employeeNo && r.employeeNo.includes(kw)
+      if (!matchName && !matchNo) return false
+    }
     return true
   })
 })
@@ -495,6 +515,12 @@ const filteredData = computed(() => {
 const formatAmount = (val) => {
   if (val === null || val === undefined) return '/'
   return `¥ ${val.toFixed(2)}`
+}
+
+const formatPeriod = (val) => {
+  if (!val) return '/'
+  const [y, m] = val.split('-')
+  return `${y}年${m}月`
 }
 
 const payField = (row, pgi, field) => {

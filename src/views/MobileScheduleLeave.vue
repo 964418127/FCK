@@ -6,6 +6,35 @@
     </div>
     
     <div class="content-container">
+      <!-- 自主下线（与自主下线页面共用） -->
+      <div class="self-offline-card">
+        <div class="module-title">
+          <span class="red-bar"></span>
+          自主下线
+        </div>
+        <div class="duration-row">
+          <span class="duration-label">今日服务时长(分钟)：</span>
+          <span class="duration-value">{{ todayServiceDuration }}</span>
+          <el-button
+            type="primary"
+            @click="handleSelfOffline"
+            :disabled="todayServiceDuration < 480 || isSelfOffline"
+            class="offline-btn"
+          >
+            {{ isSelfOffline ? '已下线' : '我要下线' }}
+          </el-button>
+        </div>
+
+        <div v-if="isSelfOffline && selfOfflineTime" class="offline-time">
+          下线时间：{{ selfOfflineTime }}
+        </div>
+
+        <div class="info-block">
+          <span class="info-label">注：</span>
+          <span class="info-text">当日项目服务时长&gt;=480分钟且已完成订单，可自主下线。自主下线后，所有门店都将下线，不可重新上线。</span>
+        </div>
+      </div>
+
       <div class="calendar-section">
         <div class="month-selector">
           <el-icon @click="prevMonth"><ArrowLeft /></el-icon>
@@ -272,6 +301,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 
@@ -323,6 +353,26 @@ const leaveTypes = ref([
 
 const totalLeaveDays = ref(2)
 const remainingLeaveDays = ref(2)
+
+// ==================== 自主下线模块 ====================
+const todayServiceDuration = ref(482)
+const isSelfOffline = ref(false)
+const selfOfflineTime = ref(null)
+
+const handleSelfOffline = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '下线后所有门店将不可重新上线，确定要自主下线吗？',
+      '确认自主下线',
+      { confirmButtonText: '确定下线', cancelButtonText: '取消', type: 'warning' }
+    )
+    isSelfOffline.value = true
+    selfOfflineTime.value = new Date().toLocaleString('zh-CN', { hour12: false })
+    ElMessage.success('已成功下线')
+  } catch (e) {
+    // 用户取消
+  }
+}
 
 // 排假相关变量
 const selectedLeaveDate = ref(null)
@@ -748,6 +798,89 @@ onMounted(() => {
 .mobile-schedule-leave {
   min-height: 100vh;
   background: #f5f5f5;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========== 自主下线模块（顶部） ========== */
+.self-offline-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+  padding: 12px 16px;
+}
+
+.self-offline-card .module-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.self-offline-card .red-bar {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: #a40035;
+  border-radius: 2px;
+}
+
+.duration-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.duration-label {
+  font-size: 14px;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.duration-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #a40035;
+  flex: 1;
+}
+
+.offline-btn {
+  background: #a40035;
+  border-color: #a40035;
+}
+
+.offline-btn.is-disabled {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+.offline-time {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.info-block {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.7;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #333;
+  margin-right: 4px;
+}
+
+.info-text {
+  color: #666;
 }
 
 .page-header {

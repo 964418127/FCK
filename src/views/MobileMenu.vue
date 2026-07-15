@@ -51,6 +51,20 @@
             <div class="grid-title">挂店管理</div>
           </div>
 
+          <div class="grid-item" @click="goToStoreSelfOffline">
+            <div class="grid-icon">
+              <el-icon><CircleClose /></el-icon>
+            </div>
+            <div class="grid-title">自主下线</div>
+          </div>
+
+          <div class="grid-item" @click="goToStoreHangingNew">
+            <div class="grid-icon">
+              <el-icon><Connection /></el-icon>
+            </div>
+            <div class="grid-title">新挂店管理</div>
+          </div>
+
           <div class="grid-item" @click="goToScheduleLeave">
             <div class="grid-icon">
               <el-icon><Calendar /></el-icon>
@@ -65,11 +79,39 @@
             <div class="grid-title">全职薪酬看板</div>
           </div>
 
+          <div class="grid-item" @click="goToSalaryDashboard2">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">全职薪酬看板2</div>
+          </div>
+
           <div class="grid-item" @click="goToPartTimeSalaryDashboard">
             <div class="grid-icon">
               <el-icon><DataLine /></el-icon>
             </div>
             <div class="grid-title">非全日制薪酬看板</div>
+          </div>
+
+          <div class="grid-item" @click="goToPartTimeSalaryDashboard2">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">非全日制薪酬看板2</div>
+          </div>
+
+          <div class="grid-item" @click="goToAccountManagerSalaryDashboard">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">客户经理薪酬看板</div>
+          </div>
+
+          <div class="grid-item" @click="goToBeanAccount">
+            <div class="grid-icon">
+              <el-icon><Coin /></el-icon>
+            </div>
+            <div class="grid-title">常乐豆账户</div>
           </div>
 
           <div class="grid-item" @click="goToNotification">
@@ -95,7 +137,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell } from '@element-plus/icons-vue'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 
 const router = useRouter()
@@ -110,6 +152,14 @@ const goToStoreManagement = () => {
   router.push('/mobile-store-management')
 }
 
+const goToStoreSelfOffline = () => {
+  router.push('/mobile-store-self-offline')
+}
+
+const goToStoreHangingNew = () => {
+  router.push('/mobile-store-hanging-new')
+}
+
 const goToScheduleLeave = () => {
   router.push('/mobile-schedule-leave')
 }
@@ -118,8 +168,24 @@ const goToSalaryDashboard = () => {
   router.push('/mobile-salary-dashboard')
 }
 
+const goToSalaryDashboard2 = () => {
+  router.push('/mobile-salary-dashboard-2')
+}
+
 const goToPartTimeSalaryDashboard = () => {
   router.push('/mobile-part-time-salary-dashboard')
+}
+
+const goToPartTimeSalaryDashboard2 = () => {
+  router.push('/mobile-part-time-salary-dashboard-2')
+}
+
+const goToAccountManagerSalaryDashboard = () => {
+  router.push('/mobile-account-manager-salary-dashboard')
+}
+
+const goToBeanAccount = () => {
+  router.push('/mobile-bean-account')
 }
 
 const goToNotification = () => {
