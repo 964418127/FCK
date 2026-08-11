@@ -17,7 +17,6 @@
           <el-button type="primary" @click="handlePublish">发布</el-button>
         </template>
         <template v-else>
-          <el-button @click="toggleStatus">{{ data.status === '生效中' ? '停用' : '启用' }}</el-button>
           <el-button type="primary" @click="handleEdit">编辑</el-button>
         </template>
       </div>
@@ -725,15 +724,6 @@ const executeSave = () => {
   ElMessage.success(pendingStatus.value === '生效中' ? '已发布' : '已暂存草稿')
   isEdit.value = false
 }
-const toggleStatus = () => {
-  data.value.status = data.value.status === '生效中' ? '草稿' : '生效中'
-  const idx = storeSalaryStrategies.findIndex(s => s.id === data.value.id)
-  if (idx > -1) storeSalaryStrategies[idx].status = data.value.status
-  ElMessage.success(data.value.status === '生效中' ? '已启用' : '已停用')
-}
-
-
-
 // 人员筛选
 const addPersonCondition = () => {
   const field = '员工'
