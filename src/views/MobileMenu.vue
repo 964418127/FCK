@@ -114,12 +114,32 @@
             <div class="grid-title">常乐豆账户</div>
           </div>
 
+          <div class="grid-item" @click="goToBeanView">
+            <div class="grid-icon">
+              <el-icon><Document /></el-icon>
+            </div>
+            <div class="grid-title">示例自助查询</div>
+          </div>
+
           <div class="grid-item" @click="goToNotification">
             <div class="grid-icon">
               <el-icon><Bell /></el-icon>
             </div>
             <div class="grid-title">通知</div>
             <span v-if="unreadNoticeCount > 0" class="grid-badge">{{ unreadNoticeCount }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 总部岗位分组 -->
+      <div class="menu-group">
+        <div class="group-title">总部岗位</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="goToReimbursement">
+            <div class="grid-icon">
+              <el-icon><Wallet /></el-icon>
+            </div>
+            <div class="grid-title">个人报销</div>
           </div>
         </div>
       </div>
@@ -137,7 +157,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin } from '@element-plus/icons-vue'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin, Wallet, Document } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 
 const router = useRouter()
@@ -188,8 +208,16 @@ const goToBeanAccount = () => {
   router.push('/mobile-bean-account')
 }
 
+const goToBeanView = () => {
+  router.push('/mobile-bean-view')
+}
+
 const goToNotification = () => {
   router.push('/mobile-notification')
+}
+
+const goToReimbursement = () => {
+  router.push('/mobile-reimbursement-list')
 }
 
 const handleLogout = () => {
@@ -202,7 +230,9 @@ const handleLogout = () => {
 
 <style scoped>
 .mobile-menu {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: #f5f5f5;
 }
 

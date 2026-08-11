@@ -67,7 +67,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑薪酬项' : '新增薪酬项'"
-      width="800px"
+      width="960px"
       @close="handleDialogClose"
       class="salary-item-dialog"
     >
@@ -271,6 +271,7 @@
             </el-row>
           </div>
 
+          <!-- 计算方式选择 -->
           <!-- 分支条件与计算公式 -->
           <div class="branch-section">
             <div class="branch-header">
@@ -356,6 +357,16 @@
                     <el-button size="small" @click="insertFormula(branch, '最小值()')">最小值</el-button>
                     <el-button size="small" @click="insertFormula(branch, '向上取整()')">向上取整</el-button>
                     <el-button size="small" @click="insertFormula(branch, '向下取整()')">向下取整</el-button>
+                    <el-button size="small" type="primary" plain @click="openDsFunctionDialog(branch, null)">数据源函数</el-button>
+                  </div>
+                  <div v-if="branch.dsFunctions && branch.dsFunctions.length" class="ds-chips-row">
+                    <span class="ds-chips-label">数据源函数：</span>
+                    <span
+                      v-for="dsf in branch.dsFunctions"
+                      :key="dsf.uid"
+                      class="ds-chip"
+                      @click="openDsFunctionDialog(branch, dsf)"
+                    >{{ dsf.token }}</span>
                   </div>
                 </el-col>
               </el-row>
@@ -366,6 +377,72 @@
           </div>
         </div>
       </div>
+
+      <!-- 数据源函数配置弹窗 -->
+      <el-dialog
+        v-model="dsDialogVisible"
+        title="插入数据源函数"
+        width="800px"
+        append-to-body
+        destroy-on-close
+      >
+        <el-form label-width="100px" size="small">
+          <el-form-item label="选择策略">
+            <el-select v-model="dsForm.strategyId" placeholder="选择数据源策略" filterable style="width: 100%;" @change="onDsStrategyChange">
+              <el-option
+                v-for="s in storeStrategies"
+                :key="s.id"
+                :label="s.name"
+                :value="s.id"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="dsForm.strategyId" label="可用返回值">
+            <span v-for="k in dsReturnKeys" :key="k" class="return-key-chip">{{ k }}</span>
+            <span v-if="!dsReturnKeys.length" class="strategy-hint">该策略暂无返回值</span>
+          </el-form-item>
+          <el-form-item v-if="dsForm.strategyId && dsForm.paramMappings.length" label="参数映射">
+            <el-table :data="dsForm.paramMappings" border size="small" style="width: 100%;">
+              <el-table-column label="策略参数" prop="name" width="140" />
+              <el-table-column label="类型" prop="type" width="110">
+                <template #default="{ row }">
+                  {{ INPUT_PARAM_TYPE_LABELS[row.type] || row.type || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="说明" prop="desc" width="160" />
+              <el-table-column label="传入值（订单字段）" min-width="180">
+                <template #default="{ row }">
+                  <el-select v-model="row.mappedField" placeholder="选择或输入字段" size="small" filterable allow-create default-first-option style="width: 100%;">
+                    <el-option label="实付金额" value="实付金额" />
+                    <el-option label="原价" value="原价" />
+                    <el-option label="订单数量" value="订单数量" />
+                    <el-option label="回头客次数" value="回头客次数" />
+                    <el-option label="门店编码" value="门店编码" />
+                    <el-option label="技法" value="技法" />
+                    <el-option label="项目" value="项目" />
+                    <el-option label="时段" value="时段" />
+                    <el-option label="日期类型" value="日期类型" />
+                    <el-option label="员工工号" value="员工工号" />
+                    <el-option label="岗位" value="岗位" />
+                    <el-option label="合作模式" value="合作模式" />
+                  </el-select>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-form-item>
+          <el-form-item v-if="dsForm.strategyId" label="返回值Key" required>
+            <el-select v-model="dsForm.returnKey" placeholder="选择返回值Key" size="small" style="width: 100%;">
+              <el-option v-for="k in dsReturnKeys" :key="k" :label="k" :value="k" />
+            </el-select>
+            <span v-if="!dsReturnKeys.length" class="strategy-hint">该策略暂无返回值定义</span>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="dsDialogVisible = false">取消</el-button>
+          <el-button v-if="dsEditingUid" type="danger" link @click="removeDsFunction">移除</el-button>
+          <el-button type="primary" @click="confirmDsFunction">{{ dsEditingUid ? '更新' : '插入函数' }}</el-button>
+        </template>
+      </el-dialog>
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -378,6 +455,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 // 薪酬项列表数据
 const salaryItems = ref([
@@ -510,9 +588,14 @@ const form = reactive({
     decimalPlaces: '2',
     paymentForm: '现金'
   },
+  paramMappings: [
+    { paramKey: '实付金额', orderField: '实付金额', paramDesc: '订单实付金额' },
+    { paramKey: '原价', orderField: '', paramDesc: '订单原价' },
+    { paramKey: '订单数量', orderField: '', paramDesc: '周期内订单数' }
+  ],
   // 分支条件
   branches: [
-    { conditionType: '所有', filterConditions: [], formula: '', logicDesc: '' }
+    { conditionType: '所有', filterConditions: [], formula: '', logicDesc: '', dsFunctions: [] }
   ]
 })
 
@@ -525,6 +608,115 @@ const rules = {
 }
 
 // 过滤后的薪酬项列表
+const router = useRouter()
+import { storeSalaryStrategies as storeStrategies, INPUT_PARAM_TYPE_LABELS } from '../mock/storeSalaryStrategies.js'
+// ============ 数据源函数弹窗 ============
+const dsDialogVisible = ref(false)
+const dsTargetBranch = ref(null)
+const dsEditingUid = ref(null)
+const dsForm = reactive({
+  strategyId: '',
+  paramMappings: [],
+  returnKey: ''
+})
+let dsUidCounter = 0
+
+const dsReturnKeys = computed(() => {
+  if (!dsForm.strategyId) return []
+  const s = storeStrategies.find(x => x.id === dsForm.strategyId)
+  if (!s || !s.rules) return []
+  const keys = new Set()
+  s.rules.forEach(r => {
+    (r.returnValues || []).forEach(rv => {
+      if (rv.key) keys.add(rv.key)
+    })
+  })
+  return [...keys]
+})
+
+const onDsStrategyChange = () => {
+  const s = storeStrategies.find(x => x.id === dsForm.strategyId)
+  if (!s || !s.inputParams) { dsForm.paramMappings = []; return }
+  dsForm.paramMappings = s.inputParams.map(p => ({
+    name: p.name, type: p.type || 'string', desc: p.desc || '', mappedField: p.name
+  }))
+  dsForm.returnKey = ''
+}
+
+const openDsFunctionDialog = (branch, existing) => {
+  dsTargetBranch.value = branch
+  if (!branch.dsFunctions) branch.dsFunctions = []
+  if (existing) {
+    dsEditingUid.value = existing.uid
+    dsForm.strategyId = existing.strategyId
+    dsForm.returnKey = existing.returnKey
+    dsForm.paramMappings = JSON.parse(JSON.stringify(existing.paramMappings))
+  } else {
+    dsEditingUid.value = null
+    dsForm.strategyId = ''
+    dsForm.paramMappings = []
+    dsForm.returnKey = ''
+  }
+  dsDialogVisible.value = true
+}
+
+const buildToken = (strategyId, returnKey) => {
+  const s = storeStrategies.find(x => x.id === strategyId)
+  const name = s ? s.name : strategyId
+  return `DS(${name}).${returnKey}`
+}
+
+const confirmDsFunction = () => {
+  if (!dsForm.strategyId) { ElMessage.warning('请选择策略'); return }
+  if (!dsForm.returnKey) { ElMessage.warning('请选择返回值Key'); return }
+  const branch = dsTargetBranch.value
+  if (!branch.dsFunctions) branch.dsFunctions = []
+  const token = buildToken(dsForm.strategyId, dsForm.returnKey)
+
+  if (dsEditingUid.value) {
+    // Edit: replace old token in formula, update dsFunctions entry
+    const idx = branch.dsFunctions.findIndex(d => d.uid === dsEditingUid.value)
+    if (idx > -1) {
+      const oldToken = branch.dsFunctions[idx].token
+      branch.formula = branch.formula.replaceAll(oldToken, token)
+      branch.dsFunctions[idx] = {
+        uid: dsEditingUid.value,
+        strategyId: dsForm.strategyId,
+        paramMappings: JSON.parse(JSON.stringify(dsForm.paramMappings)),
+        returnKey: dsForm.returnKey,
+        token
+      }
+    }
+    ElMessage.success('已更新数据源函数')
+  } else {
+    // New: append token to formula, add to dsFunctions
+    dsUidCounter++
+    branch.formula += (branch.formula ? ' ' : '') + token
+    branch.dsFunctions.push({
+      uid: 'dsf_' + dsUidCounter,
+      strategyId: dsForm.strategyId,
+      paramMappings: JSON.parse(JSON.stringify(dsForm.paramMappings)),
+      returnKey: dsForm.returnKey,
+      token
+    })
+    ElMessage.success('已插入数据源函数')
+  }
+  dsDialogVisible.value = false
+}
+
+const removeDsFunction = () => {
+  const branch = dsTargetBranch.value
+  if (!branch.dsFunctions || !dsEditingUid.value) return
+  const idx = branch.dsFunctions.findIndex(d => d.uid === dsEditingUid.value)
+  if (idx > -1) {
+    const oldToken = branch.dsFunctions[idx].token
+    branch.formula = branch.formula.replaceAll(oldToken, '').trim()
+    branch.dsFunctions.splice(idx, 1)
+  }
+  ElMessage.success('已移除数据源函数')
+  dsDialogVisible.value = false
+}
+
 const filteredSalaryItems = computed(() => {
   return salaryItems.value.filter(item => {
     // 编号或名称搜索
@@ -727,7 +919,7 @@ const removeFilterCondition = (index) => {
 
 // 分支操作
 const addBranch = () => {
-  form.branches.push({ conditionType: '所有', filterConditions: [], formula: '', logicDesc: '' })
+  form.branches.push({ conditionType: '所有', filterConditions: [], formula: '', logicDesc: '', dsFunctions: [] })
 }
 
 const removeBranch = (index) => {
@@ -932,5 +1124,35 @@ const handleSubmit = async () => {
 .salary-item-dialog :deep(.el-dialog__body) {
   max-height: 70vh;
   overflow-y: auto;
+}
+.filter-tip {
+  font-size: 12px;
+  color: #999;
+}
+.calc-method-section { margin-bottom: 12px; }
+.strategy-bind-section {
+  background: #f8faff;
+  border: 1px solid #e0eaff;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.return-key-chip { background: #f0f0f5; border: 1px solid #d8d8e0; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-family: 'SF Mono', monospace; }
+.ds-chips-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ds-chips-label { font-size: 12px; color: #999; }
+.ds-chip { background: #fff0f3; border: 1px solid #f5b0c0; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-family: 'SF Mono', monospace; cursor: pointer; transition: all 0.15s; color: #a40035; }
+.ds-chip:hover { background: #a40035; color: #fff; border-color: #a40035; }
+.strategy-hint {
+  font-size: 12px;
+  color: #999;
+  margin-left: 8px;
+}
+.param-mapping {
+  margin-top: 12px;
+}
+.param-mapping-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 </style>

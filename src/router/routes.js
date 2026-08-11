@@ -346,6 +346,30 @@ export const routes = [
         }
       },
       {
+        path: 'config-rule-management',
+        name: 'config-rule-management',
+        component: () => import('../views/ConfigRuleManagement.vue'),
+        meta: {
+          title: '配置规则管理'
+        }
+      },
+      {
+        path: 'store-salary-strategy',
+        name: 'store-salary-strategy',
+        component: () => import('../views/StoreSalaryStrategy.vue'),
+        meta: {
+          title: '数据源策略'
+        }
+      },
+      {
+        path: 'store-salary-strategy/:id',
+        name: 'store-salary-strategy-detail',
+        component: () => import('../views/StoreSalaryStrategyDetail.vue'),
+        meta: {
+          title: '数据源策略详情'
+        }
+      },
+      {
         path: 'personnel-salary-detail',
         name: 'personnel-salary-detail',
         component: () => import('../views/PersonnelSalaryDetail.vue'),
@@ -484,11 +508,35 @@ export const routes = [
     }
   },
   {
+    path: '/mobile-bean-view',
+    name: 'mobile-bean-view',
+    component: () => import('../views/MobileBeanView.vue'),
+    meta: {
+      title: '常乐豆明细'
+    }
+  },
+  {
     path: '/mobile-bean-account',
     name: 'mobile-bean-account',
     component: () => import('../views/MobileBeanAccount.vue'),
     meta: {
       title: '常乐豆账户'
+    }
+  },
+  {
+    path: '/mobile-bean-withdraw-records',
+    name: 'mobile-bean-withdraw-records',
+    component: () => import('../views/MobileBeanWithdrawRecords.vue'),
+    meta: {
+      title: '提现记录'
+    }
+  },
+  {
+    path: '/mobile-bean-withdraw',
+    name: 'mobile-bean-withdraw',
+    component: () => import('../views/MobileBeanWithdraw.vue'),
+    meta: {
+      title: '自助提现'
     }
   },
   {
@@ -513,6 +561,30 @@ export const routes = [
     component: () => import('../views/MobileNotification.vue'),
     meta: {
       title: '通知'
+    }
+  },
+  {
+    path: '/mobile-reimbursement-submit',
+    name: 'mobile-reimbursement-submit',
+    component: () => import('../views/MobileReimbursementSubmit.vue'),
+    meta: {
+      title: '申请报销'
+    }
+  },
+  {
+    path: '/mobile-reimbursement-list',
+    name: 'mobile-reimbursement-list',
+    component: () => import('../views/MobileReimbursementList.vue'),
+    meta: {
+      title: '我的报销'
+    }
+  },
+  {
+    path: '/mobile-reimbursement-detail/:id',
+    name: 'mobile-reimbursement-detail',
+    component: () => import('../views/MobileReimbursementDetail.vue'),
+    meta: {
+      title: '报销详情'
     }
   },
   {

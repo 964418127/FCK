@@ -79,10 +79,10 @@ const goBack = () => router.back()
 const monthGroups = ref([
   {
     label: '2025-11',
-    total: 4280,
+    total: 4780,
     records: [
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 1500,
         statusLabel: '冻结',
         statusType: 'frozen',
@@ -92,7 +92,7 @@ const monthGroups = ref([
         scenario: '常乐豆福利兑换（京东）'
       },
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 880,
         statusLabel: '消费成功',
         statusType: 'success',
@@ -102,7 +102,7 @@ const monthGroups = ref([
         scenario: '常乐豆福利兑换（天猫超市）'
       },
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 1900,
         statusLabel: '消费成功',
         statusType: 'success',
@@ -110,15 +110,25 @@ const monthGroups = ref([
         slipNo: '12910291105191204',
         completedAt: '2025-11-06 16:12:10',
         scenario: '常乐豆福利兑换（京东）'
+      },
+      {
+        title: '其他兑换',
+        amount: 500,
+        statusLabel: '消费成功',
+        statusType: 'success',
+        startAt: '2025-11-12 09:20:30',
+        slipNo: '12910291112092018',
+        completedAt: '2025-11-12 09:20:35',
+        scenario: '常乐豆兑换体检券'
       }
     ]
   },
   {
     label: '2025-10',
-    total: 3560,
+    total: 4360,
     records: [
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 1200,
         statusLabel: '消费成功',
         statusType: 'success',
@@ -128,7 +138,7 @@ const monthGroups = ref([
         scenario: '常乐豆福利兑换（美团）'
       },
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 2360,
         statusLabel: '消费成功',
         statusType: 'success',
@@ -136,15 +146,25 @@ const monthGroups = ref([
         slipNo: '12910291005191204',
         completedAt: '2025-10-06 16:12:10',
         scenario: '常乐豆福利兑换（京东）'
+      },
+      {
+        title: '其他兑换',
+        amount: 800,
+        statusLabel: '消费成功',
+        statusType: 'success',
+        startAt: '2025-10-18 15:30:00',
+        slipNo: '12910291018153012',
+        completedAt: '2025-10-18 15:30:05',
+        scenario: '常乐豆兑换电影票'
       }
     ]
   },
   {
     label: '2025-09',
-    total: 1840,
+    total: 2160,
     records: [
       {
-        title: '购物消费',
+        title: '购物兑换',
         amount: 1840,
         statusLabel: '消费成功',
         statusType: 'success',
@@ -152,6 +172,16 @@ const monthGroups = ref([
         slipNo: '12910290922112501',
         completedAt: '2025-09-23 09:30:55',
         scenario: '常乐豆福利兑换（山姆会员店）'
+      },
+      {
+        title: '其他兑换',
+        amount: 320,
+        statusLabel: '冻结',
+        statusType: 'frozen',
+        startAt: '2025-09-28 16:45:22',
+        slipNo: '12910290928164509',
+        completedAt: null,
+        scenario: '常乐豆兑换洗牙券'
       }
     ]
   }

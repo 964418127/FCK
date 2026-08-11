@@ -205,7 +205,7 @@
             <span class="brand-icon">TL</span>
             <div class="brand-text">
               <div class="brand-name">TLZJ 平台</div>
-              <div class="brand-sub">推拿之家 · 数字化平台</div>
+              <div class="brand-sub">数字化平台</div>
             </div>
           </div>
         </div>
@@ -326,9 +326,9 @@ const moduleSalaryMenu = [
     label: '模块薪酬',
     icon: Coin,
     children: [
-      { index: 'salary-item-management', label: '薪酬项配置', icon: List },
       { index: 'job-compensation-template', label: '岗位薪酬模板', icon: Document },
       { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },
+      { index: 'config-rule-management', label: '配置规则管理', icon: Coin },
       { index: 'personnel-salary-detail', label: '人员薪酬明细', icon: List },
       {
         index: 'negative-wage',

@@ -19,7 +19,7 @@
         </svg>
       </div>
       <h2 class="title">XV 平台</h2>
-      <p class="subtitle">专业的推拿之家数字化平台</p>
+      <p class="subtitle">数字化平台</p>
       
       <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
         <el-form-item prop="username">

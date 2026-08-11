@@ -84,6 +84,7 @@
         </el-table-column> -->
         <el-table-column prop="currentWithdrawal" label="本月提现数量" width="150" />
         <el-table-column prop="currentConsumption" label="本月累计消费" width="150" />
+        <el-table-column prop="otherExchange" label="其他兑换" width="130" />
         <el-table-column prop="withdrawalSuccessAmount" label="提现交易成功金额" width="150" />
         <el-table-column prop="currentAvailableBalance" label="实时可用余额" width="150">
           <template #default="scope">
@@ -340,6 +341,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 500,
       withdrawalSuccessAmount: 450,
       currentConsumption: 200,
+      otherExchange: 50,
       currentAvailableBalance: 5000,
       status: '在职'
     },
@@ -360,6 +362,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 300,
       withdrawalSuccessAmount: 280,
       currentConsumption: 150,
+      otherExchange: 30,
       currentAvailableBalance: 3000,
       status: '在职'
     },
@@ -380,6 +383,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 1000,
       withdrawalSuccessAmount: 920,
       currentConsumption: 300,
+      otherExchange: 80,
       currentAvailableBalance: 7500,
       status: '离职'
     },
@@ -400,6 +404,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 150,
+      otherExchange: 0,
       currentAvailableBalance: 4150,
       status: '在职'
     },
@@ -420,6 +425,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 450,
       withdrawalSuccessAmount: 400,
       currentConsumption: 180,
+      otherExchange: 40,
       currentAvailableBalance: 4470,
       status: '离职'
     }
@@ -441,6 +447,7 @@ const accountMonthlyByMonth = {
       availableBalance: 5100,
       currentWithdrawal: 400,
       currentConsumption: 0,
+      otherExchange: 20,
       currentAvailableBalance: 4700,
       status: '在职'
     },
@@ -460,6 +467,7 @@ const accountMonthlyByMonth = {
       availableBalance: 3050,
       currentWithdrawal: 400,
       currentConsumption: 0,
+      otherExchange: 0,
       currentAvailableBalance: 2650,
       status: '在职'
     },
@@ -480,6 +488,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 700,
       withdrawalSuccessAmount: 650,
       currentConsumption: 0,
+      otherExchange: 60,
       currentAvailableBalance: 7300,
       status: '离职'
     },
@@ -500,6 +509,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 350,
       withdrawalSuccessAmount: 320,
       currentConsumption: 150,
+      otherExchange: 0,
       currentAvailableBalance: 3500,
       status: '在职'
     },
@@ -520,6 +530,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 150,
+      otherExchange: 25,
       currentAvailableBalance: 4050,
       status: '离职'
     }
@@ -542,6 +553,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 0,
+      otherExchange: 0,
       currentAvailableBalance: 4200,
       status: '在职'
     },
@@ -562,6 +574,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 400,
       withdrawalSuccessAmount: 380,
       currentConsumption: 0,
+      otherExchange: 10,
       currentAvailableBalance: 2200,
       status: '在职'
     },
@@ -582,6 +595,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 500,
       withdrawalSuccessAmount: 480,
       currentConsumption: 0,
+      otherExchange: 45,
       currentAvailableBalance: 6800,
       status: '离职'
     },
@@ -602,6 +616,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 300,
       withdrawalSuccessAmount: 280,
       currentConsumption: 200,
+      otherExchange: 0,
       currentAvailableBalance: 3000,
       status: '在职'
     },
@@ -622,6 +637,7 @@ const accountMonthlyByMonth = {
       currentWithdrawal: 350,
       withdrawalSuccessAmount: 320,
       currentConsumption: 150,
+      otherExchange: 35,
       currentAvailableBalance: 3600,
       status: '离职'
     }
@@ -658,7 +674,7 @@ const resetForm = () => {
 const handleExport = () => {
   console.log('导出', {
     ...searchForm,
-    exportFields: ['month', 'city', 'name', 'department', 'position', 'employeeId', 'accountType', 'lastMonthBalance', 'monthlySettlement', 'availableBalance', 'currentWithdrawal', 'currentConsumption', 'currentAvailableBalance']
+    exportFields: ['month', 'city', 'name', 'department', 'position', 'employeeId', 'accountType', 'lastMonthBalance', 'monthlySettlement', 'availableBalance', 'currentWithdrawal', 'currentConsumption', 'otherExchange', 'currentAvailableBalance']
   })
   // 实际项目中这里会调用API导出数据
 }

@@ -6,7 +6,7 @@
           <el-icon size="64" :style="{ color: 'hsl(var(--primary-foreground))' }"><HomeFilled /></el-icon>
         </div>
         <h1 class="welcome-title">欢迎使用 TLZJ 平台</h1>
-        <p class="welcome-subtitle">推拿之家 · 数字化平台</p>
+        <p class="welcome-subtitle">数字化平台</p>
         <div class="welcome-description">
           <p>这里是您的数据校验工作台，提供专业的差异数据确认和管理服务。</p>
         </div>
