@@ -54,14 +54,25 @@ export const docMenu = [
     ]
   },
   {
-    index: 'doc-welfare',
-    label: '福利保障',
+    index: 'doc-personnel-welfare',
+    label: '人事福利',
     icon: Document,
     children: [
       {
+        index: 'doc-personnel-change-flow',
+        label: '人员异动流程',
+        icon: Reading,
+        to: '/docs/personnel-change-flow',
+        children: [
+          { index: 'doc-personnel-change-flow-function', label: '一、功能流程说明' },
+          { index: 'doc-personnel-change-flow-requirement', label: '二、产品需求说明' }
+        ]
+      },
+      {
         index: 'doc-welfare-guide',
         label: '福利保障说明',
-        icon: InfoFilled
+        icon: InfoFilled,
+        to: '/docs/welfare-guide'
       }
     ]
   }
