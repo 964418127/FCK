@@ -37,7 +37,7 @@ export const v2FullTree = {
         { id: 'comp-block', label: '薪酬体系', type: 'group', icon: '📊', color: 'hsl(262, 83%, 58%)',
           children: [
             { id: 'salary-items', label: '薪酬项配置', type: 'route', route: '/salary-item-management', icon: '🧩' },
-            { id: 'job-template', label: '岗位薪酬模板', type: 'route', route: '/job-compensation-template', icon: '📄' },
+            { id: 'job-template', label: '人员岗位薪酬规划', type: 'route', route: '/personnel-position-salary-planning', icon: '📄' },
             { id: 'salary-distribution', label: '薪酬发放策略', type: 'route', route: '/salary-distribution-strategy', icon: '📤' },
             { id: 'negative-wage', label: '负工资', type: 'route', route: '/negative-wage-account', icon: '➖' },
             { id: 'multi-tax', label: '多轮报税逻辑（多主体倒序）', type: 'section', anchor: 'scenarios', icon: '🔄' }

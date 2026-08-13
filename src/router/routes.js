@@ -82,13 +82,22 @@ export const routes = [
         }
       },
       {
-        path: 'job-compensation-template',
-        name: 'job-compensation-template',
-        component: () => import('../views/JobCompensationTemplate.vue'),
+        path: 'personnel-position-salary-planning',
+        name: 'personnel-position-salary-planning',
+        component: () => import('../views/PersonnelPositionSalaryPlanning.vue'),
         meta: {
-          title: '岗位薪酬模板'
+          title: '人员岗位薪酬规划'
         }
       },
+      {
+        path: 'personnel-change-processing',
+        name: 'personnel-change-processing',
+        component: () => import('../views/PersonnelChangeProcessing.vue'),
+        meta: {
+          title: '人员异动处理'
+        }
+      },
+
       {
         path: 'job-welfare-config',
         name: 'job-welfare-config',
@@ -640,6 +649,30 @@ export const routes = [
         component: () => import('../views/EmployeeWelfareGuide.vue'),
         meta: {
           title: '福利保障说明'
+        }
+      },
+      {
+        path: 'personnel-change-flow',
+        name: 'doc-personnel-change-flow',
+        component: () => import('../views/personnel-change-flow/PersonnelChangeFlowGuide.vue'),
+        meta: {
+          title: '人员异动流程'
+        }
+      },
+      {
+        path: 'personnel-change-flow/function',
+        name: 'doc-personnel-change-flow-function',
+        component: () => import('../views/personnel-change-flow/sections/FunctionFlow.vue'),
+        meta: {
+          title: '人员异动流程 / 一、功能流程说明'
+        }
+      },
+      {
+        path: 'personnel-change-flow/requirement',
+        name: 'doc-personnel-change-flow-requirement',
+        component: () => import('../views/personnel-change-flow/sections/Requirement.vue'),
+        meta: {
+          title: '人员异动流程 / 二、产品需求说明'
         }
       }
     ]

@@ -199,7 +199,7 @@ const companyCostItems = ref([])
 
 // 返回列表
 const goBack = () => {
-  router.push({ name: 'job-compensation-template' })
+  router.push({ name: 'personnel-position-salary-planning' })
 }
 
 // 编辑

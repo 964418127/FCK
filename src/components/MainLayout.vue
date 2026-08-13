@@ -326,7 +326,8 @@ const moduleSalaryMenu = [
     label: '模块薪酬',
     icon: Coin,
     children: [
-      { index: 'job-compensation-template', label: '岗位薪酬模板', icon: Document },
+      { index: 'personnel-change-processing', label: '人员异动处理', icon: Document },
+      { index: 'personnel-position-salary-planning', label: '人员岗位薪酬规划', icon: Document },
       { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },
       { index: 'config-rule-management', label: '配置规则管理', icon: Coin },
       { index: 'personnel-salary-detail', label: '人员薪酬明细', icon: List },

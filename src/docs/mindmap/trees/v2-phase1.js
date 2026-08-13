@@ -22,7 +22,7 @@ export const v2Phase1Tree = {
         { id: 'modular-comp', label: '模块化薪酬（4 种用工类型）', type: 'group', icon: '👔', color: 'hsl(217, 91%, 60%)',
           children: [
             { id: 'salary-items', label: '薪酬项（薪酬项配置）', type: 'route', route: '/salary-item-management', icon: '🧩' },
-            { id: 'job-template', label: '薪酬模板（岗位薪酬模板）', type: 'route', route: '/job-compensation-template', icon: '📄' },
+            { id: 'job-template', label: '人员岗位薪酬规划', type: 'route', route: '/personnel-position-salary-planning', icon: '📄' },
             { id: 'personnel-salary', label: '人员薪酬明细', type: 'route', route: '/personnel-salary-detail', icon: '👥' },
             { id: 'salary-distribution', label: '发放策略（支持多主体）', type: 'route', route: '/salary-distribution-strategy', icon: '📤' }
           ]
