@@ -116,19 +116,19 @@
           <tbody>
             <tr>
               <td><strong>HR 同步</strong></td>
-              <td>HR 人事模块按日把异动结论（换签主体 / 换合作方式 / 换岗位 / 离职）推送到本模块异动列表</td>
+              <td>HR 人事模块按日把异动结论（入职 / 换签主体 / 换合作方式 / 换岗位 / 离职）推送到本模块异动列表</td>
               <td>HR 人事模块</td>
               <td>每日定时</td>
             </tr>
             <tr>
               <td><strong>自动步</strong></td>
-              <td>异动落库即把对应"在任"任职段的失效时间改为 HR 给定的旧结束时间</td>
+              <td>非入职异动落库即把对应"在任"任职段的失效时间改为 HR 给定的旧结束时间；<strong>入职类型 no-op</strong>（无旧关系）</td>
               <td>系统（无人工）</td>
               <td>异动入列表时</td>
             </tr>
             <tr>
               <td><strong>手动步</strong></td>
-              <td>薪酬专员在「Tab 2 新关系确认」挑选岗位薪酬模板，点击确认写入新规划记录</td>
+              <td>薪酬专员在「Tab 2 新关系确认」挑选岗位薪酬模板，点击确认写入新规划记录（入职类型写首段，换签/换合作/换岗写续段）</td>
               <td>薪酬专员</td>
               <td>Tab 2 操作</td>
             </tr>
@@ -144,7 +144,7 @@
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">匹配规则（五要素）</h4>
-        <p style="font-size: 13px; line-height: 1.7;">在【人员薪酬规划】里查找同时满足以下全部条件的"当前在任"任职段：</p>
+        <p style="font-size: 13px; line-height: 1.7;">仅适用于「换签主体 / 换合作方式 / 换岗位 / 离职」四种类型。在【人员薪酬规划】里查找同时满足以下全部条件的"当前在任"任职段：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>同一人员</li>
           <li>同一岗位</li>
@@ -152,19 +152,23 @@
           <li>同一主体</li>
           <li>同一门店</li>
         </ul>
+        <div class="note" style="margin-top: 8px;">
+          <strong>入职类型特例：</strong>新员工没有旧任职段可截尾，自动步函数在检测到 <code>changeType === '入职'</code> 时<strong>直接返回</strong>（不查规划、不打 warn）。<code>inheritedFields</code> 置空；手动步依然按 HR 给的「新任职四要素」+ 起止时间初始化首段任职段。
+        </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">截尾动作</h4>
         <p style="font-size: 13px; line-height: 1.7;">找到匹配的"在任"任职段后，把它的失效时间从"在任"标记改为 HR 报告的旧关系结束时间。UI 上展示：原"至今"变更为具体日期。</p>
 
         <h4 style="margin-top: 12px; font-size: 14px;">不变量与异常处理</h4>
         <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
-          <strong>⚠️ 业务不变量</strong>：HR 报过来的每条异动必能在规划里找到对应 active 旧记录。出现未匹配属数据不一致边界态。
+          <strong>⚠️ 业务不变量</strong>：HR 报过来的<strong>非入职</strong>异动必能在规划里找到对应 active 旧记录。出现未匹配属数据不一致边界态。
           <strong>UI 兜底</strong>：始终显示「✓ 已写入」绿色 tag，不暴露给业务用户。
           <strong>排查线索</strong>：控制台 <code>console.warn</code> 输出该异动的唯一标识、人员姓名、旧任职五要素 + 旧结束时间，由开发者定位 HR / 规划两边数据脱钩问题。
+          <strong>入职豁免</strong>：入职类型必 no-op，<strong>不视为边界态</strong>，不打 warn。
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">新关系继承自旧任职段的信息</h4>
-        <p style="font-size: 13px; line-height: 1.7;">自动步匹配成功后，会把旧任职段的部分信息"带过来"，供手动步在写入新任职段时直接复用，避免重复维护：</p>
+        <p style="font-size: 13px; line-height: 1.7;">对「换签主体 / 换合作方式 / 换岗位」自动步匹配成功后，会把旧任职段的部分信息"带过来"，供手动步在写入新任职段时直接复用，避免重复维护：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>岗位的城市归属</li>
           <li>任职门店</li>
@@ -172,6 +176,7 @@
         </ul>
         <div class="note" style="margin-top: 8px;">
           <strong>注意：</strong>新关系的<strong>岗位本身</strong>不会从旧任职段继承——如果本条异动是换岗，新任职段的岗位必须取 HR 报告的<strong>新岗位</strong>（曹娜娜从客户经理换到推拿师，新任职段的岗位就是"推拿师"）。
+          <strong>入职类型无旧任职段</strong>，以上三项继承字段均置空，由 HR 在异动里直接给出。
         </div>
       </div>
 
@@ -239,7 +244,7 @@
         <p style="font-size: 13px; line-height: 1.7;">薪酬专员提交确认后，系统会把以下信息自动组装成一条新任职段写入【人员薪酬规划】：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li><strong>任职四要素</strong>：主体、合作方式、岗位、门店——其中<strong>岗位</strong>取 HR 报告的新岗位（换岗场景下必须用新岗位，不是旧岗位），其余取 HR 报告的新值</li>
-          <li><strong>岗位的归属信息</strong>：城市归属、岗位分类等——从旧任职段继承（同一个人换岗通常只是岗位变，城市 / 分类不变）</li>
+          <li><strong>岗位的归属信息</strong>：城市归属、岗位分类等——<strong>非入职</strong>类型从<strong>旧任职段继承</strong>（同一个人换岗通常只是岗位变，城市 / 分类不变）；<strong>入职</strong>类型无旧任职段，归属信息由 HR 在异动里直接给出（如未给出则置空）</li>
           <li><strong>岗位薪酬模板</strong>：薪酬专员刚选的模板</li>
           <li><strong>有效期</strong>：起始时间取 HR 给的起始日；结束时间取 HR 给的结束日（无则视为在任）</li>
           <li><strong>数据来源溯源</strong>：记录本任职段由哪条 HR 异动产生，便于跨表追溯</li>
@@ -263,6 +268,15 @@
         <h3>4. 异动状态机</h3>
         <div style="padding: 16px; background: hsl(var(--background)); border-radius: 6px; border: 1px solid hsl(var(--border)); font-family: -apple-system, BlinkMacSystemFont, monospace; font-size: 13px; line-height: 2;">
           <div>HR 异动落库</div>
+          <div style="padding-left: 24px; color: hsl(var(--muted-foreground));">│</div>
+          <div style="padding-left: 24px;">├── 异动类型 = 入职</div>
+          <div style="padding-left: 56px;">▼</div>
+          <div style="padding-left: 56px;">┌──────────────┐</div>
+          <div style="padding-left: 56px;">│  status = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
+          <div style="padding-left: 56px;">│ Tab 1 + Tab 2 显示│                                │ status = 已确认│</div>
+          <div style="padding-left: 56px;">│ 「结束什么关系」│                                │ Tab 1 显示    │</div>
+          <div style="padding-left: 56px;">│ 列展示「无旧关系」│                              │ 任职段写入规划 │</div>
+          <div style="padding-left: 56px;">└──────────────┘                                  └────────────┘</div>
           <div style="padding-left: 24px; color: hsl(var(--muted-foreground));">│</div>
           <div style="padding-left: 24px;">├── 异动类型 ∈ {换签主体, 换合作方式, 换岗位}</div>
           <div style="padding-left: 56px;">▼</div>
@@ -291,15 +305,15 @@
           <tbody>
             <tr>
               <td><strong style="color: hsl(var(--warning));">待确认</strong></td>
-              <td>HR 同步换签/换合作方式/换岗位异动</td>
-              <td>Tab 1 + Tab 2</td>
+              <td>HR 同步换签/换合作方式/换岗位/入职异动</td>
+              <td>Tab 1 + Tab 2（入职、换签、换合作方式、换岗）</td>
               <td>薪酬专员手动确认 → 已确认</td>
             </tr>
             <tr>
               <td><strong style="color: hsl(var(--success));">已确认</strong></td>
               <td>薪酬专员手动确认成功</td>
               <td>Tab 1（同步状态显示「✓ 已写入」）</td>
-              <td>流程结束</td>
+              <td>流程结束；新任职段写入规划</td>
             </tr>
             <tr>
               <td><strong style="color: hsl(var(--danger));">已结束</strong></td>
@@ -316,19 +330,19 @@
 
         <h4 style="margin-top: 12px; font-size: 14px;">Tab 1 异动结束（查看）—— 只读</h4>
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>页面打开：自动加载 <code>changeList</code>，对所有异动执行 <code>autoApplyEndOfOldRelation</code>（业务上必然命中）</li>
-          <li>列表展示：同步日期 / 异动ID / 姓名 / 人才ID / 异动类型 badge / 结束什么关系 / 同步状态 / 对应新关系 / 详情按钮</li>
-          <li>筛选器：搜索（姓名 / 人才ID）、异动类型（含「离职」）、无</li>
-          <li>详情弹窗：完整字段 + 同步状态说明 + 已写入模板（如已确认）</li>
+          <li>页面打开：自动加载 <code>changeList</code>，对所有<strong>非入职</strong>异动执行 <code>autoApplyEndOfOldRelation</code>（业务上必然命中）；<strong>入职类型 no-op</strong></li>
+          <li>列表展示：同步日期 / 异动ID / 姓名 / 人才ID / 异动类型 badge / 结束什么关系（入职显示「— 新入职，无旧关系可结束 —」）/ 同步状态 / 对应新关系 / 详情按钮</li>
+          <li>筛选器：搜索（姓名 / 人才ID）、异动类型（含「入职」「离职」等 5 种）、无</li>
+          <li>详情弹窗：完整字段 + 同步状态说明 + 已写入模板（如已确认）；入职类型只展示「新任职四要素」+ 起止时间，旧字段整块隐藏</li>
         </ol>
 
         <h4 style="margin-top: 12px; font-size: 14px;">Tab 2 新关系确认 —— 交互式</h4>
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>页面打开：自动过滤 <code>status = '待确认'</code> 的异动（离职 / 已确认自动隐藏）</li>
+          <li>页面打开：自动过滤 <code>status = '待确认'</code> 的异动（离职 / 已确认自动隐藏；<strong>入职类型显示在 Tab 2</strong>，等薪酬专员挂模板初始化首段）</li>
           <li>列表展示：异动ID / 姓名 / 异动类型 / 新岗位 badge / 新任职 / 起止时间（HR 提供）/ <strong>岗位薪酬模板行内选择器</strong> / 单击「确认」</li>
-          <li>筛选器：搜索、新岗位（按新岗位过滤）、异动类型</li>
-          <li>批量操作：勾选多行 → 顶部「批量确认」按钮（要求选中行的新岗位一致；不一致时弹窗提示拒掉）</li>
-          <li>确认成功：异动 <code>status</code> 变 '已确认'，从 Tab 2 列表移除；新记录写入【人员薪酬规划】</li>
+          <li>筛选器：搜索、新岗位（按新岗位过滤）、异动类型（含「入职」）</li>
+          <li>批量操作：勾选多行 → 顶部「批量确认」按钮（按「同岗位一致」强约束，详见上方手动步章节）</li>
+          <li>确认成功：异动 <code>status</code> 变 '已确认'，从 Tab 2 列表移除；<strong>入职类型写首段，换签/换合作/换岗写续段</strong></li>
         </ol>
 
         <div class="note" style="margin-top: 12px;">

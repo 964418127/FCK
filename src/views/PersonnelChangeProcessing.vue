@@ -59,6 +59,7 @@
                 </el-form-item>
                 <el-form-item>
                   <el-select v-model="endSearch.changeType" placeholder="异动类型" clearable style="width: 130px;">
+                    <el-option label="入职" value="入职" />
                     <el-option label="换签主体" value="换签主体" />
                     <el-option label="换合作方式" value="换合作方式" />
                     <el-option label="换岗位" value="换岗位" />
@@ -84,7 +85,10 @@
               </el-table-column>
               <el-table-column label="结束什么关系" min-width="360">
                 <template #default="{ row }">
-                  <div class="end-relation">
+                  <div v-if="row.changeType === '入职'" class="end-relation end-relation-empty">
+                    <span class="empty-text">— 新入职，无旧关系可结束 —</span>
+                  </div>
+                  <div v-else class="end-relation">
                     <div><span class="rel-key">主体</span>{{ row.oldCompany }}</div>
                     <div><span class="rel-key">合作</span>{{ row.oldCoopMode }}</div>
                     <div><span class="rel-key">岗位</span>{{ row.oldPosition }} / {{ row.oldStore }}</div>
@@ -154,6 +158,7 @@
                 </el-form-item>
                 <el-form-item>
                   <el-select v-model="startSearch.changeType" placeholder="异动类型" clearable style="width: 130px;">
+                    <el-option label="入职" value="入职" />
                     <el-option label="换签主体" value="换签主体" />
                     <el-option label="换合作方式" value="换合作方式" />
                     <el-option label="换岗位" value="换岗位" />
@@ -308,18 +313,29 @@
         <el-descriptions-item label="人才ID">{{ detail.talentId }}</el-descriptions-item>
         <el-descriptions-item label="同步日期">{{ detail.syncDate }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ detail.status }}</el-descriptions-item>
-        <el-descriptions-item label="旧主体">{{ detail.oldCompany }}</el-descriptions-item>
-        <el-descriptions-item label="新主体">{{ detail.newCompany }}</el-descriptions-item>
-        <el-descriptions-item label="旧合作方式">{{ detail.oldCoopMode }}</el-descriptions-item>
-        <el-descriptions-item label="新合作方式">{{ detail.newCoopMode }}</el-descriptions-item>
-        <el-descriptions-item label="旧岗位">{{ detail.oldPosition }} / {{ detail.oldStore }}</el-descriptions-item>
-        <el-descriptions-item label="新岗位">{{ detail.newPosition }} / {{ detail.newStore }}</el-descriptions-item>
-        <el-descriptions-item label="旧结束时间">{{ detail.oldEndTime }}</el-descriptions-item>
-        <el-descriptions-item label="新起止时间">{{ detail.newStartTime }} ~ {{ detail.newEndTime || '至今' }}</el-descriptions-item>
-        <el-descriptions-item label="自动截尾" :span="2">
-          <span v-if="detail.oldRelationTruncated === true" style="color: hsl(var(--success));">✓ 已自动写入（旧记录计算失效时间已更新为 {{ detail.oldEndTime }}）</span>
-          <span v-else style="color: hsl(var(--danger));">× 未匹配到旧记录（仅新增新关系）</span>
-        </el-descriptions-item>
+        <template v-if="detail.changeType !== '入职'">
+          <el-descriptions-item label="旧主体">{{ detail.oldCompany }}</el-descriptions-item>
+          <el-descriptions-item label="新主体">{{ detail.newCompany }}</el-descriptions-item>
+          <el-descriptions-item label="旧合作方式">{{ detail.oldCoopMode }}</el-descriptions-item>
+          <el-descriptions-item label="新合作方式">{{ detail.newCoopMode }}</el-descriptions-item>
+          <el-descriptions-item label="旧岗位">{{ detail.oldPosition }} / {{ detail.oldStore }}</el-descriptions-item>
+          <el-descriptions-item label="新岗位">{{ detail.newPosition }} / {{ detail.newStore }}</el-descriptions-item>
+          <el-descriptions-item label="旧结束时间">{{ detail.oldEndTime }}</el-descriptions-item>
+          <el-descriptions-item label="新起止时间">{{ detail.newStartTime }} ~ {{ detail.newEndTime || '至今' }}</el-descriptions-item>
+          <el-descriptions-item label="自动截尾" :span="2">
+            <span v-if="detail.oldRelationTruncated === true" style="color: hsl(var(--success));">✓ 已自动写入（旧记录计算失效时间已更新为 {{ detail.oldEndTime }}）</span>
+            <span v-else style="color: hsl(var(--danger));">× 未匹配到旧记录（仅新增新关系）</span>
+          </el-descriptions-item>
+        </template>
+        <template v-else>
+          <el-descriptions-item label="新主体" :span="2">{{ detail.newCompany }}</el-descriptions-item>
+          <el-descriptions-item label="新合作方式" :span="2">{{ detail.newCoopMode }}</el-descriptions-item>
+          <el-descriptions-item label="新岗位" :span="2">{{ detail.newPosition }} / {{ detail.newStore }}</el-descriptions-item>
+          <el-descriptions-item label="新起止时间" :span="2">{{ detail.newStartTime }} ~ {{ detail.newEndTime || '至今' }}</el-descriptions-item>
+          <el-descriptions-item label="自动截尾" :span="2">
+            <span style="color: hsl(var(--muted-foreground));">— 入职无旧关系，自动步 no-op —</span>
+          </el-descriptions-item>
+        </template>
         <el-descriptions-item v-if="detail.status === '已确认'" label="已写入模板" :span="2">{{ detail.templateName }}</el-descriptions-item>
         <el-descriptions-item v-if="detail.appliedAt" label="确认时间">{{ detail.appliedAt }}</el-descriptions-item>
       </el-descriptions>
@@ -405,6 +421,7 @@ startPagination.total = filteredStartList.value.length
 
 // ===== 工具 =====
 const getChangeTypeTag = (type) => ({
+  '入职': 'info',
   '换签主体': 'primary',
   '换合作方式': 'warning',
   '换岗位': 'success',
@@ -582,6 +599,10 @@ const handleSimulateSync = async () => {
   gap: 2px;
   font-size: 12px;
   line-height: 1.6;
+}
+.end-relation-empty {
+  align-items: center;
+  padding: 8px 0;
 }
 .rel-key {
   display: inline-flex;

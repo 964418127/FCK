@@ -253,6 +253,19 @@ const initialChangeList = [
     effectiveStart: '2026-08-15 00:00:00', effectiveEnd: '2099-12-31 00:00:00',
     status: '已确认'
   },
+  // ===== 入职样例：员工从无到有，无旧任职段可截尾，自动步 no-op（不打 warn）=====
+  {
+    changeId: 'CHG-20260813-0007', talentId: '900000000000000010',
+    name: '周晓燕', changeType: '入职', syncDate: '2026-08-13',
+    oldCompany: '', oldCoopMode: '', oldPosition: '', oldStore: '',
+    oldEndTime: '',
+    newCompany: '常乐健康（成都）有限公司', newCoopMode: '劳动合同-全日制',
+    newPosition: '客户经理', newStore: '成都春熙路店',
+    newStartTime: '2026-08-15 00:00:00',
+    newEndTime: '2099-12-31 00:00:00',
+    templateName: '', effectiveStart: '', effectiveEnd: '',
+    status: '待确认'
+  },
   // ===== 离职样例：业务上离职必然存在 active 旧记录，自动步必然命中（无未匹配示例） =====
   {
     changeId: 'CHG-20260813-0006', talentId: 'T00676',
@@ -300,7 +313,13 @@ export const getTemplatesByPosition = (position) =>
 
 // 自动步：结束旧关系（无 UI 介入，既成事实）。
 // 模块级函数：在异动进入列表时（初始化 / 按日汇入）自动执行；找不到匹配记录则 no-op。
+// 入职类型无旧关系可截尾，跳过查找且不打 warn（视为预期 no-op）。
 function autoApplyEndOfOldRelation(change) {
+  if (change.changeType === '入职') {
+    change.inheritedFields = {}
+    change.oldRelationTruncated = false
+    return false
+  }
   const activeRecord = planningList.value.find(r =>
     r.talentId === change.talentId &&
     r.company === change.oldCompany &&
@@ -321,7 +340,7 @@ function autoApplyEndOfOldRelation(change) {
   } else {
     change.inheritedFields = {}
     change.oldRelationTruncated = false
-    // 业务上不该发生：HR 报过来的异动必能在规划里找到对应 active 旧记录。
+    // 业务上不该发生：HR 报过来的非入职异动必能在规划里找到对应 active 旧记录。
     // 出现这条说明数据不一致，需要排查 HR / 规划两边数据是否脱钩。
     console.warn('[HR异动自动截尾] 未匹配到 active 旧记录，请排查:', change.changeId, change.name, {
       talentId: change.talentId, position: change.oldPosition, coopMode: change.oldCoopMode,
@@ -420,6 +439,19 @@ export function usePlanningRecords() {
         newPosition: '客户经理', newStore: '成都春熙路店',
         newStartTime: today + ' 00:00:00',
         newEndTime: '2027-08-25 00:00:00',
+        templateName: '', effectiveStart: '', effectiveEnd: '',
+        status: '待确认'
+      },
+      {
+        // 真新员工：无旧字段，自动步 no-op（不打 warn）
+        changeId: baseId + '9003', talentId: '900000000000000003',
+        name: '新入职员工C', changeType: '入职', syncDate: today,
+        oldCompany: '', oldCoopMode: '', oldPosition: '', oldStore: '',
+        oldEndTime: '',
+        newCompany: '常乐健康（上海）有限公司', newCoopMode: '劳动合同-全日制',
+        newPosition: '推拿师', newStore: '上海徐汇店',
+        newStartTime: today + ' 00:00:00',
+        newEndTime: '2099-12-31 00:00:00',
         templateName: '', effectiveStart: '', effectiveEnd: '',
         status: '待确认'
       }
