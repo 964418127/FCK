@@ -2,7 +2,7 @@
   <DocShell
     :toc-items="tocItems"
     title="人员异动流程"
-    subtitle='HR 人事模块每日汇入异动事实（入职 / 换签主体 / 换合作方式 / 换岗位 / 离职），本系统<strong>自动截尾</strong>对应旧记录的失效时间，并由<strong>薪酬专员确认</strong>新关系挂接的岗位薪酬模板；最终写入【人员薪酬规划】作为薪酬计算的输入'
+    subtitle='HR 人事模块每日汇入异动事实（入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职），本系统<strong>自动截尾</strong>对应旧记录的失效时间，并由<strong>薪酬专员确认</strong>新关系挂接的岗位薪酬模板；最终写入【人员薪酬规划】作为薪酬计算的输入'
     version="v1.0"
     date="2026-08-13"
     :breadcrumbs="breadcrumbs"
@@ -42,8 +42,8 @@
         </thead>
         <tbody>
           <tr>
-            <td rowspan="5"><strong>v1.0</strong></td>
-            <td rowspan="5">2026-08-13</td>
+            <td rowspan="6"><strong>v1.0</strong></td>
+            <td rowspan="6">2026-08-13</td>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
             <td><strong>人员异动入口</strong>：菜单 <code>员工福利保障 / 模块薪酬 / 人员异动处理</code>；独立页面 <code>/personnel-change-processing</code>，按日拉取 HR 异动列表</td>
           </tr>
@@ -62,6 +62,10 @@
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
             <td><strong>入职类型</strong>：无旧关系可截尾，自动步必 no-op（<strong>不视为边界态、不打 warn</strong>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化首段任职段；UI 列表「结束什么关系」列展示「— 新入职，无旧关系可结束 —」</td>
+          </tr>
+          <tr>
+            <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
+            <td><strong>续约类型</strong>：4 要素不变，仅合同期延长；自动步沿用换签代码路径截尾旧段；进入 Tab 2 等薪酬专员挂模板初始化续段任职段</td>
           </tr>
         </tbody>
       </table>
@@ -89,7 +93,7 @@
           </tr>
           <tr>
             <td><strong>异动类型</strong></td>
-            <td><strong>入职</strong>（无旧关系，仅初始化首段任职段；自动步 no-op）、<strong>换签主体</strong>（主体变更，门店/合作方式/岗位可能变）、<strong>换合作方式</strong>（全职 ↔ 非全日制/兼职/返聘）、<strong>换岗位</strong>（岗位变更，主体/合作方式不变）、<strong>离职</strong>（无新关系）</td>
+            <td><strong>入职</strong>（无旧关系，仅初始化首段任职段；自动步 no-op）、<strong>续约</strong>（4 要素不变，仅合同期延长；自动步沿用换签代码路径截尾旧段）、<strong>换签主体</strong>（主体变更，门店/合作方式/岗位可能变）、<strong>换合作方式</strong>（全职 ↔ 非全日制/兼职/返聘）、<strong>换岗位</strong>（岗位变更，主体/合作方式不变）、<strong>离职</strong>（无新关系）</td>
           </tr>
           <tr>
             <td><strong>自动步不变量</strong></td>

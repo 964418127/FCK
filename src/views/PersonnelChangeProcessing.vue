@@ -60,6 +60,7 @@
                 <el-form-item>
                   <el-select v-model="endSearch.changeType" placeholder="异动类型" clearable style="width: 130px;">
                     <el-option label="入职" value="入职" />
+                    <el-option label="续约" value="续约" />
                     <el-option label="换签主体" value="换签主体" />
                     <el-option label="换合作方式" value="换合作方式" />
                     <el-option label="换岗位" value="换岗位" />
@@ -159,6 +160,7 @@
                 <el-form-item>
                   <el-select v-model="startSearch.changeType" placeholder="异动类型" clearable style="width: 130px;">
                     <el-option label="入职" value="入职" />
+                    <el-option label="续约" value="续约" />
                     <el-option label="换签主体" value="换签主体" />
                     <el-option label="换合作方式" value="换合作方式" />
                     <el-option label="换岗位" value="换岗位" />
@@ -422,6 +424,7 @@ startPagination.total = filteredStartList.value.length
 // ===== 工具 =====
 const getChangeTypeTag = (type) => ({
   '入职': 'info',
+  '续约': 'info',
   '换签主体': 'primary',
   '换合作方式': 'warning',
   '换岗位': 'success',

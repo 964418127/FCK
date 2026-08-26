@@ -13,7 +13,7 @@
       <div class="card" id="goal">
         <h3>1. 模块目标</h3>
         <p style="font-size: 13px; line-height: 1.8;">
-          本模块作为<strong>HR 人事模块</strong>与<strong>薪酬计算模块</strong>之间的桥梁（中间产物即本模块维护的【人员薪酬规划】）：HR 人事模块按日把人员任职变动（入职 / 换签主体 / 换合作方式 / 换岗位 / 离职）汇入本模块，本模块负责把"任职事实"翻译为"薪酬规划"，让薪酬计算能拿到正确的人员 × 模板 × 时间区间挂接关系。
+          本模块作为<strong>HR 人事模块</strong>与<strong>薪酬计算模块</strong>之间的桥梁（中间产物即本模块维护的【人员薪酬规划】）：HR 人事模块按日把人员任职变动（入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职）汇入本模块，本模块负责把"任职事实"翻译为"薪酬规划"，让薪酬计算能拿到正确的人员 × 模板 × 时间区间挂接关系。
         </p>
         <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>📌 核心定位</strong>：本模块不重新发明 HR 人事模块，也不维护人员基础信息；只消费 HR 异动结论 + 协调薪酬专员补全新关系的薪酬模板，最终输出可被薪酬计算模块直接消费的【人员薪酬规划】数据。
@@ -66,7 +66,7 @@
             </tr>
             <tr>
               <td><strong>异动类型</strong></td>
-              <td>下拉筛选项：入职 / 换签主体 / 换合作方式 / 换岗位 / 离职（含全部五种类型）</td>
+              <td>下拉筛选项：入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职（含全部六种类型）</td>
             </tr>
             <tr>
               <td><strong>同步日期</strong></td>
@@ -102,8 +102,8 @@
             </tr>
             <tr>
               <td>异动类型</td>
-              <td>入职 / 换签主体 / 换合作方式 / 换岗位 / 离职</td>
-              <td>Badge 颜色：入职灰、换签主体蓝、换合作方式橙、换岗位绿、离职红</td>
+              <td>入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职</td>
+              <td>Badge 颜色：入职灰、续约灰、换签主体蓝、换合作方式橙、换岗位绿、离职红</td>
             </tr>
             <tr>
               <td>结束什么关系</td>
@@ -118,7 +118,7 @@
             <tr>
               <td>对应新关系</td>
               <td>本条异动对应的"新关系确认"状态</td>
-              <td>Badge：<strong style="color: hsl(var(--success));">已确认</strong>绿 / <strong style="color: hsl(var(--success));">无需确认</strong>绿（离职）/ <strong style="color: hsl(var(--warning));">待确认</strong>橙（入职 + 换签/换合作/换岗）</td>
+              <td>Badge：<strong style="color: hsl(var(--success));">已确认</strong>绿 / <strong style="color: hsl(var(--success));">无需确认</strong>绿（离职）/ <strong style="color: hsl(var(--warning));">待确认</strong>橙（入职 + 续约 + 换签/换合作/换岗）</td>
             </tr>
             <tr>
               <td>操作</td>
@@ -156,7 +156,7 @@
             </tr>
             <tr>
               <td><strong>异动类型</strong></td>
-              <td>下拉筛选项：入职 / 换签主体 / 换合作方式 / 换岗位（<strong>离职自动从列表中过滤掉</strong>，因为没有新关系可确认；入职保留，因为需要薪酬专员挂模板初始化首段）</td>
+              <td>下拉筛选项：入职 / 续约 / 换签主体 / 换合作方式 / 换岗位（<strong>离职自动从列表中过滤掉</strong>，因为没有新关系可确认；入职保留，因为需要薪酬专员挂模板初始化首段；续约保留，因为需要薪酬专员挂模板初始化续段）</td>
             </tr>
           </tbody>
         </table>
@@ -188,7 +188,7 @@
             </tr>
             <tr>
               <td>异动类型</td>
-              <td>入职 / 换签主体 / 换合作方式 / 换岗位</td>
+              <td>入职 / 续约 / 换签主体 / 换合作方式 / 换岗位</td>
               <td>Badge 颜色同 Tab 1</td>
             </tr>
             <tr>
@@ -271,6 +271,11 @@
               <td>首段任职段未挂模板，导致新员工首月无薪酬</td>
             </tr>
             <tr>
+              <td><strong>续约：4 要素不变，仅延长合同期</strong></td>
+              <td>续约异动的主体 / 合作方式 / 岗位 / 门店与上一任职段一致（HR 可显式重传或留空由本系统推断），自动步沿用换签代码路径截尾旧段（<code>effectiveEnd = oldEndTime</code>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化续段任职段</td>
+              <td>续段未挂模板或截尾旧段失败，导致合同期内无薪酬或前后两段重叠</td>
+            </tr>
+            <tr>
               <td><strong>批量确认：同岗位</strong></td>
               <td>批量确认要求所有选中行的新岗位一致；不一致时弹窗提示拒掉</td>
               <td>混批跨岗位模板体系产生无效配置</td>
@@ -318,7 +323,16 @@
           <li>HR 必须给出 5 个新字段（新主体 / 新合作方式 / 新岗位 / 新门店 / 起止时间），旧字段留空</li>
         </ul>
 
-        <h4 style="margin-top: 16px; font-size: 14px;">场景 E：离职</h4>
+        <h4 style="margin-top: 16px; font-size: 14px;">场景 E：续约（4 要素不变，仅延长合同期）</h4>
+        <p style="font-size: 13px; line-height: 1.7;">HR 完成合同续签后，按日推续约异动过来。本系统处理：</p>
+        <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
+          <li>自动步：按 HR 给的「旧四要素 + oldEndTime」找到当前 active 任职段，将 <code>effectiveEnd</code> 改为 <code>oldEndTime</code>（典型情况原 <code>effectiveEnd</code> 已是 2099-12-31，所以是真实改写；少数情况已是同日期，则为 no-op）</li>
+          <li>进入 Tab 1「异动结束（查看）」，列表的「结束什么关系」列展示旧四要素</li>
+          <li>进入 Tab 2「新关系确认」，等薪酬专员挑模板并确认，写入续段任职段（newStartTime → newEndTime）</li>
+          <li>HR 应保证：oldEndTime ≤ newStartTime（连续或留有间隔均可），且 newStartTime ≤ newEndTime；违反任一条视为数据异常</li>
+        </ul>
+
+        <h4 style="margin-top: 16px; font-size: 14px;">场景 F：离职</h4>
         <p style="font-size: 13px; line-height: 1.7;">离职异动不携带任何"新任职"信息。本系统处理：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>自动步截尾对应 active 任职段（业务上必然命中，因为离职人员必然有当前在挂的任职）</li>
@@ -345,11 +359,11 @@
             </tr>
             <tr>
               <td><strong>异动类型</strong></td>
-              <td>入职 / 换签主体 / 换合作方式 / 换岗位 / 离职</td>
+              <td>入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职</td>
             </tr>
             <tr>
               <td><strong>旧任职四要素</strong></td>
-              <td>旧主体 / 旧合作方式 / 旧岗位 / 旧门店（用于在本系统规划里找到对应 active 任职段；<strong>入职类型留空</strong>）</td>
+              <td>旧主体 / 旧合作方式 / 旧岗位 / 旧门店（用于在本系统规划里找到对应 active 任职段；<strong>入职类型留空</strong>；<strong>续约类型可重传或留空</strong>，留空时由本系统从当前 active 任职段推断）</td>
             </tr>
             <tr>
               <td><strong>旧关系结束时间</strong></td>
@@ -461,6 +475,21 @@
               <td>13</td>
               <td>把入职异动从 Tab 2 隐藏掉</td>
               <td>新员工首段必须挂模板，否则首月无薪酬；隐藏会绕过这条不变量</td>
+            </tr>
+            <tr>
+              <td>14</td>
+              <td>把续约当成"换签主体 / 换合作方式 / 换岗位"等其他类型处理</td>
+              <td>续约 4 要素不变，HR 推数据时可省略旧四要素；其他类型必须有完整旧四要素才能匹配。混用会导致自动步匹配失败</td>
+            </tr>
+            <tr>
+              <td>15</td>
+              <td>让续约自动步"找不到旧记录"时打 warn</td>
+              <td>续约旧记录的 effectiveEnd 可能已被前序事件改写过，自动步找不到属预期范围；不应视作数据不一致告警</td>
+            </tr>
+            <tr>
+              <td>16</td>
+              <td>把续约异动从 Tab 2 隐藏掉</td>
+              <td>续约续段必须挂模板，否则续段无薪酬；隐藏会绕过这条不变量</td>
             </tr>
           </tbody>
         </table>

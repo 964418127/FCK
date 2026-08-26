@@ -116,7 +116,7 @@
           <tbody>
             <tr>
               <td><strong>HR 同步</strong></td>
-              <td>HR 人事模块按日把异动结论（入职 / 换签主体 / 换合作方式 / 换岗位 / 离职）推送到本模块异动列表</td>
+              <td>HR 人事模块按日把异动结论（入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职）推送到本模块异动列表</td>
               <td>HR 人事模块</td>
               <td>每日定时</td>
             </tr>
@@ -128,7 +128,7 @@
             </tr>
             <tr>
               <td><strong>手动步</strong></td>
-              <td>薪酬专员在「Tab 2 新关系确认」挑选岗位薪酬模板，点击确认写入新规划记录（入职类型写首段，换签/换合作/换岗写续段）</td>
+              <td>薪酬专员在「Tab 2 新关系确认」挑选岗位薪酬模板，点击确认写入新规划记录（入职类型写首段，续约/换签/换合作/换岗写续段）</td>
               <td>薪酬专员</td>
               <td>Tab 2 操作</td>
             </tr>
@@ -144,7 +144,7 @@
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">匹配规则（五要素）</h4>
-        <p style="font-size: 13px; line-height: 1.7;">仅适用于「换签主体 / 换合作方式 / 换岗位 / 离职」四种类型。在【人员薪酬规划】里查找同时满足以下全部条件的"当前在任"任职段：</p>
+        <p style="font-size: 13px; line-height: 1.7;">仅适用于「换签主体 / 换合作方式 / 换岗位 / 离职 / 续约」五种类型。在【人员薪酬规划】里查找同时满足以下全部条件的"当前在任"任职段：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>同一人员</li>
           <li>同一岗位</li>
@@ -168,7 +168,7 @@
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">新关系继承自旧任职段的信息</h4>
-        <p style="font-size: 13px; line-height: 1.7;">对「换签主体 / 换合作方式 / 换岗位」自动步匹配成功后，会把旧任职段的部分信息"带过来"，供手动步在写入新任职段时直接复用，避免重复维护：</p>
+        <p style="font-size: 13px; line-height: 1.7;">对「续约 / 换签主体 / 换合作方式 / 换岗位」自动步匹配成功后，会把旧任职段的部分信息"带过来"，供手动步在写入新任职段时直接复用，避免重复维护：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>岗位的城市归属</li>
           <li>任职门店</li>
@@ -278,7 +278,7 @@
           <div style="padding-left: 56px;">│ 列展示「无旧关系」│                              │ 任职段写入规划 │</div>
           <div style="padding-left: 56px;">└──────────────┘                                  └────────────┘</div>
           <div style="padding-left: 24px; color: hsl(var(--muted-foreground));">│</div>
-          <div style="padding-left: 24px;">├── 异动类型 ∈ {换签主体, 换合作方式, 换岗位}</div>
+          <div style="padding-left: 24px;">├── 异动类型 ∈ {续约, 换签主体, 换合作方式, 换岗位}</div>
           <div style="padding-left: 56px;">▼</div>
           <div style="padding-left: 56px;">┌──────────────┐</div>
           <div style="padding-left: 56px;">│  status = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
@@ -305,8 +305,8 @@
           <tbody>
             <tr>
               <td><strong style="color: hsl(var(--warning));">待确认</strong></td>
-              <td>HR 同步换签/换合作方式/换岗位/入职异动</td>
-              <td>Tab 1 + Tab 2（入职、换签、换合作方式、换岗）</td>
+              <td>HR 同步续约/换签/换合作方式/换岗位/入职异动</td>
+              <td>Tab 1 + Tab 2（入职、续约、换签、换合作方式、换岗）</td>
               <td>薪酬专员手动确认 → 已确认</td>
             </tr>
             <tr>
@@ -332,7 +332,7 @@
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>页面打开：自动加载 <code>changeList</code>，对所有<strong>非入职</strong>异动执行 <code>autoApplyEndOfOldRelation</code>（业务上必然命中）；<strong>入职类型 no-op</strong></li>
           <li>列表展示：同步日期 / 异动ID / 姓名 / 人才ID / 异动类型 badge / 结束什么关系（入职显示「— 新入职，无旧关系可结束 —」）/ 同步状态 / 对应新关系 / 详情按钮</li>
-          <li>筛选器：搜索（姓名 / 人才ID）、异动类型（含「入职」「离职」等 5 种）、无</li>
+          <li>筛选器：搜索（姓名 / 人才ID）、异动类型（含「入职」「续约」「离职」等 6 种）、无</li>
           <li>详情弹窗：完整字段 + 同步状态说明 + 已写入模板（如已确认）；入职类型只展示「新任职四要素」+ 起止时间，旧字段整块隐藏</li>
         </ol>
 
@@ -342,7 +342,7 @@
           <li>列表展示：异动ID / 姓名 / 异动类型 / 新岗位 badge / 新任职 / 起止时间（HR 提供）/ <strong>岗位薪酬模板行内选择器</strong> / 单击「确认」</li>
           <li>筛选器：搜索、新岗位（按新岗位过滤）、异动类型（含「入职」）</li>
           <li>批量操作：勾选多行 → 顶部「批量确认」按钮（按「同岗位一致」强约束，详见上方手动步章节）</li>
-          <li>确认成功：异动 <code>status</code> 变 '已确认'，从 Tab 2 列表移除；<strong>入职类型写首段，换签/换合作/换岗写续段</strong></li>
+          <li>确认成功：异动 <code>status</code> 变 '已确认'，从 Tab 2 列表移除；<strong>入职类型写首段，续约/换签/换合作/换岗写续段</strong></li>
         </ol>
 
         <div class="note" style="margin-top: 12px;">

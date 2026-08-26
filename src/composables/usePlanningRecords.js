@@ -266,6 +266,20 @@ const initialChangeList = [
     templateName: '', effectiveStart: '', effectiveEnd: '',
     status: '待确认'
   },
+  // ===== 续约样例：4 要素不变（与上一任职段一致），仅合同期延长；自动步沿用换签代码路径截尾旧段 =====
+  {
+    changeId: 'CHG-20260813-0008', talentId: 'T00703',
+    name: '乐乐', changeType: '续约', syncDate: '2026-08-13',
+    oldCompany: '-', oldCoopMode: '非全日制',
+    oldPosition: '调理师', oldStore: 'BFC外滩金融中心',
+    oldEndTime: '2027-06-30 23:59:59',
+    newCompany: '-', newCoopMode: '非全日制',
+    newPosition: '调理师', newStore: 'BFC外滩金融中心',
+    newStartTime: '2027-07-01 00:00:00',
+    newEndTime: '2028-06-30 23:59:59',
+    templateName: '', effectiveStart: '', effectiveEnd: '',
+    status: '待确认'
+  },
   // ===== 离职样例：业务上离职必然存在 active 旧记录，自动步必然命中（无未匹配示例） =====
   {
     changeId: 'CHG-20260813-0006', talentId: 'T00676',
@@ -452,6 +466,20 @@ export function usePlanningRecords() {
         newPosition: '推拿师', newStore: '上海徐汇店',
         newStartTime: today + ' 00:00:00',
         newEndTime: '2099-12-31 00:00:00',
+        templateName: '', effectiveStart: '', effectiveEnd: '',
+        status: '待确认'
+      },
+      {
+        // 续约：4 要素不变，自动步沿用换签路径截尾旧段
+        changeId: baseId + '9004', talentId: 'T00704',
+        name: '汉波', changeType: '续约', syncDate: today,
+        oldCompany: '-', oldCoopMode: '非全日制',
+        oldPosition: '调理师', oldStore: '大竹林金科乐方店',
+        oldEndTime: '2026-12-31 23:59:59',
+        newCompany: '-', newCoopMode: '非全日制',
+        newPosition: '调理师', newStore: '大竹林金科乐方店',
+        newStartTime: '2027-01-01 00:00:00',
+        newEndTime: '2027-12-31 23:59:59',
         templateName: '', effectiveStart: '', effectiveEnd: '',
         status: '待确认'
       }
