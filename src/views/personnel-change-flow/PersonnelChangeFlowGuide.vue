@@ -45,23 +45,23 @@
             <td rowspan="6"><strong>v1.0</strong></td>
             <td rowspan="6">2026-08-13</td>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>人员异动入口</strong>：菜单 <code>员工福利保障 / 模块薪酬 / 人员异动处理</code>；独立页面 <code>/personnel-change-processing</code>，按日拉取 HR 异动列表</td>
+            <td><strong>人员异动入口</strong>：菜单 <code>员工福利保障 / 模块薪酬 / 人员异动处理</code>；独立页面「人员异动处理」，按日拉取 HR 异动列表</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>自动步（旧关系结束）</strong>：异动落库即截尾对应 active 规划记录的 <code>effectiveEnd = oldEndTime</code>；本系统只做同步，不允许修改结束时间</td>
+            <td><strong>自动步（旧关系结束）</strong>：异动落库即截尾对应在任规划记录的 <code>任职结束时间 = 旧结束时间</code>；本系统只做同步，不允许修改结束时间</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>手动步（新关系确认）</strong>：薪酬专员按 <code>newPosition</code> 过滤的岗位薪酬模板列表中挑选模板（起止时间只读采用 HR 提供值），确认后写入新规划记录</td>
+            <td><strong>手动步（新关系确认）</strong>：薪酬专员按 <code>新岗位</code> 过滤的岗位薪酬模板列表中挑选模板（起止时间只读采用 HR 提供值），确认后写入新规划记录</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>离职类型</strong>：无新关系，<code>status='已结束'</code>，自动步必然命中；UI 标记为「无需确认」绿色，不进入「新关系确认」Tab</td>
+            <td><strong>离职类型</strong>：无新关系，<code>状态='已结束'</code>，自动步必然命中；UI 标记为「无需确认」绿色，不进入「新关系确认」Tab</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
-            <td><strong>入职类型</strong>：无旧关系可截尾，自动步必 no-op（<strong>不视为边界态、不打 warn</strong>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化首段任职段；UI 列表「结束什么关系」列展示「— 新入职，无旧关系可结束 —」</td>
+            <td><strong>入职类型</strong>：无旧关系可截尾，自动步必<strong>不操作</strong>（<strong>不视为边界态、不告警</strong>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化首段任职段；UI 列表「结束什么关系」列展示「— 新入职，无旧关系可结束 —」</td>
           </tr>
           <tr>
             <td><span style="color: hsl(var(--primary)); font-weight: 600;">新增</span></td>
@@ -93,15 +93,15 @@
           </tr>
           <tr>
             <td><strong>异动类型</strong></td>
-            <td><strong>入职</strong>（无旧关系，仅初始化首段任职段；自动步 no-op）、<strong>续约</strong>（4 要素不变，仅合同期延长；自动步沿用换签代码路径截尾旧段）、<strong>换签主体</strong>（主体变更，门店/合作方式/岗位可能变）、<strong>换合作方式</strong>（全职 ↔ 非全日制/兼职/返聘）、<strong>换岗位</strong>（岗位变更，主体/合作方式不变）、<strong>离职</strong>（无新关系）</td>
+            <td><strong>入职</strong>（无旧关系，仅初始化首段任职段；自动步<strong>不操作</strong>）、<strong>续约</strong>（4 要素不变，仅合同期延长；自动步沿用换签代码路径截尾旧段）、<strong>换签主体</strong>（主体变更，门店/合作方式/岗位可能变）、<strong>换合作方式</strong>（全职 ↔ 非全日制/兼职/返聘）、<strong>换岗位</strong>（岗位变更，主体/合作方式不变）、<strong>离职</strong>（无新关系）</td>
           </tr>
           <tr>
             <td><strong>自动步不变量</strong></td>
-            <td>HR 报过来的<strong>非入职</strong>异动必能在【人员薪酬规划】里找到对应 active 旧记录；找不到属于数据不一致边界态（UI 兜底显示「✓ 已写入」，控制台 warn 排查）。<strong>入职类型必 no-op</strong>，不视为边界态</td>
+            <td>HR 报过来的<strong>非入职</strong>异动必能在【人员薪酬规划】里找到对应<strong>在任</strong>旧记录；找不到属于数据不一致边界态（UI 兜底显示「✓ 已写入」，控制台告警排查）。<strong>入职类型必不操作</strong>，不视为边界态</td>
           </tr>
           <tr>
             <td><strong>手动步不变量</strong></td>
-            <td>薪酬专员<strong>只挑模板</strong>，起止时间只读采用 HR 给的 <code>newStartTime / newEndTime</code>；批量确认要求所有选中行 <code>newPosition</code> 一致</td>
+            <td>薪酬专员<strong>只挑模板</strong>，起止时间只读采用 HR 给的 <code>新起始时间 / 新结束时间</code>；批量确认要求所有选中行 <code>新岗位</code> 一致</td>
           </tr>
           <tr>
             <td><strong>HR 异动时间差</strong></td>
@@ -109,7 +109,7 @@
           </tr>
           <tr>
             <td><strong>离职特殊语义</strong></td>
-            <td>离职只有旧关系结束，无新关系；<code>status='已结束'</code>，不进入「Tab 2 新关系确认」；UI 标记红色「离职」+ 绿色「无需确认」</td>
+            <td>离职只有旧关系结束，无新关系；<code>状态='已结束'</code>，不进入「Tab 2 新关系确认」；UI 标记红色「离职」+ 绿色「无需确认」</td>
           </tr>
         </tbody>
       </table>
@@ -158,12 +158,12 @@
           </tr>
           <tr>
             <td><strong>模块化薪酬重算</strong></td>
-            <td><router-link to="/docs/product-v2-phase1/supplementary"><strong>十一、补充需求 / sup-1 模块化薪酬重算</strong></router-link></td>
+            <td><router-link to="/docs/product-v2-phase1/supplementary"><strong>十一、补充需求 / 补-1 模块化薪酬重算</strong></router-link></td>
             <td>已发出未发放的重跑按合作主体隔离；重算范围依赖本系统维护的【人员薪酬规划】</td>
           </tr>
           <tr>
             <td><strong>离职</strong>（无新关系）</td>
-            <td><router-link to="/docs/product-v2-phase1/bean"><strong>三、常乐豆</strong></router-link> + <router-link to="/docs/product-v2-phase1/supplementary"><strong>十一、补充需求 / sup-2</strong></router-link></td>
+            <td><router-link to="/docs/product-v2-phase1/bean"><strong>三、常乐豆</strong></router-link> + <router-link to="/docs/product-v2-phase1/supplementary"><strong>十一、补充需求 / 补-2</strong></router-link></td>
             <td>离职触发常乐豆提现流程；本系统只截尾任职段，<strong>不</strong>处理常乐豆提现</td>
           </tr>
         </tbody>

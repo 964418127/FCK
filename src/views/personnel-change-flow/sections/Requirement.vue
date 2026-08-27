@@ -47,7 +47,7 @@
 
       <div class="card" id="modules">
         <h3>3. 页面模块拆分</h3>
-        <p style="font-size: 13px; line-height: 1.8;">本模块对应一个独立页面 <code>/personnel-change-processing</code>，由两个 Tab 组成，分别承担"异动结束查看"和"新关系确认"两类用户动作：</p>
+        <p style="font-size: 13px; line-height: 1.8;">本模块对应一个独立页面「人员异动处理」，由两个 Tab 组成，分别承担"异动结束查看"和"新关系确认"两类用户动作：</p>
 
         <h4 style="margin-top: 16px; font-size: 14px;">3.1 模块：异动结束（查看）—— Tab 1</h4>
 
@@ -221,7 +221,7 @@
 
         <h5 style="margin-top: 12px; font-size: 13px; color: hsl(var(--warning));">后续操作</h5>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li><strong>单条确认</strong>：行内 template 选择器挑好模板 → 点击行尾「确认」按钮 → 异动 <code>status</code> 变为「已确认」，从 Tab 2 列表移除；新任职段写入【人员薪酬规划】</li>
+          <li><strong>单条确认</strong>：行内模板选择器挑好模板 → 点击行尾「确认」按钮 → 异动 <code>状态</code> 变为「已确认」，从 Tab 2 列表移除；新任职段写入【人员薪酬规划】</li>
           <li><strong>批量确认</strong>：勾选多行（必须<strong>同岗位</strong>）→ 顶部「批量确认」按钮 → 弹窗确认 → 逐条触发单条确认逻辑
             <ul style="margin-top: 6px;">
               <li>选中行跨岗位时弹窗提示"批量确认要求所有选中行岗位一致"，拒掉执行</li>
@@ -267,12 +267,12 @@
             </tr>
             <tr>
               <td><strong>入职：无旧关系，仅初始化首段</strong></td>
-              <td>入职异动没有旧任职段可截尾，自动步 no-op；薪酬专员在「Tab 2 新关系确认」挑模板初始化首段任职段。HR 应给出「新主体 / 新合作方式 / 新岗位 / 新门店 / 起止时间」5 字段，旧字段留空</td>
+              <td>入职异动没有旧任职段可截尾，自动步<strong>不操作</strong>；薪酬专员在「Tab 2 新关系确认」挑模板初始化首段任职段。HR 应给出「新主体 / 新合作方式 / 新岗位 / 新门店 / 起止时间」5 字段，旧字段留空</td>
               <td>首段任职段未挂模板，导致新员工首月无薪酬</td>
             </tr>
             <tr>
               <td><strong>续约：4 要素不变，仅延长合同期</strong></td>
-              <td>续约异动的主体 / 合作方式 / 岗位 / 门店与上一任职段一致（HR 可显式重传或留空由本系统推断），自动步沿用换签代码路径截尾旧段（<code>effectiveEnd = oldEndTime</code>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化续段任职段</td>
+              <td>续约异动的主体 / 合作方式 / 岗位 / 门店与上一任职段一致（HR 可显式重传或留空由本系统推断），自动步沿用换签代码路径截尾旧段（<code>任职结束时间 = 旧结束时间</code>）；薪酬专员在「Tab 2 新关系确认」挑模板初始化续段任职段</td>
               <td>续段未挂模板或截尾旧段失败，导致合同期内无薪酬或前后两段重叠</td>
             </tr>
             <tr>
@@ -282,7 +282,7 @@
             </tr>
             <tr>
               <td><strong>自动步必然命中（入职豁免）</strong></td>
-              <td>HR 报过来的<strong>非入职</strong>异动必能在【人员薪酬规划】里找到对应 active 任职段；未匹配属数据不一致边界态，由开发者排查，业务用户无须处理。<strong>入职类型必 no-op，不视为边界态</strong>，不打 warn</td>
+              <td>HR 报过来的<strong>非入职</strong>异动必能在【人员薪酬规划】里找到对应<strong>在任</strong>任职段；未匹配属数据不一致边界态，由开发者排查，业务用户无须处理。<strong>入职类型必不操作，不视为边界态</strong>，不告警</td>
               <td>异动无法在本系统落地，薪酬错乱</td>
             </tr>
             <tr>
@@ -301,7 +301,7 @@
         <p style="font-size: 13px; line-height: 1.7;">换合作方式时，HR 人事模块可能先批完结束流程，过几小时才批完开始流程。两条异动分别到达本系统时，各自独立推进：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
           <li>结束异动先到 → 自动步截尾旧任职段；进入 Tab 2「待确认」</li>
-          <li>开始异动后到 → 自动步截尾上一条（因已先被截尾，no-op）；进入 Tab 2「待确认」</li>
+          <li>开始异动后到 → 自动步截尾上一条（因已先被截尾，<strong>不操作</strong>）；进入 Tab 2「待确认」</li>
           <li>薪酬专员分别对两条做手动确认</li>
         </ul>
 
@@ -317,7 +317,7 @@
         <h4 style="margin-top: 16px; font-size: 14px;">场景 D：入职</h4>
         <p style="font-size: 13px; line-height: 1.7;">HR 完成新员工报到后，按日把入职异动推过来。本系统处理：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>自动步必 no-op（<code>changeType === '入职'</code>，新员工没有旧任职段可截尾，不打 warn）</li>
+          <li>自动步必<strong>不操作</strong>（<code>异动类型 === '入职'</code>，新员工没有旧任职段可截尾，不告警）</li>
           <li>进入 Tab 1「异动结束（查看）」，列表的「结束什么关系」列展示「— 新入职，无旧关系可结束 —」</li>
           <li>进入 Tab 2「新关系确认」，等薪酬专员挑模板并确认，写入首段任职段</li>
           <li>HR 必须给出 5 个新字段（新主体 / 新合作方式 / 新岗位 / 新门店 / 起止时间），旧字段留空</li>
@@ -326,10 +326,10 @@
         <h4 style="margin-top: 16px; font-size: 14px;">场景 E：续约（4 要素不变，仅延长合同期）</h4>
         <p style="font-size: 13px; line-height: 1.7;">HR 完成合同续签后，按日推续约异动过来。本系统处理：</p>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>自动步：按 HR 给的「旧四要素 + oldEndTime」找到当前 active 任职段，将 <code>effectiveEnd</code> 改为 <code>oldEndTime</code>（典型情况原 <code>effectiveEnd</code> 已是 2099-12-31，所以是真实改写；少数情况已是同日期，则为 no-op）</li>
+          <li>自动步：按 HR 给的「旧四要素 + <code>旧结束时间</code>」找到当前<strong>在任</strong>任职段，将 <code>任职结束时间</code> 改为 <code>旧结束时间</code>（典型情况原 <code>任职结束时间</code> 已是 2099-12-31，所以是真实改写；少数情况已是同日期，则为<strong>不操作</strong>）</li>
           <li>进入 Tab 1「异动结束（查看）」，列表的「结束什么关系」列展示旧四要素</li>
-          <li>进入 Tab 2「新关系确认」，等薪酬专员挑模板并确认，写入续段任职段（newStartTime → newEndTime）</li>
-          <li>HR 应保证：oldEndTime ≤ newStartTime（连续或留有间隔均可），且 newStartTime ≤ newEndTime；违反任一条视为数据异常</li>
+          <li>进入 Tab 2「新关系确认」，等薪酬专员挑模板并确认，写入续段任职段（新起始时间 → 新结束时间）</li>
+          <li>HR 应保证：旧结束时间 ≤ 新起始时间（连续或留有间隔均可），且 新起始时间 ≤ 新结束时间；违反任一条视为数据异常</li>
         </ul>
 
         <h4 style="margin-top: 16px; font-size: 14px;">场景 F：离职</h4>
@@ -443,7 +443,7 @@
             </tr>
             <tr>
               <td>7</td>
-              <td>让自动步对"未匹配"静默 no-op 而不告警</td>
+              <td>让自动步对"未匹配"静默不操作而不告警</td>
               <td>数据不一致会无声扩散，到下游薪酬计算模块才暴露（已经晚了）</td>
             </tr>
             <tr>
@@ -464,7 +464,7 @@
             <tr>
               <td>11</td>
               <td>把入职异动当成"换合作方式 / 换签主体"等其他类型处理</td>
-              <td>入职没有旧任职段可截尾，套用其他类型的自动步会无意义触发 warn + no-op 走偏路径</td>
+              <td>入职没有旧任职段可截尾，套用其他类型的自动步会无意义触发告警 + 不操作走偏路径</td>
             </tr>
             <tr>
               <td>12</td>
@@ -483,8 +483,8 @@
             </tr>
             <tr>
               <td>15</td>
-              <td>让续约自动步"找不到旧记录"时打 warn</td>
-              <td>续约旧记录的 effectiveEnd 可能已被前序事件改写过，自动步找不到属预期范围；不应视作数据不一致告警</td>
+              <td>让续约自动步"找不到旧记录"时告警</td>
+              <td>续约旧记录的任职结束时间可能已被前序事件改写过，自动步找不到属预期范围；不应视作数据不一致告警</td>
             </tr>
             <tr>
               <td>16</td>

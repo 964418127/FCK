@@ -122,7 +122,7 @@
             </tr>
             <tr>
               <td><strong>自动步</strong></td>
-              <td>非入职异动落库即把对应"在任"任职段的失效时间改为 HR 给定的旧结束时间；<strong>入职类型 no-op</strong>（无旧关系）</td>
+              <td>非入职异动落库即把对应"在任"任职段的失效时间改为 HR 给定的旧结束时间；<strong>入职类型不操作</strong>（无旧关系）</td>
               <td>系统（无人工）</td>
               <td>异动入列表时</td>
             </tr>
@@ -139,8 +139,8 @@
       <div class="card" id="auto-step">
         <h3>2. 自动步（旧关系结束）</h3>
         <div class="note">
-          <strong>触发时机：</strong>异动落库即触发（init 阶段 + simulateSync 推送新异动时）。
-          <strong>执行函数：</strong><code>autoApplyEndOfOldRelation(change)</code>，模块级函数，跨组件共享。
+          <strong>触发时机：</strong>异动落库即触发（初始化阶段 + <code>模拟同步</code> 推送新异动时）。
+          <strong>执行函数：</strong><code>自动结束旧关系(异动)</code>，模块级函数，跨组件共享。
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">匹配规则（五要素）</h4>
@@ -153,7 +153,7 @@
           <li>同一门店</li>
         </ul>
         <div class="note" style="margin-top: 8px;">
-          <strong>入职类型特例：</strong>新员工没有旧任职段可截尾，自动步函数在检测到 <code>changeType === '入职'</code> 时<strong>直接返回</strong>（不查规划、不打 warn）。<code>inheritedFields</code> 置空；手动步依然按 HR 给的「新任职四要素」+ 起止时间初始化首段任职段。
+          <strong>入职类型特例：</strong>新员工没有旧任职段可截尾，自动步函数在检测到 <code>异动类型 === '入职'</code> 时<strong>直接返回</strong>（不查规划、不告警）。<code>继承字段</code> 置空；手动步依然按 HR 给的「新任职四要素」+ 起止时间初始化首段任职段。
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">截尾动作</h4>
@@ -161,10 +161,10 @@
 
         <h4 style="margin-top: 12px; font-size: 14px;">不变量与异常处理</h4>
         <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
-          <strong>⚠️ 业务不变量</strong>：HR 报过来的<strong>非入职</strong>异动必能在规划里找到对应 active 旧记录。出现未匹配属数据不一致边界态。
+          <strong>⚠️ 业务不变量</strong>：HR 报过来的<strong>非入职</strong>异动必能在规划里找到对应<strong>在任</strong>旧记录。出现未匹配属数据不一致边界态。
           <strong>UI 兜底</strong>：始终显示「✓ 已写入」绿色 tag，不暴露给业务用户。
-          <strong>排查线索</strong>：控制台 <code>console.warn</code> 输出该异动的唯一标识、人员姓名、旧任职五要素 + 旧结束时间，由开发者定位 HR / 规划两边数据脱钩问题。
-          <strong>入职豁免</strong>：入职类型必 no-op，<strong>不视为边界态</strong>，不打 warn。
+          <strong>排查线索</strong>：控制台告警输出该异动的唯一标识、人员姓名、旧任职五要素 + 旧结束时间，由开发者定位 HR / 规划两边数据脱钩问题。
+          <strong>入职豁免</strong>：入职类型必不操作，<strong>不视为边界态</strong>，不告警。
         </div>
 
         <h4 style="margin-top: 12px; font-size: 14px;">新关系继承自旧任职段的信息</h4>
@@ -272,8 +272,8 @@
           <div style="padding-left: 24px;">├── 异动类型 = 入职</div>
           <div style="padding-left: 56px;">▼</div>
           <div style="padding-left: 56px;">┌──────────────┐</div>
-          <div style="padding-left: 56px;">│  status = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
-          <div style="padding-left: 56px;">│ Tab 1 + Tab 2 显示│                                │ status = 已确认│</div>
+          <div style="padding-left: 56px;">│  状态 = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
+          <div style="padding-left: 56px;">│ Tab 1 + Tab 2 显示│                                │ 状态 = 已确认│</div>
           <div style="padding-left: 56px;">│ 「结束什么关系」│                                │ Tab 1 显示    │</div>
           <div style="padding-left: 56px;">│ 列展示「无旧关系」│                              │ 任职段写入规划 │</div>
           <div style="padding-left: 56px;">└──────────────┘                                  └────────────┘</div>
@@ -281,22 +281,22 @@
           <div style="padding-left: 24px;">├── 异动类型 ∈ {续约, 换签主体, 换合作方式, 换岗位}</div>
           <div style="padding-left: 56px;">▼</div>
           <div style="padding-left: 56px;">┌──────────────┐</div>
-          <div style="padding-left: 56px;">│  status = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
-          <div style="padding-left: 56px;">│ Tab 2 显示    │                                  │ status = 已确认│</div>
+          <div style="padding-left: 56px;">│  状态 = 待确认 │ ─── 薪酬专员手动确认 ──▶ ┌────────────┐</div>
+          <div style="padding-left: 56px;">│ Tab 2 显示    │                                  │ 状态 = 已确认│</div>
           <div style="padding-left: 56px;">└──────────────┘                                  │ Tab 1 显示    │</div>
           <div style="padding-left: 80px;">└────────────┘</div>
           <div style="padding-left: 24px; color: hsl(var(--muted-foreground));">│</div>
           <div style="padding-left: 24px;">└── 异动类型 = 离职</div>
           <div style="padding-left: 56px;">▼</div>
           <div style="padding-left: 56px;">┌────────────┐</div>
-          <div style="padding-left: 56px;">│ status = 已结束│ （不进 Tab 2，UI 标红色「离职」+ 绿色「无需确认」）</div>
+          <div style="padding-left: 56px;">│ 状态 = 已结束│ （不进 Tab 2，UI 标红色「离职」+ 绿色「无需确认」）</div>
           <div style="padding-left: 56px;">└────────────┘</div>
         </div>
 
         <table class="data-table" style="margin-top: 12px;">
           <thead>
             <tr>
-              <th style="width: 130px;">status</th>
+              <th style="width: 130px;">状态</th>
               <th>进入路径</th>
               <th>UI 出现位置</th>
               <th>后续动作</th>
@@ -330,7 +330,7 @@
 
         <h4 style="margin-top: 12px; font-size: 14px;">Tab 1 异动结束（查看）—— 只读</h4>
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>页面打开：自动加载 <code>changeList</code>，对所有<strong>非入职</strong>异动执行 <code>autoApplyEndOfOldRelation</code>（业务上必然命中）；<strong>入职类型 no-op</strong></li>
+          <li>页面打开：自动加载 <code>异动列表</code>，对所有<strong>非入职</strong>异动执行 <code>自动结束旧关系</code>（业务上必然命中）；<strong>入职类型不操作</strong></li>
           <li>列表展示：同步日期 / 异动ID / 姓名 / 人才ID / 异动类型 badge / 结束什么关系（入职显示「— 新入职，无旧关系可结束 —」）/ 同步状态 / 对应新关系 / 详情按钮</li>
           <li>筛选器：搜索（姓名 / 人才ID）、异动类型（含「入职」「续约」「离职」等 6 种）、无</li>
           <li>详情弹窗：完整字段 + 同步状态说明 + 已写入模板（如已确认）；入职类型只展示「新任职四要素」+ 起止时间，旧字段整块隐藏</li>
@@ -338,15 +338,15 @@
 
         <h4 style="margin-top: 12px; font-size: 14px;">Tab 2 新关系确认 —— 交互式</h4>
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 24px;">
-          <li>页面打开：自动过滤 <code>status = '待确认'</code> 的异动（离职 / 已确认自动隐藏；<strong>入职类型显示在 Tab 2</strong>，等薪酬专员挂模板初始化首段）</li>
+          <li>页面打开：自动过滤 <code>状态 = '待确认'</code> 的异动（离职 / 已确认自动隐藏；<strong>入职类型显示在 Tab 2</strong>，等薪酬专员挂模板初始化首段）</li>
           <li>列表展示：异动ID / 姓名 / 异动类型 / 新岗位 badge / 新任职 / 起止时间（HR 提供）/ <strong>岗位薪酬模板行内选择器</strong> / 单击「确认」</li>
           <li>筛选器：搜索、新岗位（按新岗位过滤）、异动类型（含「入职」）</li>
           <li>批量操作：勾选多行 → 顶部「批量确认」按钮（按「同岗位一致」强约束，详见上方手动步章节）</li>
-          <li>确认成功：异动 <code>status</code> 变 '已确认'，从 Tab 2 列表移除；<strong>入职类型写首段，续约/换签/换合作/换岗写续段</strong></li>
+          <li>确认成功：异动 <code>状态</code> 变 '已确认'，从 Tab 2 列表移除；<strong>入职类型写首段，续约/换签/换合作/换岗写续段</strong></li>
         </ol>
 
         <div class="note" style="margin-top: 12px;">
-          <strong>同步 HR 异动</strong>按钮（首页「人员岗位薪酬规划 Tab 1」顶部）：触发 <code>simulateSync()</code>，演示 HR 推新异动过来。实际生产环境由 HR 人事模块定时调用接口，本模块被动接收。
+          <strong>同步 HR 异动</strong>按钮（首页「人员岗位薪酬规划 Tab 1」顶部）：触发 <code>模拟同步()</code>，演示 HR 推新异动过来。实际生产环境由 HR 人事模块定时调用接口，本模块被动接收。
         </div>
       </div>
     </div>
