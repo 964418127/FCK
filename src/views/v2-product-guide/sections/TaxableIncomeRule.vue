@@ -4,7 +4,7 @@
         <p>本节给出 V2 系统中"应税收入"的<strong>正式公式与边界规则</strong>，作为工资条、个税计算、汇算等所有环节的口径基准。</p>
 
         <!-- 1. 公式 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>① 公式（per record / per payslip）</h3>
           <p style="font-size: 18px; font-weight: 600; color: hsl(var(--primary)); margin: 8px 0;">
             应税收入 = 第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）
@@ -67,7 +67,7 @@
               </tr>
             </tbody>
           </table>
-          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning));">
+          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning));">
             <strong>⚠ 重点：为什么"个税预扣"和"社保/公积金"都不能进应税收入？</strong><br/>
             · <strong>预扣（个税）：</strong>是<strong>真正的个税</strong>（税基 = 应税收入，税 = 预扣金额），仅用于月末个税汇算；预扣所在工资条已发放，不可回溯<br/>
             · <strong>社保/公积金个人部分：</strong>个税申报时<strong>不需要传</strong>，税局会在税基计算中<strong>自动减除</strong>，所以也不进入应税收入公式<br/>
@@ -122,7 +122,7 @@
         </div>
 
         <!-- 6. 常乐豆与公积金的认知补充 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>⑥ 常乐豆与公积金 / 工资单的关系（关键认知）</h3>
           <p>常乐豆<strong>仅全职</strong>享有，<strong>只用于抵扣公积金</strong>（公司部分 / 个人部分），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>不计入应税收入</strong>。当常乐豆余额不足以抵扣公积金<strong>个人部分</strong>时，需要从对应<strong>工资单现金</strong>中补扣，扣款项的<strong>固定名称</strong>为【<strong>公积金个人扣款</strong>】。</p>
           <table class="data-table">
@@ -157,7 +157,7 @@
               </tr>
             </tbody>
           </table>
-          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning)); margin-top: 8px;">
+          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning)); margin-top: 8px;">
             <strong>⚠ 关键：</strong>【公积金个人扣款】<strong>仅是工资单上的一个固定名称扣缴项</strong>，其本质与"代扣公积金个人部分"等同——都属于"个税申报时税局自动减除"项，<strong>不进入应税收入公式</strong>。换言之：<strong>应税收入公式不受常乐豆抵扣行为影响</strong>，常乐豆只是改变"工资单的现金流出方向"（且只针对公积金）。
           </div>
         </div>

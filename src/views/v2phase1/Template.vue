@@ -9,10 +9,10 @@
   >
     <div id="template" class="section">
       <h2>四、岗位薪酬模板（含四·附录：动态薪酬项）</h2>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 职责边界：</strong>岗位薪酬模板<strong>只管工资条项</strong>（薪酬项 + 扣缴项 + 系统项）。其中<strong>系统项</strong>包含<strong>代扣社保 / 代扣公积金 / 代扣个税</strong>，金额由<strong>老系统接口 / 百旺服务</strong>返回（个人部分从老系统接口读取、个税由百旺按月计算）；<strong>商业险</strong><strong>暂不进入系统</strong>（由线下购买，成本归公司），也不在薪酬模板里配置。
         </div>
-        <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>⚠ 2 级薪酬项配置规则：</strong>第 2 级薪酬项是<strong>自定义配置</strong>（与 1 级独立），但配置内容<strong>只能使用第 1 级薪酬项、元数据和配置参数</strong>，<strong>不可引用</strong>其他 2 级或更低层级数据。
         </div>
 
@@ -301,7 +301,7 @@
             <span style="margin-right: 4px;">📋</span>复制章节
           </el-button>
         </div>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 与"模板固定项"的区别：</strong>上一节【岗位薪酬模板】列出的薪酬项 / 扣缴项是<strong>HR 预先在模板中配置</strong>的。本节列出的项是<strong>在业务执行/计算流转过程中，按条件动态产生</strong>的——<strong>不固定配置在模板中</strong>，而是<strong>触发式动态项</strong>。
         </div>
 

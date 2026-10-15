@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# WorkBuddy 本地目录（会话记忆等，不入库）
+.workbuddy/
+
+# 本地临时截图等
+.tmp/

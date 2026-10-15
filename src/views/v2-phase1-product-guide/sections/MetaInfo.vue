@@ -45,7 +45,7 @@
           </tbody>
         </table>
 
-        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 全局说明：1 门店 = 1 主体</strong>——全职/返聘 1 个合同主体 = 入职门店（不能挂店）；非全日制/兼职 可在 N 个门店服务 → 归属 N 个主体（按门店分别结算、申报个税、发放工资）。
         </div>
 

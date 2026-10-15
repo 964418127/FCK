@@ -15,11 +15,18 @@
  *   - 二级无 children → 二级页面（叶子）
  *   - 三级永远是叶子页面，点击 router.push({ name: index })
  */
-import { Document, InfoFilled, Reading } from '@element-plus/icons-vue'
+import { Document, InfoFilled, Reading, UserFilled, Clock } from '@element-plus/icons-vue'
 import { v2phase1Chapters } from './chapters.js'
+import { leaveReformChapters } from './leaveReformChapters.js'
 
 // 把 chapters 转换成菜单叶子节点
 const v2phase1MenuChildren = v2phase1Chapters.map(ch => ({
+  index: ch.routeName,
+  label: `${ch.order}、${ch.title}`
+}))
+
+// 假勤重构模块：同样由章节元数据生成，与路由保持单一数据源
+const leaveReformMenuChildren = leaveReformChapters.map(ch => ({
   index: ch.routeName,
   label: `${ch.order}、${ch.title}`
 }))
@@ -75,5 +82,29 @@ export const docMenu = [
         to: '/docs/welfare-guide'
       }
     ]
+  },
+  {
+    index: 'doc-parttime-account-manager',
+    label: '非全客户经理',
+    icon: UserFilled,
+    to: '/docs/parttime-account-manager',
+    children: [
+      {
+        index: 'doc-parttime-am-attendance',
+        label: '考勤打卡',
+        icon: Reading
+      },
+      {
+        index: 'doc-parttime-am-functions',
+        label: '功能模块',
+        icon: Reading
+      }
+    ]
+  },
+  {
+    index: 'doc-leave-reform',
+    label: '假勤重构',
+    icon: Clock,
+    children: leaveReformMenuChildren
   }
 ]

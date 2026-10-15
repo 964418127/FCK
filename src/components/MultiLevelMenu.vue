@@ -7,12 +7,12 @@
           v-if="!isCollapsed"
           class="menu-group-header"
           :class="{ expanded: expandedGroups.has(item.index) }"
-          @click="toggleGroup(item.index)"
+          @click="handleGroupHeaderClick(item)"
         >
           <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
           <span class="menu-label">{{ item.label }}</span>
           <el-icon class="arrow" :class="{ expanded: expandedGroups.has(item.index) }">
-            <ArrowRight />
+            <ArrowDown />
           </el-icon>
         </div>
         <!-- 折叠状态：一级分组显示悬浮菜单 -->
@@ -37,7 +37,7 @@
                 <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
                 <span class="menu-label">{{ child.label }}</span>
                 <el-icon class="arrow" :class="{ expanded: expandedGroups.has(child.index) }">
-                  <ArrowRight />
+                  <ArrowDown />
                 </el-icon>
               </div>
               <!-- 折叠状态：二级分组显示悬浮菜单 -->
@@ -137,7 +137,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight } from '@element-plus/icons-vue'
+import { ArrowDown } from '@element-plus/icons-vue'
 
 const props = defineProps({
   menuData: {
@@ -334,12 +334,12 @@ const handleSelect = (index) => {
 
 .menu-group-header .arrow {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 18px;
   transition: transform 0.2s;
 }
 
 .menu-group-header .arrow.expanded {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
 .menu-group-header.collapsed {
@@ -383,6 +383,13 @@ const handleSelect = (index) => {
   font-size: 14px;
 }
 
+/* 分组/页面图标：与 el-sub-menu 原生图标同为 24px 定宽盒并居中，保证图标列与文字起点对齐 */
+.menu-group-header > .el-icon:not(.arrow),
+.menu-item > .el-icon {
+  width: 24px;
+  text-align: center;
+}
+
 /* 1级页面 */
 .level-1-item {
   height: 48px;
@@ -390,11 +397,11 @@ const handleSelect = (index) => {
   font-size: 14px;
 }
 
-/* 2级分组标题 */
+/* 2级分组标题（54px = el-menu-item 的 padding 50 + theme.css 的 margin 4，图形与 EP 二级项对齐） */
 .level-2-group > .menu-group-header {
   height: 44px;
   line-height: 44px;
-  padding-left: 36px;
+  padding-left: 54px;
   font-size: 14px;
 }
 
@@ -402,15 +409,15 @@ const handleSelect = (index) => {
 .level-2-item {
   height: 44px;
   line-height: 44px;
-  padding-left: 36px;
+  padding-left: 54px;
   font-size: 14px;
 }
 
-/* 3级页面：字号更小、不显示 icon */
+/* 3级页面：字号更小、不显示 icon（缩进与 2 级保持 30px 步进） */
 .level-3-item {
   height: 36px;
   line-height: 36px;
-  padding-left: 56px;
+  padding-left: 84px;
   font-size: 13px;
 }
 
@@ -420,6 +427,10 @@ const handleSelect = (index) => {
 
 .menu-label {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .el-icon {
@@ -428,11 +439,11 @@ const handleSelect = (index) => {
   flex-shrink: 0;
 }
 
-/* 箭头图标特殊处理 */
+/* 箭头图标特殊处理：与 el-sub-menu 原生箭头（18px）保持一致，右缘对齐其 absolute right:20px + margin 的位置 */
 .menu-group-header .arrow {
   margin-left: auto;
-  margin-right: 0;
-  font-size: 12px !important;
+  margin-right: 8px;
+  font-size: 18px !important;
 }
 
 /* 悬浮菜单样式 */

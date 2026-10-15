@@ -1,6 +1,5 @@
 <template>
   <div class="main-layout">
-    <!-- 侧边导航栏 -->
     <aside :class="['sidebar', { collapsed: isSidebarCollapsed }]">
       <div class="sidebar-header">
         <h2 v-show="!isSidebarCollapsed">TLZJ 平台</h2>
@@ -91,6 +90,15 @@
           </el-menu-item>
         </el-sub-menu>
         
+          <el-sub-menu index="parttime-manager">
+          <template #title><el-icon><Calendar /></el-icon><span>非全客户经理</span></template>
+          <el-menu-item index="parttime-task-management"><el-icon><Calendar /></el-icon><span>排班排假</span></el-menu-item>
+          <el-menu-item index="parttime-task-publication"><el-icon><Promotion /></el-icon><span>任务发布</span></el-menu-item>
+          <el-menu-item index="parttime-task-tracking"><el-icon><List /></el-icon><span>任务跟踪</span></el-menu-item>
+          <el-menu-item index="parttime-income-guarantee"><el-icon><Coin /></el-icon><span>收入保底配置</span></el-menu-item>
+          <el-menu-item index="parttime-unit-prices"><el-icon><Coin /></el-icon><span>收入单价配置</span></el-menu-item>
+        </el-sub-menu>
+
         <!-- 排假分组 -->
         <el-sub-menu index="leave-management">
           <template #title>
@@ -104,6 +112,71 @@
           <el-menu-item index="schedule-leave-approval">
             <el-icon><Check /></el-icon>
             <span>排班排假审核</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- 假勤重构分组（新设计；旧假勤原型待推翻，暂与「排排排假」并存以便对照）
+             本分组只放原型页；设计总览等文档内容一律在「文档中心」→「假勤重构」 -->
+        <el-sub-menu index="leave-reform">
+          <template #title>
+            <el-icon><Clock /></el-icon>
+            <span>假勤重构</span>
+          </template>
+          <el-menu-item index="leave-job-roster">
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>岗位台账</span>
+          </el-menu-item>
+          <el-menu-item index="leave-work-calendar">
+            <el-icon><Calendar /></el-icon>
+            <span>工作日历</span>
+          </el-menu-item>
+          <el-menu-item index="leave-job-mode">
+            <el-icon><User /></el-icon>
+            <span>假勤模式</span>
+          </el-menu-item>
+          <el-menu-item index="leave-type-dictionary">
+            <el-icon><List /></el-icon>
+            <span>假种字典</span>
+          </el-menu-item>
+          <el-menu-item index="leave-approval-rules">
+            <el-icon><Check /></el-icon>
+            <span>审核规则</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- 假勤重构 · 预设计 v2（工作模式方向）：与上组 v1 并存，专供对照 -->
+        <el-sub-menu index="leave-work-mode-pd">
+          <template #title>
+            <el-icon><Grid /></el-icon>
+            <span>工作模式 · 预设计</span>
+          </template>
+          <el-menu-item index="leave-wm-work-mode">
+            <el-icon><Grid /></el-icon>
+            <span>工作模式</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-scheme">
+            <el-icon><Collection /></el-icon>
+            <span>工作日方案</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-quota">
+            <el-icon><Coin /></el-icon>
+            <span>假期方案</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-attendance">
+            <el-icon><LocationInformation /></el-icon>
+            <span>考勤组</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-reference">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>引用总览</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-ledger">
+            <el-icon><Tickets /></el-icon>
+            <span>假期盘点</span>
+          </el-menu-item>
+          <el-menu-item index="leave-wm-consequence">
+            <el-icon><WarningFilled /></el-icon>
+            <span>请假后果</span>
           </el-menu-item>
         </el-sub-menu>
 
@@ -245,7 +318,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { users as mockUsers } from '../mock/data.js'
 import MultiLevelMenu from './MultiLevelMenu.vue'
@@ -272,9 +345,16 @@ import {
   UserFilled,
   Operation,
   Money,
+  Promotion,
   Setting,
   InfoFilled,
-  Wallet
+  Wallet,
+  Grid,
+  Collection,
+  LocationInformation,
+  DataAnalysis,
+  Tickets,
+  WarningFilled
 } from '@element-plus/icons-vue'
 
 // 员工福利保障菜单数据
@@ -355,6 +435,8 @@ const currentUser = ref(null)
 // 获取路由和路由实例
 const route = useRoute()
 const router = useRouter()
+
+watch(() => route.name, name => { activeMenu.value = name || 'welcome' }, { immediate: true })
 
 // 生命周期钩子
 onMounted(() => {

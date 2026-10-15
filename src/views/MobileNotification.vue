@@ -62,10 +62,10 @@
                 <span class="line-value">{{ item.desc }}</span>
               </div>
               <div class="item-line">
-                <span class="line-label">申请时间：</span>
+                <span class="line-label">{{ ['system_dispatch', 'task_publication'].includes(item.type) ? '通知时间：' : '申请时间：' }}</span>
                 <span class="line-value">{{ item.applyTime }}</span>
               </div>
-              <div class="item-line">
+              <div v-if="item.type !== 'system_dispatch' && item.status" class="item-line">
                 <span class="line-label">状 态：</span>
                 <span class="line-value status-pending">{{ item.status }}</span>
               </div>
@@ -238,6 +238,10 @@ import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Close, BellFilled, ArrowRight, Document, MoreFilled, VideoCameraFilled } from '@element-plus/icons-vue'
+import { notificationStore } from '../stores/notifications'
+import { syncScheduledPublication } from '../stores/parttimeTasks'
+
+syncScheduledPublication()
 
 const router = useRouter()
 
@@ -253,193 +257,8 @@ const tabs = [
 const searchKeyword = ref('')
 
 // ==================== 通知数据 ====================
-const notifications = reactive([
-  {
-    id: 1,
-    title: '计件提成确认通知',
-    desc: '您有一条计件提成确认需要查看',
-    applyTime: '2025-08-08 12:01:29',
-    displayDate: '08.08 12:01',
-    status: '待审核',
-    store: '弹子石老街店',
-    entity: '重庆弹子石推拿有限公司',
-    read: false,
-    processed: false,
-    done: false,
-    detail: {
-      pageTitle: '月度汇算',
-      period: '2025年07月(01-31日)计件提成',
-      income: {
-        title: '计件提成',
-        items: [
-          { label: '提成金额', value: '6435.12' }
-        ],
-        subtotal: '6435.12'
-      },
-      deduction: {
-        title: '扣缴',
-        items: [
-          { label: '代扣社保', value: '-269.14' },
-          { label: '投诉扣款', value: '-269.14' },
-          { label: '服务时间不足扣提成', value: '-269.14' },
-          { label: '负工资抵扣', value: '-269.14' }
-        ],
-        subtotal: '-538.28'
-      },
-      summary: {
-        title: '汇总',
-        items: [
-          { label: '发薪主体', value: '重庆弹子石推拿有限公司' },
-          { label: '收款人', value: '张小华' },
-          { label: '卡号', value: '12121121212121212121' },
-          { label: '开户行', value: '工商银行成都市高新区支行' },
-          { label: '应发合计', value: '5965.98', isBold: true },
-          { label: '应发合计', value: '5965.98', isBold: true },
-          { label: '付款状态', value: '- -' }
-        ]
-      },
-      confirms: [
-        '1.本人已核实，已阅读并确认无误，同意公司下发。',
-        '2.以上个人信息属于公司的高度保密资料，除自己本人以外，绝不允许本人对外泄露，本人严格遵照公司的信息的保密制度执行。'
-      ]
-    }
-  },
-  {
-    id: 2,
-    title: '加班工资确认通知',
-    desc: '您有一条加班工资确认需要查看',
-    applyTime: '2025-07-08 10:57:38',
-    displayDate: '07.08 10:57',
-    status: '待审核',
-    store: '成都印象城店',
-    entity: '成都印象城健康管理有限公司',
-    read: false,
-    processed: false,
-    done: false,
-    detail: {
-      pageTitle: '月度汇算',
-      period: '2025年07月(01-31日)加班工资',
-      income: {
-        title: '加班工资',
-        items: [
-          { label: '加班工资', value: '1435.12' }
-        ],
-        subtotal: '1435.12'
-      },
-      deduction: {
-        title: '扣缴',
-        items: [
-          { label: '代扣个税', value: '-239.14' },
-          { label: '负工资抵扣', value: '-30.00' }
-        ],
-        subtotal: '-269.14'
-      },
-      summary: {
-        title: '汇总',
-        items: [
-          { label: '发薪主体', value: '成都印象城健康管理有限公司' },
-          { label: '收款人', value: '张小华' },
-          { label: '卡号', value: '12121121212121212121' },
-          { label: '开户行', value: '工商银行成都市高新区支行' },
-          { label: '应发合计', value: '1055.98', isBold: true },
-          { label: '应发合计', value: '1055.98', isBold: true },
-          { label: '付款状态', value: '- -' }
-        ]
-      },
-      confirms: [
-        '1.本人已核实，已阅读并确认无误，同意公司下发。',
-        '2.以上个人信息属于公司的高度保密资料，除自己本人以外，绝不允许本人对外泄露，本人严格遵照公司的信息的保密制度执行。'
-      ]
-    }
-  },
-  {
-    id: 3,
-    title: '补贴确认通知',
-    desc: '您有一条补贴确认需要查看',
-    applyTime: '2025-06-25 15:07:24',
-    displayDate: '06.25 15:07',
-    status: '待审核',
-    store: '北城天街店',
-    entity: '重庆北城天街推拿有限公司',
-    read: true,
-    processed: false,
-    done: false,
-    detail: {
-      pageTitle: '月度汇算',
-      period: '2025年07月(01-31日)补贴',
-      income: {
-        title: '补贴',
-        items: [
-          { label: '超产值补贴金额', value: '1435.12' },
-          { label: '客户打赏', value: '1435.12' },
-          { label: '退单补贴', value: '1435.12' }
-        ],
-        subtotal: '1435.12'
-      },
-      deduction: {
-        title: '扣缴',
-        items: [
-          { label: '负工资抵扣', value: '-1269.14' }
-        ],
-        subtotal: '-1269.14'
-      },
-      summary: {
-        title: '汇总',
-        items: [
-          { label: '发薪主体', value: '重庆北城天街推拿有限公司' },
-          { label: '收款人', value: '张小华' },
-          { label: '卡号', value: '12121121212121212121' },
-          { label: '开户行', value: '工商银行成都市高新区支行' },
-          { label: '应发合计', value: '600.00', isBold: true },
-          { label: '应发合计', value: '600.00', isBold: true },
-          { label: '付款状态', value: '- -' }
-        ]
-      },
-      confirms: [
-        '1.本人已核实，已阅读并确认无误，同意公司下发。',
-        '2.以上个人信息属于公司的高度保密资料，除自己本人以外，绝不允许本人对外泄露，本人严格遵照公司的信息的保密制度执行。'
-      ]
-    }
-  },
-  {
-    id: 4,
-    title: '常乐豆兑换确认通知',
-    desc: '您有一条常乐豆兑换确认需要查看',
-    applyTime: '2025-06-25 15:07:24',
-    displayDate: '06.25 15:07',
-    status: '待审核',
-    store: '解放碑店',
-    entity: '重庆解放碑推拿有限公司',
-    read: true,
-    processed: false,
-    done: false,
-    detail: {
-      pageTitle: '常乐豆兑换',
-      period: '2025年06月常乐豆兑换记录',
-      exchange: {
-        title: '兑换明细',
-        items: [
-          { label: '兑换类型', value: '提现到银行卡' },
-          { label: '兑换数量', value: '200 颗' },
-          { label: '兑换比例', value: '1 颗 = 0.5 元' },
-          { label: '到账金额', value: '¥100.00' },
-          { label: '申请时间', value: '2025-06-25 15:07:24' },
-          { label: '到账时间', value: '预计 1-3 工作日' }
-        ]
-      },
-      summary: {
-        title: '汇总',
-        items: [
-          { label: '发薪主体', value: '重庆解放碑推拿有限公司' }
-        ]
-      },
-      confirms: [
-        '1.本人已核实，已阅读并确认无误，同意公司下发。',
-        '2.以上个人信息属于公司的高度保密资料，除自己本人以外，绝不允许本人对外泄露，本人严格遵照公司的信息的保密制度执行。'
-      ]
-    }
-  }
-])
+// 来源：共享通知 store。
+const notifications = notificationStore.list
 
 // 过滤
 const filteredNotifications = computed(() => {
@@ -470,6 +289,15 @@ const confirmChecked = ref([])
 const signature = ref('')
 const openDetail = (item) => {
   item.read = true
+  // 任务通知直接打开非全任务列表。
+  if (item.type === 'system_dispatch') {
+    router.push('/mobile-parttime-tasks')
+    return
+  }
+  if (item.type === 'task_publication') {
+    router.push({ path: '/mobile-parttime-tasks', query: { view: 'available' } })
+    return
+  }
   currentDetail.value = item
   // 重置确认状态
   confirmChecked.value = (item.detail.confirms || []).map(() => false)

@@ -1,7 +1,7 @@
 <template>
       <div id="welfare-data-source" class="section">
         <h2>二、福利数据来源（老系统）</h2>
-        <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 阶段1 关键裁剪：</strong>v2 完整版中独立的【员工福利保障】模块在 v2-1 阶段<strong>整体不开发</strong>。本节明确说明福利数据<strong>从哪来</strong>、<strong>不开发什么</strong>、<strong>商业险怎么处理</strong>。
         </div>
 
@@ -69,7 +69,7 @@
         </div>
 
         <!-- 2. 老系统接口契约 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>② 老系统接口契约（占位，待与老系统团队对齐）</h3>
           <table class="data-table">
             <thead>
@@ -111,7 +111,7 @@
         </div>
 
         <!-- 3. 商业险默认机制 -->
-        <div class="card" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning));">
+        <div class="card" style="background: hsl(var(--warning) / 0.05); border-left: 1px solid hsl(var(--warning));">
           <h3>③ 商业险默认机制</h3>
           <p>v2-1 阶段商业险<strong>不开发</strong>商业险库配置页、不做城市/险种选择、不做入职时选商业险流程。采取<strong>默认机制</strong>：</p>
           <table class="data-table">

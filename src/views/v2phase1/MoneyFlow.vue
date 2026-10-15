@@ -11,7 +11,7 @@
       <h2>十、金额流转泳道图</h2>
         <div class="card">
           <h3 id="money-1">月度金额流转全景（v2-1）</h3>
-          <div class="note" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning)); margin-bottom: 16px; font-size: 13px;">
+          <div class="note" style="background: hsl(var(--warning) / 0.05); border-left: 1px solid hsl(var(--warning)); margin-bottom: 16px; font-size: 13px;">
             <strong>v2-1 变化点：</strong>社保/公积金<strong>金额从老系统接口读取</strong>（图中用<strong>橙色</strong>标注），商业险<strong>暂不进入系统（线下购买）</strong>，<strong>无员工福利保障关系建立</strong>环节。
           </div>
           <div class="swimlane-container">

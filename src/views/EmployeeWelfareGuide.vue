@@ -1155,7 +1155,7 @@ const exportToPdf = async () => {
   background: hsl(var(--primary) / 0.08);
   padding: 12px 16px;
   border-radius: 4px;
-  border-left: 3px solid hsl(var(--primary));
+  border-left: 1px solid hsl(var(--primary));
 }
 
 .toc {
@@ -1351,7 +1351,7 @@ const exportToPdf = async () => {
 
 .note {
   background: hsl(var(--primary) / 0.08);
-  border-left: 3px solid hsl(var(--primary));
+  border-left: 1px solid hsl(var(--primary));
   padding: 12px 16px;
   border-radius: 0 4px 4px 0;
   font-size: 13px;

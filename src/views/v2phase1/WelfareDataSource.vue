@@ -9,7 +9,7 @@
   >
     <div id="welfare-data-source" class="section">
       <h2>二、福利数据来源（老系统）</h2>
-      <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+      <div class="note" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
         <strong>⚠️ 阶段1 关键裁剪：</strong>v2 完整版中独立的【员工福利保障】模块在 v2-1 阶段<strong>整体不开发</strong>。本节明确说明福利数据<strong>从哪来</strong>、<strong>不开发什么</strong>、<strong>商业险怎么处理</strong>。
       </div>
 
@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));" id="legacy-api">
+      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));" id="legacy-api">
         <h3>② 老系统接口契约（占位，待与老系统团队对齐）</h3>
         <table class="data-table">
           <thead>
@@ -113,7 +113,7 @@
         </table>
               </div>
 
-      <div class="card" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning));" id="commercial-insurance">
+      <div class="card" style="background: hsl(var(--warning) / 0.05); border-left: 1px solid hsl(var(--warning));" id="commercial-insurance">
         <h3>③ 商业险线下购买（暂不进入系统）</h3>
         <p>v2-1 阶段商业险<strong>暂不进入新系统</strong>，由<strong>线下</strong>完成购买，<strong>成本归公司</strong>。本系统不开发商业险库配置页、不做城市/险种选择、不做入职时选商业险流程、不显示在工资条/福利明细中。</p>
         <table class="data-table">

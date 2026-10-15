@@ -1,7 +1,7 @@
 <template>
       <div id="dynamic-items" class="section">
         <h2>四·附录：动态薪酬项 / 扣缴项（业务流转产生）</h2>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 与"模板固定项"的区别：</strong>上一节【岗位薪酬模板】列出的薪酬项 / 扣缴项是<strong>HR 预先在模板中配置</strong>的。本节列出的项是<strong>在业务执行/计算流转过程中，按条件动态产生</strong>的——<strong>不固定配置在模板中</strong>，而是<strong>触发式动态项</strong>。
         </div>
 

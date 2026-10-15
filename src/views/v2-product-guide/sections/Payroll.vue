@@ -207,7 +207,7 @@
         </div>
 
         <!-- 动态项在工资条上的位置速查 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>动态项在工资条上的位置速查</h3>
           <p>汇总上述示例涉及的<strong>触发式动态项</strong>在工资条中出现的位置与条件（与【四·附录：动态薪酬项】对应）：</p>
           <table class="data-table">

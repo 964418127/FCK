@@ -31,7 +31,7 @@
         <h2 class="login-title">XV 平台</h2>
         <p class="login-subtitle">数字化平台</p>
       </div>
-      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
+      <el-form :model="loginForm" :rules="loginRules" class="login-form">
         <el-form-item prop="username">
           <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" />
         </el-form-item>

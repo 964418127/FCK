@@ -9,7 +9,7 @@
   >
     <div id="supplementary" class="section">
       <h2>十一、补充需求</h2>
-      <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
+      <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
         <strong>本章定位：</strong>v2-1 阶段在主体功能（章节一~十）定稿后新增的补丁需求，包含<strong>模块化薪酬重算与测试</strong>、<strong>离职员工常乐豆相关文案与定时任务</strong>两类调整。
       </div>
 
@@ -75,7 +75,7 @@
           </tbody>
         </table>
 
-        <div class="note" style="background: hsl(var(--warning) / 0.05); border-left: 3px solid hsl(var(--warning)); margin-top: 12px; font-size: 13px;">
+        <div class="note" style="background: hsl(var(--warning) / 0.05); border-left: 1px solid hsl(var(--warning)); margin-top: 12px; font-size: 13px;">
           <strong>关键：</strong>模块化薪酬的<strong>合作主体维度</strong>贯穿重算、计算、报税、发放全链路——<strong>1 员工跨 N 门店 = N 个独立计算 / 申报 / 发放单位</strong>，测试用例必须<strong>按主体拆分</strong>断言，<strong>不可</strong>用合并后的总金额反推主体间分配正确性。
         </div>
       </div>
@@ -118,7 +118,7 @@
           </tbody>
         </table>
 
-        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-top: 12px; font-size: 13px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-top: 12px; font-size: 13px;">
           <strong>实施要点：</strong><br/>
           · <strong>a 项（文案）</strong>涉及短信模板配置 + 通话话术手册，<strong>仅修改模板 / 话术</strong>，不动系统逻辑<br/>
           · <strong>b 项（定时任务）</strong>需在定时任务调度逻辑中<strong>增加「员工在职状态」过滤条件</strong>，任务执行时<strong>排除离职员工</strong>；建议同时<strong>记录过滤日志</strong>（被过滤的员工数 / 员工编号），便于审计追溯<br/>

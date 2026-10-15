@@ -15,7 +15,7 @@
         <p style="font-size: 13px; line-height: 1.8;">
           本模块作为<strong>HR 人事模块</strong>与<strong>薪酬计算模块</strong>之间的桥梁（中间产物即本模块维护的【人员薪酬规划】）：HR 人事模块按日把人员任职变动（入职 / 续约 / 换签主体 / 换合作方式 / 换岗位 / 离职）汇入本模块，本模块负责把"任职事实"翻译为"薪酬规划"，让薪酬计算能拿到正确的人员 × 模板 × 时间区间挂接关系。
         </p>
-        <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>📌 核心定位</strong>：本模块不重新发明 HR 人事模块，也不维护人员基础信息；只消费 HR 异动结论 + 协调薪酬专员补全新关系的薪酬模板，最终输出可被薪酬计算模块直接消费的【人员薪酬规划】数据。
         </div>
       </div>
@@ -307,7 +307,7 @@
 
         <h4 style="margin-top: 16px; font-size: 14px;">场景 B：换签主体（主体变更，门店可能变）</h4>
         <p style="font-size: 13px; line-height: 1.7;">如某人从「主体 A 上海徐汇店」换到「主体 B 深圳南山店」。自动步按 HR 报告的"原主体门店"匹配本系统的旧任职段，新关系则按 HR 报告的"新主体门店"继承。</p>
-        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 已知风险</strong>：HR 人事模块记录的"原主体门店"与本系统规划里旧任职段的门店不一致时，自动步会找不到匹配项。生产环境必须<strong>提前</strong>保证 HR / 规划两边"门店"字段同步，否则需要走数据修复流程。
         </div>
 

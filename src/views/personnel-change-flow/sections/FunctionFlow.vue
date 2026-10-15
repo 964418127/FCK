@@ -12,7 +12,7 @@
 
       <div class="card" id="end-to-end">
         <h3>1. 端到端数据流</h3>
-        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
           <strong>全链路总览：</strong>HR 人事模块按日汇入异动结论 → 本系统异动列表 → <strong>自动步</strong>截尾旧记录 → <strong>手动步</strong>确认新关系挂模板 → 写入【人员薪酬规划】→ 作为后续薪酬计算的输入
         </div>
 
@@ -160,7 +160,7 @@
         <p style="font-size: 13px; line-height: 1.7;">找到匹配的"在任"任职段后，把它的失效时间从"在任"标记改为 HR 报告的旧关系结束时间。UI 上展示：原"至今"变更为具体日期。</p>
 
         <h4 style="margin-top: 12px; font-size: 14px;">不变量与异常处理</h4>
-        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 业务不变量</strong>：HR 报过来的<strong>非入职</strong>异动必能在规划里找到对应<strong>在任</strong>旧记录。出现未匹配属数据不一致边界态。
           <strong>UI 兜底</strong>：始终显示「✓ 已写入」绿色 tag，不暴露给业务用户。
           <strong>排查线索</strong>：控制台告警输出该异动的唯一标识、人员姓名、旧任职五要素 + 旧结束时间，由开发者定位 HR / 规划两边数据脱钩问题。
@@ -185,7 +185,7 @@
 
         <h4 style="margin-top: 12px; font-size: 14px;">触发时机</h4>
         <p style="font-size: 13px; line-height: 1.7;">薪酬专员在「Tab 2 新关系确认」选中行内模板下拉框，点击行尾「确认」按钮；或勾选多行后点击顶部「批量确认」按钮。</p>
-        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 手动步只负责写新任职段</strong>。旧关系的截尾已在自动步处理，手动步不会再触发；旧关系和新任职段是<strong>两个独立动作</strong>，不是一条流程的两段。
         </div>
 
@@ -251,7 +251,7 @@
         </ul>
 
         <h4 style="margin-top: 16px; font-size: 14px;">批量确认约束</h4>
-        <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 强制约束</strong>：选中行的<strong>新岗位必须一致</strong>才允许批量确认。原因：不同岗位对应不同模板体系（客户经理 / 推拿师 / 调理师 各有独立模板池），混批没有意义。如不一致，弹窗提示并拒掉。此外，任一行未选模板也拒掉执行。
         </div>
 

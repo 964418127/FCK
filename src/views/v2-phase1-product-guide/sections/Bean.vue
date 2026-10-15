@@ -72,7 +72,7 @@
           </div>
         </div>
 
-        <div class="callout" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>💡 v2-1 阶段变化点：</strong>常乐豆使用规则在 v2-1 阶段<strong>做了关键简化</strong>——从原 4 步优先级（公司部分 → 个人部分 → 现金补扣【公积金个人扣款】 → 消费）<strong>简化为 1 步</strong>：<strong>只抵扣公积金公司部分</strong>。<strong>【公积金个人扣款】动态项随之取消</strong>，员工个人部分由<strong>足额自行交纳</strong>（工资条上保留「代扣公积金」项）。
         </div>
       </div>

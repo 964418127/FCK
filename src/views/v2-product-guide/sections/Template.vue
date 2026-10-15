@@ -1,7 +1,7 @@
 <template>
       <div id="template" class="section">
         <h2>四、岗位薪酬模板</h2>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 职责边界：</strong>岗位薪酬模板<strong>只管工资条项</strong>（薪酬项 + 扣缴项 + 系统项）。福利保障项（社保 / 公积金 / 商业险）已<strong>拆出</strong>到独立的【岗位福利保障】页面维护，<strong>不配置在薪酬模板中</strong>。
         </div>
 

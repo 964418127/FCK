@@ -12,7 +12,7 @@
         <!-- 核心流程（9 步全链路） -->
         <div class="card architecture-card">
           <h2>核心流程（端到端全链路）</h2>
-          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
+          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
             <strong>宏观全链路：</strong>1.<s>定义岗位</s> <strong>本阶段跳过（走老系统）</strong> → 2.配置岗位薪酬模板 → 3.发放策略配置 → 4.<s>招聘入职</s> <strong>本阶段跳过（走老系统）</strong> → 5.<s>员工福利保障关系建立</s> <strong>本阶段跳过</strong> → 6.薪酬计算 → 7.<s>员工福利保障月度明细生成</s> <strong>改从老系统接口读取 + 升级计算（公积金抵扣 / 多主体报税）</strong> → 8.工资条生成 → 9.工资发放（<strong>通知确认 → 付款单 → 银行打款</strong>）<br/>
             <strong>阶段划分：</strong>① 配置阶段（步骤 2-3，HR 配置规则） ② 触发阶段（步骤 1、4、5 全部走老系统） ③ 执行阶段（步骤 6-9，每结算周期：计算收入 → 老系统读取<strong>社保</strong> + 升级计算<strong>公积金抵扣（全职）</strong> / <strong>多主体倒序报税（非全日制/兼职）</strong> → 生成工资条 → <strong>通知确认 + 付款单 + 发放</strong>）
           </div>
@@ -100,13 +100,13 @@
             <div class="arch-layer">
               <div class="arch-layer-title">6. 薪酬计算 <span style="font-size: 12px; font-weight: 400; color: hsl(var(--muted-foreground));">— 计算应发收入（代扣金额在 step 7 读取老系统）</span></div>
               <div style="font-size: 13px; line-height: 1.8; text-align: left;">
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第1级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 基础收入/扣缴：</span>计件提成、超产值奖金、超时加班费、投诉扣款
                 </div>
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第2级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 补充项，依赖第1级：</span>保底获豆（全职）｜个税预扣（非全日制/兼职，每条 3%）
                 </div>
-                <div style="padding: 6px 10px; border-left: 3px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
+                <div style="padding: 6px 10px; border-left: 1px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
                   <span style="font-weight: 700; color: hsl(var(--primary));">输出：</span>当月<strong>应发收入合计</strong>确定 → 触发 step 7 读取老系统代扣金额<br/>
                   <span style="font-size: 12px; color: hsl(var(--muted-foreground));">注：代扣金额（社保/公积金/个税）在 step 7 确定，step 6 仅算应发收入</span>
                 </div>

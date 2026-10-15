@@ -100,13 +100,6 @@
             <div class="grid-title">非全日制薪酬看板2</div>
           </div>
 
-          <div class="grid-item" @click="goToAccountManagerSalaryDashboard">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">客户经理薪酬看板</div>
-          </div>
-
           <div class="grid-item" @click="goToBeanAccount">
             <div class="grid-icon">
               <el-icon><Coin /></el-icon>
@@ -131,6 +124,37 @@
         </div>
       </div>
 
+      <!-- 客户经理分组 -->
+      <div class="menu-group">
+        <div class="group-title">客户经理</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="goToAccountManagerSalaryDashboard">
+            <div class="grid-icon">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="grid-title">客户经理薪酬看板</div>
+          </div>
+          <div class="grid-item" @click="goToAccountManagerAttendance">
+            <div class="grid-icon">
+              <el-icon><Clock /></el-icon>
+            </div>
+            <div class="grid-title">客户经理考勤</div>
+          </div>
+          <div class="grid-item" @click="goToParttimeTasks">
+            <div class="grid-icon">
+              <el-icon><List /></el-icon>
+            </div>
+            <div class="grid-title">非全任务列表</div>
+          </div>
+          <div class="grid-item" @click="goToParttimeAccountManagerAttendance">
+            <div class="grid-icon">
+              <el-icon><Position /></el-icon>
+            </div>
+            <div class="grid-title">非全客户经理打卡</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 总部岗位分组 -->
       <div class="menu-group">
         <div class="group-title">总部岗位</div>
@@ -140,6 +164,19 @@
               <el-icon><Wallet /></el-icon>
             </div>
             <div class="grid-title">个人报销</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 请假模块 · 预设计分组 -->
+      <div class="menu-group">
+        <div class="group-title">请假模块 · 预设计</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="goToLeavePd">
+            <div class="grid-icon">
+              <el-icon><Calendar /></el-icon>
+            </div>
+            <div class="grid-title">请假</div>
           </div>
         </div>
       </div>
@@ -157,7 +194,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin, Wallet, Document } from '@element-plus/icons-vue'
+import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin, Wallet, Document, Clock, Position, List } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 
 const router = useRouter()
@@ -204,6 +241,18 @@ const goToAccountManagerSalaryDashboard = () => {
   router.push('/mobile-account-manager-salary-dashboard')
 }
 
+const goToAccountManagerAttendance = () => {
+  router.push('/mobile-account-manager-attendance')
+}
+
+const goToParttimeTasks = () => {
+  router.push('/mobile-parttime-tasks')
+}
+
+const goToParttimeAccountManagerAttendance = () => {
+  router.push('/mobile-account-manager-attendance?mode=parttime')
+}
+
 const goToBeanAccount = () => {
   router.push('/mobile-bean-account')
 }
@@ -218,6 +267,10 @@ const goToNotification = () => {
 
 const goToReimbursement = () => {
   router.push('/mobile-reimbursement-list')
+}
+
+const goToLeavePd = () => {
+  router.push({ name: 'mobile-leave-pd' })
 }
 
 const handleLogout = () => {

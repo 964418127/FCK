@@ -70,7 +70,7 @@
         </tbody>
       </table>
 
-      <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 12px; font-size: 13px; border-radius: 4px;">
+      <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 12px; font-size: 13px; border-radius: 4px;">
         <strong>📌 模块定位</strong><br/>
         本模块是<strong>「HR 异动事实」</strong>和<strong>「薪酬计算输入」</strong>之间的桥梁：HR 报过来的任何人员任职变动，必须在本系统里完成<strong>新关系挂模板</strong>一步后，才能进入【人员薪酬规划】驱动后续薪酬计算。<strong>非入职</strong>类型还需先走【旧关系截尾】；<strong>入职</strong>类型无旧关系可截尾，跳过此步
       </div>
@@ -118,7 +118,7 @@
     <!-- 与 HR 人事模块边界 -->
     <div id="boundary" class="section">
       <h3>与 HR 人事模块的边界</h3>
-      <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
+      <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; font-size: 13px; border-radius: 4px;">
         <strong>⚠️ 本模块不重新发明 HR</strong><br/>
         人员任职事实的主数据在<strong>HR 人事模块</strong>（招聘入职、离职、换签、换合作方式等人事流程都在那边完成）。本模块只<strong>消费</strong> HR 按日汇入的异动结论，不反向写回 HR，不维护人员基础信息。
       </div>
@@ -169,7 +169,7 @@
         </tbody>
       </table>
 
-      <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 12px; font-size: 13px; border-radius: 4px;">
+      <div class="callout" style="background: hsl(var(--primary) / 0.06); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-top: 12px; font-size: 13px; border-radius: 4px;">
         <strong>📌 唯一翻译层</strong><br/>
         本流程是「HR 异动事实」→「薪酬计算输入」之间<strong>唯一的翻译层</strong>。其他模块看到的「员工当前在任的岗位 / 主体 / 合作方式 / 模板 / 有效期」五要素，<strong>必须</strong>来自【人员薪酬规划】，不能从其他地方读取。
       </div>

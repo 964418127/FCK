@@ -544,7 +544,7 @@ onMounted(() => {
   gap: 12px;
   padding: 12px 16px;
   background: hsl(var(--warning) / 0.1);
-  border-left: 3px solid hsl(var(--warning));
+  border-left: 1px solid hsl(var(--warning));
   border-radius: 4px;
   margin-bottom: 16px;
 }

@@ -79,7 +79,7 @@
         </tbody>
       </table>
 
-      <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+      <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
         <strong>⚠️ 全局说明：1 门店 = 1 主体</strong><br/>
         <strong>① 门店与主体的对应关系：</strong>1 门店 = 1 主体，主体为门店对应的法人单位<br/>
         <strong>② 全职 / 返聘：</strong>1 个合同主体 = 入职门店（不允许挂店）。若隐瞒挂店事实则薪酬计算时统计该员工全部门店业绩，但发薪时仅使用主服务门店的主体<br/>
@@ -229,7 +229,7 @@
       </div>
       <p>本节给出 v2-1 系统中"应税收入"的<strong>正式公式与边界规则</strong>，作为工资条、个税计算、汇算等所有环节的口径基准。</p>
 
-      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
         <h3>① 公式（per record / per payslip）</h3>
         <p style="font-size: 18px; font-weight: 600; color: hsl(var(--primary)); margin: 8px 0;">
           应税收入 = 第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）
@@ -290,7 +290,7 @@
             </tr>
           </tbody>
         </table>
-        <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning));">
+        <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning));">
           <strong>⚠ 重点：为什么"个税预扣"和"社保/公积金"都不能进应税收入？</strong><br/>
           · <strong>预扣（个税）：</strong>是<strong>真正的个税</strong>（税基 = 应税收入，税 = 预扣金额），仅用于月末个税汇算；预扣所在工资条已发放，不可回溯<br/>
           · <strong>社保/公积金个人部分：</strong>个税申报时<strong>不需要传</strong>，税局会在税基计算中<strong>自动减除</strong>，所以也不进入应税收入公式<br/>
@@ -342,7 +342,7 @@
         </table>
       </div>
 
-      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+      <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
         <h3>⑥ 常乐豆与公积金 / 工资单的关系（关键认知）</h3>
         <p>常乐豆<strong>仅全职</strong>享有，<strong>优先抵扣公积金公司部分</strong>，<strong>剩余可继续抵扣公积金个人部分</strong>（不足部分由员工现金补差），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>常乐豆本身不计入应税收入</strong>。公积金<strong>个人部分</strong>在工资条上按<strong>全额</strong>显示，金额由<strong>老系统接口读取</strong>；当常乐豆代缴了部分个人公积金时，公司会以<strong>「激励补贴」或类似名义</strong>在<strong>第 1 个工资条</strong>中增加等额收入，<strong>该「激励补贴」计入应税收入</strong>（作为 1 级收入项）。</p>
         <table class="data-table">
@@ -372,7 +372,7 @@
             </tr>
           </tbody>
         </table>
-        <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning)); margin-top: 8px;">
+        <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning)); margin-top: 8px;">
           <strong>⚠ 关键：</strong>① 常乐豆<strong>本身</strong>不计入应税收入；② 当常乐豆代缴公积金个人部分时，<strong>「激励补贴」名义等额收入计入应税收入</strong>——本质是公司替员工承担的公积金个人部分，属于员工的隐性收入，应当计入应税基数；③ 工资条上「代扣公积金」<strong>始终按全额显示</strong>，与常乐豆无关；④ <strong>「激励补贴」默认进第 1 个工资条</strong>，便于与「代扣公积金」在同一工资条中体现。
         </div>
       </div>

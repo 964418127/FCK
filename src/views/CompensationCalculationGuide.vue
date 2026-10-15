@@ -140,22 +140,22 @@
             <div class="arch-layer">
               <div class="arch-layer-title">3. 计算节点（按层级顺序）</div>
               <div style="font-size: 14px; line-height: 2; text-align: left;">
-                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700; color: hsl(var(--foreground));">第1级计算</span>
                   <span style="color: hsl(var(--muted-foreground)); font-size: 13px;"> — 基础收入/扣缴，每工资条计算</span>
                   <div style="margin-top: 4px; font-size: 13px;">计件提成、超产值奖金、超时加班费、投诉扣款</div>
                 </div>
-                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700; color: hsl(var(--foreground));">第2级计算</span>
                   <span style="color: hsl(var(--muted-foreground)); font-size: 13px;"> — 补充收入项，依赖第1级</span>
                   <div style="margin-top: 4px; font-size: 13px;">保底获豆（全职）</div>
                 </div>
-                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 3px solid hsl(var(--muted-foreground));">
+                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 1px solid hsl(var(--muted-foreground));">
                   <span style="font-weight: 700; color: hsl(var(--foreground));">系统项</span>
                   <span style="color: hsl(var(--muted-foreground)); font-size: 13px;"> — 第1/2级计算完成后执行，每月只计算一次</span>
                   <div style="margin-top: 4px; font-size: 13px;">代扣社保、代扣公积金、代扣个税、<strong>个税预扣</strong>（兼职）</div>
                 </div>
-                <div style="padding-left: 12px; border-left: 3px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; padding: 8px 12px;">
+                <div style="padding-left: 12px; border-left: 1px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; padding: 8px 12px;">
                   <span style="font-weight: 700; color: hsl(var(--primary));">条件触发（计算后加入工资条）</span>
                   <div style="font-size: 13px; margin-top: 4px;">
                     <span style="color: hsl(var(--foreground);">代扣个税</span>

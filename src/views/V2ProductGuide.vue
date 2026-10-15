@@ -119,7 +119,7 @@
           </tbody>
         </table>
 
-        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 3px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
+        <div class="callout" style="background: hsl(var(--warning) / 0.08); border-left: 1px solid hsl(var(--warning)); padding: 10px 12px; margin-top: 8px; font-size: 13px; border-radius: 4px;">
           <strong>⚠️ 全局说明：1 门店 = 1 主体</strong>——全职/返聘 1 个合同主体 = 入职门店（不能挂店）；非全日制/兼职 可在 N 个门店服务 → 归属 N 个主体（按门店分别结算、申报个税、发放工资）。
         </div>
 
@@ -284,7 +284,7 @@
         <p>本节给出 V2 系统中"应税收入"的<strong>正式公式与边界规则</strong>，作为工资条、个税计算、汇算等所有环节的口径基准。</p>
 
         <!-- 1. 公式 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>① 公式（per record / per payslip）</h3>
           <p style="font-size: 18px; font-weight: 600; color: hsl(var(--primary)); margin: 8px 0;">
             应税收入 = 第1级收入 + 第2级收入 - 第1级扣款 - 第2级扣款（非预扣）
@@ -347,7 +347,7 @@
               </tr>
             </tbody>
           </table>
-          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning));">
+          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning));">
             <strong>⚠ 重点：为什么"个税预扣"和"社保/公积金"都不能进应税收入？</strong><br/>
             · <strong>预扣（个税）：</strong>是<strong>真正的个税</strong>（税基 = 应税收入，税 = 预扣金额），仅用于月末个税汇算；预扣所在工资条已发放，不可回溯<br/>
             · <strong>社保/公积金个人部分：</strong>个税申报时<strong>不需要传</strong>，税局会在税基计算中<strong>自动减除</strong>，所以也不进入应税收入公式<br/>
@@ -402,7 +402,7 @@
         </div>
 
         <!-- 6. 常乐豆与公积金的认知补充 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>⑥ 常乐豆与公积金 / 工资单的关系（关键认知）</h3>
           <p>常乐豆<strong>仅全职</strong>享有，<strong>只用于抵扣公积金</strong>（公司部分 / 个人部分），<strong>不抵扣社保、不抵扣商业险</strong>。<strong>不计入应税收入</strong>。当常乐豆余额不足以抵扣公积金<strong>个人部分</strong>时，需要从对应<strong>工资单现金</strong>中补扣，扣款项的<strong>固定名称</strong>为【<strong>公积金个人扣款</strong>】。</p>
           <table class="data-table">
@@ -437,7 +437,7 @@
               </tr>
             </tbody>
           </table>
-          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 3px solid hsl(var(--warning)); margin-top: 8px;">
+          <div class="note" style="background: hsl(var(--warning) / 0.1); border-left: 1px solid hsl(var(--warning)); margin-top: 8px;">
             <strong>⚠ 关键：</strong>【公积金个人扣款】<strong>仅是工资单上的一个固定名称扣缴项</strong>，其本质与"代扣公积金个人部分"等同——都属于"个税申报时税局自动减除"项，<strong>不进入应税收入公式</strong>。换言之：<strong>应税收入公式不受常乐豆抵扣行为影响</strong>，常乐豆只是改变"工资单的现金流出方向"（且只针对公积金）。
           </div>
         </div>
@@ -450,7 +450,7 @@
         <!-- 核心流程（8 步全链路：配置→入职→关系建立→计算→福利明细→发放） -->
         <div class="card architecture-card">
           <h2>核心流程（端到端全链路）</h2>
-          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
+          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
             <strong>宏观全链路：</strong>1.定义岗位 → 2.配置岗位薪酬模板 → 3.发放策略配置 → 4.招聘入职 → 5.员工福利保障<strong>关系建立</strong> → 6.薪酬计算 → 7.员工福利保障<strong>月度明细生成 + 代扣金额确定</strong> → 8.工资条生成<br/>
             <strong>阶段划分：</strong>① 配置阶段（步骤 1-3，HR 配置规则） ② 触发阶段（步骤 4-5，入职建立员工福利关系，<strong>无月度数据</strong>） ③ 执行阶段（步骤 6-8，每结算周期：计算收入 → 生成福利明细 → 发放）
           </div>
@@ -546,13 +546,13 @@
             <div class="arch-layer">
               <div class="arch-layer-title">6. 薪酬计算 <span style="font-size: 12px; font-weight: 400; color: hsl(var(--muted-foreground));">— 计算应发收入（代扣金额在 step 7 确定）</span></div>
               <div style="font-size: 13px; line-height: 1.8; text-align: left;">
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第1级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 基础收入/扣缴：</span>计件提成、超产值奖金、超时加班费、投诉扣款
                 </div>
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第2级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 补充项，依赖第1级：</span>保底获豆（全职）｜个税预扣（非全日制/兼职，每条 3%）
                 </div>
-                <div style="padding: 6px 10px; border-left: 3px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
+                <div style="padding: 6px 10px; border-left: 1px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
                   <span style="font-weight: 700; color: hsl(var(--primary));">输出：</span>当月<strong>应发收入合计</strong>确定 → 触发 step 7 福利明细动态生成<br/>
                   <span style="font-size: 12px; color: hsl(var(--muted-foreground));">注：代扣金额（社保/公积金/个税）在 step 7 确定，数据来源各异（福利明细 / 系统公式 / 百旺服务），step 6 仅算应发收入</span>
                 </div>
@@ -1429,7 +1429,7 @@
       <!-- 四、岗位薪酬模板 -->
       <div id="template" class="section">
         <h2>四、岗位薪酬模板</h2>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 职责边界：</strong>岗位薪酬模板<strong>只管工资条项</strong>（薪酬项 + 扣缴项 + 系统项）。福利保障项（社保 / 公积金 / 商业险）已<strong>拆出</strong>到独立的【岗位福利保障】页面维护，<strong>不配置在薪酬模板中</strong>。
         </div>
 
@@ -1702,7 +1702,7 @@
       <!-- 四·附录：动态薪酬项 / 扣缴项（业务流转产生，非模板固定配置） -->
       <div id="dynamic-items" class="section">
         <h2>四·附录：动态薪酬项 / 扣缴项（业务流转产生）</h2>
-        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
+        <div class="note" style="background: hsl(var(--primary) / 0.08); border-left: 1px solid hsl(var(--primary)); padding: 10px 12px; margin-bottom: 12px; font-size: 13px; border-radius: 4px;">
           <strong>📌 与"模板固定项"的区别：</strong>上一节【岗位薪酬模板】列出的薪酬项 / 扣缴项是<strong>HR 预先在模板中配置</strong>的。本节列出的项是<strong>在业务执行/计算流转过程中，按条件动态产生</strong>的——<strong>不固定配置在模板中</strong>，而是<strong>触发式动态项</strong>。
         </div>
 
@@ -2846,7 +2846,7 @@
         </div>
 
         <!-- 动态项在工资条上的位置速查 -->
-        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary));">
+        <div class="card" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary));">
           <h3>动态项在工资条上的位置速查</h3>
           <p>汇总上述示例涉及的<strong>触发式动态项</strong>在工资条中出现的位置与条件（与【四·附录：动态薪酬项】对应）：</p>
           <table class="data-table">

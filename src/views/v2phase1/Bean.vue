@@ -63,7 +63,7 @@
             <li><strong>消费 / 提现</strong>：剩余可消费；<strong>离职时全额提现</strong></li>
           </ol>
           <strong style="display: block; margin-top: 8px;">⚠ 重要：</strong>工资条「代扣公积金」<strong>始终按全额显示</strong>（由老系统接口读取），与常乐豆无关。<strong>员工现金补差 = 全额 - 常乐豆代缴金额</strong>。
-          <div style="margin-top: 12px; padding: 10px 12px; background: hsl(var(--muted) / 0.3); border-left: 3px solid hsl(var(--primary)); border-radius: 4px; font-size: 13px;">
+          <div style="margin-top: 12px; padding: 10px 12px; background: hsl(var(--muted) / 0.3); border-left: 1px solid hsl(var(--primary)); border-radius: 4px; font-size: 13px;">
             <strong>📌 边界场景：</strong>常乐豆账户存在<strong>剩余未消费豆</strong>，<strong>次月</strong>常乐豆<strong>不足抵扣公积金</strong>时，是否可以使用这笔豆？<br/>
             <strong>答：【不允许】</strong>——常乐豆<strong>不得跨月使用</strong>，仅可抵扣<strong>当月</strong>公积金。
           </div>

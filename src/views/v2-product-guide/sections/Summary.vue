@@ -5,7 +5,7 @@
         <!-- 核心流程（8 步全链路：配置→入职→关系建立→计算→福利明细→发放） -->
         <div class="card architecture-card">
           <h2>核心流程（端到端全链路）</h2>
-          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
+          <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 16px; font-size: 13px;">
             <strong>宏观全链路：</strong>1.定义岗位 → 2.配置岗位薪酬模板 → 3.发放策略配置 → 4.招聘入职 → 5.员工福利保障<strong>关系建立</strong> → 6.薪酬计算 → 7.员工福利保障<strong>月度明细生成 + 代扣金额确定</strong> → 8.工资条生成<br/>
             <strong>阶段划分：</strong>① 配置阶段（步骤 1-3，HR 配置规则） ② 触发阶段（步骤 4-5，入职建立员工福利关系，<strong>无月度数据</strong>） ③ 执行阶段（步骤 6-8，每结算周期：计算收入 → 生成福利明细 → 发放）
           </div>
@@ -101,13 +101,13 @@
             <div class="arch-layer">
               <div class="arch-layer-title">6. 薪酬计算 <span style="font-size: 12px; font-weight: 400; color: hsl(var(--muted-foreground));">— 计算应发收入（代扣金额在 step 7 确定）</span></div>
               <div style="font-size: 13px; line-height: 1.8; text-align: left;">
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第1级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 基础收入/扣缴：</span>计件提成、超产值奖金、超时加班费、投诉扣款
                 </div>
-                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 3px solid hsl(var(--primary));">
+                <div style="margin-bottom: 6px; padding-left: 10px; border-left: 1px solid hsl(var(--primary));">
                   <span style="font-weight: 700;">第2级</span> <span style="font-size: 12px; color: hsl(var(--muted-foreground));">— 补充项，依赖第1级：</span>保底获豆（全职）｜个税预扣（非全日制/兼职，每条 3%）
                 </div>
-                <div style="padding: 6px 10px; border-left: 3px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
+                <div style="padding: 6px 10px; border-left: 1px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.05); border-radius: 4px; font-size: 13px;">
                   <span style="font-weight: 700; color: hsl(var(--primary));">输出：</span>当月<strong>应发收入合计</strong>确定 → 触发 step 7 福利明细动态生成<br/>
                   <span style="font-size: 12px; color: hsl(var(--muted-foreground));">注：代扣金额（社保/公积金/个税）在 step 7 确定，数据来源各异（福利明细 / 系统公式 / 百旺服务），step 6 仅算应发收入</span>
                 </div>
