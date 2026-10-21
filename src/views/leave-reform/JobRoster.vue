@@ -2,7 +2,7 @@
   <div class="job-roster">
     <div class="page-header">
       <div class="header-main">
-        <h1>岗位台账</h1>
+        <h1>岗位列表</h1>
         <el-tag type="info" effect="plain" size="small">只读 · 引用</el-tag>
       </div>
       <p class="tip">
@@ -12,7 +12,7 @@
 
     <div class="section-card">
       <div class="card-header">
-        <span class="card-title">岗位列表</span>
+        <span class="card-title">全部岗位</span>
         <span class="card-sub">共 {{ jobs.length }} 个岗位 · {{ totalHeadcount }} 人</span>
         <div class="header-actions">
           <el-radio-group v-model="orgFilter" size="small">
@@ -41,6 +41,12 @@
         <el-table-column label="所属组织" width="160">
           <template #default="{ row }">
             <span class="org-text">{{ orgName(row.name) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="在册人数" width="110" align="right">
+          <template #default="{ row }">
+            <span class="org-text">{{ row.headcount ?? '—' }}</span>
           </template>
         </el-table-column>
       </el-table>

@@ -28,3 +28,6 @@ dist-ssr
 
 # 本地临时截图等
 .tmp/
+
+# 菜单门控（gate）运行期状态，本机共享配置，不入库
+.gate-state.json

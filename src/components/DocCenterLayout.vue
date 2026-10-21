@@ -16,7 +16,7 @@
         </el-icon>
       </div>
       <nav class="sidebar-nav">
-        <MultiLevelMenu :menu-data="docMenu" :is-collapsed="isCollapsed" />
+        <MultiLevelMenu :menu-data="visibleDocMenu" :is-collapsed="isCollapsed" />
       </nav>
     </aside>
 
@@ -28,14 +28,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import MultiLevelMenu from './MultiLevelMenu.vue'
 import { Fold, Expand, Back } from '@element-plus/icons-vue'
 import { docMenu } from '../docs/menu.js'
+import { filterMenuTree } from '../composables/useGateConfig.js'
 
 const router = useRouter()
 const isCollapsed = ref(false)
+
+// 文档中心自己的左侧章节导航也要受「菜单配置」控制（/gate 的「文档中心」页签）
+const visibleDocMenu = computed(() => filterMenuTree(docMenu))
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value

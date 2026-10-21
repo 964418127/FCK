@@ -3,7 +3,6 @@
     <div class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>休假记录</h1>
-      <span class="pd-tag">预设计</span>
     </div>
 
     <div class="content">
@@ -32,7 +31,6 @@
           <div class="rec-top">
             <div class="rec-left">
               <span class="rec-type">{{ r.typeName }}</span>
-              <span class="rec-channel">{{ r.channel }}</span>
             </div>
             <span :class="['st', r.status]">{{ statusLabel(r.status) }}</span>
           </div>
@@ -66,7 +64,6 @@
         <div class="detail-rows">
           <div class="d-row"><span class="d-key">休假日期</span><span class="d-val">{{ current.date }}{{ current.dateEnd ? ' ~ ' + current.dateEnd : '' }}</span></div>
           <div class="d-row"><span class="d-key">时长</span><span class="d-val">{{ durationText(current) }}</span></div>
-          <div class="d-row"><span class="d-key">扣减渠道</span><span class="d-val">{{ current.channel }}</span></div>
           <div class="d-row"><span class="d-key">提交时间</span><span class="d-val">{{ current.submittedAt }}</span></div>
         </div>
 
@@ -78,6 +75,20 @@
               {{ d.schemeName.split(' · ')[0] }} {{ d.amount }}{{ d.unit }}<i v-if="d.note" class="tag-note">{{ d.note }}</i>
             </span>
           </template>
+        </div>
+
+        <div class="detail-sec">审批流转</div>
+        <div class="flow-list">
+          <div v-for="(n, i) in flow" :key="i" class="flow-node">
+            <span class="flow-dot" :class="n.status"></span>
+            <div class="flow-main">
+              <div class="flow-head">
+                <span class="flow-title">{{ n.people.join('、') }}</span>
+                <span :class="['flow-st', n.status]">{{ flowLabel(n.status) }}</span>
+              </div>
+              <i v-if="n.mode === 'any'" class="flow-mode">同节点多人 · 任一人处理</i>
+            </div>
+          </div>
         </div>
 
         <div v-if="current.rejectReason" class="reject-box">拒绝原因：{{ current.rejectReason }}</div>
@@ -100,6 +111,7 @@ import {
   recordsOf,
   statusLabel,
   recordStatusOptions,
+  approvalFlowOf,
   setCurrentEmpId
 } from '../../mock/mobileLeavePd.js'
 
@@ -129,6 +141,10 @@ const open = (r) => {
   current.value = r
   drawer.value = true
 }
+
+/* 审批流转：谁审、几个节点、同节点多人 */
+const flow = computed(() => (current.value ? approvalFlowOf(current.value) : []))
+const flowLabel = (s) => ({ done: '已通过', current: '处理中', waiting: '未开始', rejected: '已驳回' }[s] || s)
 const canWithdraw = computed(() => current.value && ['pending', 'approved'].includes(current.value.status))
 
 const withdraw = async () => {
@@ -201,6 +217,24 @@ const goBack = () => router.push({ name: 'mobile-leave-pd' })
 .d-key { font-size: 13px; color: #999; }
 .d-val { font-size: 13px; color: #333; }
 .detail-sec { font-size: 13px; font-weight: 600; color: #333; margin: 16px 0 10px; }
+
+/* 审批流转 */
+.flow-list { display: flex; flex-direction: column; gap: 10px; }
+.flow-node { display: flex; align-items: flex-start; gap: 10px; }
+.flow-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; background: #e5e7eb; }
+.flow-dot.done { background: #15803d; }
+.flow-dot.current { background: #b45309; box-shadow: 0 0 0 3px #fef3c7; }
+.flow-dot.rejected { background: #b91c1c; }
+.flow-main { flex: 1; min-width: 0; }
+.flow-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.flow-title { font-size: 13px; font-weight: 600; color: #333; }
+.flow-st { font-size: 11px; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
+.flow-st.done { color: #15803d; background: #dcfce7; }
+.flow-st.current { color: #b45309; background: #fef3c7; }
+.flow-st.waiting { color: #9ca3af; background: #f3f4f6; }
+.flow-st.rejected { color: #b91c1c; background: #fee2e2; }
+.flow-people { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.6; }
+.flow-mode { font-style: normal; font-size: 10.5px; color: #a40035; background: #fff0f4; border-radius: 8px; padding: 0 6px; margin-left: 6px; }
 .reject-box { margin-top: 14px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 12px; color: #b91c1c; }
 .detail-actions { margin-top: 18px; }
 .wd-btn { width: 100%; color: #a40035; border-color: #f5c2d1; }

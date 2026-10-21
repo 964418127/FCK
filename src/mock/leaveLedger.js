@@ -1,14 +1,14 @@
 /* ============================================================
-   假期盘点（数据层 · 本轮盘点用，非结论）
+   假期盘点（数据层 · 本轮盘点用）
    视角：结果侧 —— 按周期看「每个员工还剩多少假、这些假怎么用掉的」
    口径：
-     · 额度来自「岗位引用的假期方案」（leaveWorkMode.js）
+     · 额度来自「岗位引用的假期额度方案」（leaveWorkMode.js）
      · 已用来自假勤申请记录（本文件 leaveRecords），按申请里的扣减分段累计
      · 1 天 = 8 小时（一线岗排班日）
    注意：真实发放 / 结转 / 与排班的抵扣顺序仍在现有额度模块，
         本页只做盘点，不产生业务动作。
    ============================================================ */
-import { jobWorkModes, findQuotaScheme } from './leaveWorkMode.js'
+import { jobWorkModes, quotaEntriesOf, quotaTypeName, profileOf } from './leaveWorkMode.js'
 
 const _jobMode = (job) => jobWorkModes.find(m => m.job === job) || null
 
@@ -35,25 +35,27 @@ export const ledgerPeriods = {
 export const ledgerJobOptions = ['全部', ...jobWorkModes.map(m => m.job)]
 
 /* ---------------- 员工 ---------------- */
-/* quotaAdjust：系统折算后与方案名义额度不同的情况（如临时假按上月业绩折算） */
+/* quotaAdjust：系统折算后与方案名义额度不同的情况（如临时假按上月业绩折算）
+   grade / employment / company：额度方案解档要用的员工画像字段（员工档案），
+   本轮 mock 只给演示所需的几个人显式赋值，其余由 profileOf 按默认兜底 */
 export const ledgerEmployees = [
   { id: 'e01', staffNo: 'TL1001', name: '陈伟', job: '推拿师', org: '门店', store: '深圳南山店', joinedAt: '2023-04-12',
-    quotaAdjust: { 'qs-temp-16h': { amount: 12, note: '按 9 月业绩折算' } } },
+    quotaAdjust: { 'qt-temp': { amount: 12, note: '按 9 月业绩折算' } } },
   { id: 'e02', staffNo: 'TL1002', name: '刘婷', job: '推拿师', org: '门店', store: '深圳福田店', joinedAt: '2023-08-01' },
   { id: 'e03', staffNo: 'TL1003', name: '王强', job: '推拿师', org: '门店', store: '成都春熙店', joinedAt: '2022-11-09' },
   { id: 'e04', staffNo: 'TL1004', name: '李娜', job: '推拿师', org: '门店', store: '成都春熙店', joinedAt: '2024-03-15' },
   { id: 'e05', staffNo: 'TL1005', name: '张敏', job: '客户经理', org: '门店', store: '深圳南山店', joinedAt: '2022-06-20' },
   { id: 'e06', staffNo: 'TL1006', name: '周昊', job: '客户经理', org: '门店', store: '深圳福田店', joinedAt: '2023-02-14' },
   { id: 'e07', staffNo: 'TL1007', name: '赵蕾', job: '客户经理', org: '门店', store: '成都春熙店', joinedAt: '2023-09-05' },
-  { id: 'e08', staffNo: 'TL1008', name: '孙志远', job: '门店店长', org: '门店', store: '深圳南山店', joinedAt: '2021-05-10' },
+  { id: 'e08', staffNo: 'TL1008', name: '孙志远', job: '门店店长', org: '门店', store: '深圳南山店', joinedAt: '2021-05-10', grade: 'P4' },
   { id: 'e09', staffNo: 'TL1009', name: '吴倩', job: '前台客服', org: '门店', store: '深圳南山店', joinedAt: '2024-01-08' },
   { id: 'e10', staffNo: 'TL1010', name: '郑凯', job: '前台客服', org: '门店', store: '成都春熙店', joinedAt: '2023-07-17' },
-  { id: 'e11', staffNo: 'TL1011', name: '何洁', job: '产品经理', org: '总部', store: '总部', joinedAt: '2022-03-01' },
+  { id: 'e11', staffNo: 'TL1011', name: '何洁', job: '产品经理', org: '总部', store: '总部', joinedAt: '2022-03-01', grade: 'P4' },
   { id: 'e12', staffNo: 'TL1012', name: '马东', job: '后端开发', org: '总部', store: '总部', joinedAt: '2021-09-13' },
   { id: 'e13', staffNo: 'TL1013', name: '冯雪', job: '前端开发', org: '总部', store: '总部', joinedAt: '2023-05-22' },
   { id: 'e14', staffNo: 'TL1014', name: '邓超', job: '运营专员', org: '总部', store: '总部', joinedAt: '2022-12-05' },
   { id: 'e15', staffNo: 'TL1015', name: '秦岚', job: '职能支持', org: '总部', store: '总部', joinedAt: '2020-11-02' },
-  { id: 'e16', staffNo: 'TL1016', name: '蒋涛', job: '区域经理', org: '总部', store: '外勤 / 巡店', joinedAt: '2019-04-15' }
+  { id: 'e16', staffNo: 'TL1016', name: '蒋涛', job: '区域经理', org: '总部', store: '外勤 / 巡店', joinedAt: '2019-04-15', employment: '劳务合作-兼职' }
 ]
 
 /** 门店 / 办公点候选：按名称（不是「门店 / 总部」这类分类），且支持输入片段模糊匹配 */
@@ -66,17 +68,17 @@ export const leaveRecords = [
   { id: 'lr-1001', date: '2026-10-06', empId: 'e01', leaveType: '班次假', amount: 2, unit: '天', status: '已通过',
     deduction: [{ schemeId: 'qs-shift-4d', label: '班次假', value: 2, unit: '天' }] },
   { id: 'lr-1002', date: '2026-10-13', empId: 'e01', leaveType: '临时假', amount: 6, unit: '小时', status: '已通过',
-    deduction: [{ schemeId: 'qs-temp-16h', label: '临时假', value: 6, unit: '小时' }] },
+    deduction: [{ schemeId: 'qt-temp', label: '临时假', value: 6, unit: '小时' }] },
   { id: 'lr-1003', date: '2026-10-09', empId: 'e02', leaveType: '班次假', amount: 1, unit: '天', status: '已通过',
     deduction: [{ schemeId: 'qs-shift-4d', label: '班次假', value: 1, unit: '天' }] },
   { id: 'lr-1004', date: '2026-10-12', empId: 'e03', leaveType: '特殊情况请假', amount: 6, unit: '天', status: '已通过',
     deduction: [
       { schemeId: 'qs-shift-4d', label: '班次假', value: 4, unit: '天' },
-      { schemeId: 'qs-temp-16h', label: '临时假', value: 16, unit: '小时' },
+      { schemeId: 'qt-temp', label: '临时假', value: 16, unit: '小时' },
       { schemeId: null, label: '超出', value: 1, unit: '天' }
     ], note: '超出部分不扣薪资，只记录时长' },
   { id: 'lr-1005', date: '2026-10-10', empId: 'e04', leaveType: '临时假', amount: 8, unit: '小时', status: '已通过',
-    deduction: [{ schemeId: 'qs-temp-16h', label: '临时假', value: 8, unit: '小时' }] },
+    deduction: [{ schemeId: 'qt-temp', label: '临时假', value: 8, unit: '小时' }] },
   { id: 'lr-1006', date: '2026-10-09', empId: 'e05', leaveType: '特殊情况请假', amount: 5, unit: '天', status: '已通过',
     deduction: [
       { schemeId: 'qs-shift-4d', label: '班次假', value: 4, unit: '天' },
@@ -109,7 +111,7 @@ export const leaveRecords = [
   { id: 'lr-0901', date: '2026-09-15', empId: 'e01', leaveType: '班次假', amount: 3, unit: '天', status: '已通过',
     deduction: [{ schemeId: 'qs-shift-4d', label: '班次假', value: 3, unit: '天' }] },
   { id: 'lr-0902', date: '2026-09-18', empId: 'e03', leaveType: '临时假', amount: 10, unit: '小时', status: '已通过',
-    deduction: [{ schemeId: 'qs-temp-16h', label: '临时假', value: 10, unit: '小时' }] },
+    deduction: [{ schemeId: 'qt-temp', label: '临时假', value: 10, unit: '小时' }] },
   { id: 'lr-0903', date: '2026-09-20', empId: 'e05', leaveType: '班次假', amount: 4, unit: '天', status: '已通过',
     deduction: [{ schemeId: 'qs-shift-4d', label: '班次假', value: 4, unit: '天' }] },
   { id: 'lr-0904', date: '2026-09-22', empId: 'e12', leaveType: '年假', amount: 2, unit: '天', status: '已通过',
@@ -119,7 +121,7 @@ export const leaveRecords = [
 
   /* 2026-08 */
   { id: 'lr-0801', date: '2026-08-12', empId: 'e01', leaveType: '临时假', amount: 12, unit: '小时', status: '已通过',
-    deduction: [{ schemeId: 'qs-temp-16h', label: '临时假', value: 12, unit: '小时' }] },
+    deduction: [{ schemeId: 'qt-temp', label: '临时假', value: 12, unit: '小时' }] },
   { id: 'lr-0802', date: '2026-08-20', empId: 'e08', leaveType: '年假', amount: 2, unit: '天', status: '已通过',
     deduction: [{ schemeId: 'qs-annual-5d', label: '年假', value: 2, unit: '天' }] }
 ]
@@ -145,17 +147,22 @@ function schemeAmount(scheme, mode) {
 /** 某员工在所选周期内的各假种余额 */
 export function balancesOf(emp, mode, period) {
   const jm = _jobMode(emp.job)
-  const schemes = ((jm && jm.quotaSchemeIds) || []).map(findQuotaScheme).filter(Boolean)
+  const schemes = quotaEntriesOf(jm, profileOf(emp))
   const recs = leaveRecords.filter(r => r.empId === emp.id)
 
   return schemes.map(s => {
     const adjust = (emp.quotaAdjust || {})[s.id]
+    /* 扣减按假种名对账：同一假种可能有多份范围方案，员工命中哪一份由地址决定，
+       历史申请记录里存的是当时的方案 id，直接用 id 会对不上 */
+    const name = quotaTypeName(s)
+    const hits = (d) => d.schemeId === s.id || d.label === name
 
     if (s.measure === 'event') {
-      const times = recs.filter(r => r.leaveType === s.leaveType && inPeriod(r.date, mode, period)).length
+      const times = recs.filter(r => r.leaveType === name && inPeriod(r.date, mode, period)).length
       return {
-        schemeId: s.id, leaveType: s.leaveType, kind: 'event',
-        unit: s.unit, perTime: s.amount, usedTimes: times
+        schemeId: s.id, leaveType: name, kind: 'event',
+        unit: s.unit, perTime: s.amount, usedTimes: times,
+        scopeDim: s.resolvedDimension || 'all'
       }
     }
 
@@ -169,15 +176,16 @@ export function balancesOf(emp, mode, period) {
     recs.forEach(r => {
       if (!inPeriod(r.date, scopeMode, scopePeriod)) return
       ;(r.deduction || []).forEach(d => {
-        if (d.schemeId === s.id) used += d.value
+        if (hits(d)) used += d.value
       })
     })
     const remaining = Math.round((quota - used) * 10) / 10
 
     return {
-      schemeId: s.id, leaveType: s.leaveType, kind: 'cycle',
+      schemeId: s.id, leaveType: name, kind: 'cycle',
       unit: s.unit, quota, used, remaining, over: remaining < 0,
       adjusted: !!adjust, adjustNote: adjust ? adjust.note : '',
+      scopeDim: s.resolvedDimension || 'all',
       scopeText: yearScoped ? '年' : mode === 'month' ? '月' : mode === 'quarter' ? '季' : '年'
     }
   })

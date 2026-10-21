@@ -2,13 +2,10 @@
   <div class="leave-type-dict">
     <div class="page-header">
       <div class="header-main">
-        <h1>假种字典</h1>
-        <el-tag type="warning" effect="plain" size="small">预研稿 · 非结论</el-tag>
-        <el-tag type="success" effect="plain" size="small">配置层 · P0</el-tag>
+        <h1>假期类型</h1>
       </div>
       <p class="tip">
-        假勤侧的核心字典。每个假种声明自己的带薪性、最小单位、凭证要求、是否排他占位、是否计额度，
-        以及<strong>配置下沉到哪一层为止</strong> —— 特殊假（婚 / 丧 / 产 / 陪产）标准值只配到城市，不必逐店填写。
+        只维护假期类型本身：类别、是否排他、适用性。额度值与获取上限在「假期额度方案」，岗位额度在「岗位假勤方案」。
       </p>
     </div>
 
@@ -23,46 +20,32 @@
         <span class="stat-label">公司自定</span>
       </div>
       <div class="stat-item">
-        <span class="stat-value">{{ proofCount }}</span>
-        <span class="stat-label">需凭证核验<br />（默认转人工）</span>
+        <span class="stat-value">{{ enabledCount }}</span>
+        <span class="stat-label">已启用</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-value">{{ quotaCount }}</span>
-        <span class="stat-label">计额度<br />（消耗个人可休量）</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">{{ cityOnlyCount }}</span>
-        <span class="stat-label">只细到城市层<br />（不下沉门店）</span>
-      </div>
-    </div>
-
-    <!-- 分层说明 -->
-    <div class="inherit-note">
-      <span class="note-badge">继承规则</span>
-      <span>
-        配置项 × 层级的稀疏表：<strong>留空即向上继承</strong>。
-        某假种若只声明到「通用 → 城市」，则门店层无配置项、不产生覆盖，也就不会出现"每家门店填一遍婚假天数"的浪费。
-      </span>
     </div>
 
     <div class="section-card">
       <div class="card-header">
-        <span class="card-title">假种清单</span>
+        <span class="card-title">假期类型清单</span>
         <div class="header-actions">
           <el-select v-model="filterCategory" size="small" style="width: 130px;">
             <el-option label="全部类别" value="" />
             <el-option label="法定假" value="statutory" />
             <el-option label="公司自定" value="company" />
           </el-select>
-          <el-button type="primary" size="small" @click="openDialog()">+ 新增假种</el-button>
+          <el-button type="primary" size="small" @click="openDialog()">+ 新增假期类型</el-button>
         </div>
       </div>
 
       <el-table :data="filteredTypes" size="small" class="type-table">
-        <el-table-column label="假种" min-width="168" fixed="left">
+        <el-table-column label="类型" min-width="168" fixed="left">
           <template #default="{ row }">
             <div class="type-cell">
-              <span class="type-name">{{ row.name }}</span>
+              <span class="type-name">
+                {{ row.name }}
+                <el-tag v-if="row.legacy" size="small" effect="plain" type="danger" class="legacy-tag">历史遗留</el-tag>
+              </span>
               <span class="type-note">{{ row.note }}</span>
             </div>
           </template>
@@ -78,52 +61,19 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="带薪性" width="112">
+        <el-table-column label="适用性" width="118">
           <template #default="{ row }">
-            <span class="paid-text" :class="'paid-' + row.paid">{{ paidText(row) }}</span>
+            <el-tag v-if="row.applicability === 'all'" size="small" effect="plain" type="info">岗位通用</el-tag>
+            <el-tooltip v-else :content="`仅 ${(row.appJobs || []).join('、')} 有此假种`" placement="top">
+              <el-tag size="small" effect="plain" type="warning">指定岗位 · {{ (row.appJobs || []).length }}</el-tag>
+            </el-tooltip>
           </template>
         </el-table-column>
 
-        <el-table-column label="最小单位" width="86" align="center">
-          <template #default="{ row }">{{ labelOf(unitTypes, row.unit) }}</template>
-        </el-table-column>
-
-        <el-table-column label="凭证要求" width="150">
-          <template #default="{ row }">
-            <span :class="row.needProof ? 'proof-yes' : 'plain-text'">{{ row.proofText }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="提前申请期" width="98" align="center">
-          <template #default="{ row }">
-            {{ row.advanceDays === 0 ? '可事后补' : row.advanceDays + ' 天' }}
-          </template>
-        </el-table-column>
-
-        <el-table-column label="时间线" width="92">
+        <el-table-column label="排他" width="92">
           <template #default="{ row }">
             <el-tag size="small" effect="plain" :type="row.exclusive ? 'warning' : 'info'">
               {{ row.exclusive ? '排他占位' : '非排他' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="额度" width="112">
-          <template #default="{ row }">
-            <span class="plain-text">{{ row.countQuota ? '计入额度' : '不计额度' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="标准值" min-width="230" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span class="plain-text">{{ row.standard }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="配置下沉" width="156">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain" :type="depthTagType(row.configDepth)">
-              {{ labelOf(configDepths, row.configDepth) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -141,18 +91,24 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <p class="foot-note">
+        班次假 / 临时假这类<strong>岗位专属类型</strong>同样在此维护适用性。值不在本页：班次假在「岗位假勤方案」的岗位额度里按岗位配；
+        临时假由系统按业绩折算发放，<strong>获取上限</strong>在「假期额度方案」以「上限方案」设置（历史已折算的存量不在本系统处理）。
+        <strong>特殊情况请假</strong>为历史大包假种（现状把事假、病假等全部混在一个兜底通道），重构后由事假 / 病假等标准类型承接，此处仅作现状对照保留。
+      </p>
     </div>
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? `编辑假种 · ${form.name}` : '新增假种'"
+      :title="isEdit ? `编辑假期类型 · ${form.name}` : '新增假期类型'"
       width="760px"
     >
       <el-form :model="form" label-width="120px">
         <el-divider content-position="left">基本信息</el-divider>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="假种名称">
+            <el-form-item label="类型名称">
               <el-input v-model="form.name" placeholder="如：婚假" />
             </el-form-item>
           </el-col>
@@ -165,6 +121,23 @@
           </el-col>
         </el-row>
 
+        <el-divider content-position="left">适用性</el-divider>
+        <el-form-item label="适用性">
+          <el-radio-group v-model="form.applicability" @change="onApplicabilityChange">
+            <el-radio v-for="a in applicabilityOptions" :key="a.value" :value="a.value">{{ a.label }}</el-radio>
+          </el-radio-group>
+          <div class="field-desc">{{ applicabilityDesc }}</div>
+        </el-form-item>
+        <el-form-item v-if="form.applicability === 'jobs'" label="适用岗位">
+          <el-select v-model="form.appJobs" multiple filterable style="width: 100%;" placeholder="选择可用此类型的岗位">
+            <el-option v-for="j in jobNames" :key="j" :label="j" :value="j" />
+          </el-select>
+          <div class="field-desc">
+            岗位通用类型的值在「假期额度方案」配；指定岗位类型的值在「岗位假勤方案」的岗位额度配，
+            系统折算类型（如临时假）的获取上限在「假期额度方案」以「上限方案」设置。
+          </div>
+        </el-form-item>
+
         <el-divider content-position="left">时间线占位（由时间线组校验）</el-divider>
         <el-form-item label="占位性质">
           <el-radio-group v-model="form.exclusive">
@@ -176,87 +149,6 @@
           </div>
         </el-form-item>
 
-        <el-divider content-position="left">额度与薪酬</el-divider>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="带薪性">
-              <el-select v-model="form.paid" style="width: 100%;">
-                <el-option v-for="p in paidTypes" :key="p.value" :label="p.label" :value="p.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item v-if="form.paid === 'partial'" label="带薪比例">
-              <el-input-number
-                v-model="form.paidRatio"
-                :min="0"
-                :max="100"
-                :step="10"
-                controls-position="right"
-                style="width: 120px;"
-              />
-              <span class="field-hint">百分比</span>
-            </el-form-item>
-            <el-form-item v-else label="最小单位">
-              <el-select v-model="form.unit" style="width: 100%;">
-                <el-option v-for="u in unitTypes" :key="u.value" :label="u.label" :value="u.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="最小单位">
-              <el-select v-model="form.unit" style="width: 100%;">
-                <el-option v-for="u in unitTypes" :key="u.value" :label="u.label" :value="u.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="计入额度">
-              <el-switch v-model="form.countQuota" />
-              <span class="field-hint">消耗个人可休量</span>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="额度来源">
-          <el-select v-model="form.quotaSource" style="width: 100%;" :disabled="!form.countQuota">
-            <el-option label="固定配置（按周期发放）" value="fixed" />
-            <el-option label="加班累积（按加班时长折算）" value="overtime" />
-            <el-option label="业绩折算（由现有额度模块计算）" value="performance" />
-            <el-option label="不适用" value="none" />
-          </el-select>
-        </el-form-item>
-
-        <el-divider content-position="left">申请与审核</el-divider>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="提前申请期">
-              <el-input-number v-model="form.advanceDays" :min="0" controls-position="right" style="width: 100%;" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="需凭证核验">
-              <el-switch v-model="form.needProof" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item v-if="form.needProof" label="凭证类型">
-          <el-input v-model="form.proofText" placeholder="如：结婚证" />
-        </el-form-item>
-
-        <el-divider content-position="left">配置分层</el-divider>
-        <el-form-item label="配置下沉深度">
-          <el-select v-model="form.configDepth" style="width: 100%;">
-            <el-option v-for="c in configDepths" :key="c.value" :label="c.label" :value="c.value" />
-          </el-select>
-          <div class="field-desc">
-            法定假通常只到城市层（各地口径不同）；公司自定假可按门店细化
-          </div>
-        </el-form-item>
-        <el-form-item label="标准值">
-          <el-input v-model="form.standard" type="textarea" :rows="2" placeholder="如：法定 3 天；深圳市含地方奖励假共 10 天" />
-        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.note" type="textarea" :rows="2" placeholder="说明该假种的特殊处理规则" />
         </el-form-item>
@@ -276,12 +168,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   leaveTypes as rawTypes,
   leaveCategories,
-  paidTypes,
-  unitTypes,
-  configDepths
+  applicabilityOptions,
+  jobs as allJobs
 } from '../../mock/leaveAttendance.js'
 
-const typeList = ref(rawTypes.map(t => ({ ...t })))
+const typeList = ref(rawTypes.map(t => ({ ...t, appJobs: [...(t.appJobs || [])] })))
 const filterCategory = ref('')
 
 const filteredTypes = computed(() =>
@@ -292,25 +183,11 @@ const filteredTypes = computed(() =>
 
 const statutoryCount = computed(() => typeList.value.filter(t => t.category === 'statutory').length)
 const companyCount = computed(() => typeList.value.filter(t => t.category === 'company').length)
-const proofCount = computed(() => typeList.value.filter(t => t.needProof).length)
-const quotaCount = computed(() => typeList.value.filter(t => t.countQuota).length)
-const cityOnlyCount = computed(() => typeList.value.filter(t => t.configDepth === 'city').length)
+const enabledCount = computed(() => typeList.value.filter(t => t.enabled).length)
 
 const labelOf = (list, value) => {
   const hit = list.find(i => i.value === value)
   return hit ? hit.label : value
-}
-
-const paidText = (row) => {
-  if (row.paid === 'paid') return '带薪'
-  if (row.paid === 'unpaid') return '无薪'
-  return `部分带薪 ${row.paidRatio}%`
-}
-
-const depthTagType = (depth) => {
-  if (depth === 'general') return 'success'
-  if (depth === 'city') return 'warning'
-  return 'info'
 }
 
 const dialogVisible = ref(false)
@@ -320,52 +197,58 @@ const emptyForm = () => ({
   id: '',
   name: '',
   category: 'company',
-  paid: 'unpaid',
-  paidRatio: 0,
-  unit: 'day',
-  needProof: false,
-  proofText: '无需凭证',
-  advanceDays: 1,
   exclusive: true,
-  countQuota: false,
-  quotaSource: 'none',
-  standard: '',
-  configDepth: 'store',
   enabled: true,
+  applicability: 'all',
+  appJobs: [],
   note: ''
 })
 
 const form = reactive(emptyForm())
 
+const jobNames = allJobs.map(j => j.name)
+const applicabilityDesc = computed(() => (applicabilityOptions.find(a => a.value === form.applicability) || {}).desc || '')
+
+const onApplicabilityChange = (v) => {
+  if (v === 'all') form.appJobs = []
+}
+
 const openDialog = (row = null) => {
-  Object.assign(form, row ? { ...row } : emptyForm())
+  if (row) {
+    Object.assign(form, {
+      ...row,
+      appJobs: [...(row.appJobs || [])]
+    })
+  } else {
+    Object.assign(form, emptyForm())
+  }
   isEdit.value = !!row
   dialogVisible.value = true
 }
 
 const save = () => {
   if (!form.name.trim()) {
-    ElMessage.warning('请填写假种名称')
+    ElMessage.warning('请填写类型名称')
     return
   }
   if (isEdit.value) {
     const idx = typeList.value.findIndex(t => t.id === form.id)
     if (idx !== -1) typeList.value[idx] = { ...form }
-    ElMessage.success(`假种「${form.name}」已更新`)
+    ElMessage.success(`假期类型「${form.name}」已更新`)
   } else {
     typeList.value.push({ ...form, id: 'leave-' + Date.now() })
-    ElMessage.success(`假种「${form.name}」已新增`)
+    ElMessage.success(`假期类型「${form.name}」已新增`)
   }
   dialogVisible.value = false
 }
 
 const toggleEnabled = (row) => {
-  ElMessage.success(`假种「${row.name}」已${row.enabled ? '启用' : '停用'}`)
+  ElMessage.success(`假期类型「${row.name}」已${row.enabled ? '启用' : '停用'}`)
 }
 
 const removeType = (row) => {
   ElMessageBox.confirm(
-    `确定删除假种「${row.name}」吗？删除后员工将无法再提交该假种的申请。`,
+    `确定删除假期类型「${row.name}」吗？删除后员工将无法再提交该类型的申请。`,
     '删除确认',
     { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
   ).then(() => {
@@ -413,7 +296,7 @@ const removeType = (row) => {
 
 .stat-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -440,35 +323,6 @@ const removeType = (row) => {
   font-size: 12px;
   line-height: 1.4;
   color: hsl(var(--muted-foreground));
-}
-
-.inherit-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: hsl(var(--muted) / 0.6);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: hsl(var(--muted-foreground));
-}
-
-.note-badge {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: hsl(var(--background));
-  background: hsl(var(--muted-foreground));
-  border-radius: 4px;
-  padding: 2px 8px;
-  margin-top: 1px;
-}
-
-.inherit-note strong {
-  color: hsl(var(--foreground));
-  font-weight: 600;
 }
 
 .section-card {
@@ -514,27 +368,18 @@ const removeType = (row) => {
   font-size: 14px;
   font-weight: 500;
   color: hsl(var(--foreground));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legacy-tag {
+  flex-shrink: 0;
 }
 
 .type-note {
   font-size: 12px;
   line-height: 1.5;
-  color: hsl(var(--muted-foreground));
-}
-
-.paid-text {
-  font-size: 13px;
-}
-
-.paid-paid {
-  color: hsl(var(--primary));
-}
-
-.paid-partial {
-  color: #b8860b;
-}
-
-.paid-unpaid {
   color: hsl(var(--muted-foreground));
 }
 
@@ -548,17 +393,28 @@ const removeType = (row) => {
   color: hsl(var(--muted-foreground));
 }
 
-.field-hint {
-  margin-left: 10px;
+.foot-note {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed hsl(var(--border));
   font-size: 12px;
+  line-height: 1.7;
   color: hsl(var(--muted-foreground));
 }
+.foot-note strong { color: hsl(var(--foreground)); font-weight: 600; }
 
 .field-desc {
   font-size: 12px;
   color: hsl(var(--muted-foreground));
   line-height: 1.6;
   margin-top: 4px;
+}
+
+.opt-desc {
+  float: right;
+  margin-left: 16px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
 }
 
 :deep(.el-divider__text) {

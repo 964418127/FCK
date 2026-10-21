@@ -5,169 +5,157 @@
       <div class="head-row">
         <div class="head-left">
           <div class="header-main">
-            <h1>工作模式</h1>
-            <el-tag type="warning" effect="plain" size="small">预设计 v2 · 非结论</el-tag>
+            <h1>岗位假勤方案</h1>
           </div>
         </div>
         <div class="head-actions">
-          <el-button size="small" @click="go('leave-wm-scheme')">工作日方案</el-button>
+          <el-button size="small" @click="go('leave-wm-scheme')">出勤方案</el-button>
           <el-button size="small" @click="go('leave-wm-attendance')">考勤组</el-button>
-          <el-button size="small" @click="go('leave-wm-reference')">引用总览</el-button>
         </div>
       </div>
     </div>
 
-    <el-row :gutter="16">
-      <!-- ============ 左栏：按岗位查看 ============ -->
-      <el-col :span="7">
-        <div class="section-card">
-          <div class="card-header">
-            <span class="card-title">按岗位查看</span>
-            <span class="card-sub">共 {{ jobList.length }} 个岗位</span>
-          </div>
-
-          <div class="job-pane">
-            <div v-for="o in organizations" :key="o.id" class="org-block">
-              <div class="org-title">
-                <span>{{ o.name }}</span>
-                <em>{{ o.jobs.length }}</em>
+    <el-tabs v-model="view" class="wm-tabs">
+      <el-tab-pane label="按岗位" name="jobs">
+        <el-row :gutter="16">
+          <!-- ============ 左栏：按岗位查看 ============ -->
+          <el-col :span="7">
+            <div class="section-card">
+              <div class="card-header">
+                <span class="card-title">按岗位查看</span>
+                <span class="card-sub">共 {{ jobList.length }} 个岗位</span>
               </div>
-              <div
-                v-for="n in o.jobs"
-                :key="n"
-                class="job-line"
-                :class="{ active: n === selectedJob }"
-                @click="selectJob(n)"
-              >
-                <div class="jl-top">
-                  <span class="jl-name">{{ n }}</span>
-                  <el-tooltip content="配置该岗位的工作模式" placement="left" :show-after="200">
-                    <el-icon class="jl-edit" @click.stop="openConfig(n)"><Setting /></el-icon>
-                  </el-tooltip>
-                </div>
-                <div class="jl-refs">
-                  <span class="ref-chip" :class="{ warn: !modeOf(n).schemeId }">
-                    <i class="ref-dot"></i>
-                    {{ modeOf(n).schemeId ? schemeName(modeOf(n).schemeId) : '未引用方案' }}
-                  </span>
-                  <span v-if="modeOf(n).attendance" class="ref-chip att">
-                    {{ modeOf(n).attendanceGroupId ? attName(modeOf(n).attendanceGroupId) : '未引考勤组' }}
-                  </span>
-                  <span v-else class="ref-chip none">不打卡</span>
-                  <span v-if="quotaCount(modeOf(n))" class="ref-chip quota">
-                    {{ quotaCount(modeOf(n)) }} 项额度
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </el-col>
 
-      <!-- ============ 右栏：整屏日历 ============ -->
-      <el-col :span="17">
-        <template v-if="currentScheme">
-          <div class="section-card">
-            <div class="card-header">
-              <span class="card-title">
-                {{ selectedJob }}
-                <em class="card-title-sub">
-                  · 引用方案「{{ currentScheme.name }}」
-                  <template v-if="currentMode.attendanceGroupId">
-                    · 考勤组「{{ attName(currentMode.attendanceGroupId) }}」
-                  </template>
-                </em>
-              </span>
-              <div class="header-actions">
-                <el-button size="small" @click="shiftMonth(-1)">‹ 上月</el-button>
-                <span class="month-label">{{ viewYear }} 年 {{ viewMonth }} 月</span>
-                <el-button size="small" @click="shiftMonth(1)">下月 ›</el-button>
-              </div>
-            </div>
-
-            <div class="summary-row">
-              <span class="sum-item"><b>{{ stats.work }}</b> 个工作日</span>
-              <span class="sum-item"><b>{{ stats.rest }}</b> 个休息日</span>
-              <span class="sum-item"><b>{{ stats.holiday }}</b> 天法定节假日</span>
-              <span class="sum-item"><b>{{ stats.makeup }}</b> 天调班上班</span>
-              <span class="sum-item plain">
-                {{ jobsUsingScheme(currentScheme.id).length }} 个岗位共用这份方案
-              </span>
-            </div>
-
-            <div class="cal-grid">
-              <div v-for="w in weekDayNames" :key="'h' + w" class="cal-head">周{{ w }}</div>
-              <div
-                v-for="(c, i) in calendarCells"
-                :key="'c' + i"
-                class="cal-cell"
-                :class="c ? [c.cls, { picked: c.dateKey === selectedKey }] : 'blank'"
-                @click="c && (selectedKey = c.dateKey)"
-              >
-                <template v-if="c">
-                  <span class="cal-day">{{ c.day }}</span>
-                  <span v-if="c.label" class="cal-tag">{{ c.label }}</span>
-                </template>
-              </div>
-            </div>
-
-            <div class="legend">
-              <span v-for="l in legends" :key="l.cls" class="legend-item">
-                <i class="legend-dot" :class="l.cls"></i>{{ l.text }}
-              </span>
-            </div>
-
-            <div v-if="selected" class="why-card">
-              <div class="why-head">
-                <span class="why-date">{{ selected.dateKey }} · 周{{ weekDayNames[selected.dow - 1] }}</span>
-                <el-tag size="small" :type="selected.tagType" effect="plain">{{ selected.statusText }}</el-tag>
-                <span class="why-for">{{ selectedJob }}（方案：{{ currentScheme.name }}）</span>
-              </div>
-              <div class="why-chain">
-                <div
-                  v-for="(step, i) in selected.chain"
-                  :key="i"
-                  class="why-step"
-                  :class="{ overridden: step.overridden }"
-                >
-                  <span class="step-idx">{{ i + 1 }}</span>
-                  <span class="step-layer">{{ step.layer }}</span>
-                  <span class="step-detail">{{ step.detail }}</span>
-                  <span class="step-result">
-                    {{ step.resultText }}
-                    <em v-if="step.overridden">← 已被上层覆盖</em>
-                  </span>
+              <div class="job-pane">
+                <div v-for="o in organizations" :key="o.id" class="org-block">
+                  <div class="org-title">
+                    <span>{{ o.name }}</span>
+                    <em>{{ o.jobs.length }}</em>
+                  </div>
+                  <div
+                    v-for="n in o.jobs"
+                    :key="n"
+                    class="job-line"
+                    :class="{ active: n === selectedJob }"
+                    @click="selectJob(n)"
+                  >
+                    <div class="jl-top">
+                      <span class="jl-name">{{ n }}</span>
+                      <el-tooltip content="配置该岗位的假勤方案" placement="left" :show-after="200">
+                        <el-icon class="jl-edit" @click.stop="openConfig(n)"><Setting /></el-icon>
+                      </el-tooltip>
+                    </div>
+                    <div class="jl-refs">
+                      <span class="ref-chip" :class="{ warn: !modeOf(n).schemeId }">
+                        <i class="ref-dot"></i>
+                        {{ modeOf(n).schemeId ? schemeName(modeOf(n).schemeId) : '未引用方案' }}
+                      </span>
+                      <span v-if="modeOf(n).attendance" class="ref-chip att">
+                        {{ modeOf(n).attendanceGroupId ? attName(modeOf(n).attendanceGroupId) : '未引考勤组' }}
+                      </span>
+                      <span v-else class="ref-chip none">不打卡</span>
+                      <span v-if="quotaCount(modeOf(n))" class="ref-chip quota">
+                        {{ quotaCount(modeOf(n)) }} 项假种额度
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div v-else class="empty-hint">
-              点击日历上任意一天，查看它是工作日还是休息日、以及为什么。
-            </div>
-          </div>
-        </template>
+          </el-col>
 
-        <!-- 未引用方案的岗位 -->
-        <div v-else class="section-card">
-          <div class="card-header">
-            <span class="card-title">这个岗位还没有工作日方案</span>
-          </div>
-          <div class="no-group">
-            <div class="no-group-title">「{{ selectedJob }}」尚未引用任何方案</div>
-            <div class="no-group-desc">
-              从已有方案里挑一份引用，或去方案库新建一份。
-              <span v-if="currentMode && currentMode.pending" class="pending-note">{{ currentMode.pending }}</span>
+          <!-- ============ 右栏：整屏日历 ============ -->
+          <el-col :span="17">
+            <template v-if="currentScheme">
+              <div class="section-card">
+                <div class="card-header">
+                  <span class="card-title">
+                    {{ selectedJob }}
+                    <em class="card-title-sub">
+                      · 引用方案「{{ currentScheme.name }}」
+                      <template v-if="currentMode.attendanceGroupId">
+                        · 考勤组「{{ attName(currentMode.attendanceGroupId) }}」
+                      </template>
+                    </em>
+                  </span>
+                  <div class="header-actions">
+                    <el-button size="small" @click="shiftMonth(-1)">‹ 上月</el-button>
+                    <span class="month-label">{{ viewYear }} 年 {{ viewMonth }} 月</span>
+                    <el-button size="small" @click="shiftMonth(1)">下月 ›</el-button>
+                  </div>
+                </div>
+
+                <div class="summary-row">
+                  <span class="sum-item"><b>{{ stats.work }}</b> 个工作日</span>
+                  <span class="sum-item"><b>{{ stats.rest }}</b> 个休息日</span>
+                  <span class="sum-item"><b>{{ stats.holiday }}</b> 天法定节假日</span>
+                  <span class="sum-item"><b>{{ stats.makeup }}</b> 天调班上班</span>
+                  <span class="sum-item plain">
+                    {{ jobsUsingScheme(currentScheme.id).length }} 个岗位共用这份方案
+                  </span>
+                </div>
+
+                <div class="cal-grid">
+                  <div v-for="w in weekDayNames" :key="'h' + w" class="cal-head">周{{ w }}</div>
+                  <div
+                    v-for="(c, i) in calendarCells"
+                    :key="'c' + i"
+                    class="cal-cell"
+                    :class="c ? [c.cls, { picked: c.dateKey === selectedKey }] : 'blank'"
+                    @click="c && (selectedKey = c.dateKey)"
+                  >
+                    <template v-if="c">
+                      <span class="cal-day">{{ c.day }}</span>
+                      <span v-if="c.label" class="cal-tag">{{ c.label }}</span>
+                    </template>
+                  </div>
+                </div>
+
+                <div class="legend">
+                  <span v-for="l in legends" :key="l.cls" class="legend-item">
+                    <i class="legend-dot" :class="l.cls"></i>{{ l.text }}
+                  </span>
+                </div>
+
+                <div v-if="selected" class="day-bar">
+                  <span class="db-date">{{ selected.dateKey }} · 周{{ weekDayNames[selected.dow - 1] }}</span>
+                  <el-tag size="small" :type="selected.tagType" effect="plain">{{ selected.statusText }}</el-tag>
+                  <span class="db-basis">依据：{{ basisOf(selected) }}</span>
+                </div>
+                <div v-else class="empty-hint">
+                  点击日历上任意一天，查看当天是工作日还是休息日。
+                </div>
+              </div>
+            </template>
+
+            <!-- 未引用方案的岗位 -->
+            <div v-else class="section-card">
+              <div class="card-header">
+                <span class="card-title">这个岗位还没有出勤方案</span>
+              </div>
+              <div class="no-group">
+                <div class="no-group-title">「{{ selectedJob }}」尚未引用任何方案</div>
+                <div class="no-group-desc">
+                  从已有方案里挑一份引用，或去方案库新建一份。
+                  <span v-if="currentMode && currentMode.pending" class="pending-note">{{ currentMode.pending }}</span>
+                </div>
+                <div class="no-group-actions">
+                  <el-button size="small" type="primary" @click="openConfig(selectedJob)">去配置</el-button>
+                  <el-button size="small" @click="go('leave-wm-scheme')">方案库</el-button>
+                </div>
+              </div>
             </div>
-            <div class="no-group-actions">
-              <el-button size="small" type="primary" @click="openConfig(selectedJob)">去配置</el-button>
-              <el-button size="small" @click="go('leave-wm-scheme')">方案库</el-button>
-            </div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
+
+      <el-tab-pane label="矩阵" name="matrix">
+        <ReferenceOverview embedded :modes="modes" @pick="pickJob" />
+      </el-tab-pane>
+    </el-tabs>
 
     <!-- ============ 配置抽屉（引用 + 声明） ============ -->
-    <el-drawer v-model="drawerVisible" :title="`配置工作模式 · ${form.job}`" size="620px" :modal="false">
+    <el-drawer v-model="drawerVisible" :title="`配置假勤方案 · ${form.job}`" size="620px" :modal="false">
       <div class="drawer-body">
         <div class="src-banner">
           <span class="src-badge">岗位 · 只读</span>
@@ -182,11 +170,11 @@
 
         <div class="cfg-block">
           <div class="cfg-label">
-            <span>工作日方案</span>
-            <span class="cfg-note">配置层 · 可复用实体</span>
+            <span>出勤方案</span>
+            <span class="cfg-note">可被多个岗位复用</span>
           </div>
           <div class="ref-row">
-            <el-select v-model="form.schemeId" placeholder="选择一份工作日方案" clearable style="flex: 1">
+            <el-select v-model="form.schemeId" placeholder="选择一份出勤方案" clearable style="flex: 1">
               <el-option
                 v-for="s in schemes"
                 :key="s.id"
@@ -217,7 +205,7 @@
         <div class="cfg-block">
           <div class="cfg-label">
             <span>考勤组</span>
-            <span class="cfg-note">引用层 · 归属待定（Q4）</span>
+            <span class="cfg-note">来自打卡组</span>
           </div>
           <div class="ref-row">
             <el-select
@@ -242,22 +230,7 @@
           <div v-if="formAtt" class="ref-detail">
             <span class="rd-item">打卡方式：<b>{{ formAtt.method }}</b></span>
             <span class="rd-item">范围：<b>{{ formAtt.scope }}</b></span>
-            <span class="rd-item">假勤侧覆盖岗位：<b>{{ jobsUsingAttendance(form.attendanceGroupId).length }} 个</b></span>
-          </div>
-        </div>
-
-        <div class="cfg-block">
-          <div class="cfg-label">
-            <span>法定节假日</span>
-            <span class="cfg-note">引用层 · 国家 · 只读</span>
-          </div>
-          <div class="holiday-mini">
-            <div class="mini-list">
-              <span v-for="h in statutoryCalendar.holidays" :key="h.name" class="mini-item">
-                {{ h.name }} · {{ h.days }} 天
-              </span>
-            </div>
-            <div class="mini-source">{{ statutoryCalendar.source }}（{{ statutoryCalendar.year }} 年，只读）</div>
+            <span class="rd-item">该考勤组被 <b>{{ jobsUsingAttendance(form.attendanceGroupId).length }}</b> 个岗位引用</span>
           </div>
         </div>
 
@@ -268,10 +241,6 @@
         <div v-if="!form.attendance && form.attendanceGroupId" class="check-banner warn">
           引用了考勤组，却声明「不打卡」→ 该引用不会生效，建议清空。
         </div>
-        <div v-if="form.schemeId" class="check-banner ok">
-          配置自洽：日历来自「{{ schemeName(form.schemeId) }}」{{ form.attendance ? `，打卡沿用「${attName(form.attendanceGroupId)}」` : '，岗位不打卡' }}。
-        </div>
-
         <!-- 声明层 -->
         <el-divider content-position="left">声明</el-divider>
 
@@ -292,31 +261,16 @@
 
         <div class="cfg-block">
           <div class="cfg-label">
-            <span>假期方案</span>
-            <span class="cfg-note">配置层 · 可复用实体</span>
+            <span>假期额度</span>
+            <span class="cfg-note">由「假期额度方案」勾选本岗位为适用岗位 · 本页只读</span>
           </div>
-          <div class="ref-row">
-            <el-select
-              v-model="form.quotaSchemeIds"
-              multiple
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="引用假期方案（可不引用）"
-              style="flex: 1"
-            >
-              <el-option v-for="q in quotas" :key="q.id" :label="q.name" :value="q.id">
-                <span class="opt-name">{{ q.name }}</span>
-                <span class="opt-meta">{{ q.leaveType }}</span>
-              </el-option>
-            </el-select>
-            <el-button size="small" @click="go('leave-wm-quota')">管理方案</el-button>
+          <div v-if="formQuotaTypes.length" class="quota-mini">
+            <div v-for="t in formQuotaTypes" :key="t.id" class="qm-row">
+              <span class="qm-name">{{ t.name }}</span>
+              <span class="qm-value">{{ quotaSummary(t.id) }}</span>
+            </div>
           </div>
-          <div v-if="formQuotas.length" class="ref-detail">
-            <span v-for="q in formQuotas" :key="q.id" class="rd-item">
-              {{ q.leaveType }}：<b>{{ quotaText(q) }}</b>
-            </span>
-          </div>
-          <div v-else class="field-desc">未引用假期方案。</div>
+          <div v-else class="field-desc">该岗位未被任何额度方案勾选为适用岗位，暂时没有假期额度。</div>
         </div>
 
         <div class="cfg-block">
@@ -334,7 +288,7 @@
 
         <div class="cfg-block last">
           <div class="cfg-label"><span>备注</span></div>
-          <el-input v-model="form.note" type="textarea" :rows="2" placeholder="说明该岗位的工作模式特点" />
+          <el-input v-model="form.note" type="textarea" :rows="2" placeholder="说明该岗位的假勤方案特点" />
         </div>
       </div>
 
@@ -347,17 +301,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Setting } from '@element-plus/icons-vue'
+import ReferenceOverview from './ReferenceOverview.vue'
 import {
   scheduleSchemes,
   attendanceGroups,
   jobWorkModes,
   jobsUsingScheme,
   jobsUsingAttendance,
-  quotaSchemes,
+  leaveTypeOptions,
+  quotaChainOf,
+  schemesOfJob,
+  cycleOptions,
   backfillOptions,
   patternText,
   weekDayNames,
@@ -367,18 +325,46 @@ import {
 } from '../../mock/leaveWorkMode.js'
 
 const router = useRouter()
+const route = useRoute()
 const go = (name) => router.push({ name })
+
+/* 视图切换：按岗位（默认） / 矩阵（原「引用总览」，已并入本页） */
+const view = ref(route.query.view === 'matrix' ? 'matrix' : 'jobs')
+watch(
+  () => route.query.view,
+  (v) => {
+    const next = v === 'matrix' ? 'matrix' : 'jobs'
+    if (next !== view.value) view.value = next
+  }
+)
+watch(view, (v) => {
+  const nextQuery = { ...route.query }
+  if (v === 'matrix') nextQuery.view = 'matrix'
+  else delete nextQuery.view
+  router.replace({ query: nextQuery })
+})
 
 const schemes = scheduleSchemes
 const attGroups = attendanceGroups
-const quotas = quotaSchemes
+const leaveTypes = leaveTypeOptions
+const cycles = cycleOptions
 const modes = ref(jobWorkModes.map(m => ({ ...m })))
 const jobList = computed(() => modes.value)
 
 const modeOf = (name) => modes.value.find(m => m.job === name) || { job: name, attendance: false }
 const schemeName = (id) => (scheduleSchemes.find(s => s.id === id) || {}).name || '—'
-const quotaCount = (m) => ((m && m.quotaSchemeIds) || []).length
-const quotaText = (q) => (q.measure === 'cycle' ? `${q.cycle} ${q.amount} ${q.unit}` : `每次 ${q.amount} ${q.unit}`)
+const quotaCount = (m) => (m ? schemesOfJob(m.job).length : 0)
+/** 额度摘要：按计量方式表达（周期发放 / 周期上限 / 按次上限）+ 另有几条差异化 */
+const quotaSummary = (leaveTypeId) => {
+  const tiers = quotaChainOf(leaveTypeId)
+  if (!tiers.length) return '—'
+  const base = tiers.find(q => q.base) || tiers[0]
+  let what
+  if (base.measure === 'cap') what = `≤ ${base.amount} ${base.unit} / ${base.cycle}（上限）`
+  else if (base.measure === 'event') what = `每次 ≤ ${base.amount} ${base.unit}`
+  else what = `${base.amount} ${base.unit} / ${base.cycle}`
+  return tiers.length > 1 ? `${what}（另 ${tiers.length - 1} 条差异化）` : what
+}
 const attName = (id) => (attendanceGroups.find(a => a.id === id) || {}).name || '—'
 const policyLabel = (v) => (holidayPolicies.find(p => p.value === v) || {}).label || v
 const subDesc = computed(() => {
@@ -397,6 +383,12 @@ const currentScheme = computed(() => {
 const selectJob = (name) => {
   selectedJob.value = name
   selectedKey.value = ''
+}
+
+/** 矩阵里点岗位 → 回到「按岗位」并选中它 */
+const pickJob = (name) => {
+  selectJob(name)
+  view.value = 'jobs'
 }
 
 /* ---------- 日历 ---------- */
@@ -520,6 +512,14 @@ const selected = computed(() => {
   return resolveDay(y, m, d)
 })
 
+/** 当天状态取自哪一层（只给最终生效的那一层，覆盖链路属文档内容） */
+const basisOf = (c) => {
+  const chain = c.chain || []
+  const last = chain[chain.length - 1]
+  if (!last) return '方案周基础模式'
+  return last.detail ? `${last.layer} · ${last.detail}` : last.layer
+}
+
 const stats = computed(() => {
   const cells = calendarCells.value.filter(Boolean)
   return {
@@ -554,14 +554,15 @@ const shiftMonth = (delta) => {
 const drawerVisible = ref(false)
 const emptyForm = () => ({
   job: '', org: '', headcount: 0, schedule: true, attendance: true,
-  schemeId: null, attendanceGroupId: null, quotaSchemeIds: [],
+  schemeId: null, attendanceGroupId: null,
   backfill: 'none', note: '', pending: ''
 })
 const form = reactive(emptyForm())
 
 const formScheme = computed(() => (form.schemeId ? scheduleSchemes.find(s => s.id === form.schemeId) : null))
 const formAtt = computed(() => (form.attendanceGroupId ? attendanceGroups.find(a => a.id === form.attendanceGroupId) : null))
-const formQuotas = computed(() => (form.quotaSchemeIds || []).map(id => quotaSchemes.find(q => q.id === id)).filter(Boolean))
+const formQuotaTypes = computed(() => schemesOfJob(form.job)
+  .map(s => ({ id: s.leaveTypeId, name: (leaveTypes.find(t => t.value === s.leaveTypeId) || {}).label || s.leaveTypeId })))
 
 const openConfig = (name) => {
   const m = modeOf(name)
@@ -573,12 +574,15 @@ const save = () => {
   const idx = modes.value.findIndex(m => m.job === form.job)
   if (idx !== -1) modes.value[idx] = { ...modes.value[idx], ...JSON.parse(JSON.stringify(form)) }
   drawerVisible.value = false
-  ElMessage.success(`「${form.job}」的工作模式已更新，将于次月生效`)
+  ElMessage.success(`「${form.job}」的假勤方案已更新，将于次月生效`)
 }
 </script>
 
 <style scoped>
 .wm-page { padding: 0; }
+
+.wm-tabs :deep(.el-tabs__header) { margin-bottom: 14px; }
+.wm-tabs :deep(.el-tabs__item) { font-size: 14px; }
 
 .page-header { margin-bottom: 14px; }
 .head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -633,6 +637,7 @@ const save = () => {
 .ref-chip.att { color: hsl(var(--primary) / 0.9); }
 .ref-chip.none { opacity: 0.6; }
 .ref-chip.warn { color: hsl(38 92% 42%); border-color: hsl(38 92% 50% / 0.5); background: hsl(38 92% 50% / 0.1); }
+
 .ref-chip.quota { color: hsl(150 45% 34%); border-color: hsl(150 45% 40% / 0.4); background: hsl(150 45% 40% / 0.1); }
 .ref-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.7; }
 .pane-foot {
@@ -676,22 +681,13 @@ const save = () => {
 .legend-dot.special-work { background: hsl(150 60% 42% / 0.45); }
 .legend-dot.special-rest { background: hsl(200 70% 50% / 0.45); }
 
-.why-card { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: hsl(var(--muted) / 0.35); border: 1px solid hsl(var(--border)); }
-.why-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.why-date { font-size: 13px; font-weight: 600; color: hsl(var(--foreground)); }
-.why-for { font-size: 12px; color: hsl(var(--muted-foreground)); margin-left: auto; }
-.why-chain { display: flex; flex-direction: column; gap: 6px; }
-.why-step { display: grid; grid-template-columns: 20px 96px 1fr auto; align-items: center; gap: 8px; font-size: 12px; }
-.why-step.overridden { opacity: 0.5; }
-.step-idx {
-  width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-  background: hsl(var(--background)); border: 1px solid hsl(var(--border)); font-size: 10px; color: hsl(var(--muted-foreground));
+.day-bar {
+  margin-top: 14px; padding: 10px 14px; border-radius: 8px;
+  background: hsl(var(--muted) / 0.35); border: 1px solid hsl(var(--border));
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
-.step-layer { font-weight: 500; color: hsl(var(--foreground)); }
-.step-detail { color: hsl(var(--muted-foreground)); }
-.step-result { color: hsl(var(--foreground)); }
-.step-result em { font-style: normal; color: hsl(38 92% 42%); margin-left: 4px; }
-.why-foot { margin-top: 10px; padding-top: 9px; border-top: 1px dashed hsl(var(--border)); font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.6; }
+.db-date { font-size: 13px; font-weight: 600; color: hsl(var(--foreground)); }
+.db-basis { font-size: 12px; color: hsl(var(--muted-foreground)); margin-left: auto; }
 .empty-hint { font-size: 12.5px; color: hsl(var(--muted-foreground)); padding: 6px 0; }
 
 .no-group { padding: 8px 0; }
@@ -710,9 +706,17 @@ const save = () => {
 .src-text { font-size: 12px; color: hsl(var(--muted-foreground)); }
 .cfg-block { margin-bottom: 14px; }
 .cfg-label { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 13px; font-weight: 500; color: hsl(var(--foreground)); }
+.label-action { margin-left: auto; }
+
 .cfg-note { font-size: 11px; font-weight: 400; color: hsl(var(--muted-foreground)); }
 .ref-row { display: flex; gap: 8px; align-items: center; }
 .ref-detail { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.quota-mini { margin-top: 4px; border: 1px solid hsl(var(--border)); border-radius: 8px; overflow: hidden; }
+.quota-mini .qm-row { display: flex; align-items: center; padding: 7px 12px; font-size: 12.5px; }
+.quota-mini .qm-row + .qm-row { border-top: 1px solid hsl(var(--border) / 0.6); }
+.quota-mini .qm-row:nth-child(odd) { background: hsl(var(--muted) / 0.25); }
+.quota-mini .qm-name { width: 96px; flex-shrink: 0; color: hsl(var(--muted-foreground)); }
+.quota-mini .qm-value { color: hsl(var(--foreground)); font-weight: 500; }
 .ref-detail b { color: hsl(var(--foreground)); font-weight: 500; }
 .opt-name { margin-right: 10px; }
 .opt-meta { float: right; font-size: 12px; color: hsl(var(--muted-foreground)); }

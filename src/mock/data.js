@@ -2813,6 +2813,51 @@ export const distributionStrategies = [
   }
 ]
 
+/* ---------------- 补偿金单（第三类单据） ----------------
+   与工资单 / 常乐豆单并列的第三种单据，但有三点不同：
+     · 默认跟随薪酬模板 —— 补偿金分类挂在策略所属的岗位薪酬模板下；但款项组成固定两项
+       （人事协商的一次性金额 + 结转的常乐豆），不从模板公式计算
+     · 不进「应发之和 = 总净工资」等式 —— 属独立的申报科目
+     · 取数时点不由日期驱动 —— 挂在「常乐豆余额冻结完成」之后，取「上月内离职的人」
+   组成固定两项，扣缴只有【补偿金个税】系统项（负工资抵扣等动态扣款在单据实例上，不在策略配置里）。 */
+const defaultCompSlips = [
+  {
+    name: '离职补偿金',
+    frequency: '月',
+    trigger: '常乐豆余额冻结完成后（次月 5 日）',
+    dataDateStart: '上月/1日',
+    dataDateEnd: '上月/末日',
+    scope: '上月内离职人员',
+    notifyDate: '次月5日',
+    paymentDate: '次月9日',
+    delayConfirm: '次日发放',
+    paymentEntity: '合作主体',
+    payeeAccount: '新员工关系（银行卡）',
+    taxSubject: '解除劳动合同一次性补偿金',
+    incomeGroups: [
+      {
+        name: '补偿金',
+        items: [
+          { id: 1, displayName: '协商一次性现金', category: '补偿金', itemName: '协商一次性补偿金', source: '人事录入' },
+          { id: 2, displayName: '常乐豆（离职通道）', category: '补偿金', itemName: '常乐豆结转补偿金', source: '余额冻结后取值' }
+        ]
+      }
+    ],
+    deductGroups: [
+      {
+        name: '补偿金个税',
+        items: [
+          { id: 1, displayName: '补偿金个税', category: '系统代扣', itemName: '解除劳动合同一次性补偿金个税', source: '系统' }
+        ]
+      }
+    ]
+  }
+]
+
+distributionStrategies.forEach((s) => {
+  s.compSlips = JSON.parse(JSON.stringify(defaultCompSlips))
+})
+
 // 生成并导出 workPosts（依赖 users、positions、budgetPlans）
 workPosts = _generateWorkPosts()
 

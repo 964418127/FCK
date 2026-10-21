@@ -2,769 +2,371 @@
   <div class="approval-rules">
     <div class="page-header">
       <div class="header-main">
-        <h1>审核规则</h1>
-        <el-tag type="warning" effect="plain" size="small">预研稿 · 非结论</el-tag>
-        <el-tag type="success" effect="plain" size="small">配置层 · P0</el-tag>
+        <h1>假期审核规则</h1>
       </div>
-      <p class="tip">
-        固定假默认走自动审核，<strong>部分城市或门店可以单独关掉</strong>，关掉后该层走人工。
-        规则遵循「继承优先 + 局部覆盖」，且覆盖方向锁定为<strong>单向收紧</strong> ——
-        向下只会更严、不会更松，避免规则碎片化。
-      </p>
     </div>
 
-    <div class="rule-layout">
-      <!-- 左：假种规则列表 -->
-      <aside class="rule-side">
-        <div class="side-head">假种规则</div>
-        <div class="rule-list">
-          <div
-            v-for="r in ruleList"
-            :key="r.leaveTypeId"
-            class="rule-item"
-            :class="{ active: r.leaveTypeId === currentId }"
-            @click="selectRule(r.leaveTypeId)"
-          >
-            <div class="rule-name">{{ typeName(r.leaveTypeId) }}</div>
-            <div class="rule-tags">
-              <el-tag
-                size="small"
-                effect="plain"
-                :type="r.general.autoApprove ? 'success' : 'warning'"
-              >{{ r.general.autoApprove ? '通用 · 自动' : '通用 · 人工' }}</el-tag>
-              <span v-if="summary(r)" class="rule-summary">{{ summary(r) }}</span>
+    <div class="section-card">
+      <div class="card-header">
+        <span class="card-title">申请与审核要求</span>
+        <span class="card-sub">{{ rows.length }} 个假种 · {{ autoCount }} 个自动审核 · {{ diffCount }} 条差异化</span>
+        <span class="card-note">改动会记入下方变更记录</span>
+      </div>
+
+      <el-table :data="rows" size="small" class="rule-table">
+        <el-table-column label="假种" min-width="230">
+          <template #default="{ row }">
+            <div class="type-cell">
+              <span class="type-name">{{ row.name }}</span>
+              <span class="type-note">{{ row.note }}</span>
             </div>
-          </div>
-        </div>
-      </aside>
+          </template>
+        </el-table-column>
 
-      <!-- 右：层级与条件 -->
-      <div class="rule-main">
-        <!-- 三层继承 -->
-        <div class="section-card">
-          <div class="card-header">
-            <span class="card-title">{{ typeName(currentId) }} · 层级继承</span>
-            <span class="card-sub">留空即向上继承；本层改动只有「收紧」一种方向</span>
-          </div>
+        <el-table-column label="类别" width="92">
+          <template #default="{ row }">
+            <el-tag size="small" effect="plain" :type="row.category === 'statutory' ? 'primary' : 'info'">
+              {{ row.category === 'statutory' ? '法定假' : '公司自定' }}
+            </el-tag>
+          </template>
+        </el-table-column>
 
-          <div class="layer-row">
-            <!-- 通用 -->
-            <div class="layer-card base">
-              <div class="layer-head">
-                <span class="layer-title">通用</span>
-                <el-tag size="small" effect="plain" type="info">基准层</el-tag>
-              </div>
-              <div class="layer-body">
-                <div class="switch-row">
-                  <span class="switch-label">固定假自动审核</span>
-                  <el-switch
-                    :model-value="current.general.autoApprove"
-                    @change="v => setGeneral(v)"
-                  />
-                </div>
-                <div class="layer-state" :class="current.general.autoApprove ? 'is-auto' : 'is-manual'">
-                  {{ current.general.autoApprove ? '自动审核' : '人工审核' }}
-                </div>
-              </div>
-              <div class="layer-foot">所有城市 / 门店的默认值</div>
-            </div>
+        <el-table-column label="凭证要求" width="178" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span :class="row.proofTypes.length ? 'proof-yes' : 'plain'">{{ proofTextOf(row.proofTypes) }}</span>
+          </template>
+        </el-table-column>
 
-            <!-- 城市 -->
-            <div class="layer-card" :class="{ override: cityIsOverride }">
-              <div class="layer-head">
-                <span class="layer-title">城市</span>
-                <el-tag
-                  size="small"
-                  effect="plain"
-                  :type="cityIsOverride ? 'warning' : 'info'"
-                >{{ cityIsOverride ? '本层覆盖' : '继承' }}</el-tag>
-              </div>
-              <div class="layer-body">
-                <el-select v-model="city" size="small" style="width: 100%; margin-bottom: 10px;">
-                  <el-option v-for="c in ruleCities" :key="c" :label="c" :value="c" />
-                </el-select>
-                <div class="switch-row">
-                  <span class="switch-label">固定假自动审核</span>
-                  <el-switch
-                    :model-value="cityValue"
-                    :disabled="!current.general.autoApprove"
-                    @change="v => setCity(v)"
-                  />
-                </div>
-                <div class="layer-state" :class="cityValue ? 'is-auto' : 'is-manual'">
-                  {{ cityValue ? '自动审核' : '人工审核' }}
-                </div>
-              </div>
-              <div class="layer-foot">
-                <span v-if="!current.general.autoApprove" class="foot-hint">
-                  上层已为人工，本层无需配置（不可放宽）
-                </span>
-                <span v-else-if="cityIsOverride">
-                  来源：本层设定
-                  <el-button size="small" link type="primary" @click="restoreCity">恢复继承</el-button>
-                </span>
-                <span v-else>来源：继承自通用层</span>
-              </div>
-            </div>
+        <el-table-column label="提前申请期" width="104" align="center">
+          <template #default="{ row }">
+            <span class="plain">{{ advanceText(row.advanceDays) }}</span>
+          </template>
+        </el-table-column>
 
-            <!-- 门店 -->
-            <div class="layer-card" :class="{ override: storeIsOverride }">
-              <div class="layer-head">
-                <span class="layer-title">门店</span>
-                <el-tag
-                  size="small"
-                  effect="plain"
-                  :type="storeIsOverride ? 'warning' : 'info'"
-                >{{ storeIsOverride ? '本层覆盖' : '继承' }}</el-tag>
-              </div>
-              <div class="layer-body">
-                <el-select v-model="store" size="small" style="width: 100%; margin-bottom: 10px;">
-                  <el-option v-for="s in storeOptions" :key="s" :label="s" :value="s" />
-                </el-select>
-                <div class="switch-row">
-                  <span class="switch-label">固定假自动审核</span>
-                  <el-switch
-                    :model-value="storeValue"
-                    :disabled="!cityValue"
-                    @change="v => setStore(v)"
-                  />
-                </div>
-                <div class="layer-state" :class="storeValue ? 'is-auto' : 'is-manual'">
-                  {{ storeValue ? '自动审核' : '人工审核' }}
-                </div>
-              </div>
-              <div class="layer-foot">
-                <span v-if="!cityValue" class="foot-hint">
-                  上层已为人工，本层无需配置（不可放宽）
-                </span>
-                <span v-else-if="storeIsOverride">
-                  来源：本层设定
-                  <el-button size="small" link type="primary" @click="restoreStore">恢复继承</el-button>
-                </span>
-                <span v-else>来源：继承自 {{ city }} 层</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 生效链路 -->
-          <div class="chain-row">
-            <span class="chain-badge">生效链路</span>
-            <span class="chain-text">{{ chainText }}</span>
-            <el-tag
+        <el-table-column label="审核方式" width="176">
+          <template #default="{ row }">
+            <el-radio-group
+              :model-value="row.autoApprove ? 'auto' : 'manual'"
               size="small"
-              :type="effectiveAuto ? 'success' : 'danger'"
-              effect="dark"
-            >最终：{{ effectiveAuto ? '自动审核' : '人工审核' }}</el-tag>
-          </div>
+              @change="v => setAuto(row, v === 'auto')"
+            >
+              <el-radio-button value="auto">自动</el-radio-button>
+              <el-radio-button value="manual">人工</el-radio-button>
+            </el-radio-group>
+          </template>
+        </el-table-column>
 
-          <!-- 冗余覆盖提示 -->
-          <el-alert
-            v-if="staleOverrides.length"
-            type="warning"
-            :closable="false"
-            show-icon
-            class="stale-alert"
-          >
-            <template #title>
-              上层收紧后，以下 {{ staleOverrides.length }} 处覆盖已失效：{{ staleOverrides.join('、') }}
-            </template>
-          </el-alert>
-        </div>
-
-        <!-- 触发原因预览 -->
-        <div class="section-card">
-          <div class="card-header">
-            <span class="card-title">触发原因预览</span>
-            <span class="card-sub">审批人需要能一眼分辨「为什么走人工」</span>
-          </div>
-          <div class="preview-box">
-            <div class="preview-line">
-              <span class="preview-key">当前场景</span>
-              <span>员工 {{ sceneEmployee }} 在「{{ store }}」提交 {{ typeName(currentId) }} 申请</span>
-            </div>
-            <div class="preview-line">
-              <span class="preview-key">审核路径</span>
-              <el-tag size="small" effect="plain" :type="effectiveAuto ? 'success' : 'danger'">
-                {{ effectiveAuto ? '自动审核' : '人工审核' }}
-              </el-tag>
-            </div>
-            <div class="preview-line">
-              <span class="preview-key">触发原因</span>
-              <span v-if="effectiveAuto" class="preview-auto">
-                全部自动条件满足 → 直接放行，不产生待办
-              </span>
-              <span v-else>
-                <el-tag size="small" type="info" effect="plain">{{ triggerReason.tag }}</el-tag>
-                <span class="preview-reason">{{ triggerReason.text }}</span>
+        <el-table-column label="差异化" min-width="300">
+          <template #default="{ row }">
+            <div v-if="row.overrides.length" class="ov-wrap">
+              <span v-for="o in row.overrides" :key="o.id" class="ov-chip" :title="o.note || ''">
+                {{ dimLabel(o.dimension) }} · {{ shortValues(o) }}
+                <b>{{ patchText(o) }}</b>
               </span>
             </div>
+            <span v-else class="plain">—</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" link type="primary" @click="openEdit(row)">配置</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <div class="section-card">
+      <div class="card-header">
+        <span class="card-title">配置变更记录</span>
+      </div>
+      <el-table :data="changeLogs" size="small">
+        <el-table-column prop="time" label="时间" width="150" />
+        <el-table-column prop="operator" label="操作人" width="160" />
+        <el-table-column prop="target" label="对象" width="170" />
+        <el-table-column label="变更" width="200">
+          <template #default="{ row }">
+            <span class="log-from">{{ row.from }}</span>
+            <span class="log-arrow">→</span>
+            <span class="log-to">{{ row.to }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reason" label="原因" min-width="240" show-overflow-tooltip />
+      </el-table>
+    </div>
+
+    <!-- ============ 配置抽屉 ============ -->
+    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="720px" :modal="false">
+      <div class="drawer-body" v-if="current">
+        <el-divider content-position="left">基础配置</el-divider>
+
+        <div class="base-grid">
+          <div class="ov-field">
+            <span class="of-label">凭证要求</span>
+            <el-select v-model="current.proofTypes" multiple size="small" placeholder="不选即无需凭证" style="flex: 1">
+              <el-option v-for="p in proofTypes" :key="p.value" :label="p.label" :value="p.value">
+                <span>{{ p.label }}</span>
+                <span v-if="p.desc" class="opt-desc">{{ p.desc }}</span>
+              </el-option>
+            </el-select>
           </div>
-          <p class="preview-note">
-            区分「配置原因」与「业务原因」的意义：前者审批人只是走形式，后者才需要真正判断。
-            两者若在界面上长得一样，审批人就会一直在做无用判断。
-          </p>
+
+          <div class="ov-field">
+            <span class="of-label">提前申请期</span>
+            <el-input-number v-model="current.advanceDays" size="small" :min="0" :step="1" controls-position="right" style="width: 120px" />
+            <span class="row-unit">天</span>
+            <span class="cfg-note">0 = 可事后补</span>
+          </div>
+
+          <div class="ov-field">
+            <span class="of-label">审核方式</span>
+            <el-radio-group v-model="current.autoApprove" size="small">
+              <el-radio-button :value="true">自动审核</el-radio-button>
+              <el-radio-button :value="false">人工审核</el-radio-button>
+            </el-radio-group>
+            <span class="cfg-note">全公司打底</span>
+          </div>
         </div>
 
-        <!-- 自动通过条件集 -->
-        <div class="section-card">
-          <div class="card-header">
-            <span class="card-title">自动通过条件集</span>
-            <span class="card-sub">全部满足才自动通过，任一不满足即转人工</span>
+        <el-divider content-position="left">差异化</el-divider>
+
+        <div class="cfg-block">
+          <div class="cfg-label">
+            <span>差异化条目</span>
+            <span class="cfg-note">仅城市 / 门店 · 三项默认取基础配置，改动哪项就覆盖哪项</span>
+            <el-button size="small" class="cfg-add" @click="addOverride">+ 添加差异化</el-button>
           </div>
-          <div class="cond-list">
-            <div v-for="c in conditions" :key="c.id" class="cond-item">
-              <el-switch v-model="c.enabled" size="small" />
-              <div class="cond-main">
-                <div class="cond-label">{{ c.label }}</div>
-                <div class="cond-desc">{{ c.desc }}</div>
+
+          <div v-if="!current.overrides.length" class="field-desc">未配置差异化，全部按基础配置执行。</div>
+
+          <div v-for="(o, idx) in current.overrides" :key="o.id" class="ov-row">
+            <div class="ov-head">
+              <span class="ov-index">{{ idx + 1 }}</span>
+              <el-select v-model="o.dimension" size="small" style="width: 100px" @change="onOverrideDim(o)">
+                <el-option v-for="d in dimChoices" :key="d.value" :label="d.label" :value="d.value" />
+              </el-select>
+              <el-select
+                v-model="o.values"
+                multiple
+                filterable
+                size="small"
+                style="flex: 1; min-width: 180px"
+                :placeholder="`选择${dimLabel(o.dimension)}（可多选）`"
+              >
+                <el-option v-for="v in dimValues(o.dimension)" :key="v" :label="v" :value="v" />
+              </el-select>
+              <el-button size="small" link type="danger" @click="removeOverride(idx)">删除</el-button>
+            </div>
+
+            <div class="ov-fields">
+              <div class="ov-field">
+                <span class="of-label">审核方式</span>
+                <el-radio-group
+                  :model-value="eff(o, 'autoApprove')"
+                  size="small"
+                  @change="v => setPatch(o, 'autoApprove', v)"
+                >
+                  <el-radio-button :value="true">自动</el-radio-button>
+                  <el-radio-button :value="false">人工</el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <div class="ov-field">
+                <span class="of-label">凭证要求</span>
+                <el-select
+                  :model-value="eff(o, 'proofTypes')"
+                  multiple
+                  size="small"
+                  placeholder="不选即无需凭证"
+                  style="flex: 1"
+                  @change="v => setPatch(o, 'proofTypes', v)"
+                >
+                  <el-option v-for="p in proofTypes" :key="p.value" :label="p.label" :value="p.value" />
+                </el-select>
+              </div>
+
+              <div class="ov-field">
+                <span class="of-label">提前申请期</span>
+                <el-input-number
+                  :model-value="eff(o, 'advanceDays')"
+                  size="small"
+                  :min="0"
+                  :step="1"
+                  controls-position="right"
+                  style="width: 110px"
+                  @change="v => setPatch(o, 'advanceDays', v)"
+                />
+                <span class="row-unit">天</span>
               </div>
             </div>
-          </div>
-          <p class="preview-note">
-            条件集当前为全局配置，作用于所有已开启自动审核的假种。
-            是否需要按假种分别配置条件（例如「额度内」只对计额度的假种生效），列为待决事项。
-          </p>
-        </div>
 
-        <!-- 变更记录 -->
-        <div class="section-card">
-          <div class="card-header">
-            <span class="card-title">配置变更记录</span>
-            <span class="card-sub">影响审批工作量的配置改动需可追溯</span>
+            <div class="ov-sub">
+              <el-input v-model="o.note" size="small" placeholder="差异原因（选填）" style="max-width: 420px" />
+            </div>
           </div>
-          <el-table :data="changeLogs" size="small">
-            <el-table-column prop="time" label="时间" width="150" />
-            <el-table-column prop="operator" label="操作人" width="150" />
-            <el-table-column prop="scope" label="层级" width="150" />
-            <el-table-column prop="target" label="假种" width="90" />
-            <el-table-column label="变更" width="200">
-              <template #default="{ row }">
-                <span class="log-from">{{ row.from }}</span>
-                <span class="log-arrow">→</span>
-                <span class="log-to">{{ row.to }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="reason" label="原因" min-width="240" show-overflow-tooltip />
-          </el-table>
         </div>
       </div>
-    </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   approvalRules as rawRules,
-  autoApproveConditions,
   ruleChangeLogs,
-  ruleCities,
-  ruleStores,
-  findLeaveType
+  findLeaveType,
+  proofTypes,
+  proofTextOf
 } from '../../mock/leaveAttendance.js'
+import { dimLabel, dimValues, diffDimensions } from '../../mock/leaveWorkMode.js'
 
-const ruleList = ref(JSON.parse(JSON.stringify(rawRules)))
-const conditions = reactive(autoApproveConditions.map(c => ({ ...c })))
+const rules = ref(JSON.parse(JSON.stringify(rawRules)))
 const changeLogs = ref(ruleChangeLogs)
 
-const currentId = ref(ruleList.value[0].leaveTypeId)
-const city = ref(ruleCities[0])
-const store = ref((ruleStores[ruleCities[0]] || [])[0] || '')
-
-const current = computed(() =>
-  ruleList.value.find(r => r.leaveTypeId === currentId.value)
+const rows = computed(() =>
+  rules.value.map(r => {
+    const t = findLeaveType(r.leaveTypeId) || {}
+    return {
+      leaveTypeId: r.leaveTypeId,
+      autoApprove: r.autoApprove,
+      proofTypes: r.proofTypes || [],
+      advanceDays: r.advanceDays ?? 0,
+      overrides: r.overrides || [],
+      name: t.name || r.leaveTypeId,
+      note: t.note || '',
+      category: t.category
+    }
+  })
 )
 
-const typeName = (id) => {
-  const t = findLeaveType(id)
-  return t ? t.name : id
+const autoCount = computed(() => rows.value.filter(r => r.autoApprove).length)
+const diffCount = computed(() => rows.value.reduce((n, r) => n + r.overrides.length, 0))
+
+/* 差异化维度：与额度一致，只有城市 / 门店 */
+const dimChoices = diffDimensions.filter(d => d.value === 'city' || d.value === 'store')
+
+const advanceText = (d) => (d === 0 ? '可事后补' : `${d} 天`)
+const shortValues = (o) => {
+  const list = o.values || []
+  if (!list.length) return '未指定'
+  if (list.length <= 2) return list.join('、')
+  return `${list[0]} 等 ${list.length} 个`
 }
-
-const storeOptions = computed(() => ruleStores[city.value] || [])
-
-/* ---------- 层级取值 ---------- */
-const cityIsOverride = computed(() => !!current.value.city[city.value])
-
-const cityValue = computed(() => {
-  const ov = current.value.city[city.value]
-  return ov ? ov.autoApprove : current.value.general.autoApprove
-})
-
-const storeIsOverride = computed(() => !!current.value.store[store.value])
-
-const storeValue = computed(() => {
-  const ov = current.value.store[store.value]
-  return ov ? ov.autoApprove : cityValue.value
-})
-
-const effectiveAuto = computed(() => storeValue.value)
-
-/* ---------- 设置层级值 ---------- */
-const setGeneral = (v) => {
-  current.value.general.autoApprove = v
-  ElMessage.success(`通用层已设为「${v ? '自动' : '人工'}审核」`)
-}
-
-const setCity = (v) => {
-  if (!current.value.general.autoApprove && v) {
-    ElMessage.warning('上层已为人工审核，本层不可放宽')
-    return
-  }
-  current.value.city[city.value] = { autoApprove: v }
-  ElMessage.success(`${city.value} 已${v ? '开启' : '关闭'}自动审核`)
-}
-
-const setStore = (v) => {
-  if (!cityValue.value && v) {
-    ElMessage.warning('上层已为人工审核，本层不可放宽')
-    return
-  }
-  current.value.store[store.value] = { autoApprove: v }
-  ElMessage.success(`${store.value} 已${v ? '开启' : '关闭'}自动审核`)
-}
-
-const restoreCity = () => {
-  delete current.value.city[city.value]
-  ElMessage.success(`${city.value} 已恢复继承通用层`)
-}
-
-const restoreStore = () => {
-  delete current.value.store[store.value]
-  ElMessage.success(`${store.value} 已恢复继承 ${city.value} 层`)
-}
-
-/* ---------- 派生信息 ---------- */
-const chainText = computed(() => {
-  const g = current.value.general.autoApprove ? '自动' : '人工'
-  const c = cityValue.value ? '自动' : '人工'
-  const s = storeValue.value ? '自动' : '人工'
-  return `通用 ${g} → ${city.value} ${c}${cityIsOverride.value ? '（本层）' : '（继承）'} → ${store.value} ${s}${storeIsOverride.value ? '（本层）' : '（继承）'}`
-})
-
-const staleOverrides = computed(() => {
-  const list = []
-  if (!current.value.general.autoApprove) {
-    Object.keys(current.value.city).forEach(c => list.push(`${c}（城市层覆盖已冗余）`))
-  }
-  if (!cityValue.value) {
-    Object.keys(current.value.store).forEach(s => list.push(`${s}（门店层覆盖已冗余）`))
-  }
-  return list
-})
-
-const summary = (r) => {
-  const cityCount = Object.keys(r.city).length
-  const storeCount = Object.keys(r.store).length
+const patchText = (o) => {
+  const p = o.patch || {}
   const parts = []
-  if (cityCount) parts.push(`${cityCount} 城覆盖`)
-  if (storeCount) parts.push(`${storeCount} 店覆盖`)
-  return parts.join(' · ')
+  if ('autoApprove' in p) parts.push(p.autoApprove ? '自动' : '人工')
+  if ('proofTypes' in p) parts.push(`凭证：${p.proofTypes.length ? proofTextOf(p.proofTypes) : '无需'}`)
+  if ('advanceDays' in p) parts.push(`提前 ${advanceText(p.advanceDays)}`)
+  return parts.join(' / ') || '同基础配置'
 }
 
-const sceneEmployee = ref('李慧敏 · 客户经理')
-
-const triggerReason = computed(() => {
-  if (storeIsOverride.value && !storeValue.value) {
-    return {
-      tag: '配置原因',
-      text: `门店「${store.value}」已关闭自动审核，员工提交后直接进入人工审批队列（非业务问题）`
-    }
-  }
-  if (cityIsOverride.value && !cityValue.value) {
-    return {
-      tag: '配置原因',
-      text: `城市「${city.value}」已关闭自动审核，门店「${store.value}」继承该设置`
-    }
-  }
-  if (!current.value.general.autoApprove) {
-    return {
-      tag: '配置原因',
-      text: `通用层将「${typeName(currentId.value)}」设为人工审核（如特殊假种需核验凭证）`
-    }
-  }
-  return { tag: '—', text: '无' }
-})
-
-/* ---------- 切换假种 ---------- */
-const selectRule = (id) => {
-  currentId.value = id
-  const r = ruleList.value.find(x => x.leaveTypeId === id)
-  const cityKeys = Object.keys(r.city)
-  const cityHit = cityKeys.length ? cityKeys[0] : ruleCities[0]
-  city.value = cityHit
-  const stores = ruleStores[cityHit] || []
-  const storeKeys = Object.keys(r.store)
-  const storeHit = storeKeys.length ? storeKeys[0] : stores[0]
-  store.value = storeHit || ''
+const setAuto = (row, v) => {
+  const hit = rules.value.find(r => r.leaveTypeId === row.leaveTypeId)
+  if (hit) hit.autoApprove = v
+  ElMessage.success(`「${row.name}」已设为${v ? '自动审核' : '人工审核'}`)
 }
+
+/* ---------- 抽屉 ---------- */
+const drawerVisible = ref(false)
+const current = ref(null)
+const drawerTitle = computed(() => (current.value ? `配置审核规则 · ${current.value.name}` : '配置审核规则'))
+
+const openEdit = (row) => {
+  current.value = row
+  drawerVisible.value = true
+}
+
+const addOverride = () => {
+  current.value.overrides.push({
+    id: 'ov-ap-' + Date.now(),
+    dimension: 'city',
+    values: [],
+    patch: {},
+    note: ''
+  })
+}
+const onOverrideDim = (o) => { o.values = [] }
+
+/** 差异化里每项默认显示基础配置的值；改动即写入 patch，改回基础值则退出 patch */
+const eff = (o, k) => (k in o.patch ? o.patch[k] : current.value[k])
+const sameVal = (a, b) => (Array.isArray(a) || Array.isArray(b))
+  ? JSON.stringify(a || []) === JSON.stringify(b || [])
+  : a === b
+const setPatch = (o, k, v) => {
+  if (sameVal(v, current.value[k])) delete o.patch[k]
+  else o.patch[k] = v
+}
+
+const removeOverride = (idx) => { current.value.overrides.splice(idx, 1) }
 </script>
 
 <style scoped>
-.approval-rules {
-  padding: 0;
-}
+.approval-rules { padding: 0; }
 
-.page-header {
-  margin-bottom: 20px;
-}
+.page-header { margin-bottom: 14px; }
+.header-main { display: flex; align-items: center; gap: 12px; }
+.page-header h1 { font-size: 22px; font-weight: 600; margin: 0; color: hsl(var(--foreground)); }
 
-.header-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.page-header h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-  color: hsl(var(--foreground));
-}
-
-.page-header .tip {
-  color: hsl(var(--muted-foreground));
-  font-size: 14px;
-  margin: 0;
-  line-height: 1.7;
-  max-width: 960px;
-}
-
-.page-header .tip strong {
-  color: hsl(var(--foreground));
-  font-weight: 600;
-}
-
-/* 布局 */
-.rule-layout {
-  display: grid;
-  grid-template-columns: 236px 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
-.rule-side {
-  background: hsl(var(--background));
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  position: sticky;
-  top: 0;
-}
-
-.side-head {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  padding: 14px 16px;
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--muted) / 0.5);
-}
-
-.rule-list {
-  padding: 8px;
-}
-
-.rule-item {
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 4px;
-  transition: background 0.15s;
-  border: 1px solid transparent;
-}
-
-.rule-item:hover {
-  background: hsl(var(--muted) / 0.6);
-}
-
-.rule-item.active {
-  background: hsl(var(--primary) / 0.06);
-  border-color: hsl(var(--primary) / 0.3);
-}
-
-.rule-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-  margin-bottom: 6px;
-}
-
-.rule-tags {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.rule-summary {
-  font-size: 11px;
-  color: hsl(var(--muted-foreground));
-}
-
-/* 卡片 */
 .section-card {
   background: hsl(var(--background));
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 16px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
 }
-
-.section-card:last-child {
-  margin-bottom: 0;
-}
+.section-card:last-child { margin-bottom: 0; }
 
 .card-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid hsl(var(--border));
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px; padding-bottom: 11px;
+  border-bottom: 1px solid hsl(var(--border)); flex-wrap: wrap;
 }
+.card-title { font-size: 15px; font-weight: 600; color: hsl(var(--foreground)); }
+.card-sub { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.card-note { font-size: 11.5px; color: hsl(var(--muted-foreground) / 0.85); margin-left: auto; }
 
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
+.type-cell { display: flex; flex-direction: column; gap: 2px; }
+.type-name { font-size: 13.5px; font-weight: 500; color: hsl(var(--foreground)); }
+.type-note { font-size: 11.5px; color: hsl(var(--muted-foreground)); line-height: 1.5; }
+.plain { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.proof-yes { font-size: 12.5px; color: #b8860b; }
 
-.card-sub {
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
+.ov-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.ov-chip {
+  font-size: 11.5px; padding: 2px 8px; border-radius: 10px;
+  border: 1px solid hsl(38 92% 50% / 0.4); background: hsl(38 92% 50% / 0.1); color: hsl(38 92% 38%);
 }
+.ov-chip b { font-weight: 600; margin-left: 2px; }
 
-/* 三层卡片 */
-.layer-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
+/* 抽屉 */
+.drawer-body { padding-bottom: 8px; }
+.cfg-block { margin-bottom: 18px; }
+.cfg-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 500; color: hsl(var(--foreground)); flex-wrap: wrap; }
+.cfg-note { font-size: 11px; font-weight: 400; color: hsl(var(--muted-foreground)); }
+.cfg-add { margin-left: auto; }
+.cfg-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.base-grid { display: flex; flex-direction: column; gap: 12px; padding: 2px 0 14px; }
+.row-label { font-size: 12.5px; color: hsl(var(--muted-foreground)); width: 84px; }
+.row-unit { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.field-desc { font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.65; margin-top: 6px; }
+.opt-desc { margin-left: 10px; font-size: 11.5px; color: hsl(var(--muted-foreground)); }
 
-.layer-card {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+.ov-row { border: 1px solid hsl(38 92% 50% / 0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: hsl(38 92% 50% / 0.04); }
+.ov-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ov-index {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  font-size: 11px; display: inline-flex; align-items: center; justify-content: center;
+  background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 38%); font-weight: 600;
 }
+.ov-fields { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.ov-field { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.of-label { font-size: 12px; color: hsl(var(--muted-foreground)); width: 84px; }
+.ov-sub { margin-top: 8px; }
 
-.layer-card.base {
-  border-color: hsl(var(--primary) / 0.35);
-}
-
-.layer-card.override {
-  border-color: hsl(var(--primary) / 0.6);
-}
-
-.layer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: hsl(var(--muted) / 0.5);
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.layer-card.override .layer-head {
-  background: hsl(var(--primary) / 0.06);
-}
-
-.layer-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-
-.layer-body {
-  padding: 14px;
-  flex: 1;
-}
-
-.switch-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.switch-label {
-  font-size: 13px;
-  color: hsl(var(--foreground));
-}
-
-.layer-state {
-  margin-top: 10px;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.layer-state.is-auto {
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.08);
-}
-
-.layer-state.is-manual {
-  color: #b8860b;
-  background: rgba(184, 134, 11, 0.1);
-}
-
-.layer-foot {
-  padding: 10px 14px;
-  border-top: 1px dashed hsl(var(--border));
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-  line-height: 1.6;
-  min-height: 44px;
-}
-
-.foot-hint {
-  color: #b8860b;
-}
-
-/* 生效链路 */
-.chain-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: hsl(var(--muted) / 0.5);
-  border-radius: 8px;
-  flex-wrap: wrap;
-}
-
-.chain-badge {
-  font-size: 12px;
-  font-weight: 600;
-  color: hsl(var(--background));
-  background: hsl(var(--muted-foreground));
-  border-radius: 4px;
-  padding: 2px 8px;
-  flex-shrink: 0;
-}
-
-.chain-text {
-  font-size: 13px;
-  color: hsl(var(--foreground));
-  flex: 1;
-  min-width: 320px;
-  font-variant-numeric: tabular-nums;
-}
-
-.stale-alert {
-  margin-top: 12px;
-}
-
-/* 触发原因预览 */
-.preview-box {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  padding: 16px;
-  background: hsl(var(--muted) / 0.35);
-}
-
-.preview-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: hsl(var(--foreground));
-  margin-bottom: 8px;
-}
-
-.preview-line:last-child {
-  margin-bottom: 0;
-}
-
-.preview-key {
-  width: 76px;
-  flex-shrink: 0;
-  color: hsl(var(--muted-foreground));
-  font-size: 12px;
-  padding-top: 2px;
-}
-
-.preview-auto {
-  color: hsl(var(--primary));
-}
-
-.preview-reason {
-  margin-left: 8px;
-  color: hsl(var(--muted-foreground));
-}
-
-.preview-note {
-  font-size: 12px;
-  line-height: 1.7;
-  color: hsl(var(--muted-foreground));
-  margin: 12px 0 0 0;
-  padding-left: 12px;
-  border-left: 2px solid hsl(var(--border));
-}
-
-/* 条件集 */
-.cond-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 10px;
-}
-
-.cond-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-}
-
-.cond-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.cond-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-  margin-bottom: 3px;
-}
-
-.cond-desc {
-  font-size: 12px;
-  line-height: 1.5;
-  color: hsl(var(--muted-foreground));
-}
-
-/* 变更记录 */
-.log-from {
-  font-size: 13px;
-  color: hsl(var(--muted-foreground));
-}
-
-.log-arrow {
-  margin: 0 8px;
-  color: hsl(var(--muted-foreground));
-}
-
-.log-to {
-  font-size: 13px;
-  font-weight: 500;
-  color: hsl(var(--primary));
-}
-
-@media (max-width: 1280px) {
-  .rule-layout {
-    grid-template-columns: 1fr;
-  }
-  .layer-row {
-    grid-template-columns: 1fr;
-  }
-}
+.log-from { font-size: 13px; color: hsl(var(--muted-foreground)); }
+.log-arrow { margin: 0 8px; color: hsl(var(--muted-foreground)); }
+.log-to { font-size: 13px; font-weight: 500; color: hsl(var(--primary)); }
 </style>

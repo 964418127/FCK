@@ -412,9 +412,6 @@
                       <span class="slip-name">{{ slip.name }}</span>
                     </div>
                   </div>
-                  <div class="panel-footer">
-                    <el-button v-if="isEdit" type="primary" size="small" link @click="addBeanSlip">+ 新增常乐豆单</el-button>
-                  </div>
                 </div>
 
                 <!-- 右侧：常乐豆单详情 -->
@@ -608,6 +605,167 @@
               </div>
             </div>
           </el-tab-pane>
+
+          <!-- 补偿金映射 -->
+          <el-tab-pane label="补偿金映射" name="comp">
+            <div class="mapping-section">
+              <div class="payroll-mapping-layout">
+                <!-- 左侧：补偿金单列表 -->
+                <div class="payroll-list-panel">
+                  <div class="panel-header">
+                    <span class="panel-title">补偿金单列表</span>
+                  </div>
+                  <div class="payroll-slip-list">
+                    <div
+                      v-for="(slip, index) in compSlips"
+                      :key="index"
+                      :class="['payroll-slip-item', { active: currentCompSlipIndex === index }]"
+                      @click="selectCompSlip(index)"
+                    >
+                      <span class="slip-name">{{ slip.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 右侧：补偿金单详情 -->
+                <div class="payroll-detail-panel" v-if="currentCompSlip">
+                  <div class="detail-header-bar">
+                    <span class="detail-title">{{ currentCompSlip.name }}</span>
+                    <el-button v-if="isEdit" type="danger" size="small" link @click="removeCompSlip(currentCompSlipIndex)">解散补偿金单</el-button>
+                  </div>
+
+                  <!-- 补偿金基础配置 -->
+                  <div class="detail-config-block">
+                    <h5>补偿金基础配置</h5>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="info-label">薪酬模板</span>
+                        <span class="info-value">{{ strategyData.templateName || '／' }}<span class="info-sub">（默认跟随）</span></span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">计算周期频次</span>
+                        <span class="info-value">{{ currentCompSlip.frequency }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">取数对象</span>
+                        <span class="info-value">{{ currentCompSlip.scope }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">取数起始</span>
+                        <span class="info-value">{{ currentCompSlip.dataDateStart }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">取数截止</span>
+                        <span class="info-value">{{ currentCompSlip.dataDateEnd }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">计算触发</span>
+                        <span class="info-value">{{ currentCompSlip.trigger }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">个税申报科目</span>
+                        <span class="info-value">{{ currentCompSlip.taxSubject }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <h5>补偿金组成</h5>
+                    </div>
+                    <div class="group-list">
+                      <div v-for="(group, gIndex) in currentCompSlip.incomeGroups" :key="gIndex" class="group-card">
+                        <div class="group-header" style="cursor: default;">
+                          <div class="group-title">
+                            <span class="group-name">{{ group.name }}</span>
+                            <el-tag size="small" style="margin-left: 8px;">{{ group.items.length }}项</el-tag>
+                          </div>
+                        </div>
+                        <div class="group-content">
+                          <el-table :data="group.items" size="small" border style="width: 100%;">
+                            <el-table-column prop="id" label="编号" width="50" align="center" />
+                            <el-table-column prop="displayName" label="映射展示名称" min-width="140" />
+                            <el-table-column prop="itemName" label="薪酬项名称" min-width="170" />
+                            <el-table-column label="支付形式" width="80" align="center">
+                              <template #default>
+                                <el-tag size="small">现金</el-tag>
+                              </template>
+                            </el-table-column>
+                            <el-table-column prop="source" label="来源" min-width="120" />
+                          </el-table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <h5>扣缴项分组</h5>
+                    </div>
+                    <div class="group-list">
+                      <div v-for="(group, gIndex) in currentCompSlip.deductGroups" :key="gIndex" class="group-card">
+                        <div class="group-header" style="cursor: default;">
+                          <div class="group-title">
+                            <span class="group-name">{{ group.name }}</span>
+                            <el-tag size="small" style="margin-left: 8px;">{{ group.items.length }}项</el-tag>
+                          </div>
+                        </div>
+                        <div class="group-content">
+                          <el-table :data="group.items" size="small" border style="width: 100%;">
+                            <el-table-column prop="id" label="编号" width="50" align="center" />
+                            <el-table-column prop="displayName" label="映射展示名称" min-width="140" />
+                            <el-table-column prop="itemName" label="扣缴项名称" min-width="190" />
+                            <el-table-column label="支付形式" width="80" align="center">
+                              <template #default>
+                                <el-tag size="small">现金</el-tag>
+                              </template>
+                            </el-table-column>
+                            <el-table-column prop="source" label="来源" min-width="120" />
+                          </el-table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 发放策略配置 -->
+                  <div class="detail-config-block">
+                    <h5>发放策略配置</h5>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="info-label">通知时间</span>
+                        <span class="info-value" v-if="!isEdit">{{ currentCompSlip.notifyDate }}</span>
+                        <el-input v-else v-model="currentCompSlip.notifyDate" style="width: 90px;" />
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">发放时间</span>
+                        <span class="info-value" v-if="!isEdit">{{ currentCompSlip.paymentDate }}</span>
+                        <el-input v-else v-model="currentCompSlip.paymentDate" style="width: 90px;" />
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">延迟确认发放</span>
+                        <span class="info-value" v-if="!isEdit">{{ currentCompSlip.delayConfirm }}</span>
+                        <el-select v-else v-model="currentCompSlip.delayConfirm" style="width: 100px;">
+                          <el-option label="次日发放" value="次日发放" />
+                          <el-option label="当月发放" value="当月发放" />
+                        </el-select>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">发放主体</span>
+                        <span class="info-value">{{ currentCompSlip.paymentEntity }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">收款账户</span>
+                        <span class="info-value">{{ currentCompSlip.payeeAccount }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="payroll-detail-panel empty" v-else>
+                  <div class="empty-tip">请选择补偿金单查看详情</div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </div>
 
@@ -630,7 +788,7 @@ const route = useRoute()
 const router = useRouter()
 
 const isEdit = ref(false)
-const activeTab = ref('payroll')
+const activeTab = ref(route.query.tab || 'payroll')
 const editingSlipIndex = ref(-1)
 const editingBeanSlipIndex = ref(-1)
 
@@ -667,11 +825,16 @@ const payrollSlips = ref(JSON.parse(JSON.stringify(strategyData.value.payrollSli
 const currentBeanSlipIndex = ref(0)
 const beanSlips = ref(JSON.parse(JSON.stringify(strategyData.value.beanSlips || [])))
 
+// 补偿金单列表（第三类单据，独立拷贝）
+const currentCompSlipIndex = ref(0)
+const compSlips = ref(JSON.parse(JSON.stringify(strategyData.value.compSlips || [])))
+
 const matchedPersonCount = ref(sourceStrategy.personCount || 0)
 
 // 计算属性
 const currentPayrollSlip = computed(() => payrollSlips.value[currentPayrollSlipIndex.value])
 const currentBeanSlip = computed(() => beanSlips.value[currentBeanSlipIndex.value])
+const currentCompSlip = computed(() => compSlips.value[currentCompSlipIndex.value])
 const hasBeanSlips = computed(() => beanSlips.value.length > 0)
 
 // 返回列表
@@ -750,24 +913,6 @@ const selectBeanSlip = (index) => {
   currentBeanSlipIndex.value = index
 }
 
-const addBeanSlip = () => {
-  beanSlips.value.push({
-    name: '新常乐豆单',
-    frequency: '月',
-    calculateDate: '次月/10日',
-    dataDateStart: '本月/1日',
-    dataDateEnd: '本月/31日',
-    notifyDate: '次月30日',
-    paymentDate: '次月31日',
-    paymentEntity: '合作主体',
-    settlementAccount: '余额账户',
-    incomeGroups: [],
-    deductGroups: []
-  })
-  currentBeanSlipIndex.value = beanSlips.value.length - 1
-  editingBeanSlipIndex.value = 'header'
-}
-
 const removeBeanSlip = (index) => {
   beanSlips.value.splice(index, 1)
   if (currentBeanSlipIndex.value >= beanSlips.value.length) {
@@ -775,9 +920,20 @@ const removeBeanSlip = (index) => {
   }
 }
 
+// 补偿金单操作
+const selectCompSlip = (index) => {
+  currentCompSlipIndex.value = index
+}
+
+const removeCompSlip = (index) => {
+  compSlips.value.splice(index, 1)
+  if (currentCompSlipIndex.value >= compSlips.value.length) {
+    currentCompSlipIndex.value = Math.max(0, compSlips.value.length - 1)
+  }
+}
+
 // 分组操作
-const toggleGroup = (type, index) => {
-  expandedGroups[type] = expandedGroups[type] === index ? -1 : index
+const toggleGroup = (type, index) => {  expandedGroups[type] = expandedGroups[type] === index ? -1 : index
 }
 
 const addIncomeGroup = (type) => {
@@ -909,6 +1065,12 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: hsl(var(--foreground));
+}
+
+.info-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
 }
 
 .validity-edit {

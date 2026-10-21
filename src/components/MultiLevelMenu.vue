@@ -75,7 +75,7 @@
               v-else
               class="menu-item level-2-item"
               :class="{ active: activeMenu === child.index }"
-              @click="handleSelect(child.index)"
+              @click="handleSelect(child.index, child.to)"
             >
               <template v-if="!isCollapsed">
                 <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
@@ -95,7 +95,7 @@
         v-else
         class="menu-item level-1-item"
         :class="{ active: activeMenu === item.index }"
-        @click="handleSelect(item.index)"
+        @click="handleSelect(item.index, item.to)"
       >
         <el-tooltip v-if="isCollapsed" :content="item.label" placement="right" :show-after="200">
           <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
@@ -122,7 +122,7 @@
             <div
               class="float-menu-item"
               :class="{ active: activeMenu === child.index, 'is-page': !child.children }"
-              @click.stop="handleSelect(child.index)"
+              @click.stop="handleSelect(child.index, child.to)"
             >
               <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
               <span>{{ child.label }}</span>
@@ -262,11 +262,12 @@ const isChildGroupActive = (child) => {
   return child.children?.some(g => g.index === activeMenu.value)
 }
 
-// 处理菜单选择
-const handleSelect = (index) => {
+// 处理菜单选择：带 to 的节点直接按 to 跳（文档中心的分组页有 to，但它的 index 不是路由 name）
+const handleSelect = (index, to) => {
   activeMenu.value = index
   floatMenuVisible.value = false
-  router.push({ name: index })
+  if (to) router.push(to)
+  else router.push({ name: index })
   emit('select', index)
 }
 </script>
@@ -383,11 +384,12 @@ const handleSelect = (index) => {
   font-size: 14px;
 }
 
-/* 分组/页面图标：与 el-sub-menu 原生图标同为 24px 定宽盒并居中，保证图标列与文字起点对齐 */
+/* 分组/页面图标：与 el-menu 原生图标同为 24px 定宽盒；字形左对齐（theme.css 同步改过），
+   不同图标墨迹宽度不同，居中会让左边缘参差 */
 .menu-group-header > .el-icon:not(.arrow),
 .menu-item > .el-icon {
   width: 24px;
-  text-align: center;
+  text-align: left;
 }
 
 /* 1级页面 */

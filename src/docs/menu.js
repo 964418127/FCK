@@ -15,9 +15,10 @@
  *   - 二级无 children → 二级页面（叶子）
  *   - 三级永远是叶子页面，点击 router.push({ name: index })
  */
-import { Document, InfoFilled, Reading, UserFilled, Clock } from '@element-plus/icons-vue'
+import { Document, InfoFilled, Reading, UserFilled, Clock, SwitchButton } from '@element-plus/icons-vue'
 import { v2phase1Chapters } from './chapters.js'
 import { leaveReformChapters } from './leaveReformChapters.js'
+import { resignChapters } from './resignChapters.js'
 
 // 把 chapters 转换成菜单叶子节点
 const v2phase1MenuChildren = v2phase1Chapters.map(ch => ({
@@ -27,6 +28,12 @@ const v2phase1MenuChildren = v2phase1Chapters.map(ch => ({
 
 // 假勤重构模块：同样由章节元数据生成，与路由保持单一数据源
 const leaveReformMenuChildren = leaveReformChapters.map(ch => ({
+  index: ch.routeName,
+  label: `${ch.order}、${ch.title}`
+}))
+
+// 离职流程模块：同样由章节元数据生成
+const resignMenuChildren = resignChapters.map(ch => ({
   index: ch.routeName,
   label: `${ch.order}、${ch.title}`
 }))
@@ -103,8 +110,23 @@ export const docMenu = [
   },
   {
     index: 'doc-leave-reform',
-    label: '假勤重构',
+    label: '假勤管理',
     icon: Clock,
     children: leaveReformMenuChildren
+  },
+  {
+    index: 'doc-resign-flow',
+    label: '离职流程',
+    icon: SwitchButton,
+    children: resignMenuChildren
   }
 ]
+
+/** 纯数据形态（剥掉图标组件与 to），供 /gate「菜单配置」页的「文档中心」页签使用 */
+const plainDocMenu = (nodes) => nodes.map((n) => ({
+  index: n.index,
+  label: n.label,
+  ...(n.children ? { children: plainDocMenu(n.children) } : {})
+}))
+
+export const docMenuCatalog = plainDocMenu(docMenu)

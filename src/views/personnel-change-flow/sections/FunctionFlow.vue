@@ -139,7 +139,7 @@
       <div class="card" id="auto-step">
         <h3>2. 自动步（旧关系结束）</h3>
         <div class="note">
-          <strong>触发时机：</strong>异动落库即触发（初始化阶段 + <code>模拟同步</code> 推送新异动时）。
+          <strong>触发时机：</strong>异动落库即触发（初始化阶段 + <code>立即同步</code> 推送新异动时）。
           <strong>执行函数：</strong><code>自动结束旧关系(异动)</code>，模块级函数，跨组件共享。
         </div>
 
@@ -346,7 +346,7 @@
         </ol>
 
         <div class="note" style="margin-top: 12px;">
-          <strong>同步 HR 异动</strong>按钮（首页「人员岗位薪酬规划 Tab 1」顶部）：触发 <code>模拟同步()</code>，演示 HR 推新异动过来。实际生产环境由 HR 人事模块定时调用接口，本模块被动接收。
+          <strong>同步 HR 异动</strong>按钮（首页「人员岗位薪酬规划 Tab 1」顶部）：触发 <code>立即同步()</code>，把 HR 侧的新异动推过来。实际生产环境由 HR 人事模块定时调用接口，本模块被动接收。
         </div>
       </div>
     </div>

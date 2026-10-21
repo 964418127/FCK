@@ -3,7 +3,6 @@
     <div class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>请假</h1>
-      <span class="pd-tag">预设计</span>
     </div>
 
     <div class="content">
@@ -66,22 +65,31 @@
         <div v-else class="picked-hint">点一个日期，看当天班次与还能休几个人</div>
       </div>
 
-      <!-- 我的假期 -->
+      <!-- 我的假期：不鼓励请假，默认只给一行速览，点开才看明细 -->
       <div class="card">
         <div class="sec-head">
           <span class="sec-title">我的假期</span>
-          <span class="sec-sub">自然月</span>
+          <span class="sec-link" @click="showBal = !showBal">{{ showBal ? '收起' : '查看明细 ›' }}</span>
         </div>
-        <div class="bal-list">
+        <div v-if="!showBal" class="bal-summary">
+          <span v-for="s in summaryBalances" :key="s.schemeId" class="sum-chip">
+            {{ s.leaveType }} <b>余 {{ s.remain }}</b>{{ s.unit === '小时' ? '时' : '天' }}
+          </span>
+          <span class="sum-hint">按需休假 · 点右上角看全部</span>
+        </div>
+        <div v-else class="bal-list">
           <div v-for="b in balances" :key="b.schemeId" class="bal-row">
             <div class="bal-left">
               <span class="bal-type">{{ b.leaveType }}</span>
-              <span class="bal-meta">{{ balMeta(b) }}</span>
+              <span class="bal-meta">{{ b.ondemand ? b.ondemandNote : balMeta(b) }}</span>
             </div>
             <div class="bal-right">
-              <span :class="['bal-remain', { over: b.remain < 0 }]">{{ b.remain }}</span>
-              <span class="bal-unit">{{ b.unit }}</span>
-              <span class="bal-used">已用 {{ b.used }}</span>
+              <template v-if="!b.ondemand">
+                <span :class="['bal-remain', { over: b.remain < 0 }]">{{ b.remain }}</span>
+                <span class="bal-unit">{{ b.unit }}</span>
+                <span class="bal-used">已用 {{ b.used }}</span>
+              </template>
+              <span v-else class="bal-ondemand">按需</span>
             </div>
           </div>
         </div>
@@ -231,6 +239,10 @@ const applyWeek = () => {
 
 /* ---------- 余额与记录 ---------- */
 const balances = computed(() => balancesOf(emp.value))
+const showBal = ref(false)
+/* 收起态速览：只挑前三个有方案的假种，明细点开才看全 */
+/* 收起态速览：只挑有额度数字的假种（按需的不带数字，进明细才看） */
+const summaryBalances = computed(() => balances.value.filter(b => !b.ondemand).slice(0, 3))
 const records = computed(() => recordsOf(empId.value, 'all'))
 const attention = computed(() =>
   records.value.filter(r => ['pending', 'rejected'].includes(r.status)).slice(0, 2)
@@ -239,7 +251,8 @@ const attention = computed(() =>
 const balMeta = (b) => {
   const bits = []
   if (b.measure === 'cycle') {
-    bits.push(`${b.cycle} ${b.amount} ${b.unit}`)
+    const c = b.cycle === '自然月' ? '月' : b.cycle === '自然年' ? '年' : b.cycle
+    bits.push(`${b.amount} ${b.unit}/${c}`)
   } else {
     bits.push(`每次 ${b.amount} ${b.unit}`)
     if (b.validWithin) bits.push(b.validWithin)
@@ -350,6 +363,10 @@ const nextMonth = () => {
 .st.withdrawn { color: #6b7280; background: #f3f4f6; }
 
 .bal-list { display: flex; flex-direction: column; }
+.bal-summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sum-chip { font-size: 12px; padding: 6px 12px; border-radius: 14px; background: #fafafa; border: 1px solid #f0f0f0; color: #666; }
+.sum-chip b { font-size: 13px; color: #a40035; margin: 0 2px; }
+.sum-hint { font-size: 11px; color: #c0c0c0; }
 .bal-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
 .bal-row:last-child { border-bottom: none; }
 .bal-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -360,6 +377,7 @@ const nextMonth = () => {
 .bal-remain.over { color: #b91c1c; }
 .bal-unit { font-size: 12px; color: #666; }
 .bal-used { font-size: 11px; color: #999; margin-left: 6px; }
+.bal-ondemand { font-size: 12px; color: #999; }
 
 .rec-list { display: flex; flex-direction: column; }
 .rec-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f5f5f5; }

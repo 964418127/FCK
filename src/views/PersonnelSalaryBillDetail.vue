@@ -2,8 +2,12 @@
   <div class="personnel-salary-bill-detail">
     <div class="page-header">
       <div>
-        <h1>工资单详情</h1>
-        <p class="tip">查看单张工资单的完整组成（基础信息 + 薪酬项 + 扣缴项）</p>
+        <h1>{{ isCompBill ? '补偿金单详情' : '工资单详情' }}</h1>
+        <p class="tip">
+          {{ isCompBill
+            ? '查看单张补偿金单的完整组成（协商一次性现金 + 结转常乐豆 − 补偿金个税）'
+            : '查看单张工资单的完整组成（基础信息 + 薪酬项 + 扣缴项）' }}
+        </p>
       </div>
       <el-button @click="handleBack">
         <el-icon><ArrowLeft /></el-icon>
@@ -14,6 +18,10 @@
     <!-- 基础信息 -->
     <el-card class="section-card basic-info-card" shadow="never">
       <div class="info-grid">
+        <div class="info-item">
+          <span class="label">单据类型：</span>
+          <span class="value">{{ billData.billType }}</span>
+        </div>
         <div class="info-item">
           <span class="label">编号：</span>
           <span class="value mono">{{ billData.billNo }}</span>
@@ -135,8 +143,12 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 const route = useRoute()
 const router = useRouter()
 
+// 单据类型由路由带入：工资单（默认）/ 补偿金单
+const isCompBill = computed(() => route.query.type === 'comp')
+
 // TODO: 替换为按 billNo 真实拉取。当前原型用图中的示例数据固定展示
-const billData = ref({
+const payrollBill = ref({
+  billType: '工资单',
   billNo: '1116914240949403726',
   incomeTotal: 29.9,
   deductionTotal: null,
@@ -200,9 +212,70 @@ const billData = ref({
   ]
 })
 
+// 补偿金单：与工资单同构（收入项 / 扣缴项分组），收入侧只有协商现金 + 结转常乐豆，
+// 扣缴侧只有【补偿金个税】—— 负工资在 3 日结算时已用常乐豆抵扣（结转值即抵扣后的冻结值），本单不再二次扣；
+// 属单独的申报科目，不与工资单合并
+const compBill = ref({
+  billType: '补偿金单',
+  billNo: '1118020941003720018',
+  incomeTotal: 1320.0,
+  deductionTotal: -27.0,
+  payableTotal: 1293.0,
+  notifyTime: '2026-11-05 10:20:31',
+  plannedPayTime: '2026-11-09T09:00:00',
+  status: '已发放',
+  payTime: '2026-11-09T11:03:22',
+  payStatus: '成功',
+  actualAmount: 1293.0,
+  failReason: null,
+  incomeGroups: [
+    {
+      category: '补偿金',
+      items: [
+        {
+          no: '11000912120444001 18',
+          mapName: '协商一次性现金',
+          deductionType: '补偿金',
+          itemName: '协商一次性补偿金',
+          payType: '现金',
+          amount: 1000.0,
+          source: '人事录入'
+        },
+        {
+          no: '11000912120444001 19',
+          mapName: '常乐豆（离职通道）',
+          deductionType: '补偿金',
+          itemName: '常乐豆结转补偿金（已扣负工资）',
+          payType: '现金',
+          amount: 320.0,
+          source: '自动'
+        }
+      ]
+    }
+  ],
+  deductionGroups: [
+    {
+      category: '补偿金个税',
+      items: [
+        {
+          no: '11000912120444001 21',
+          mapName: '补偿金个税',
+          deductionType: '系统代扣',
+          itemName: '解除劳动合同一次性补偿金个税',
+          payType: '现金',
+          amount: -27.0,
+          source: '自动'
+        }
+      ]
+    }
+  ]
+})
+
+const billData = computed(() => (isCompBill.value ? compBill.value : payrollBill.value))
+
 const formatAmount = (val) => {
   if (val === null || val === undefined) return '/'
-  return `¥ ${val.toFixed(2)}`
+  return val < 0 ? `- ¥ ${Math.abs(val).toFixed(2)}` : `¥ ${val.toFixed(2)}`
 }
 
 const statusTagType = (status) => {

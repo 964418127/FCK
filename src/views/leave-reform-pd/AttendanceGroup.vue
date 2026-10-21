@@ -3,16 +3,13 @@
     <div class="page-header">
       <div class="header-main">
         <h1>考勤组</h1>
-        <el-tag type="warning" effect="plain" size="small">预设计 v2 · 非结论</el-tag>
-        <el-tag type="info" effect="plain" size="small">引用层</el-tag>
-        <el-tag effect="plain" size="small" type="primary">本轮补编辑态</el-tag>
       </div>
     </div>
 
-    <!-- 校验一：岗位声明 ↔ 引用 -->
+    <!-- 岗位声明与引用自洽 -->
     <div class="section-card" :class="{ 'has-warn': issues.length }">
       <div class="card-header">
-        <span class="card-title">校验一 · 岗位声明与引用是否自洽</span>
+        <span class="card-title">岗位声明与引用自洽</span>
         <span class="card-sub">声明「需要打卡」的岗位，应引用一个考勤组</span>
       </div>
       <div v-if="issues.length" class="issue-list">
@@ -28,29 +25,11 @@
       </div>
     </div>
 
-    <!-- 校验二：考勤组覆盖 ↔ 岗位引用（本轮补编辑态后新增的对照） -->
-    <div class="section-card" :class="{ 'has-warn': coverageConflicts.length }">
-      <div class="card-header">
-        <span class="card-title">校验二 · 考勤组「覆盖岗位」与岗位实际引用是否一致</span>
-        <span class="card-sub">两组名单应保持一致</span>
-      </div>
-      <div v-if="coverageConflicts.length" class="issue-list">
-        <div v-for="(it, i) in coverageConflicts" :key="i" class="issue-item">
-          <el-tag size="small" effect="plain" type="warning">重叠</el-tag>
-          <span class="issue-job">{{ it.job }}</span>
-          <span class="issue-text">{{ it.text }}</span>
-        </div>
-      </div>
-      <div v-else class="ok-line">
-        <el-icon color="#52a06a"><CircleCheck /></el-icon>
-        <span>当前一致：各组的「覆盖岗位」与其成员岗位的实际引用完全吻合。</span>
-      </div>
-    </div>
-
     <div class="section-card">
       <div class="card-header">
-        <span class="card-title">考勤组（打卡组资产）</span>
+        <span class="card-title">考勤组</span>
         <span class="card-sub">共 {{ groups.length }} 个 · 被 {{ totalRef }} 个岗位引用</span>
+        <span class="card-note">岗位在「岗位假勤方案」里选择考勤组，本页只做定义</span>
         <div class="header-actions">
           <el-button size="small" type="primary" @click="openCreate">+ 新建考勤组</el-button>
         </div>
@@ -95,20 +74,11 @@
 
           <div class="ac-ref">
             <div class="ac-ref-title">
-              组声明覆盖
-              <span class="ac-ref-count">{{ (g.coverJobs || []).length }} 个岗位</span>
-            </div>
-            <div v-if="(g.coverJobs || []).length" class="ref-jobs">
-              <span v-for="j in g.coverJobs" :key="j" class="ref-job">{{ j }}</span>
-            </div>
-            <div v-else class="ref-none">未声明覆盖岗位</div>
-
-            <div class="ac-ref-title mt">
-              假勤侧实际引用
-              <span class="ac-ref-count">{{ refsOf(g.id).length }} 个岗位</span>
+              被引用岗位
+              <span class="ac-ref-count">{{ refsOf(g.id).length }} 个</span>
             </div>
             <div v-if="refsOf(g.id).length" class="ref-jobs">
-              <span v-for="j in refsOf(g.id)" :key="j" class="ref-job ref-job-alt">{{ j }}</span>
+              <span v-for="j in refsOf(g.id)" :key="j" class="ref-job">{{ j }}</span>
             </div>
             <div v-else class="ref-none">暂无岗位引用本组</div>
           </div>
@@ -123,10 +93,7 @@
       <div class="drawer-body" v-if="current">
         <div class="src-banner">
           <span class="src-badge">{{ current.source }}</span>
-          <span class="src-text">
-            被 {{ refsOf(current.id).length }} 个岗位实际引用 ·
-            打卡流水同步于 {{ current.updatedAt }}
-          </span>
+          <span class="src-text">打卡流水同步于 {{ current.updatedAt }}</span>
         </div>
 
         <div class="cfg-block">
@@ -173,45 +140,13 @@
 
         <div class="cfg-block">
           <div class="cfg-label">
-            <span>覆盖岗位（组自己的成员口径）</span>
-            <span class="cfg-note">与岗位声明互为镜像 —— 留一处即可</span>
+            <span>被引用岗位</span>
+            <span class="cfg-note">只读 · 在「岗位假勤方案」页选择</span>
           </div>
-          <el-select
-            v-model="current.coverJobs"
-            size="small"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            placeholder="选择本组覆盖的岗位"
-            style="width: 100%"
-          >
-            <el-option v-for="j in jobOptions" :key="j" :label="j" :value="j" />
-          </el-select>
-
-          <!-- 双向对照：组说覆盖谁 vs 岗位说自己引用谁 -->
-          <div class="duo">
-            <div class="duo-col">
-              <div class="duo-title">组声明覆盖（可编辑）</div>
-              <div class="ref-jobs">
-                <span v-for="j in current.coverJobs" :key="j" class="ref-job">{{ j }}</span>
-                <span v-if="!current.coverJobs.length" class="ref-none">空</span>
-              </div>
-            </div>
-            <div class="duo-col">
-              <div class="duo-title">岗位实际引用（只读 · 在「工作模式」页维护）</div>
-              <div class="ref-jobs">
-                <span v-for="j in refsOf(current.id)" :key="j" class="ref-job ref-job-alt">{{ j }}</span>
-                <span v-if="!refsOf(current.id).length" class="ref-none">空</span>
-              </div>
-            </div>
+          <div v-if="refsOf(current.id).length" class="ref-jobs">
+            <span v-for="j in refsOf(current.id)" :key="j" class="ref-job">{{ j }}</span>
           </div>
-
-          <div v-if="draftConflicts.length" class="draft-warn">
-            <div class="dw-title">保存后会出现 {{ draftConflicts.length }} 处重叠：</div>
-            <div v-for="(it, i) in draftConflicts" :key="i" class="dw-item">· {{ it.job }}：{{ it.text }}</div>
-          </div>
-          <div v-else class="draft-ok">当前名单与岗位声明一致。</div>
+          <div v-else class="field-desc">暂无岗位引用本组。</div>
         </div>
 
         <div class="cfg-block">
@@ -250,7 +185,7 @@
     </el-drawer>
 
     <!-- ============ 新建考勤组 ============ -->
-    <el-dialog v-model="createVisible" title="新建考勤组" width="600px">
+    <el-dialog v-model="createVisible" title="新建考勤组" width="560px">
       <div class="dlg-body">
         <div class="dlg-row">
           <div class="dlg-label">考勤组名称</div>
@@ -283,20 +218,6 @@
           </el-select>
         </div>
         <div class="dlg-row">
-          <div class="dlg-label">覆盖岗位<em>可在配置抽屉里再调</em></div>
-          <el-select
-            v-model="newForm.coverJobs"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            placeholder="选择覆盖岗位"
-            style="width: 100%"
-          >
-            <el-option v-for="j in jobOptions" :key="j" :label="j" :value="j" />
-          </el-select>
-        </div>
-        <div class="dlg-row">
           <div class="dlg-label">备注</div>
           <el-input v-model="newForm.note" type="textarea" :rows="2" placeholder="这个组为什么存在" style="max-width: 420px" />
         </div>
@@ -317,7 +238,6 @@ import {
   attendanceGroups,
   jobsUsingAttendance,
   jobWorkModes,
-  rosterJobs,
   punchMethodOptions,
   punchScopeOptions
 } from '../../mock/leaveWorkMode.js'
@@ -325,10 +245,8 @@ import {
 const methodOptions = punchMethodOptions
 const scopeOptions = punchScopeOptions
 
-const clone = (g) => ({ ...g, coverJobs: [...(g.coverJobs || [])] })
+const clone = (g) => ({ ...g })
 const groups = ref(attendanceGroups.map(clone))
-
-const jobOptions = computed(() => rosterJobs.map(j => j.name))
 
 const needPunch = computed(() => jobWorkModes.filter(m => m.attendance))
 const noPunch = computed(() => jobWorkModes.filter(m => !m.attendance))
@@ -336,7 +254,7 @@ const noPunch = computed(() => jobWorkModes.filter(m => !m.attendance))
 const refsOf = (id) => jobsUsingAttendance(id)
 const totalRef = computed(() => groups.value.reduce((n, g) => n + refsOf(g.id).length, 0))
 
-/** 校验一：岗位声明与引用不自洽 */
+/** 岗位声明与引用不自洽 */
 const issues = computed(() => {
   const list = []
   jobWorkModes.forEach(m => {
@@ -346,41 +264,6 @@ const issues = computed(() => {
     if (!m.attendance && m.attendanceGroupId) {
       list.push({ job: m.job, text: '引用了考勤组，却声明不打卡 → 该引用不会生效' })
     }
-  })
-  return list
-})
-
-/** 校验二：某组的「覆盖岗位」名单 vs 岗位自己声明引用的组 */
-function conflictsOf(group) {
-  const list = []
-  ;(group.coverJobs || []).forEach(job => {
-    const m = jobWorkModes.find(x => x.job === job)
-    if (!m) {
-      list.push({ job, text: `不在假勤岗位清单里，本组覆盖不到` })
-      return
-    }
-    if (!m.attendance) {
-      list.push({ job, text: `该岗声明「不打卡」，却被本组列为覆盖对象` })
-      return
-    }
-    if (m.attendanceGroupId !== group.id) {
-      const other = attendanceGroups.find(a => a.id === m.attendanceGroupId)
-      list.push({ job, text: `该岗实际引用的是「${other ? other.name : '未知组'}」，与本组重叠` })
-    }
-  })
-  // 反向：声明引用本组的岗位，却没出现在覆盖名单里
-  jobsUsingAttendance(group.id).forEach(job => {
-    if (!(group.coverJobs || []).includes(job)) {
-      list.push({ job, text: '该岗实际引用了本组，但不在本组「覆盖岗位」名单里' })
-    }
-  })
-  return list
-}
-
-const coverageConflicts = computed(() => {
-  const list = []
-  groups.value.forEach(g => {
-    conflictsOf(g).forEach(c => list.push({ job: c.job, text: `「${g.name}」：${c.text}` }))
   })
   return list
 })
@@ -395,15 +278,12 @@ const openEdit = (g) => {
   drawerVisible.value = true
 }
 
-/** 抽屉内的实时重叠预览（基于当前编辑值） */
-const draftConflicts = computed(() => (current.value ? conflictsOf(current.value) : []))
-
 const resetGroup = () => {
   if (!current.value) return
   const origin = attendanceGroups.find(a => a.id === current.value.id)
   if (!origin) return
   Object.assign(current.value, clone(origin))
-  ElMessage.success('已恢复到本轮初始值')
+  ElMessage.success('已恢复初始值')
 }
 
 const removeGroup = () => {
@@ -415,7 +295,7 @@ const removeGroup = () => {
 
 /* ---------- 新建 ---------- */
 const createVisible = ref(false)
-const emptyForm = () => ({ name: '', method: '', scope: '', coverJobs: [], note: '' })
+const emptyForm = () => ({ name: '', method: '', scope: '', note: '' })
 const newForm = reactive(emptyForm())
 
 const openCreate = () => {
@@ -430,15 +310,14 @@ const createGroup = () => {
     name: newForm.name.trim(),
     method: newForm.method || '未指定',
     scope: newForm.scope || '未指定',
-    coverJobs: [...newForm.coverJobs],
     memberCount: 0,
     enabled: true,
     source: '假勤侧新建',
-    updatedAt: '2026-10-13',
+    updatedAt: '2026-10-21',
     note: newForm.note
   })
   createVisible.value = false
-  ElMessage.success('考勤组已创建，可在「工作模式」页被岗位引用')
+  ElMessage.success('考勤组已创建，可在「岗位假勤方案」页被岗位引用')
 }
 </script>
 
@@ -447,25 +326,14 @@ const createGroup = () => {
 .page-header { margin-bottom: 14px; }
 .header-main { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .header-main h1 { font-size: 22px; font-weight: 600; margin: 0; color: hsl(var(--foreground)); }
-.tip { margin: 0; font-size: 13px; line-height: 1.7; color: hsl(var(--muted-foreground)); max-width: 960px; }
-.tip strong { color: hsl(var(--foreground)); font-weight: 600; }
-
-.ro-banner {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 16px;
-  border-radius: 8px; background: hsl(var(--muted) / 0.45); border: 1px dashed hsl(var(--border));
-  font-size: 12.5px; color: hsl(var(--muted-foreground));
-}
-.ro-banner strong { color: hsl(var(--foreground)); font-weight: 600; }
-.ro-sync { margin-left: auto; font-size: 11.5px; opacity: 0.8; white-space: nowrap; }
 
 .section-card { background: hsl(var(--background)); border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
 .section-card.has-warn { border-color: hsl(38 92% 50% / 0.5); }
-.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid hsl(var(--border)); }
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid hsl(var(--border)); flex-wrap: wrap; }
 .card-title { font-size: 15px; font-weight: 600; color: hsl(var(--foreground)); }
 .card-sub { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.card-note { font-size: 11.5px; color: hsl(var(--muted-foreground) / 0.85); margin-left: auto; }
 .header-actions { margin-left: auto; }
-.card-foot-note { margin-top: 12px; padding-top: 10px; border-top: 1px dashed hsl(var(--border)); font-size: 12px; line-height: 1.7; color: hsl(var(--muted-foreground)); }
-.card-foot-note b { color: hsl(var(--foreground)); font-weight: 600; }
 
 .issue-list { display: flex; flex-direction: column; gap: 8px; }
 .issue-item { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
@@ -490,23 +358,14 @@ const createGroup = () => {
 .af-value { color: hsl(var(--foreground)); }
 .ac-ref { padding-top: 11px; border-top: 1px dashed hsl(var(--border)); }
 .ac-ref-title { display: flex; align-items: center; gap: 8px; font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 7px; }
-.ac-ref-title.mt { margin-top: 12px; }
 .ac-ref-count { font-size: 11px; padding: 1px 7px; border-radius: 9px; background: hsl(var(--muted) / 0.6); }
 .ref-jobs { display: flex; flex-wrap: wrap; gap: 5px; }
 .ref-job {
   font-size: 11.5px; padding: 1px 8px; border-radius: 9px;
   background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); border: 1px solid hsl(var(--primary) / 0.3);
 }
-.ref-job-alt { background: hsl(var(--muted) / 0.5); color: hsl(var(--muted-foreground)); border-color: hsl(var(--border)); }
 .ref-none { font-size: 12px; color: hsl(var(--muted-foreground) / 0.8); }
 .ac-note { margin-top: 12px; font-size: 12px; line-height: 1.65; color: hsl(var(--muted-foreground)); }
-
-.foot-card { margin-bottom: 0; }
-.foot-body { font-size: 13px; line-height: 1.75; color: hsl(var(--muted-foreground)); }
-.foot-body p { margin: 0 0 10px; }
-.foot-body strong { color: hsl(var(--foreground)); font-weight: 600; }
-.foot-concl { padding: 10px 12px; border-radius: 6px; background: hsl(var(--muted) / 0.4); border: 1px solid hsl(var(--border)); margin-bottom: 0 !important; }
-.foot-concl b { color: hsl(var(--foreground)); font-weight: 600; }
 
 /* 抽屉 */
 .drawer-body { padding-bottom: 8px; }
@@ -518,16 +377,9 @@ const createGroup = () => {
 .cfg-note { font-size: 11px; font-weight: 400; color: hsl(var(--muted-foreground)); }
 .field-desc { font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.65; margin-top: 6px; }
 .ro-value { font-size: 13px; color: hsl(var(--foreground)); }
-.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-.duo-col { padding: 10px 12px; border-radius: 6px; background: hsl(var(--muted) / 0.35); border: 1px solid hsl(var(--border)); }
-.duo-title { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-bottom: 8px; }
-.draft-warn { margin-top: 10px; padding: 9px 12px; border-radius: 6px; background: hsl(38 92% 50% / 0.1); border: 1px solid hsl(38 92% 50% / 0.45); font-size: 12px; color: hsl(38 92% 38%); line-height: 1.75; }
-.dw-title { font-weight: 600; margin-bottom: 3px; }
-.draft-ok { margin-top: 10px; font-size: 12px; color: hsl(var(--muted-foreground)); }
 .drawer-foot { margin-top: 10px; padding-top: 12px; border-top: 1px solid hsl(var(--border)); }
 
 /* 弹窗 */
 .dlg-body { display: flex; flex-direction: column; gap: 16px; }
 .dlg-label { font-size: 13px; font-weight: 500; color: hsl(var(--foreground)); margin-bottom: 8px; }
-.dlg-label em { font-style: normal; font-size: 11.5px; font-weight: 400; color: hsl(var(--muted-foreground)); margin-left: 8px; }
 </style>

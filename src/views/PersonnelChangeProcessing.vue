@@ -34,7 +34,7 @@
         <div class="sync-info-actions">
           <el-button type="primary" plain size="small" @click="handleSimulateSync">
             <el-icon><Refresh /></el-icon>
-            <span>立即同步（模拟）</span>
+            <span>立即同步</span>
           </el-button>
         </div>
       </div>
@@ -516,14 +516,14 @@ const handleViewDetail = (row) => {
 
 const handleSimulateSync = async () => {
   try {
-    await ElMessageBox.confirm('模拟 HR 人事模块按日汇入异动，将在异动结束列表新增 2 条今日结束事件 + 新关系确认列表新增 2 条待确认起算。', '模拟同步', {
+    await ElMessageBox.confirm('将按日汇入 HR 人事模块的异动，在异动结束列表新增 2 条今日结束事件 + 新关系确认列表新增 2 条待确认起算。', '立即同步', {
       type: 'info',
       confirmButtonText: '继续',
       cancelButtonText: '取消'
     })
     const n = simulateSync()
     syncInfo.lastSyncTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
-    ElMessage.success(`已模拟汇入 ${n} 条异动（自动截尾已执行）`)
+    ElMessage.success(`已汇入 ${n} 条异动（自动截尾已执行）`)
   } catch { /* 取消 */ }
 }
 </script>

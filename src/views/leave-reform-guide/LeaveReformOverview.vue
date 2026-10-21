@@ -1,722 +1,1001 @@
 <template>
   <DocShell
     :toc-items="tocItems"
-    title="假勤重构 · 设计总览"
-    subtitle="底座是员工时间线。假勤只负责「假」的规则与「勤」的比对，钱的后果交给薪酬，长假的结论交给员工福利。"
-    version="预研稿 v2.2"
-    date="2026-10-12"
+    title="假勤重构 · 产品需求说明"
+    subtitle="假勤只负责「谁在哪段时间被占了、这段占用合不合规」。事实只出一次、状态一变主动通知；钱怎么算、社保怎么处理，都是下游自己的活。"
+    version="v1.0"
+    date="2026-10-22"
     :breadcrumbs="breadcrumbs"
   >
-    <!-- 性质声明：这不是结论 -->
-    <div class="note" style="background: hsl(45 93% 47% / 0.08); border-left: 3px solid hsl(45 93% 47%); margin-bottom: 20px;">
-      <strong>性质说明：本页是预研探路稿，不是正式结论。</strong>
-      内容来自「先做一点看看」的推演，用于内部讨论和与相关方（员工时间线 / 打卡组）对齐口径；
-      不作为需求基线、排期依据或对外承诺。文中「已确立」「核心模型」等表述均指<strong>本次推演的内部前提</strong>，随时可被推翻。
+    <!-- ========== 一、版本信息 ========== -->
+    <div id="lr-version" class="section">
+      <div class="section-header">
+        <h2>一、版本信息</h2>
+        <DocCopyButton section-id="lr-version" />
+      </div>
+      <div class="ver-cards">
+        <div class="ver-card">
+          <el-icon><CollectionTag /></el-icon>
+          <div><div class="vc-k">当前版本号</div><div class="vc-v">v1.0</div></div>
+        </div>
+        <div class="ver-card">
+          <el-icon><Calendar /></el-icon>
+          <div><div class="vc-k">创建日期</div><div class="vc-v">2026-10-22</div></div>
+        </div>
+        <div class="ver-card">
+          <el-icon><User /></el-icon>
+          <div><div class="vc-k">负责人</div><div class="vc-v">Lacus7</div></div>
+        </div>
+      </div>
     </div>
 
-    <!-- ========== 一、定位与边界 ========== -->
+    <!-- ========== 二、变更日志 ========== -->
+    <div id="lr-changelog" class="section">
+      <div class="section-header">
+        <h2>二、变更日志</h2>
+        <DocCopyButton section-id="lr-changelog" />
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 120px;">日期</th>
+            <th style="width: 90px;">版本</th>
+            <th>变更</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-10-22</td>
+            <td>v1.0</td>
+            <td>首次成稿：需求背景、需求范围（边界与周边系统 / 内部各模块 / 请假全链路）、功能详细说明（9 节，含功能入口）、待决事项（17 项）。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ========== 三、文档说明 ========== -->
+    <div id="lr-notes" class="section">
+      <div class="section-header">
+        <h2>三、文档说明</h2>
+        <DocCopyButton section-id="lr-notes" />
+      </div>
+
+      <h3>名词解释</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 210px;">名词</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>假勤</td><td>占用与合规判定域：只管「谁在哪段时间被占了、这段占用合不合规」，出事实与结论；不出金额、不定班次、不管社保处置。</td></tr>
+          <tr><td>假期类型（假种）</td><td>定性层：这个假「是什么」——类别（法定 / 公司）、是否排他、启用状态、适用岗位（全岗位 / 指定岗位）。</td></tr>
+          <tr><td>假期额度方案</td><td>定值层：这个假「有多少」——四档计量（周期发放 / 周期上限 / 按次上限 / 按需）+ 标准值 + 差异化条目。</td></tr>
+          <tr><td>出勤方案</td><td>日历口径：哪天默认该上班（周基础模式 + 法定节假日解读 + 特殊日）；不是班次计划，不生成名额。</td></tr>
+          <tr><td>岗位假勤方案</td><td>枢纽：岗位 × 四类配置（字典 / 额度 / 审核 / 出勤）的装配点，自己不定任何值。</td></tr>
+          <tr><td>考勤组</td><td>比对口径配置：比几层、比哪些；计划层基准是出勤方案，实际层事实来自打卡。</td></tr>
+          <tr><td>缺岗信号</td><td>请假通过后系统产出的缺人事实（日期 / 门店 / 岗位 / 班次段 / 缺人数），交付排班调度，不是申请人填的字段。</td></tr>
+          <tr><td>占位事件</td><td>假勤写入「员工时间线」业务事件层的排他占位，用于冲突读取与全局时间视图。</td></tr>
+          <tr><td>长假结论</td><td>连续时长超过阈值的假种综合结论，供新员工关系系统处置社保公积金个人部分。</td></tr>
+          <tr><td>差异化条目</td><td>按城市 / 门店覆盖标准值的条目，只改数值；门店优先、命中即停；岗位不参与差异化。</td></tr>
+          <tr><td>或签</td><td>同一审批节点配置多人，任一人处理即可流转到下一节点。</td></tr>
+          <tr><td>排班排假</td><td>现有系统：班次计划与名额的 owner；假勤的出勤方案对它是约束输入。</td></tr>
+          <tr><td>员工时间线</td><td>统一时间管理体系：用工基线 → 排班 / 考勤组 → 业务事件层 → 外部事件层 → 记录层；假勤占位事件写入业务事件层。</td></tr>
+          <tr><td>新员工关系系统</td><td>接收长假结论处置社保公积金个人部分；靠「是否考勤 / 是否有订单」排查异常员工，缺假期输入会误判。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>字段字典</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 190px;">字段</th>
+            <th style="width: 240px;">位置</th>
+            <th>口径</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>计量方式</strong></td><td>假期额度方案</td><td>四选一：周期发放（预发、可结转）/ 周期上限（不预发、封顶，系统折算）/ 按次上限（不预发、每次封顶 + 有效期）/ 按需（不设值，如病假按医疗期核定）。</td></tr>
+          <tr><td><strong>额度来源</strong></td><td>假期类型字典</td><td>方案定值 / 系统折算两种；系统折算读方案库的周期上限（如临时假 16 时/月），历史存量不在本系统处理。</td></tr>
+          <tr><td><strong>适用性</strong></td><td>假期类型字典</td><td>全岗位 / 指定岗位清单；决定移动端申请页能不能看到这个假种。</td></tr>
+          <tr><td><strong>是否排他</strong></td><td>假期类型字典</td><td>写入员工时间线业务事件层时的排他占位声明。</td></tr>
+          <tr><td><strong>凭证要求</strong></td><td>假期审核规则</td><td>枚举多选：医疗诊断证明 / 结婚证 / 出生证明 / 生育相关证明 / 其他；不勾选 = 无需凭证。丧假不设凭证（死亡证明无法事先取得）。</td></tr>
+          <tr><td><strong>提前申请期</strong></td><td>假期审核规则</td><td>单位天；0 = 无要求，界面不显示该行（病假事出突然，不体现「提前 N 天」）。</td></tr>
+          <tr><td><strong>审核方式</strong></td><td>假期审核规则</td><td>自动 / 人工；自动审核单据不进审批列表。</td></tr>
+          <tr><td><strong>差异化条目</strong></td><td>假期额度方案 · 假期审核规则</td><td>仅城市 / 门店，只改数值；门店优先、命中即停；岗位不参与差异化。</td></tr>
+          <tr><td><strong>结转下期</strong></td><td>假期额度方案</td><td>周期发放是否结转到下一周期；周期上限 / 按次上限 / 按需不适用。</td></tr>
+          <tr><td><strong>补缺路径</strong></td><td>岗位假勤方案</td><td>接班任务 / 改班次 / 无缺岗 三选一；决定请假生效后缺岗信号的去向。</td></tr>
+          <tr><td><strong>扣减记录</strong></td><td>移动端休假记录</td><td>通过的额度段逐条落在方案上，「已用」由记录自动汇总。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ========== 四、需求背景 ========== -->
+    <div id="lr-bg" class="section">
+      <div class="section-header">
+        <h2>四、需求背景</h2>
+        <DocCopyButton section-id="lr-bg" />
+      </div>
+
+      <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 14px;">
+        <strong>一句话现状：</strong>当前的请假能力<strong>各自分离</strong>——班次假、临时假、特殊情况请假各管一段，谁请的、为什么请、请多久，没有一处能给出完整结论。
+      </div>
+
+      <div class="lr-key-point">
+        <div class="kp-tag">最要紧的一件事</div>
+        <div class="kp-title">员工请了长假，周边系统全部「失明」</div>
+        <p class="doc-p" style="margin: 0;">
+          员工通过「特殊情况请假」离岗，请假系统里只有一条孤立的记录——<strong>为什么请、是不是无薪长假、预计到什么时候</strong>，都没有结论，也不会通知任何人。
+          于是<strong>新员工关系系统不知道该不该继续缴社保公积金</strong>，<strong>薪酬不知道这段时间该怎么算</strong>——根因就是缺一个统一的「假期事实 + 长假结论」出口。
+        </p>
+      </div>
+
+      <div class="lr-impact">
+        <div class="lr-impact-card">
+          <div class="ip-sys">新员工关系系统</div>
+          <div class="ip-body">不清楚员工状态，社保、公积金续缴与停缴没有判断依据。而且它的主动排查靠「是否考勤、是否有订单」自动判定——<strong>假期不是输入条件</strong>，请长假的人会被误判为异常，排查结果不可信。</div>
+        </div>
+        <div class="lr-impact-card">
+          <div class="ip-sys">薪酬</div>
+          <div class="ip-body">无法准确计算工资，只能按「<strong>是否有订单 + 扣款</strong>」做基础计算；长假期间算不算缺勤、按什么口径折算，没有上游结论可依。</div>
+        </div>
+        <div class="lr-impact-card">
+          <div class="ip-sys">社保 / 公积金</div>
+          <div class="ip-body">个人部分扣缴、公司部分处理方式没有上游结论可依，只能挂账等待。</div>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>本方案要补的就是这个出口：</strong>假勤统一出事实与结论，状态一变<strong>主动通知</strong>周边系统，让社保、公积金、薪酬第一时间知道这个人处于什么状态、该怎么处理。
+      </div>
+    </div>
+
+    <!-- ========== 五、需求范围 ========== -->
     <div id="lr-scope" class="section">
       <div class="section-header">
-        <h2>一、定位与边界</h2>
+        <h2>五、需求范围</h2>
         <DocCopyButton section-id="lr-scope" />
       </div>
+      <p class="doc-p">核心就两个方面：对外，<strong>划清假勤系统的边界、定死与周边系统的关系</strong>；对内，<strong>理清各模块之间的关系</strong>。</p>
 
-      <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
-        <strong>一句话定位：</strong>假勤系统不再是「假勤全流程的主人」，而是员工时间线的两个写入方之一（另一个是排班），同时向下喂薪酬、向员工福利输出长假结论。
-      </div>
-
-      <p class="doc-p">
-        现有 6 个假勤原型（排班排假审核、临时假获取规则、客户经理请假扣款、顶班补贴、自主下线、移动端排班排假）一律视为<strong>可被推翻的旧设计</strong>，不再沿用其建模方式。旧设计的根本问题是坐标选错了：它把一切挂在「门店 × 日期」的名额上（供给侧视角），而时间线要求坐标换成「人 × 时间」（事实归属视角）。
-      </p>
-
-      <h3>四条设计前提</h3>
-      <div class="lr-principles">
-        <div class="lr-principle" v-for="p in principles" :key="p.title">
-          <div class="lr-principle-title">{{ p.title }}</div>
-          <div class="lr-principle-desc">{{ p.desc }}</div>
+      <!-- 5.1 边界与周边系统关系 -->
+      <div class="card" id="lr-scope-boundary">
+        <h3>5.1 假勤系统的边界 · 与周边系统的关系</h3>
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 14px; font-size: 13px;">
+          <strong>边界一句话：</strong>假勤只管「<strong>谁被占了 + 占得合不合规</strong>」，出事实与结论；<strong>不出金额、不定班次、不管社保处置</strong>。状态一变主动通知，谁订阅谁消费。
         </div>
-      </div>
 
-      <h3>四邻关系</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 140px;">相邻系统</th>
-            <th style="width: 150px;">关系方向</th>
-            <th>我们交付什么 / 我们依赖什么</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>员工时间线</strong>（人事组）</td>
-            <td>写入 + 读取</td>
-            <td>写入「排他占位事件」（排班 / 请假），读取冲突。粒度、排他判定方、审批中间态是否占位均<strong>待与对方组对齐</strong></td>
-          </tr>
-          <tr>
-            <td><strong>打卡组</strong></td>
-            <td>读取</td>
-            <td>读取实际层事实（上下班打卡）。需确认给的是原始时刻还是仅「有效 / 无效」</td>
-          </tr>
-          <tr>
-            <td><strong>薪酬</strong></td>
-            <td>单向输出</td>
-            <td>只出事实（缺勤天数 + 假种 + 起止），<strong>不下发金额</strong>；日标准工资基数属薪酬域，假勤不持有</td>
-          </tr>
-          <tr>
-            <td><strong>员工福利</strong></td>
-            <td>单向输出</td>
-            <td>只出判定结论（是否达长假、建议处理方式）；社保公积金个人部分的处理方式由福利侧决定</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p class="doc-p">
-        边界可以压成一句话：<strong>假勤只负责「谁在哪段时间被占了」以及「这段占用合不合规」</strong>，不负责「占了要扣多少钱」，也不负责「占了之后社保怎么算」。
-      </p>
-    </div>
-
-    <!-- ========== 二、七个核心模型 ========== -->
-    <div id="lr-models" class="section">
-      <div class="section-header">
-        <h2>二、七个核心模型</h2>
-        <DocCopyButton section-id="lr-models" />
-      </div>
-      <p class="doc-p">
-        推演时先把这七条假设固定下来，好让后面的页面和接口有个共同说法。它们是<strong>本次推演的临时前提，不是已定结论</strong>——页面可以推翻重画，这七条同样可以，只要先有新的替代说法。
-      </p>
-      <div class="lr-model-grid">
-        <div class="lr-model" v-for="m in reformModels" :key="m.id">
-          <div class="lr-model-top">
-            <span class="lr-model-id">{{ m.id }}</span>
-            <span class="lr-model-name">{{ m.name }}</span>
-          </div>
-          <p class="lr-model-brief">{{ m.brief }}</p>
-          <span class="lr-model-owner">{{ m.owner }}</span>
-        </div>
-      </div>
-
-      <h3>最容易做错的两处</h3>
-      <ul class="lr-list">
-        <li>
-          <strong>把「名额」和「额度」当同一种东西</strong>——旧设计只有名额没有额度，于是员工永远不知道自己「还剩几天」。名额是组织容量（周期生成、共享、会被抢），额度是个人可休量（私有、只减不增），两条约束都要过，请假才算成立。
-        </li>
-        <li>
-          <strong>把「长假」当事件而不是状态</strong>——时间线上的是事件（某段被占），给员工福利的却是<strong>结论</strong>（自 D1 起处于无薪长假状态，预计至 D2）。它是持续为真的状态，还带一个未决分支（个人部分走主动打款 or 挂账、复工后扣回），必须能被「复工」终止。
-        </li>
-      </ul>
-    </div>
-
-    <!-- ========== 三、文档结构规划 ========== -->
-    <div id="lr-catalog" class="section">
-      <div class="section-header">
-        <h2>三、文档结构规划</h2>
-        <DocCopyButton section-id="lr-catalog" />
-      </div>
-      <p class="doc-p">
-        本模块计划固定为八个板块。其中<strong>板块 1、2、5 必须先落</strong>——概念与接口不定，页面画了必返工。
-      </p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 56px;">序号</th>
-            <th style="width: 170px;">板块</th>
-            <th>要写清楚的东西</th>
-            <th style="width: 96px;">状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td><strong>领域总览</strong></td>
-            <td>定位与边界、四邻关系、概念地图 —— 即本页</td>
-            <td><el-tag size="small" effect="plain" type="success">本页已含</el-tag></td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td><strong>核心模型</strong></td>
-            <td>七个模型逐一展开：时间线占位与排他、三层事实、名额 vs 额度、配置双通道、分层继承与覆盖、薪酬结构分流、事实与结论</td>
-            <td><el-tag size="small" effect="plain" type="success">本页已含</el-tag></td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>业务流程</td>
-            <td>请假全流程（额度校验 → 申请 → 审核分流 → 占位替换 → 后果分发 → 销假冲回）、名额周期生成、考勤比对、长假闭环</td>
-            <td><el-tag size="small" effect="plain" type="info">待建</el-tag></td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>规则手册</td>
-            <td>假种规则表、额度规则（含业绩折算公式与可解释性）、审核规则与<strong>覆盖语义</strong>、后果规则、名额规则 —— 每条对应到配置页</td>
-            <td><el-tag size="small" effect="plain" type="info">待建</el-tag></td>
-          </tr>
-          <tr class="lr-row-key">
-            <td>5</td>
-            <td><strong>跨系统接口</strong></td>
-            <td>与时间线 / 打卡组 / 薪酬 / 员工福利的字段契约；含<strong>能力登记表</strong>（哪些能力是别人的、我们能改到什么程度）</td>
-            <td><el-tag size="small" effect="plain" type="warning">最卡脖子</el-tag></td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td>数据与状态</td>
-            <td>单据状态机、额度生命周期（发放/消耗/结转/清零/过期）、配置时间版本化、配置变更审计、名额周期分区</td>
-            <td><el-tag size="small" effect="plain" type="info">待建</el-tag></td>
-          </tr>
-          <tr>
-            <td>7</td>
-            <td>与旧设计的关系</td>
-            <td>六个老原型的逐个处置表（保留 / 重构 / 废弃），老概念（班次、假别、名额、日期类型）在新模型里的归位</td>
-            <td><el-tag size="small" effect="plain" type="info">待建</el-tag></td>
-          </tr>
-          <tr>
-            <td>8</td>
-            <td>待决事项</td>
-            <td>13 条待定项，每条标明责任方 —— 见本页第七节</td>
-            <td><el-tag size="small" effect="plain" type="success">本页已含</el-tag></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ========== 四、交付形态与可配置度 ========== -->
-    <div id="lr-delivery" class="section">
-      <div class="section-header">
-        <h2>四、交付形态与可配置度</h2>
-        <DocCopyButton section-id="lr-delivery" />
-      </div>
-
-      <p class="doc-p">
-        这套重构<strong>不是「把 19 个模块都做成新页面」</strong>。名额的生成与消耗跑在现有排班排假系统里，临时假的小时换算跑在现有额度模块里 —— 这些地方我们不重画页面，只交<strong>定义</strong>。
-      </p>
-
-      <div class="lr-form-grid">
-        <div v-for="f in deliveryForms" :key="f.id" class="lr-form-col" :class="'lr-form-' + f.id">
-          <div class="lr-form-head">
-            <span class="lr-form-name">{{ f.name }}</span>
-            <span class="lr-form-sub">{{ f.subtitle }}</span>
-          </div>
-          <ul class="lr-form-list">
-            <li v-for="it in f.items" :key="it">{{ it }}</li>
-          </ul>
-          <div class="lr-form-owner">{{ f.owner }}</div>
-          <p class="lr-form-note">{{ f.note }}</p>
-        </div>
-      </div>
-
-      <h3>可配置度阶梯：配置只能作用于「值」，不能作用于「逻辑」</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 120px;">层级</th>
-            <th style="width: 200px;">对象</th>
-            <th>可配度</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>L0 领域模型</strong></td>
-            <td>排他占位、名额 ≠ 额度、三层事实</td>
-            <td>写死，<strong>0% 可配</strong></td>
-          </tr>
-          <tr>
-            <td><strong>L1 算法</strong></td>
-            <td>业绩折算、名额生成</td>
-            <td>逻辑锁死，<strong>只暴露参数</strong>；且参数入口很可能在对方系统里</td>
-          </tr>
-          <tr>
-            <td><strong>L2 业务规则</strong></td>
-            <td>假种、额度值、审核条件与覆盖、后果策略</td>
-            <td>我们建页，业务填值</td>
-          </tr>
-          <tr>
-            <td><strong>L3 展示偏好</strong></td>
-            <td>列、筛选、看板维度</td>
-            <td>完全开放</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="card">
-        <div class="lr-card-title">为什么不做 100% 可配</div>
-        <p class="doc-p" style="margin-bottom: 8px;">
-          配置本身有成本，而且成本随维度相乘：假种（约 10）× 层级（3）× 薪酬结构（2）× 审核条件（5）× 周期（3）—— 配到最后，没人能回答业务最常问的那句话：<strong>这个员工为什么走了人工</strong>。
+        <p class="doc-p" style="margin-bottom: 10px;">
+          按<strong>假勤内部模块</strong>逐个列出关联系统，<strong>以下清单已逐项确认</strong>。逐系统契约与时序细节在后文功能详细说明中展开。
         </p>
-        <p class="doc-p" style="margin: 0;">
-          所以覆盖方向锁定为<strong>单向收紧</strong>（默认自动，局部只能改成人工，不可放宽），本质是一条压制配置成本的机制：它把「假种 × 层级」的任意矩阵压成一个单调结构。
-        </p>
-      </div>
-    </div>
 
-    <!-- ========== 五、模块优先级 ========== -->
-    <div id="lr-priority" class="section">
-      <div class="section-header">
-        <h2>五、模块优先级</h2>
-        <DocCopyButton section-id="lr-priority" />
-      </div>
-      <p class="doc-p">
-        排序依据：<strong>配置底座是所有页面的数据源</strong>，不定则后续必返工。下表只列<strong>原型侧需要交付的页面</strong>（带「查看」的可直接跳转，入口在主应用侧边栏「假勤重构」分组）；本页自身及其他文档内容属文档中心，不占原型模块名额。
-      </p>
-      <div class="lr-priority-board">
-        <div class="lr-priority-col" v-for="g in modulePriorities" :key="g.level">
-          <div class="lr-col-head" :class="'lr-lv-' + g.level.toLowerCase()">
-            <div class="lr-col-head-top">
-              <span class="lr-level-badge">{{ g.level }}</span>
-              <span class="lr-col-name">{{ g.name }}</span>
+        <div class="lr-cf">
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">出勤方案</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">排班排假 <span class="dim">（我方方案 = 它的约束输入）</span></span>
             </div>
-            <p class="lr-col-desc">{{ g.desc }}</p>
           </div>
-          <div class="lr-col-body">
-            <div v-for="m in g.items" :key="m.name" class="lr-mod-item" :class="{ built: m.built }">
-              <span class="lr-mod-name">{{ m.name }}</span>
-              <div class="lr-mod-meta">
-                <el-tag size="small" effect="plain" :type="formTagType(m.form)">{{ m.form }}</el-tag>
-                <el-button v-if="m.route" size="small" link type="primary" @click="go(m.route)">查看</el-button>
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">请假执行<br/>假期生效</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">员工时间线 <span class="dim">（写入占位 / 读取冲突）</span></span>
+              <span class="lr-chip green">排班排假 <span class="dim">（缺岗信号）</span></span>
+              <span class="lr-chip green">薪酬 <span class="dim">（缺勤事实）</span></span>
+              <span class="lr-chip green">订单 / 预约 <span class="dim">（改派取消）</span></span>
+              <span class="lr-chip green">消息中心 <span class="dim">（提醒）</span></span>
+            </div>
+          </div>
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">长假</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">新员工关系系统 <span class="dim">（长假结论 → 社保公积金个人部分处置）</span></span>
+            </div>
+          </div>
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">考勤比对</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">考勤组 <span class="dim">（实际层事实）</span></span>
+              <span class="lr-chip green">排班排假 <span class="dim">（计划层，只读）</span></span>
+            </div>
+          </div>
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">离职联动</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">离职流程 <span class="dim">（状态生效 → 取消班次 / 截断接单）</span></span>
+              <span class="lr-chip green">新员工关系系统 <span class="dim">（员工离职时间，日期锁定时、不经假勤）</span></span>
+            </div>
+          </div>
+          <div class="lr-cf-row">
+            <div class="lr-cf-mod">假期类型字典</div>
+            <div class="lr-cf-line"></div>
+            <div class="lr-cf-chips">
+              <span class="lr-chip green">模块化薪酬 <span class="dim">（带薪性 / 比例按假种映射）</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top: 10px;">
+          <strong>关于「员工时间线」：</strong>它是统一时间管理体系——时间轴<strong>核心唯一</strong>，自上而下分层：用工基线（合同工时 / 法定工时，加班延时额外）→ 排班 / 考勤组（基础排班 + 例外排班）→ 业务事件层（订单 · 会议 · 培训 · 调薪 · 弹性事假 · 日程…，按类型特点生成）→ 外部事件层（合作 · 培训 · 学习认证 · 面试）→ 记录层。假勤的<strong>排他占位事件写入业务事件层</strong>；长假结论、特殊状态事件落在记录层。
+        </div>
+      </div>
+
+      <!-- 5.1b 范围声明：调休 / 补休 -->
+      <div class="lr-decl">
+        <span class="lr-decl-tag">范围声明</span>
+        <span class="lr-decl-body">
+          本期<strong>不含「调休 / 补休」</strong>两类假种，已暂时移出假期类型字典。原因：这两类假的额度来自<strong>加班折算</strong>，要接进来前提是先有<strong>「加班申请」模块</strong>——加班事实从哪来、折算规则归谁定，都挂在它身上。本期边界内没有加班模块，所以先不收；后续若立项「加班申请」，这两个假种再随它一起加回。
+        </span>
+      </div>
+
+      <!-- 5.1c 缺口声明：移动端假期审批 -->
+      <div class="lr-decl">
+        <span class="lr-decl-tag">缺口声明</span>
+        <span class="lr-decl-body">
+          移动端现状<strong>只有员工侧的申请与记录</strong>，缺<strong>「假期审批」</strong>——审核规则里配的「人工审批」没有任何处理端，规则落不了地（自动审核不需要人，人工审批必须有入口）。本期由<strong>人事 / 总部（架构上游）</strong>补审批处理端：待审列表 → 单据详情（申请信息 + 余额与扣减试算 + 命中的审核规则）→ 通过 / 驳回（驳回必填原因）。另有一处缺口：申请侧身份目前只覆盖门店岗（推拿师 / 客户经理），<strong>总部岗位没有申请身份</strong>，本期一并补齐。
+        </span>
+      </div>
+
+      <!-- 5.2 内部模块关系 -->
+      <div class="card" id="lr-scope-modules">
+        <h3>5.2 假勤系统内部各模块的关系</h3>
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 14px; font-size: 13px;">
+          <strong>一句话：</strong>数据<strong>单向流动</strong>——配置 → 枢纽 → 只读消费，<strong>不存在结果页反写配置的路径</strong>。下面按三层自上而下看。
+        </div>
+
+        <div class="lr-layers">
+          <!-- 第一层：配置层 -->
+          <div class="lr-layer">
+            <div class="lr-layer-head">
+              <span class="lh-name">配置层</span>
+              <span class="lh-desc">把「假是什么 / 有多少 / 怎么批 / 哪天该上班」分四处定清楚，互相不越界</span>
+            </div>
+            <div class="lr-layer-cards cols-4">
+              <div class="lr-mod-card">
+                <div class="mc-name">假期类型字典</div>
+                <div class="mc-role">定性 · 这个假种「是什么」</div>
+                <div class="mc-line">→ 额度方案 / 审核规则按假种引用</div>
+                <div class="mc-line">→ 模块化薪酬：带薪性 / 比例映射</div>
+                <div class="mc-no">不做：额度值 / 单位 / 凭证 / 带薪</div>
+              </div>
+              <div class="lr-mod-card">
+                <div class="mc-name">假期额度方案</div>
+                <div class="mc-role">定值 · 这个假种「有多少」</div>
+                <div class="mc-line">→ 挂到岗位假勤方案</div>
+                <div class="mc-line">→ 假期盘点：余额只读</div>
+                <div class="mc-no">不做：审批流程、日历口径</div>
+              </div>
+              <div class="lr-mod-card">
+                <div class="mc-name">假期审核规则</div>
+                <div class="mc-role">定流程 · 这个假种「怎么批」</div>
+                <div class="mc-line">→ 挂到岗位假勤方案</div>
+                <div class="mc-line">→ 与岗位审批方式取严合并</div>
+                <div class="mc-no">不做：额度值（值与流程分离）</div>
+              </div>
+              <div class="lr-mod-card">
+                <div class="mc-name">出勤方案</div>
+                <div class="mc-role">定日历 · 哪天默认该上班</div>
+                <div class="mc-line">→ 排班排假：约束输入</div>
+                <div class="mc-line">→ 考勤比对：计划基准</div>
+                <div class="mc-no">不做：排班 / 班次 / 名额</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lr-flow-arrow"><span>四个配置页按岗位挂接</span></div>
+
+          <!-- 第二层：枢纽层 -->
+          <div class="lr-layer">
+            <div class="lr-layer-head">
+              <span class="lh-name">枢纽层</span>
+              <span class="lh-desc">岗位 × 四类配置的装配点</span>
+            </div>
+            <div class="lr-hub-card">
+              <div class="hub-main">
+                <div class="hub-name">岗位假勤方案</div>
+                <div class="hub-role">枢纽 · 上游四个配置页，下游全部只读页 + 请假执行</div>
+              </div>
+              <div class="hub-chips">
+                <span class="lr-chip blue">引用 · 字典 / 额度 / 审核 / 出勤</span>
+                <span class="lr-chip green">交付 · 只读页 + 请假执行</span>
+                <span class="lr-chip gray">不做 · 自己不定任何值（岗位侧只读，由方案反查）</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lr-flow-arrow"><span>只读消费 · 不反写</span></div>
+
+          <!-- 第三层：消费层 -->
+          <div class="lr-layer">
+            <div class="lr-layer-head">
+              <span class="lh-name">消费层</span>
+              <span class="lh-desc">只读呈现与比对，不回改任何配置</span>
+            </div>
+            <div class="lr-layer-cards cols-3">
+              <div class="lr-mod-card">
+                <div class="mc-name">假期盘点</div>
+                <div class="mc-role">只读 · 余额与明细</div>
+                <div class="mc-line">← 字典系统折算合成 + 额度方案解档</div>
+                <div class="mc-no">不做：改任何配置与余额</div>
+              </div>
+              <div class="lr-mod-card">
+                <div class="mc-name">考勤组</div>
+                <div class="mc-role">定口径 · 比几层、比哪些</div>
+                <div class="mc-line">← 出勤方案（计划层）+ 排班排假 + 考勤组（实际层事实）</div>
+                <div class="mc-line">→ 异常事实交付薪酬</div>
+                <div class="mc-no">不做：异常的后续处置</div>
+              </div>
+              <div class="lr-mod-card">
+                <div class="mc-name">岗位列表</div>
+                <div class="mc-role">只读 · 岗位主数据</div>
+                <div class="mc-line">→ 全部配置页「适用岗位」唯一数据源</div>
+                <div class="mc-no">不做：维护任何假勤属性</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ========== 六、能力登记表 ========== -->
-    <div id="lr-capability" class="section">
-      <div class="section-header">
-        <h2>六、能力登记表</h2>
-        <DocCopyButton section-id="lr-capability" />
-      </div>
-      <p class="doc-p">
-        画页面前的第一件事：<strong>先确认哪些能力是别人的、我们能改到什么程度</strong>。「可配」与「我们建」是两回事 —— 有些参数可配，但配置入口在别人系统里，我们的交付物只是一句「这个参数在哪配、影响什么」。
-      </p>
-      <el-table :data="capabilityRegistry" size="small" style="width: 100%;">
-        <el-table-column prop="id" label="编号" width="64" />
-        <el-table-column prop="name" label="能力" width="150" />
-        <el-table-column prop="owner" label="实现方" width="140" />
-        <el-table-column prop="deliverable" label="我们的交付物" min-width="230" show-overflow-tooltip />
-        <el-table-column prop="depends" label="依赖字段" width="180" show-overflow-tooltip />
-        <el-table-column label="可改性" width="86" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain" :type="row.modifiable === 'readonly' ? 'info' : 'warning'">
-              {{ row.modifiable === 'readonly' ? '只读' : '待确认' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="needConfirm" label="待确认" min-width="200" show-overflow-tooltip />
-      </el-table>
-      <div class="note" style="margin-top: 12px;">
-        <strong>信息缺口：</strong>表中多项标注「可改性 · 待确认」——现有排班排假系统、现有额度模块，我们是<strong>能要求它加字段 / 加接口</strong>，还是<strong>只能读它现在的输出</strong>？若是后者，很多校验逻辑（如「额度够不够」）会被迫放到我们这侧做补偿计算。这一条不确认，定义层就写不实。
-      </div>
-    </div>
+      <!-- 5.3 请假全链路 -->
+      <div class="card" id="lr-scope-chain">
+        <h3>5.3 请假全链路</h3>
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 1px solid hsl(var(--primary)); margin-bottom: 14px; font-size: 13px;">
+          <strong>一句话：</strong>配置装配生效 → 员工申请 → 合规判定与审批 → 休假生效扣减 → 状态一变主动通知。下面按发生顺序自上而下走一遍。
+        </div>
 
-    <!-- ========== 七、待决事项 ========== -->
-    <div id="lr-issues" class="section">
-      <div class="section-header">
-        <h2>七、待决事项</h2>
-        <DocCopyButton section-id="lr-issues" />
-      </div>
-      <p class="doc-p">
-        多数不由假勤单方决定，需与时间线组、打卡组、薪酬、员工福利对齐。<strong>8.1 时间线粒度</strong>与 <strong>8.11 外部能力可改性</strong>是两条真正的阻塞项。
-      </p>
-      <ul class="lr-issue-list">
-        <li v-for="it in openIssues" :key="it.id" class="lr-issue-item">
-          <span class="lr-issue-id">{{ it.id }}</span>
-          <div class="lr-issue-main">
-            <div class="lr-issue-title">{{ it.title }}</div>
-            <div class="lr-issue-desc">{{ it.desc }}</div>
+        <div class="lr-chain">
+          <div class="lr-step">
+            <div class="step-no">1</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">配置就绪</div>
+              <div class="lr-step-body">假期类型<strong>定性</strong> → 额度方案<strong>定值</strong> → 审核规则<strong>定流程</strong> → 出勤方案<strong>定日历</strong>；四类配置在「岗位假勤方案」按岗位装配生效，岗位自己不定任何值。</div>
+            </div>
           </div>
-          <el-tag size="small" effect="plain" type="info">{{ it.owner }}</el-tag>
-        </li>
-      </ul>
+          <div class="lr-step">
+            <div class="step-no">2</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">员工申请</div>
+              <div class="lr-step-body">移动端只展示<strong>该岗位适用的假种</strong>；选完假种立即看到当前余额（额度型给「X 天/周期」，按需型提示按需申请）；再按假种口径填写休假字段（班次假选班次、时段假填起止、按次假限天数）。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">3</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">合规判定</div>
+              <div class="lr-step-body">命中该假种的审核规则：<strong>凭证校验</strong>（无凭证要求的类型直接跳过）→ <strong>提前申请期校验</strong>（无要求的不校验、界面也不显示）→ <strong>自动审核直接生效</strong> / 人工审批进入审批流。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">4</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">审批流转</div>
+              <div class="lr-step-body">门店岗按<strong>岗类分流</strong>：推拿师、客户经理各自对应 1 级人事节点；总部按<strong>部门设置的审批人</strong>审批，允许多级、同节点可配置多人<strong>或签</strong>（任一人处理即流转）。驳回必填原因。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">5</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">休假生效</div>
+              <div class="lr-step-body">三件事同时发生：<strong>额度扣减</strong>（逐段落在方案上，「已用」由记录自动汇总）· <strong>排他占位事件写入员工时间线</strong>业务事件层（供冲突读取与全局时间视图）· <strong>缺岗信号交付排班调度</strong>（日期 / 门店 / 岗位 / 班次段 / 缺人数）。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">6</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">主动通知</div>
+              <div class="lr-step-body">状态一变主动通知订阅方：<strong>薪酬</strong>（缺勤事实，怎么折算它自己算）· <strong>消息中心</strong>（员工与审批人提醒）· <strong>订单 / 预约</strong>（改派取消）。假勤只出事实，不代下游计算。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">7</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">长假结论</div>
+              <div class="lr-step-body">连续时长超过阈值的假种，出<strong>长假综合结论</strong>交新员工关系系统——它据此处置社保公积金个人部分；没有这个输入，它靠「是否考勤 / 是否有订单」排查会把长假员工误判为异常。</div>
+            </div>
+          </div>
+          <div class="lr-step">
+            <div class="step-no">8</div>
+            <div class="lr-step-main">
+              <div class="lr-step-title">离职联动</div>
+              <div class="lr-step-body">员工离职时间由<strong>离职流程在日期锁定时直接通知新员工关系系统</strong>（迎新触达终止 / 转离职关怀），不经假勤；离职生效后假勤侧取消后续班次、截断接单。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 六、功能详细说明 ========== -->
+    <div id="lr-func" class="section">
+      <div class="section-header">
+        <h2>六、功能详细说明</h2>
+        <DocCopyButton section-id="lr-func" />
+      </div>
+      <p class="doc-p">本章按功能块逐节说明；每节开头的「功能入口」对应可走查的原型页面。</p>
+
+      <!-- ===== 6.1 假期类型 ===== -->
+      <div id="lr-func-1" class="subsection">
+        <div class="section-header">
+          <h3>6.1 假期类型</h3>
+          <DocCopyButton section-id="lr-func-1" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期类型</strong>（<code>/leave-type-dictionary</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>字典只做<strong>定性</strong>——这个假种「是什么」。类别、是否排他、启用状态、适用性；<strong>有多少（额度）、怎么批（审核）、带不带薪（薪酬）都不在这里</strong>。
+        </div>
+
+        <p class="doc-p">
+          现状是假种口径<strong>散落在各处</strong>：有的挂在班次规则里、有的写在临时假说明里，谁适用、谁排他，没有一处统一答案。
+          本次收敛为<strong>一份假种字典</strong>：全系统唯一一份「假是什么」的定义，额度方案、审核规则、移动端申请页都从这里取。
+        </p>
+
+        <h4 class="h4sub">字典管什么</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 120px;">维度</th><th style="width: 220px;">取值</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>类别</strong></td><td>法定 / 公司</td><td>法定假种（婚假、产假等）口径跟随法规；公司假种（事假等）口径公司自定</td></tr>
+            <tr><td><strong>是否排他</strong></td><td>是 / 否</td><td>写入员工时间线时的占位声明：排他占位期间不接受其他业务占用</td></tr>
+            <tr><td><strong>启用状态</strong></td><td>启用 / 停用</td><td>停用的假种不再出现在任何配置页与申请页</td></tr>
+            <tr><td><strong>适用性</strong></td><td>全岗位 / 指定岗位</td><td>指定岗位需勾选岗位清单；决定移动端申请页能不能看到这个假种</td></tr>
+            <tr><td><strong>额度来源</strong></td><td>方案定值 / 系统折算</td><td>方案定值 = 值在假期额度方案里配；系统折算 = 读方案库的周期上限（如临时假 16 时/月），历史已折算的存量不在本系统处理</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note">
+          <strong>不做什么：</strong>额度值、单位、凭证要求、带薪比例都不在字典——分别在假期额度方案、假期审核规则、模块化薪酬（带薪性 / 比例按假种映射，<strong>假种不持有薪酬口径</strong>，假勤只交付「时长 + 假种」）。调休 / 补休本期移出字典，原因见第 5 章范围声明与待决 8.14。
+        </div>
+      </div>
+
+      <!-- ===== 6.2 假期额度方案 ===== -->
+      <div id="lr-func-2" class="subsection">
+        <div class="section-header">
+          <h3>6.2 假期额度方案</h3>
+          <DocCopyButton section-id="lr-func-2" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期额度方案</strong>（<code>/leave-wm-quota</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>定值层——这个假种「有多少」。方案三块独立：<strong>适用岗位 + 标准值 + 差异化条目</strong>；计量方式四选一。
+        </div>
+
+        <h4 class="h4sub">计量四档</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 110px;">计量档</th><th style="width: 300px;">发放方式</th><th>典型假种</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>周期发放</strong></td><td>按周期预发，可配置结转下期</td><td>年假等可预发的假种</td></tr>
+            <tr><td><strong>周期上限</strong></td><td>不预发、封顶控制；由系统按假种逐期折算合成余额</td><td>临时假（16 时/月）</td></tr>
+            <tr><td><strong>按次上限</strong></td><td>不预发；每次申请封顶，并限定自事件起的有效期</td><td>婚假（一次性、限期使用）</td></tr>
+            <tr><td><strong>按需</strong></td><td>不设额度值，按需申请、按规则核定</td><td>病假（按医疗期核定）</td></tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">方案的三块结构</h4>
+        <ul class="lr-list">
+          <li>
+            <strong>适用岗位：</strong>勾选岗位清单。岗位侧不再单独维护假种清单，由方案反查——岗位决定「<strong>有没有</strong>」这个假。
+          </li>
+          <li>
+            <strong>标准值：</strong>该假种的统一额度口径；按需档无标准值，界面显示「按需」。
+          </li>
+          <li>
+            <strong>差异化条目：</strong>按城市 / 门店覆盖标准值，<strong>只改数值</strong>；门店优先、命中即停——地域决定「<strong>值多少</strong>」。
+          </li>
+        </ul>
+
+        <div class="note">
+          <strong>差异化不含岗位：</strong>岗位横跨多城市，塞进差异化会自相矛盾，所以「岗位决定有没有、地域决定值多少」两件事分开。
+          个人 / 职级 / 用工形式 / 司龄 / 合同主体差异化本期不做，按人走「系统折算」（待决 8.16）；
+          城市与门店同时命中取哪条待定——现取门店，原型可切「取最优」对比（待决 8.15）。
+        </div>
+      </div>
+
+      <!-- ===== 6.3 假期审核规则 ===== -->
+      <div id="lr-func-3" class="subsection">
+        <div class="section-header">
+          <h3>6.3 假期审核规则</h3>
+          <DocCopyButton section-id="lr-func-3" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期审核规则</strong>（<code>/leave-audit-consequence</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>定流程——这个假种「怎么批」。每个假种<strong>三项基础规则</strong> + 可选差异化条目；与岗位审批方式<strong>合并取严</strong>。
+        </div>
+
+        <h4 class="h4sub">基础三项</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 130px;">规则项</th><th>口径</th><th style="width: 280px;">特例</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>凭证要求</strong></td>
+              <td>枚举多选（医疗诊断证明 / 结婚证 / 出生证明 / 生育相关证明 / 其他）；不勾选 = 无需凭证</td>
+              <td>丧假<strong>不设凭证</strong>——死亡证明无法事先取得</td>
+            </tr>
+            <tr>
+              <td><strong>提前申请期</strong></td>
+              <td>单位天；申请日期需早于休假开始 N 天，否则不允许提交</td>
+              <td>病假<strong>无提前申请期概念</strong>——事出突然；无要求时界面不显示该行</td>
+            </tr>
+            <tr>
+              <td><strong>审核方式</strong></td>
+              <td>自动 / 人工；自动审核直接生效，单据不进审批列表</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">差异化条目</h4>
+        <ul class="lr-list">
+          <li>仅<strong>城市 / 门店</strong>两个维度；<strong>默认继承基础值，改哪项覆盖哪项</strong>——不设「是否覆盖」勾选，改动即覆盖。</li>
+          <li>门店优先、命中即停；与额度方案的差异化同口径（见 6.2）。</li>
+        </ul>
+
+        <div class="note">
+          <strong>合并取严：</strong>假种审核规则与岗位侧的审批方式合并时<strong>取严</strong>——任一方要求人工，最终即按人工；岗位「混合」不参与投票。
+        </div>
+      </div>
+
+      <!-- ===== 6.4 出勤方案 ===== -->
+      <div id="lr-func-4" class="subsection">
+        <div class="section-header">
+          <h3>6.4 出勤方案</h3>
+          <DocCopyButton section-id="lr-func-4" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>出勤方案</strong>（<code>/leave-wm-scheme</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>日历口径——哪天默认该上班。周基础模式 + 法定节假日解读 + 特殊日。
+        </div>
+
+        <ul class="lr-list">
+          <li><strong>只回答「哪天默认该上班」：</strong>每周基础出勤日 + 法定节假日的解读 + 公司特殊日（如统一调休上班日）。</li>
+          <li><strong>对排班排假是约束输入：</strong>排班岗具体哪天上哪个班次，由现有<strong>排班排假系统</strong>决定——它是班次计划与名额的 owner，出勤方案不越位。</li>
+          <li><strong>对不排班岗是考勤比对的计划基准：</strong>没有班次计划的岗位，比对就用出勤方案判断该不该出勤（见 6.6）。</li>
+        </ul>
+
+        <div class="note">
+          <strong>不做什么：</strong>不排班、不定班次、不生成名额——出勤方案是<strong>日历口径，不是班次计划</strong>。
+        </div>
+      </div>
+
+      <!-- ===== 6.5 岗位假勤方案 ===== -->
+      <div id="lr-func-5" class="subsection">
+        <div class="section-header">
+          <h3>6.5 岗位假勤方案</h3>
+          <DocCopyButton section-id="lr-func-5" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>岗位假勤方案</strong>（<code>/leave-wm-work-mode</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>枢纽——岗位 × 四类配置（字典 / 额度 / 审核 / 出勤）的装配点，<strong>自己不定任何值</strong>。
+        </div>
+
+        <h4 class="h4sub">两个视图</h4>
+        <ul class="lr-list">
+          <li><strong>按岗位：</strong>单个岗位看装配了哪四类配置，进入后逐项引用。</li>
+          <li><strong>矩阵：</strong>所有岗位 × 四类配置横向铺开，一眼看出哪个岗位缺哪类配置。</li>
+        </ul>
+
+        <h4 class="h4sub">装配关系</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 110px;">方向</th><th style="width: 320px;">对象</th><th>关系</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>上游</strong></td><td>假期类型字典 · 额度方案 · 审核规则 · 出勤方案</td><td>按岗位引用；引用后配置改动即生效</td></tr>
+            <tr><td><strong>下游</strong></td><td>假期盘点 · 考勤比对 · 移动端请假执行</td><td>只读消费，<strong>不存在下游反写配置的路径</strong></td></tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">补缺路径</h4>
+        <p class="doc-p">
+          每个岗位声明请假生效后缺人怎么补：<strong>接班任务</strong>（同岗位任务交接）/ <strong>改班次</strong>（调整班次安排）/ <strong>无缺岗</strong>（不产生缺岗信号）。
+          它决定<strong>缺岗信号的去向</strong>——「无缺岗」的岗位请假通过后不向排班调度发缺岗信号。
+        </p>
+
+        <div class="note">
+          <strong>岗位侧只读：</strong>岗位不维护假种清单与额度值——由方案的适用岗位反查；岗位上看到的额度、审核、出勤配置都是引用结果，改动要回对应配置页。
+        </div>
+      </div>
+
+      <!-- ===== 6.6 考勤组 ===== -->
+      <div id="lr-func-6" class="subsection">
+        <div class="section-header">
+          <h3>6.6 考勤组</h3>
+          <DocCopyButton section-id="lr-func-6" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>考勤组</strong>（<code>/leave-wm-attendance</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>比对口径——比几层、比哪些。
+        </div>
+
+        <ul class="lr-list">
+          <li><strong>计划层基准：</strong>出勤方案（哪天默认该上班）；有班次计划的岗位读排班排假（只读）。</li>
+          <li><strong>实际层事实：</strong>来自打卡记录。</li>
+          <li><strong>产出：</strong>异常事实（迟到 / 缺勤 / 缺卡）交付薪酬；<strong>后续处置不在假勤边界内</strong>。</li>
+        </ul>
+      </div>
+
+      <!-- ===== 6.7 假期盘点 ===== -->
+      <div id="lr-func-7" class="subsection">
+        <div class="section-header">
+          <h3>6.7 假期盘点</h3>
+          <DocCopyButton section-id="lr-func-7" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期盘点</strong>（<code>/leave-wm-ledger</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>只读——余额与明细的统一出口。
+        </div>
+
+        <ul class="lr-list">
+          <li><strong>余额合成：</strong>系统折算部分按字典的周期上限合成 + 额度方案解档；周期上限方案不重复并入。</li>
+          <li><strong>按需假种：</strong>不显示余额，只显示「按需」（如病假按医疗期核定，没有可盘点的数）。</li>
+          <li><strong>不提供任何改数入口：</strong>与配置层没有反写路径；余额异常要回配置与记录层排查。</li>
+        </ul>
+      </div>
+
+      <!-- ===== 6.8 移动端 · 员工请假 ===== -->
+      <div id="lr-func-8" class="subsection">
+        <div class="section-header">
+          <h3>6.8 移动端 · 员工请假</h3>
+          <DocCopyButton section-id="lr-func-8" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>移动端 → 假勤桌面 → <strong>请假</strong>（<code>/mobile-leave-pd/apply</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>员工侧申请入口——只展示该岗位适用的假种，选完假种即见当前余额。
+        </div>
+
+        <p class="doc-p">
+          现状只有门店岗有申请身份，<strong>总部岗位没有入口</strong>；本期一并补齐。申请页的信息按「先选类型、再看余额、再填休假、最后确认占用」的顺序分区，
+          静态口径跟假种走、动态计算单独成卡，不混排。
+        </p>
+
+        <h4 class="h4sub">申请页的信息分区</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 120px;">区</th><th style="width: 280px;">内容</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>假种选择</strong></td>
+              <td>下拉选择，按假种类别分组</td>
+              <td>只显示该岗位适用、已启用的假种；不铺开平铺</td>
+            </tr>
+            <tr>
+              <td><strong>类型简况</strong></td>
+              <td>额度 · 已用 · 剩余</td>
+              <td>选完假种立即显示；额度口语化表达（如 <strong>4 天/月</strong>）；按需假种提示「按需申请 · 按医疗期核定 · 人工审核」</td>
+            </tr>
+            <tr>
+              <td><strong>休假填写</strong></td>
+              <td>按假种口径的字段</td>
+              <td>四种口径见下表</td>
+            </tr>
+            <tr>
+              <td><strong>本次占用</strong></td>
+              <td>本次休假 / 余额所剩 / 实际扣除</td>
+              <td>单独成卡；只放动态计算，不混后台静态规则</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">四种填写口径</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 120px;">口径</th><th style="width: 280px;">填写字段</th><th>适用</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>班次假</strong></td><td>单日 + 班次</td><td>按天休且占具体班次的假种</td></tr>
+            <tr><td><strong>时段假</strong></td><td>起止时间（同一天内）</td><td>按小时计的假种</td></tr>
+            <tr><td><strong>按次假</strong></td><td>使用天数（上限 = 当前剩余）</td><td>一次性事件假（婚假等）</td></tr>
+            <tr><td><strong>区间假</strong></td><td>起止日期</td><td>按日期区间休的假种</td></tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">校验与提交</h4>
+        <ul class="lr-list">
+          <li><strong>额度型超额禁止提交</strong>——没有「超出折薪」通道，超额只能改天数或换假种。</li>
+          <li>提交后单据进入审批流；申请详情可见<strong>审批人（名 · 岗位）</strong>与审批流转状态。</li>
+        </ul>
+      </div>
+
+      <!-- ===== 6.9 移动端 · 假期审批 ===== -->
+      <div id="lr-func-9" class="subsection">
+        <div class="section-header">
+          <h3>6.9 移动端 · 假期审批</h3>
+          <DocCopyButton section-id="lr-func-9" />
+        </div>
+        <div class="func-entry"><strong>功能入口：</strong>移动端 → 假勤桌面 → <strong>假期审批</strong>（<code>/mobile-leave-pd/approval</code>）</div>
+
+        <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
+          <strong>一句话定位：</strong>人事 / 总部侧处理端——审核规则里「人工审批」的落地入口。<strong>本期补齐的缺口</strong>：此前移动端只有员工申请，人工审批没有处理端，规则落不了地。
+        </div>
+
+        <h4 class="h4sub">审批人怎么分派</h4>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 120px;">人群</th><th style="width: 240px;">节点</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>推拿师</strong></td>
+              <td>1 级 · 岗位人事经理</td>
+              <td rowspan="2">门店岗按<strong>岗类分流</strong>：各岗类对应自己的人事经理，互不交叉</td>
+            </tr>
+            <tr>
+              <td><strong>客户经理</strong></td>
+              <td>1 级 · 岗位人事经理</td>
+            </tr>
+            <tr>
+              <td><strong>总部</strong></td>
+              <td>按部门设置，允许多级</td>
+              <td>部门审批（同节点可配置多人<strong>或签</strong>——任一人处理即流转）→ 可接人事复核；节点链的配置归属见待决 8.17</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4 class="h4sub">单据详情有什么</h4>
+        <ul class="lr-list">
+          <li><strong>申请信息：</strong>休假字段 + 凭证（可查看员工上传的证明材料）。</li>
+          <li><strong>余额与本次扣除：</strong>本单占用多少、扣哪个方案的哪一段。</li>
+          <li><strong>命中的审核规则：</strong>审批方式、本单审批人；提前申请期仅在有要求时显示（病假不显示）。</li>
+        </ul>
+
+        <div class="note">
+          <strong>动作只有两个：</strong>通过 / 驳回，驳回必填原因。审批通过后按全链路生效——额度扣减、占位事件、缺岗信号（见 5.3）。
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 七、附录：待决事项 ========== -->
+    <div id="lr-open" class="section">
+      <div class="section-header">
+        <h2>七、附录：待决事项</h2>
+        <DocCopyButton section-id="lr-open" />
+      </div>
+      <p class="doc-p">以下事项显式挂起，<strong>不擅自拍板</strong>；每项写明归属方与卡点。</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 64px;">序号</th>
+            <th style="width: 190px;">事项</th>
+            <th>说明</th>
+            <th style="width: 150px;">归属方</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>8.1</td><td>时间线粒度</td><td>天 / 半天 / 时刻区间——决定「通班 + 早半天假」能否表达。</td><td>人事组</td></tr>
+          <tr><td>8.2</td><td>审批中间态是否上时间线</td><td>乐观占位（提交即占）vs 悲观占位（批准才占）。</td><td>人事组 + 假勤</td></tr>
+          <tr><td>8.3</td><td>排他性判定方</td><td>时间线侧的事件类型字典 vs 我们写入时声明的排他标记。</td><td>人事组</td></tr>
+          <tr><td>8.4</td><td>冲突解决权归属</td><td>只返回冲突 vs 可触发顶班 / 调班。</td><td>人事组 + 排班</td></tr>
+          <tr><td>8.5</td><td>业绩折算公式归属</td><td>沿用现有模块 vs 本次重定义。</td><td>业务 + 额度模块</td></tr>
+          <tr><td>8.6</td><td>业务周期粒度</td><td>周 / 月 / 自定义——决定名额生成器设计。</td><td>业务</td></tr>
+          <tr><td>8.7</td><td>配置改动是否追溯</td><td>当月生效 / 次月生效 / 人工指定生效期。</td><td>业务 + 假勤</td></tr>
+          <tr><td>8.8</td><td>「固定假」判定粒度</td><td>挂在额度来源（配置型额度）vs 挂在假种字典。</td><td>假勤</td></tr>
+          <tr><td>8.9</td><td>请长假阈值</td><td>多少天以上认定为长假并触发福利侧结论。</td><td>业务 + 员工福利</td></tr>
+          <tr><td>8.10</td><td>覆盖方向是否单向收紧</td><td>建议锁定为只能收紧，防止规则矩阵碎片化。</td><td>业务</td></tr>
+          <tr><td>8.11</td><td>各外部能力的可改性</td><td>可要求加字段 / 接口 vs 只能读其现有输出。</td><td>待与各方确认</td></tr>
+          <tr><td>8.12</td><td>外部能力输出的冻结时机与快照口径</td><td>额度、名额的历史值如何冻结。</td><td>额度模块 + 排班系统</td></tr>
+          <tr><td>8.13</td><td>可配参数的配置入口归属</td><td>哪些参数在对方系统里配，我们是否需在文档中指引。</td><td>假勤 + 各方</td></tr>
+          <tr><td>8.14</td><td>调休 / 补休接入</td><td>两类假种额度来自加班折算，接入前提是「加班申请」模块立项——加班事实来源、折算规则归属都挂在它身上。</td><td>假勤 + 业务</td></tr>
+          <tr><td>8.15</td><td>城市 / 门店差异化同时命中</td><td>同时命中取哪条（现取门店；原型可切「取最优」对比）；优先级能否调整待确认。</td><td>业务</td></tr>
+          <tr><td>8.16</td><td>个人维度差异化</td><td>个人 / 职级 / 用工形式 / 司龄 / 合同主体差异化本期不做，按人走「系统折算」；后续是否立项待定。</td><td>业务</td></tr>
+          <tr><td>8.17</td><td>总部审批节点链配置归属</td><td>总部多级审批的部门审批人配置入口与维护方（部门设置 vs 人事后台）。</td><td>人事组 + 假勤</td></tr>
+        </tbody>
+      </table>
     </div>
   </DocShell>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import DocShell from '../../docs/components/DocShell.vue'
 import DocCopyButton from '../../docs/components/DocCopyButton.vue'
-import {
-  reformModels,
-  deliveryForms,
-  capabilityRegistry,
-  openIssues,
-  modulePriorities
-} from '../../mock/leaveAttendance.js'
-
-const router = useRouter()
+import { Calendar, User, CollectionTag } from '@element-plus/icons-vue'
 
 const tocItems = [
-  { id: 'lr-scope', label: '一、定位与边界' },
-  { id: 'lr-models', label: '二、七个核心模型' },
-  { id: 'lr-catalog', label: '三、文档结构规划' },
-  { id: 'lr-delivery', label: '四、交付形态与可配置度' },
-  { id: 'lr-priority', label: '五、模块优先级' },
-  { id: 'lr-capability', label: '六、能力登记表' },
-  { id: 'lr-issues', label: '七、待决事项' }
+  { id: 'lr-version', label: '一、版本信息' },
+  { id: 'lr-changelog', label: '二、变更日志' },
+  { id: 'lr-notes', label: '三、文档说明' },
+  { id: 'lr-bg', label: '四、需求背景' },
+  { id: 'lr-scope', label: '五、需求范围' },
+  { id: 'lr-scope-boundary', label: '　5.1 边界与周边系统' },
+  { id: 'lr-scope-modules', label: '　5.2 内部各模块的关系' },
+  { id: 'lr-scope-chain', label: '　5.3 请假全链路' },
+  { id: 'lr-func', label: '六、功能详细说明' },
+  { id: 'lr-func-1', label: '　6.1 假期类型' },
+  { id: 'lr-func-2', label: '　6.2 假期额度方案' },
+  { id: 'lr-func-3', label: '　6.3 假期审核规则' },
+  { id: 'lr-func-4', label: '　6.4 出勤方案' },
+  { id: 'lr-func-5', label: '　6.5 岗位假勤方案' },
+  { id: 'lr-func-6', label: '　6.6 考勤组' },
+  { id: 'lr-func-7', label: '　6.7 假期盘点' },
+  { id: 'lr-func-8', label: '　6.8 移动端 · 员工请假' },
+  { id: 'lr-func-9', label: '　6.9 移动端 · 假期审批' },
+  { id: 'lr-open', label: '七、附录：待决事项' }
 ]
 
 const breadcrumbs = [
   { label: '文档中心', to: '/docs' },
-  { label: '假勤重构', to: '/docs/leave-reform/overview' },
-  { label: '一、设计总览' }
+  { label: '假勤管理', to: '/docs/leave-reform/overview' },
+  { label: '产品需求说明' }
 ]
-
-const principles = [
-  {
-    title: '底座是员工时间线',
-    desc: '以人为中心，按「事件是否排他」管理时间；假勤只是写入方之一，不是全流程主人'
-  },
-  {
-    title: '勤 = 两层事实的比对',
-    desc: '计划（排班）＋ 实际（打卡），差异即异常；岗位决定「勤」有几层'
-  },
-  {
-    title: '名额 ≠ 额度',
-    desc: '名额是组织容量（周期生成、共享、会被抢）；额度是个人可休量（私有、只减不增）'
-  },
-  {
-    title: '配置只能作用于「值」',
-    desc: '领域模型写死、算法只开参数、业务规则才可配 —— 不做 100% 可配'
-  }
-]
-
-const go = (name) => router.push({ name })
-
-// 原型模块只有「新建 / 配置 / 定义」三种交付形态；文档类内容不进此表（归文档中心）
-const formTagType = (form) => {
-  if (form.includes('新建')) return 'primary'
-  if (form.includes('配置')) return 'success'
-  if (form.includes('定义')) return 'info'
-  return 'warning'
-}
 </script>
 
 <style scoped>
-/* 正文段落：DocShell 的全局样式未覆盖 p，这里补齐 */
-.doc-p {
-  font-size: 14px;
-  line-height: 1.8;
-  color: hsl(var(--foreground));
-  margin: 0 0 12px 0;
+/* 版本信息卡 */
+.ver-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+.ver-card {
+  display: flex; align-items: center; gap: 12px;
+  background: hsl(var(--muted) / 0.3); border: 1px solid hsl(var(--border));
+  border-radius: 8px; padding: 14px 16px;
 }
+.ver-card .el-icon { font-size: 20px; color: hsl(var(--primary)); flex-shrink: 0; }
+.vc-k { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-bottom: 2px; }
+.vc-v { font-size: 14px; font-weight: 600; color: hsl(var(--foreground)); }
 
-/* 四条前提 */
-.lr-principles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-  margin: 12px 0 20px;
-}
-
-.lr-principle {
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  border-top: 3px solid hsl(var(--primary));
-  border-radius: 8px;
-  padding: 14px 16px;
-}
-
-.lr-principle-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  margin-bottom: 6px;
-}
-
-.lr-principle-desc {
+/* 空占位行 */
+.lr-empty-row td {
+  text-align: center;
+  color: hsl(var(--muted-foreground) / 0.7);
   font-size: 12px;
-  line-height: 1.6;
-  color: hsl(var(--muted-foreground));
-}
-
-/* 模型网格 */
-.lr-model-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 12px;
-  margin: 12px 0 20px;
-}
-
-.lr-model {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  padding: 14px;
-  transition: border-color 0.2s;
-}
-
-.lr-model:hover {
-  border-color: hsl(var(--primary) / 0.4);
-}
-
-.lr-model-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.lr-model-id {
-  font-size: 12px;
-  font-weight: 600;
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.08);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-
-.lr-model-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-
-.lr-model-brief {
-  font-size: 13px;
-  line-height: 1.6;
-  color: hsl(var(--muted-foreground));
-  margin: 0 0 10px 0;
-}
-
-.lr-model-owner {
-  font-size: 12px;
-  color: hsl(var(--muted-foreground) / 0.85);
+  padding: 14px 0;
 }
 
 /* 列表 */
-.lr-list {
-  margin: 12px 0;
-  padding-left: 20px;
+.lr-list { margin: 10px 0; padding-left: 20px; }
+.lr-list li { font-size: 13.5px; line-height: 1.8; margin-bottom: 8px; color: hsl(var(--foreground)); }
+
+/* 模块 × 关联系统确认图 */
+.lr-cf { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.lr-cf-row { display: flex; align-items: stretch; }
+.lr-cf-mod {
+  flex: 0 0 168px;
+  background: #EEEDFE; border: 1px solid #534AB7; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500; color: #26215C;
+  padding: 10px 8px; text-align: center; line-height: 1.5;
+}
+.lr-cf-line { flex: 0 0 34px; align-self: center; height: 1px; background: hsl(var(--border)); }
+.lr-cf-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lr-chip { font-size: 12px; padding: 5px 10px; border-radius: 8px; line-height: 1.6; }
+.lr-chip .dim { opacity: 0.75; }
+.lr-chip.green { background: #EAF3DE; border: 1px solid #3B6D11; color: #173404; }
+.lr-chip.blue { background: #E6F1FB; border: 1px solid #185FA5; color: #042C53; }
+.lr-chip.gray { background: #F1EFE8; border: 1px solid #888780; color: #444441; }
+.lr-mod-sub { font-size: 10.5px; font-weight: 400; color: #534AB7; opacity: 0.85; }
+
+/* 范围声明（调休 / 补休）：红色主题 + 虚线 */
+.lr-decl {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: hsl(var(--destructive) / 0.04);
+  border: 1px dashed hsl(var(--destructive) / 0.55);
+  border-left: 4px solid hsl(var(--destructive));
+  border-radius: 8px; padding: 12px 16px; margin: 14px 0;
+}
+.lr-decl-tag {
+  flex-shrink: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  color: hsl(var(--destructive)); background: hsl(var(--destructive) / 0.1);
+  border: 1px dashed hsl(var(--destructive) / 0.5);
+  padding: 1px 10px; border-radius: 10px; margin-top: 2px;
+}
+.lr-decl-body { font-size: 13px; line-height: 1.8; color: hsl(var(--foreground)); }
+.lr-decl-body strong { color: hsl(var(--destructive)); }
+
+/* 需求背景 · 重点卡 */
+.lr-key-point {
+  background: #FDF3E4; border: 1px solid #C77700; border-left: 4px solid #C77700;
+  border-radius: 8px; padding: 14px 16px; margin: 14px 0;
+}
+.kp-tag {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  color: #8A5300; background: #F8E3BE; border: 1px solid #C77700;
+  padding: 1px 10px; border-radius: 10px; margin-bottom: 8px;
+}
+.kp-title { font-size: 15px; font-weight: 600; color: #5C3A00; margin-bottom: 6px; }
+.lr-key-point .doc-p { color: #5C3A00; }
+
+/* 需求背景 · 影响面三卡 */.lr-impact { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+.lr-impact-card {
+  background: hsl(var(--muted) / 0.3); border: 1px solid hsl(var(--border));
+  border-radius: 8px; padding: 12px 14px;
+}
+.ip-sys { font-size: 13px; font-weight: 600; color: hsl(var(--primary)); margin-bottom: 6px; }
+.ip-body { font-size: 12.5px; line-height: 1.7; color: hsl(var(--foreground)); }
+
+/* 5.2 分层结构 */
+.lr-layers { display: flex; flex-direction: column; margin: 12px 0; }
+.lr-layer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.lh-name {
+  font-size: 13px; font-weight: 600; color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.35);
+  padding: 1px 10px; border-radius: 6px; white-space: nowrap;
+}
+.lh-desc { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.lr-layer-cards { display: grid; gap: 10px; }
+.lr-layer-cards.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.lr-layer-cards.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.lr-mod-card {
+  background: hsl(var(--muted) / 0.3); border: 1px solid hsl(var(--border));
+  border-radius: 8px; padding: 12px 13px;
+}
+.mc-name { font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground)); }
+.mc-role { font-size: 11px; color: hsl(var(--primary)); margin: 3px 0 8px; }
+.mc-line { font-size: 11.5px; line-height: 1.7; color: hsl(var(--muted-foreground)); }
+.mc-no {
+  font-size: 11.5px; line-height: 1.7; color: #6E6D66; margin-top: 6px;
+  padding-top: 6px; border-top: 1px dashed hsl(var(--border));
+}
+.lr-flow-arrow {
+  text-align: center; font-size: 12px; color: hsl(var(--muted-foreground));
+  padding: 4px 0; position: relative;
+}
+.lr-flow-arrow::before, .lr-flow-arrow::after {
+  content: ''; position: absolute; top: 50%; width: 0; height: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 6px solid hsl(var(--muted-foreground) / 0.6);
+}
+.lr-flow-arrow::before { left: calc(50% - 60px); }
+.lr-flow-arrow::after { right: calc(50% - 60px); }
+.lr-hub-card {
+  background: #EEEDFE; border: 1.5px solid #534AB7; border-radius: 10px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.hub-name { font-size: 15px; font-weight: 700; color: #26215C; }
+.hub-role { font-size: 12px; color: #534AB7; margin-top: 3px; }
+.hub-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+/* 5.3 全链路 · 纵向步骤 */
+.lr-chain { display: flex; flex-direction: column; margin: 12px 0; }
+.lr-step { display: flex; gap: 12px; position: relative; padding-bottom: 16px; }
+.lr-step:last-child { padding-bottom: 0; }
+.lr-step::before {
+  content: ''; position: absolute; left: 13px; top: 30px; bottom: 2px;
+  width: 2px; background: hsl(var(--border));
+}
+.lr-step:last-child::before { display: none; }
+.step-no {
+  flex: 0 0 28px; height: 28px; border-radius: 50%;
+  background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--primary) / 0.4);
+  color: hsl(var(--primary)); font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+}
+.lr-step-main { flex: 1; min-width: 0; }
+.lr-step-title { font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground)); line-height: 28px; }
+.lr-step-body { font-size: 12.5px; line-height: 1.75; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+.lr-step-body strong { color: hsl(var(--foreground)); font-weight: 500; }
+
+/* 功能详细说明 · 功能入口（置顶，同离职 PRD 口径） */
+.func-entry { font-size: 13px; color: hsl(var(--muted-foreground)); margin: 0 0 14px; }
+.func-entry strong { color: hsl(var(--foreground)); }
+.func-entry code {
+  background: hsl(var(--muted) / 0.5); border: 1px solid hsl(var(--border));
+  border-radius: 4px; padding: 1px 6px; font-size: 12px; color: hsl(var(--primary));
 }
 
-.lr-list li {
-  font-size: 13px;
-  line-height: 1.8;
-  color: hsl(var(--foreground));
-  margin-bottom: 10px;
-}
+/* 小节内子标题 */
+.h4sub { font-size: 13.5px; font-weight: 600; margin: 18px 0 8px; color: hsl(var(--foreground)); }
 
-.lr-list li strong {
-  color: hsl(var(--primary));
-}
-
-/* 交付形态三列 */
-.lr-form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin: 12px 0 20px;
-}
-
-.lr-form-col {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  padding: 16px;
-  background: hsl(var(--muted) / 0.4);
-}
-
-.lr-form-definition { border-left: 3px solid hsl(var(--muted-foreground)); }
-.lr-form-config { border-left: 3px solid hsl(var(--primary) / 0.55); }
-.lr-form-new { border-left: 3px solid hsl(var(--primary)); }
-
-.lr-form-head { margin-bottom: 12px; }
-
-.lr-form-name {
-  display: block;
-  font-size: 15px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-
-.lr-form-sub {
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-}
-
-.lr-form-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 12px 0;
-}
-
-.lr-form-list li {
-  font-size: 13px;
-  color: hsl(var(--foreground));
-  padding: 5px 0 5px 14px;
-  position: relative;
-  line-height: 1.5;
-}
-
-.lr-form-list li::before {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 12px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: hsl(var(--primary) / 0.6);
-}
-
-.lr-form-owner {
-  font-size: 12px;
-  color: hsl(var(--primary));
-  padding-top: 10px;
-  border-top: 1px dashed hsl(var(--border));
-  margin-bottom: 8px;
-}
-
-.lr-form-note {
-  font-size: 12px;
-  line-height: 1.6;
-  color: hsl(var(--muted-foreground));
-  margin: 0;
-}
-
-/* 卡片小标题 */
-.lr-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  margin-bottom: 10px;
-}
-
-/* 优先级板 */
-.lr-priority-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-top: 12px;
-}
-
-.lr-priority-col {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.lr-col-head {
-  padding: 12px 14px;
-  background: hsl(var(--muted) / 0.6);
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.lr-col-head-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.lr-level-badge {
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 4px;
-  padding: 1px 6px;
-  color: hsl(var(--background));
-  background: hsl(var(--muted-foreground));
-}
-
-.lr-lv-p0 .lr-level-badge { background: hsl(var(--primary)); }
-.lr-lv-p1 .lr-level-badge { background: hsl(var(--primary) / 0.62); }
-.lr-lv-p2 .lr-level-badge { background: hsl(var(--primary) / 0.4); }
-.lr-lv-p3 .lr-level-badge { background: hsl(var(--muted-foreground) / 0.6); }
-
-.lr-col-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-
-.lr-col-desc {
-  font-size: 12px;
-  line-height: 1.5;
-  color: hsl(var(--muted-foreground));
-  margin: 0;
-}
-
-.lr-col-body {
-  padding: 10px;
-  flex: 1;
-  background: hsl(var(--background));
-}
-
-.lr-mod-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  border: 1px solid hsl(var(--border));
-}
-
-.lr-mod-item:last-child { margin-bottom: 0; }
-
-.lr-mod-item.built {
-  border-color: hsl(var(--primary) / 0.35);
-  background: hsl(var(--primary) / 0.04);
-}
-
-.lr-mod-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-}
-
-.lr-mod-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-/* 强调行 */
-.lr-row-key td {
-  background: hsl(var(--warning) / 0.06);
-}
-
-/* 待决事项 */
-.lr-issue-list {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 10px;
-}
-
-.lr-issue-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-}
-
-.lr-issue-id {
-  font-size: 12px;
-  font-weight: 600;
-  color: hsl(var(--muted-foreground));
-  padding-top: 1px;
-  flex-shrink: 0;
-}
-
-.lr-issue-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.lr-issue-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-  margin-bottom: 3px;
-}
-
-.lr-issue-desc {
-  font-size: 12px;
-  line-height: 1.5;
-  color: hsl(var(--muted-foreground));
+@media (max-width: 720px) {
+  .lr-cf-row { flex-direction: column; gap: 6px; }
+  .lr-cf-line { display: none; }
+  .lr-impact { grid-template-columns: 1fr; }
+  .lr-layer-cards.cols-4, .lr-layer-cards.cols-3 { grid-template-columns: 1fr; }
+  .lr-flow-arrow::before, .lr-flow-arrow::after { display: none; }
+  .hub-chips { margin-left: 0; }
 }
 </style>

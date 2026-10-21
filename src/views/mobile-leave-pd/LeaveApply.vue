@@ -3,7 +3,6 @@
     <div class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>休假申请</h1>
-      <span class="pd-tag">预设计</span>
     </div>
 
     <div class="content">
@@ -15,23 +14,46 @@
         <span class="who-meta">{{ emp.staffNo }}</span>
       </div>
 
-      <!-- 类型 -->
+      <!-- 类型：收进一个选择器，不平铺 -->
       <div class="card">
         <div class="sec-title">休假类型</div>
-        <div v-for="g in groups" :key="g.channel" class="type-group">
-          <div class="group-label">{{ g.channel }}</div>
-          <div class="type-chips">
-            <span
-              v-for="t in g.items"
-              :key="t.id"
-              :class="['type-chip', { on: form.typeId === t.id, disabled: disabledType(t) }]"
-              @click="pickType(t)"
-            >
-              {{ t.name }}
-            </span>
-          </div>
+        <el-select v-model="form.typeId" style="width: 100%" placeholder="选择休假类型">
+          <template v-for="g in groups" :key="g.channel">
+            <el-option-group v-if="g.channel" :label="g.channel">
+              <el-option
+                v-for="t in g.items"
+                :key="t.id"
+                :value="t.id"
+                :label="t.name"
+                :disabled="disabledType(t)"
+              >
+                <span class="opt-name">{{ t.name }}</span>
+                <span v-if="chipBadge(t)" class="opt-quota">{{ chipBadge(t) }}</span>
+              </el-option>
+            </el-option-group>
+            <template v-else>
+              <el-option
+                v-for="t in g.items"
+                :key="t.id"
+                :value="t.id"
+                :label="t.name"
+                :disabled="disabledType(t)"
+              >
+                <span class="opt-name">{{ t.name }}</span>
+                <span v-if="chipBadge(t)" class="opt-quota">{{ chipBadge(t) }}</span>
+              </el-option>
+            </template>
+          </template>
+        </el-select>
+        <div v-if="type && (bal || type.quotaless)" class="field-desc type-brief">
+          <template v-if="bal">
+            <b>{{ bal.amount }}</b> {{ bal.unit }}/{{ shortCycle(bal.cycle) }}
+            · 已用 {{ bal.used }} {{ bal.unit }}
+            · 剩余 <b>{{ bal.remain }}</b> {{ bal.unit }}
+            <span v-if="bal.adjustNote" class="q-note">{{ bal.adjustNote }}</span>
+          </template>
+          <template v-else>按需申请 · 按医疗期核定 · 人工审核</template>
         </div>
-        <div v-if="type" class="field-desc">{{ type.desc }}</div>
       </div>
 
       <!-- 表单 -->
@@ -39,7 +61,7 @@
         <div class="sec-title">休假信息</div>
 
         <div class="field">
-          <span class="fl">{{ type.mode === 'event' || type.mode === 'range' || type.mode === 'chain' ? '休假日期' : '休假日期' }}</span>
+          <span class="fl">休假日期</span>
           <el-date-picker
             v-if="isRange"
             v-model="form.range"
@@ -61,6 +83,7 @@
           />
         </div>
 
+        <!-- 班次假专属：选哪个班次段（早半天 / 晚半天 / 全天即类型本身），补充当天所在班次给缺岗信号 -->
         <div v-if="type.mode === 'segment'" class="field">
           <span class="fl">休假班次</span>
           <el-select v-model="form.shiftId" size="small" style="width: 100%">
@@ -82,15 +105,6 @@
           <el-radio-group v-model="form.dayHours" size="small">
             <el-radio-button :value="8">整天</el-radio-button>
             <el-radio-button :value="4">半天</el-radio-button>
-          </el-radio-group>
-        </div>
-
-        <div v-if="type.mode === 'range'" class="field">
-          <span class="fl">时长口径</span>
-          <el-radio-group v-model="form.half" size="small">
-            <el-radio-button :value="false">整天</el-radio-button>
-            <el-radio-button :value="'am'">上午半天</el-radio-button>
-            <el-radio-button :value="'pm'">下午半天</el-radio-button>
           </el-radio-group>
         </div>
 
@@ -120,8 +134,35 @@
         </div>
       </div>
 
-      <!-- 扣减试算 -->
-      <div v-if="type" class="card">
+      <!-- 本次占用：只算这一单的动态账，额度速览已在类型选择处给出 -->
+      <div v-if="type && !isChain && bal" class="card">
+        <div class="sec-head">
+          <span class="sec-title">本次占用</span>
+          <span class="sec-sub">{{ amountText }}</span>
+        </div>
+        <div class="quota-line want" style="border-top: none; margin-top: 0; padding-top: 0;">
+          <span class="q-item">本次想休 <b :class="{ over: overQuota }">{{ wantAmount }}</b> {{ bal.unit }}</span>
+          <span class="q-sep">·</span>
+          <span class="q-item">扣后剩余 <b :class="{ over: overQuota }">{{ remainAfter }}</b> {{ bal.unit }}</span>
+        </div>
+        <div v-if="overQuota" class="block-box">
+          超出剩余 {{ overBy }} {{ bal.unit }}——额度型假种不能超额休假，请调整日期或改休其他假种
+        </div>
+      </div>
+
+      <!-- 无固定额度（病假等）：不参与额度校验 -->
+      <div v-if="type && type.quotaless" class="card">
+        <div class="sec-head">
+          <span class="sec-title">本次占用</span>
+          <span class="sec-sub">{{ amountText }}</span>
+        </div>
+        <div class="deduct-chain">
+          <span class="chain-tag">{{ type.name }} {{ daysValue }} 天</span>
+        </div>
+      </div>
+
+      <!-- 兜底链路（仅特殊情况请假）：依次扣班次假 → 临时假 → 超出 -->
+      <div v-if="type && isChain" class="card">
         <div class="sec-head">
           <span class="sec-title">本次扣除</span>
           <span class="sec-sub">{{ amountText }}</span>
@@ -168,7 +209,6 @@
       </div>
 
       <el-button type="primary" class="submit-btn" :disabled="!canSubmit" @click="submit">提交申请</el-button>
-      <div class="foot-note">额度后果交付薪酬；缺岗需求交付排班调度，本模块不实现补人。</div>
     </div>
   </div>
 </template>
@@ -184,6 +224,9 @@ import {
   leaveTypeOf,
   pdShifts,
   balancesOf,
+  balanceOf,
+  balanceOfType,
+  chipBadgeOf,
   estimate,
   gapSignalPreview,
   pdToday,
@@ -219,26 +262,19 @@ const isRange = computed(() => ['event', 'range', 'chain'].includes(type.value &
 const typeMaxDays = computed(() => {
   if (!type.value) return 1
   if (type.value.mode === 'event') {
-    const bal = balancesOf(emp).find(b => b.schemeId === type.value.schemeId)
-    return bal ? bal.amount : 3
+    const b = balanceOfType(emp, type.value.leaveTypeId)
+    /* 上限 = 每次额度，且不得超过当前剩余 */
+    return b ? Math.min(b.amount, Math.max(b.remain, 0)) : 3
   }
   return 1
 })
 
-const disabledType = (t) => {
-  if (t.mode === 'event') {
-    const bal = balancesOf(emp).find(b => b.schemeId === t.schemeId)
-    return bal ? bal.remain <= 0 : false
-  }
-  return false
-}
+const chipBadge = (t) => chipBadgeOf(emp, t)
 
-const pickType = (t) => {
-  if (disabledType(t)) {
-    ElMessage.warning(`「${t.name}」当前额度不足`)
-    return
-  }
-  form.typeId = t.id
+const disabledType = (t) => {
+  if (t.quotaless || t.mode === 'chain') return false
+  const b = t.leaveTypeId ? balanceOfType(emp, t.leaveTypeId) : (t.schemeId ? balanceOf(emp, t.schemeId) : null)
+  return b ? b.remain <= 0 : false
 }
 
 const dayDiff = (a, b) => {
@@ -258,10 +294,8 @@ const daysValue = computed(() => {
   const t = type.value
   if (!t) return 0
   if (t.mode === 'segment') return t.days
-  if (t.mode === 'range') {
-    const d = dayDiff(form.range[0], form.range[1])
-    return form.half ? Math.max(d - 0.5, 0.5) : d
-  }
+  /* 按天假种（年假 / 病假）：天数 = 日期区间自然日，不做班次式半天拆分 */
+  if (t.mode === 'range') return dayDiff(form.range[0], form.range[1])
   if (t.mode === 'event') return form.eventDays
   if (t.mode === 'chain') {
     const d = dayDiff(form.range[0], form.range[1])
@@ -273,6 +307,24 @@ const daysValue = computed(() => {
 const hoursValue = computed(() => (type.value && type.value.mode === 'hour' ? hoursOf() : 0))
 
 const est = computed(() => estimate(type.value, { days: daysValue.value, hours: hoursValue.value, emp }))
+
+/* ---------- 额度三笔账（非兜底型假种） ---------- */
+const isChain = computed(() => !!(type.value && type.value.mode === 'chain'))
+const bal = computed(() => {
+  const t = type.value
+  if (!t || isChain.value || t.quotaless) return null
+  return t.leaveTypeId ? balanceOfType(emp, t.leaveTypeId) : (t.schemeId ? balanceOf(emp, t.schemeId) : null)
+})
+const wantAmount = computed(() => {
+  if (!bal.value) return 0
+  return bal.value.unit === '小时' ? hoursValue.value : daysValue.value
+})
+const remainAfter = computed(() => (bal.value ? +(bal.value.remain - wantAmount.value).toFixed(2) : 0))
+const overQuota = computed(() => !!(bal.value && remainAfter.value < 0))
+const overBy = computed(() => (overQuota.value ? +(-remainAfter.value).toFixed(2) : 0))
+
+/* 周期缩写：自然月 → 月、自然年 → 年 */
+const shortCycle = (c) => (c === '自然月' ? '月' : c === '自然年' ? '年' : c || '')
 
 const amountText = computed(() => {
   const t = type.value
@@ -316,6 +368,8 @@ const signal = computed(() => {
 const canSubmit = computed(() => {
   const t = type.value
   if (!t) return false
+  /* 额度型假种：剩余不足直接不允许提交（不产生「超额扣薪」） */
+  if (overQuota.value) return false
   if (isRange.value) return !!form.range[0]
   if (t.mode === 'hour') return !!form.date && hoursOf() > 0
   return !!form.date
@@ -361,6 +415,23 @@ const goBack = () => router.push({ name: 'mobile-leave-pd' })
 .type-chip { font-size: 13px; padding: 6px 14px; border-radius: 16px; border: 1px solid #e5e7eb; color: #555; background: #fafafa; }
 .type-chip.on { color: #a40035; border-color: #a40035; background: #fff0f4; font-weight: 600; }
 .type-chip.disabled { opacity: .4; }
+.chip-quota { font-style: normal; font-size: 10.5px; margin-left: 5px; opacity: .75; font-weight: 400; }
+.opt-name { margin-right: 8px; }
+.opt-quota { font-size: 11px; color: #999; margin-left: 8px; }
+.type-brief { color: #666; font-size: 13px; }
+.type-brief b { font-size: 14.5px; color: #333; }
+.type-brief .q-note { margin-left: 6px; }
+
+/* 额度与本次占用 */
+.quota-line { font-size: 13px; color: #666; padding: 3px 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.quota-line.want { border-top: 1px dashed #f0f0f0; margin-top: 6px; padding-top: 9px; }
+.q-item b { font-size: 15px; color: #333; }
+.q-item b.over { color: #b91c1c; }
+.q-sep { color: #ddd; }
+.q-note { font-size: 11px; color: #b45309; background: #fffbeb; border-radius: 8px; padding: 1px 7px; }
+.after-title { font-size: 12px; color: #999; margin: 12px 0 8px; }
+.block-box { margin-top: 12px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #b91c1c; }
+.quota-note { margin-top: 10px; font-size: 11.5px; color: #999; }
 .field-desc { font-size: 12px; color: #999; line-height: 1.6; margin-top: 10px; }
 
 .field { margin-top: 14px; }

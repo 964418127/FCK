@@ -3,7 +3,6 @@
     <div class="page-header">
       <div class="header-main">
         <h1>假期盘点</h1>
-        <el-tag type="warning" effect="plain" size="small">预设计 v2 · 非结论</el-tag>
         <el-tag type="info" effect="plain" size="small">盘点视角</el-tag>
       </div>
     </div>
@@ -39,7 +38,6 @@
         </el-select>
 
         <el-input v-model="keyword" size="small" placeholder="搜工号 / 姓名" clearable style="width: 168px" />
-        <span class="filter-note">额度取岗位引用的假期方案；已用取自假勤申请记录</span>
       </div>
     </div>
 
@@ -191,7 +189,10 @@
           <div class="cfg-label"><span>当前余额</span></div>
           <div class="bal-cards">
             <div v-for="b in current.balances" :key="b.schemeId" class="bal-card" :class="{ over: b.over }">
-              <span class="bc-type">{{ b.leaveType }}</span>
+              <span class="bc-type">
+                {{ b.leaveType }}
+                <i v-if="b.scopeDim && b.scopeDim !== 'all'" class="bc-scope">{{ dimLabel(b.scopeDim) }}档</i>
+              </span>
               <template v-if="b.kind === 'cycle'">
                 <span class="bc-main" :class="{ over: b.over }">
                   {{ b.over ? `超出 ${-b.remaining}` : `剩 ${b.remaining}` }} {{ b.unit }}
@@ -204,7 +205,7 @@
                 <span class="bc-sub">每次 {{ b.perTime }} {{ b.unit }}</span>
               </template>
             </div>
-            <div v-if="!current.balances.length" class="none-text">该岗位未引用任何假期方案</div>
+            <div v-if="!current.balances.length" class="none-text">该岗位没有任何额度</div>
           </div>
         </div>
 
@@ -252,6 +253,7 @@ import {
   ledgerSummary,
   excessText
 } from '../../mock/leaveLedger.js'
+import { dimLabel } from '../../mock/leaveWorkMode.js'
 
 const modes = ledgerModes
 const jobs = ledgerJobOptions
@@ -297,6 +299,7 @@ const rows = computed(() => {
 })
 
 const cellOf = (row, type) => row.balances.find(b => b.leaveType === type) || null
+
 
 const filteredEmps = computed(() => rows.value.map(r => r.emp))
 const summary = computed(() => ledgerSummary(filteredEmps.value, mode.value, period.value))
@@ -399,7 +402,8 @@ const openDetail = (row) => {
   background: hsl(var(--muted) / 0.35); border: 1px solid hsl(var(--border));
 }
 .bal-card.over { border-color: hsl(0 72% 51% / 0.45); background: hsl(0 72% 51% / 0.06); }
-.bc-type { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.bc-type { font-size: 12px; color: hsl(var(--muted-foreground)); display: inline-flex; align-items: center; gap: 5px; }
+.bc-scope { font-size: 10px; font-style: normal; padding: 0 5px; border-radius: 7px; border: 1px solid hsl(var(--primary) / 0.35); color: hsl(var(--primary)); background: hsl(var(--primary) / 0.08); }
 .bc-main { font-size: 14px; font-weight: 600; color: hsl(var(--foreground)); }
 .bc-main.over { color: hsl(0 72% 51%); }
 .bc-sub { font-size: 11.5px; color: hsl(var(--muted-foreground)); }

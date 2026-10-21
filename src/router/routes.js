@@ -7,10 +7,12 @@ import MainLayout from '../components/MainLayout.vue'
 import Welcome from '../views/Welcome.vue'
 import { v2phase1Chapters } from '../docs/chapters.js'
 import { leaveReformChapters } from '../docs/leaveReformChapters.js'
+import { resignChapters } from '../docs/resignChapters.js'
 
 // Vite 编译时把所有章节 SFC 转成静态映射（SSR 也能解析）
 const chapterModules = import.meta.glob('../views/v2phase1/*.vue')
 const leaveReformChapterModules = import.meta.glob('../views/leave-reform-guide/*.vue')
+const resignChapterModules = import.meta.glob('../views/resign-flow-guide/*.vue')
 
 export const routes = [
   {
@@ -33,6 +35,15 @@ export const routes = [
         component: Welcome,
         meta: {
           title: '欢迎页'
+        }
+      },
+      // 菜单配置：不在侧边栏展示，需手动输入 /gate 访问（配置工具页，本身不占菜单位）
+      {
+        path: 'gate',
+        name: 'gate',
+        component: () => import('../views/GateConfig.vue'),
+        meta: {
+          title: '菜单配置'
         }
       },
       {
@@ -253,29 +264,14 @@ export const routes = [
           title: '推拿师自主下线明细'
         }
       },
-      // ===== 假勤重构（新分组；设计总览属文档内容，见 /docs/leave-reform/overview）=====
+      // ===== 假勤管理（合并后的唯一分组；原「假勤重构」「工作模式」两组已合并）=====
+      // 岗位列表：只读引用的岗位清单（原「岗位台账」），排在分组末尾作参考
       {
         path: 'leave-job-roster',
         name: 'leave-job-roster',
         component: () => import('../views/leave-reform/JobRoster.vue'),
         meta: {
-          title: '岗位台账'
-        }
-      },
-      {
-        path: 'leave-work-calendar',
-        name: 'leave-work-calendar',
-        component: () => import('../views/leave-reform/WorkCalendar.vue'),
-        meta: {
-          title: '工作日历'
-        }
-      },
-      {
-        path: 'leave-job-mode',
-        name: 'leave-job-mode',
-        component: () => import('../views/leave-reform/JobLeaveMode.vue'),
-        meta: {
-          title: '假勤模式'
+          title: '岗位列表'
         }
       },
       {
@@ -283,24 +279,30 @@ export const routes = [
         name: 'leave-type-dictionary',
         component: () => import('../views/leave-reform/LeaveTypeDictionary.vue'),
         meta: {
-          title: '假种字典'
+          title: '假期类型'
         }
       },
       {
-        path: 'leave-approval-rules',
-        name: 'leave-approval-rules',
+        path: 'leave-audit-consequence',
+        name: 'leave-audit-consequence',
         component: () => import('../views/leave-reform/LeaveApprovalRules.vue'),
         meta: {
-          title: '假勤审核规则'
+          title: '假期审核规则'
         }
       },
-      // ===== 假勤重构 · 预设计 v2（工作模式方向；与 v1 并存，便于对照）=====
+      // 旧入口：审核规则页已更名「假期审核规则」，保留跳转不破坏既有链接
+      {
+        path: 'leave-approval-rules',
+        name: 'leave-approval-rules',
+        redirect: { name: 'leave-audit-consequence' }
+      },
+      // ===== 假勤管理 · 方案与结果（原「工作模式」分组，现与上段同组）=====
       {
         path: 'leave-wm-work-mode',
         name: 'leave-wm-work-mode',
         component: () => import('../views/leave-reform-pd/WorkMode.vue'),
         meta: {
-          title: '工作模式'
+          title: '岗位假勤方案'
         }
       },
       {
@@ -308,7 +310,7 @@ export const routes = [
         name: 'leave-wm-scheme',
         component: () => import('../views/leave-reform-pd/ScheduleScheme.vue'),
         meta: {
-          title: '工作日方案'
+          title: '出勤方案'
         }
       },
       {
@@ -316,7 +318,7 @@ export const routes = [
         name: 'leave-wm-quota',
         component: () => import('../views/leave-reform-pd/QuotaScheme.vue'),
         meta: {
-          title: '假期方案'
+          title: '假期额度方案'
         }
       },
       {
@@ -327,13 +329,11 @@ export const routes = [
           title: '考勤组'
         }
       },
+      // 旧入口：「引用总览」已并入「岗位假勤方案」的矩阵视图，保留跳转不破坏既有链接
       {
         path: 'leave-wm-reference',
         name: 'leave-wm-reference',
-        component: () => import('../views/leave-reform-pd/ReferenceOverview.vue'),
-        meta: {
-          title: '引用总览'
-        }
+        redirect: { name: 'leave-wm-work-mode', query: { view: 'matrix' } }
       },
       {
         path: 'leave-wm-ledger',
@@ -346,9 +346,15 @@ export const routes = [
       {
         path: 'leave-wm-consequence',
         name: 'leave-wm-consequence',
-        component: () => import('../views/leave-reform-pd/LeaveConsequence.vue'),
+        redirect: { name: 'leave-audit-consequence' }
+      },
+      // ===== 离职重构（Web 端）=====
+      {
+        path: 'resign-compensation-ledger',
+        name: 'resign-compensation-ledger',
+        component: () => import('../views/resign-reform-pd/CompensationLedger.vue'),
         meta: {
-          title: '请假后果'
+          title: '离职补偿金明细'
         }
       },
       {
@@ -640,7 +646,7 @@ export const routes = [
     name: 'mobile-leave-pd',
     component: () => import('../views/mobile-leave-pd/LeaveHome.vue'),
     meta: {
-      title: '移动端请假（预设计）'
+      title: '移动端请假'
     }
   },
   {
@@ -648,7 +654,7 @@ export const routes = [
     name: 'mobile-leave-pd-apply',
     component: () => import('../views/mobile-leave-pd/LeaveApply.vue'),
     meta: {
-      title: '移动端休假申请（预设计）'
+      title: '移动端休假申请'
     }
   },
   {
@@ -656,7 +662,47 @@ export const routes = [
     name: 'mobile-leave-pd-records',
     component: () => import('../views/mobile-leave-pd/LeaveRecords.vue'),
     meta: {
-      title: '移动端休假记录（预设计）'
+      title: '移动端休假记录'
+    }
+  },
+  {
+    path: '/mobile-leave-pd/approval',
+    name: 'mobile-leave-pd-approval',
+    component: () => import('../views/mobile-leave-pd/LeaveApproval.vue'),
+    meta: {
+      title: '移动端假期审批'
+    }
+  },
+  {
+    path: '/mobile-resign-apply',
+    name: 'mobile-resign-apply',
+    component: () => import('../views/mobile-resign-pd/ResignApply.vue'),
+    meta: {
+      title: '移动端离职需求发起'
+    }
+  },
+  {
+    path: '/mobile-resign-pd',
+    name: 'mobile-resign-pd',
+    component: () => import('../views/mobile-resign-pd/ResignHome.vue'),
+    meta: {
+      title: '移动端离职处理'
+    }
+  },
+  {
+    path: '/mobile-resign-pd/detail',
+    name: 'mobile-resign-pd-detail',
+    component: () => import('../views/mobile-resign-pd/ResignDetail.vue'),
+    meta: {
+      title: '移动端离职申请详情'
+    }
+  },
+  {
+    path: '/mobile-resign-pd/release',
+    name: 'mobile-resign-pd-release',
+    component: () => import('../views/mobile-resign-pd/ResignRelease.vue'),
+    meta: {
+      title: '移动端解除用工'
     }
   },
   {
@@ -880,6 +926,13 @@ export const routes = [
         name: ch.routeName,
         component: leaveReformChapterModules[`../views/leave-reform-guide/${ch.file}`],
         meta: { title: `假勤重构 / ${ch.order}、${ch.title}` }
+      })),
+      // 离职流程模块：章节由 resignChapters 单一数据源展开
+      ...resignChapters.map(ch => ({
+        path: `resign-flow/${ch.id}`,
+        name: ch.routeName,
+        component: resignChapterModules[`../views/resign-flow-guide/${ch.file}`],
+        meta: { title: `离职流程 / ${ch.order}、${ch.title}` }
       })),
       {
         path: 'parttime-account-manager',

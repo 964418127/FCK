@@ -69,6 +69,18 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* ===== Element Plus 主色对齐 ===== */
+  /* 下方只逐条覆盖了 button / input / menu 等组件，checkbox / tabs / switch / radio /
+     pagination 这类直接读 --el-color-* 的组件此前仍是 EP 默认蓝，这里统一映射到主题色。
+     light-N / dark-2 用 color-mix 从主色派生，与 EP 官方 LESS 混色规则等价。 */
+  --el-color-primary: hsl(var(--primary));
+  --el-color-primary-dark-2: color-mix(in srgb, hsl(var(--primary)) 80%, black);
+  --el-color-primary-light-3: color-mix(in srgb, hsl(var(--primary)) 70%, white);
+  --el-color-primary-light-5: color-mix(in srgb, hsl(var(--primary)) 50%, white);
+  --el-color-primary-light-7: color-mix(in srgb, hsl(var(--primary)) 30%, white);
+  --el-color-primary-light-8: color-mix(in srgb, hsl(var(--primary)) 20%, white);
+  --el-color-primary-light-9: color-mix(in srgb, hsl(var(--primary)) 10%, white);
 }
 
 /* ===== Element Plus 按钮覆盖 ===== */
@@ -223,11 +235,15 @@
   font-weight: 500;
 }
 
-/* 菜单项图标样式 */
+/* 菜单项图标样式：图标盒定宽 24px，但字形改**左对齐** ——
+   EP 默认居中，而不同图标的墨迹宽度不同（实心满幅、线性留白多），
+   居中渲染会让左边缘参差不齐；左对齐后所有图标同一起点。
+   （折叠态由 EP 的 .el-menu--collapse 居中规则接管，优先级更高，不受影响） */
 .el-menu-item .el-icon,
 .el-sub-menu__title .el-icon {
   margin-right: 8px;
   font-size: 18px;
+  text-align: left;
 }
 
 .el-sub-menu__title:hover {

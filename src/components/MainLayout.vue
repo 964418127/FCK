@@ -18,253 +18,38 @@
           active-text-color="hsl(var(--primary-foreground))"
           @select="handleMenuSelect"
         >
-          <!-- 主要功能菜单 -->
-          <el-menu-item index="welcome">
-            <el-icon><HomeFilled /></el-icon>
-            <span>欢迎页</span>
-          </el-menu-item>
+          <!-- 菜单项由 sidebarMenu.js 渲染：顺序与显隐都来自 gate 配置
+               （orderedNodes 已按 order 排好序，并剔掉被隐藏的项） -->
+          <template v-for="node in webMenuNodes" :key="node.index">
+            <!-- 3 级分组，交给 MultiLevelMenu（模块薪酬 / 员工福利保障） -->
+            <MultiLevelMenu
+              v-if="node.kind === 'multi'"
+              :menu-data="[node]"
+              :is-collapsed="isSidebarCollapsed"
+            />
 
-          <!-- 文档中心（独立布局入口） -->
-          <el-menu-item index="docs">
-            <el-icon><Document /></el-icon>
-            <span>文档中心</span>
-          </el-menu-item>
+            <!-- 分组（有 children 即 el-sub-menu） -->
+            <el-sub-menu v-else-if="node.children" :index="node.index">
+              <template #title>
+                <el-icon v-if="node.icon"><component :is="node.icon" /></el-icon>
+                <span>{{ node.label }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in node.children"
+                :key="child.index"
+                :index="child.index"
+              >
+                <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
+                <span>{{ child.label }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 数据校验分组 -->
-          <el-sub-menu index="data-validation">
-            <template #title>
-              <el-icon><Calendar /></el-icon>
-              <span>数据校验</span>
-            </template>
-            <el-menu-item index="monthly-diff-confirm">
-              <el-icon><Calendar /></el-icon>
-              <span>月差异确认</span>
+            <!-- 单页 -->
+            <el-menu-item v-else :index="node.index">
+              <el-icon v-if="node.icon"><component :is="node.icon" /></el-icon>
+              <span>{{ node.label }}</span>
             </el-menu-item>
-          </el-sub-menu>
-
-          <!-- 推拿师分组 -->
-          <el-sub-menu index="massage-therapist">
-            <template #title>
-              <el-icon><User /></el-icon>
-              <span>推拿师</span>
-            </template>
-            <el-menu-item index="store-interval">
-              <el-icon><Location /></el-icon>
-              <span>门店间隔时间库</span>
-            </el-menu-item>
-            <el-menu-item index="store-interval2">
-              <el-icon><Location /></el-icon>
-              <span>标准时间库</span>
-            </el-menu-item>
-            <el-menu-item index="store-interval3">
-              <el-icon><Location /></el-icon>
-              <span>标库3</span>
-            </el-menu-item>
-            <el-menu-item index="custom-time-strategy">
-              <el-icon><Clock /></el-icon>
-              <span>自定义时间策略</span>
-            </el-menu-item>
-            <el-menu-item index="therapist-offline-config">
-              <el-icon><Setting /></el-icon>
-              <span>自主下线配置</span>
-            </el-menu-item>
-            <el-menu-item index="therapist-offline-detail">
-              <el-icon><Document /></el-icon>
-              <span>自主下线明细</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <!-- 挂店分组 -->
-        <el-sub-menu index="store-hanging">
-          <template #title>
-            <el-icon><Shop /></el-icon>
-            <span>挂店</span>
           </template>
-          <el-menu-item index="store-hanging-application">
-            <el-icon><Document /></el-icon>
-            <span>挂店申请管理</span>
-          </el-menu-item>
-          <el-menu-item index="store-recommendation-record">
-            <el-icon><TrendCharts /></el-icon>
-            <span>挂店推荐记录</span>
-          </el-menu-item>
-        </el-sub-menu>
-        
-          <el-sub-menu index="parttime-manager">
-          <template #title><el-icon><Calendar /></el-icon><span>非全客户经理</span></template>
-          <el-menu-item index="parttime-task-management"><el-icon><Calendar /></el-icon><span>排班排假</span></el-menu-item>
-          <el-menu-item index="parttime-task-publication"><el-icon><Promotion /></el-icon><span>任务发布</span></el-menu-item>
-          <el-menu-item index="parttime-task-tracking"><el-icon><List /></el-icon><span>任务跟踪</span></el-menu-item>
-          <el-menu-item index="parttime-income-guarantee"><el-icon><Coin /></el-icon><span>收入保底配置</span></el-menu-item>
-          <el-menu-item index="parttime-unit-prices"><el-icon><Coin /></el-icon><span>收入单价配置</span></el-menu-item>
-        </el-sub-menu>
-
-        <!-- 排假分组 -->
-        <el-sub-menu index="leave-management">
-          <template #title>
-            <el-icon><Calendar /></el-icon>
-            <span>排排排假</span>
-          </template>
-          <el-menu-item index="temporary-leave-rules">
-            <el-icon><Document /></el-icon>
-            <span>临时假获取规则</span>
-          </el-menu-item>
-          <el-menu-item index="schedule-leave-approval">
-            <el-icon><Check /></el-icon>
-            <span>排班排假审核</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <!-- 假勤重构分组（新设计；旧假勤原型待推翻，暂与「排排排假」并存以便对照）
-             本分组只放原型页；设计总览等文档内容一律在「文档中心」→「假勤重构」 -->
-        <el-sub-menu index="leave-reform">
-          <template #title>
-            <el-icon><Clock /></el-icon>
-            <span>假勤重构</span>
-          </template>
-          <el-menu-item index="leave-job-roster">
-            <el-icon><OfficeBuilding /></el-icon>
-            <span>岗位台账</span>
-          </el-menu-item>
-          <el-menu-item index="leave-work-calendar">
-            <el-icon><Calendar /></el-icon>
-            <span>工作日历</span>
-          </el-menu-item>
-          <el-menu-item index="leave-job-mode">
-            <el-icon><User /></el-icon>
-            <span>假勤模式</span>
-          </el-menu-item>
-          <el-menu-item index="leave-type-dictionary">
-            <el-icon><List /></el-icon>
-            <span>假种字典</span>
-          </el-menu-item>
-          <el-menu-item index="leave-approval-rules">
-            <el-icon><Check /></el-icon>
-            <span>审核规则</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <!-- 假勤重构 · 预设计 v2（工作模式方向）：与上组 v1 并存，专供对照 -->
-        <el-sub-menu index="leave-work-mode-pd">
-          <template #title>
-            <el-icon><Grid /></el-icon>
-            <span>工作模式 · 预设计</span>
-          </template>
-          <el-menu-item index="leave-wm-work-mode">
-            <el-icon><Grid /></el-icon>
-            <span>工作模式</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-scheme">
-            <el-icon><Collection /></el-icon>
-            <span>工作日方案</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-quota">
-            <el-icon><Coin /></el-icon>
-            <span>假期方案</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-attendance">
-            <el-icon><LocationInformation /></el-icon>
-            <span>考勤组</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-reference">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>引用总览</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-ledger">
-            <el-icon><Tickets /></el-icon>
-            <span>假期盘点</span>
-          </el-menu-item>
-          <el-menu-item index="leave-wm-consequence">
-            <el-icon><WarningFilled /></el-icon>
-            <span>请假后果</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-          <!-- 常乐豆账户分组 -->
-          <el-sub-menu index="bean-account">
-            <template #title>
-              <el-icon><Coin /></el-icon>
-              <span>常乐豆账户</span>
-            </template>
-            <el-menu-item index="bean-account-list">
-              <el-icon><List /></el-icon>
-              <span>账户列表</span>
-            </el-menu-item>
-            <el-menu-item index="bean-account-monthly">
-              <el-icon><Calendar /></el-icon>
-              <span>月度信息</span>
-            </el-menu-item>
-            <!-- <el-menu-item index="bean-settlement-detail">
-              <el-icon><Document /></el-icon>
-              <span>结算明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-withdrawal-detail">
-              <el-icon><ArrowUp /></el-icon>
-              <span>提现明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-consumption-detail">
-              <el-icon><ShoppingCart /></el-icon>
-              <span>消费明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-refund-detail">
-              <el-icon><Refresh /></el-icon>
-              <span>退货明细</span>
-            </el-menu-item> -->
-            <el-menu-item index="bean-usage-detail">
-              <el-icon><Operation /></el-icon>
-              <span>使用明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-therapist-detail">
-              <el-icon><User /></el-icon>
-              <span>推拿师获豆明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-account-manager-detail">
-              <el-icon><UserFilled /></el-icon>
-              <span>客户经理获豆明细</span>
-            </el-menu-item>
-            <el-menu-item index="bean-headquarter-detail">
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>总部岗位获豆明细</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <!-- 客户经理分组 -->
-          <el-sub-menu index="customer-manager">
-            <template #title>
-              <el-icon><UserFilled /></el-icon>
-              <span>客户经理</span>
-            </template>
-            <el-menu-item index="shift-subsidy-config">
-              <el-icon><Money /></el-icon>
-              <span>顶班补贴配置</span>
-            </el-menu-item>
-            <el-menu-item index="leave-deduction-config">
-              <el-icon><Money /></el-icon>
-              <span>请假扣款配置</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <!-- 模块薪酬分组 -->
-          <MultiLevelMenu :menu-data="moduleSalaryMenu" :is-collapsed="isSidebarCollapsed" />
-
-          <!-- 员工福利保障分组 -->
-          <MultiLevelMenu :menu-data="employeeWelfareMenu" :is-collapsed="isSidebarCollapsed" />
-
-          <!-- 财务计提分组 -->
-          <el-sub-menu index="finance-accrual">
-            <template #title>
-              <el-icon><Money /></el-icon>
-              <span>财务计提</span>
-            </template>
-            <el-menu-item index="voucher-list">
-              <el-icon><Document /></el-icon>
-              <span>凭证列表</span>
-            </el-menu-item>
-            <el-menu-item index="voucher-list-2">
-              <el-icon><Tickets /></el-icon>
-              <span>发薪核对</span>
-            </el-menu-item>
-          </el-sub-menu>
         </el-menu>
       </nav>
     </aside>
@@ -318,114 +103,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { users as mockUsers } from '../mock/data.js'
 import MultiLevelMenu from './MultiLevelMenu.vue'
-import {
-  Fold,
-  Expand,
-  HomeFilled,
-  User,
-  Clock,
-  Calendar,
-  Location,
-  ArrowDown,
-  SwitchButton,
-  Shop,
-  Document,
-  TrendCharts,
-  Check,
-  Coin,
-  List,
-  ArrowUp,
-  ShoppingCart,
-  Refresh,
-  OfficeBuilding,
-  UserFilled,
-  Operation,
-  Money,
-  Promotion,
-  Setting,
-  InfoFilled,
-  Wallet,
-  Grid,
-  Collection,
-  LocationInformation,
-  DataAnalysis,
-  Tickets,
-  WarningFilled
-} from '@element-plus/icons-vue'
-
-// 员工福利保障菜单数据
-const employeeWelfareMenu = [
-  {
-    index: 'employee-welfare',
-    label: '员工福利保障',
-    icon: Coin,
-    children: [
-      { index: 'city-salary-standard', label: '城市基准系数', icon: List },
-      { index: 'commercial-insurance', label: '商业险管理', icon: List },
-      { index: 'employee-welfare-detail', label: '员工福利保障', icon: List },
-      { index: 'job-welfare-config', label: '岗位福利保障', icon: Document },
-      {
-        index: 'social-security',
-        label: '社保',
-        icon: Document,
-        children: [
-          { index: 'security-monthly-summary', label: '社保月度汇总', icon: Document },
-          { index: 'security-monthly-record', label: '社保月度流水', icon: Document }
-        ]
-      },
-      {
-        index: 'housing-fund',
-        label: '公积金',
-        icon: Document,
-        children: [
-          { index: 'housing-fund-monthly-summary', label: '公积金月度汇总', icon: Document },
-          { index: 'housing-fund-monthly-record', label: '公积金月度流水', icon: Document }
-        ]
-      },
-      {
-        index: 'individual-tax',
-        label: '个税',
-        icon: Document,
-        children: [
-          { index: 'individual-tax-monthly-summary', label: '个税月度汇总', icon: Document },
-          { index: 'individual-tax-monthly-record', label: '个税月度流水', icon: Document }
-        ]
-      }
-    ]
-  }
-]
-
-// 模块薪酬菜单数据
-const moduleSalaryMenu = [
-  {
-    index: 'module-salary',
-    label: '模块薪酬',
-    icon: Coin,
-    children: [
-      { index: 'personnel-change-processing', label: '人员异动处理', icon: Document },
-      { index: 'personnel-position-salary-planning', label: '人员岗位薪酬规划', icon: Document },
-      { index: 'salary-distribution-strategy', label: '薪酬发放策略', icon: Coin },
-      { index: 'config-rule-management', label: '配置规则管理', icon: Coin },
-      { index: 'personnel-salary-detail', label: '人员薪酬明细', icon: List },
-      {
-        index: 'negative-wage',
-        label: '负工资',
-        icon: Wallet,
-        children: [
-          { index: 'negative-wage-account', label: '负工资账户', icon: Wallet },
-          { index: 'negative-wage-record-list', label: '负工资流水查询', icon: List }
-        ]
-      },
-      { index: 'dependency-calculation', label: '依赖计算', icon: List }
-    ]
-  }
-]
-
-
+import { sidebarMenu } from '../config/sidebarMenu.js'
+import { gateState, orderedNodes } from '../composables/useGateConfig.js'
+// 侧边栏只用到这两个图标（折叠箭头 + 头部用户下拉），菜单项的图标在数据里
+import { Fold, Expand, ArrowDown, SwitchButton, User, Setting } from '@element-plus/icons-vue'
 
 // 响应式数据
 const activeMenu = ref('welcome')
@@ -438,11 +123,25 @@ const router = useRouter()
 
 watch(() => route.name, name => { activeMenu.value = name || 'welcome' }, { immediate: true })
 
+// 侧边栏数据：sidebarMenu.js 是唯一数据源，orderedNodes 负责「按配置排序 + 剔除隐藏项」。
+// 顺序来自 /gate 的 order 配置，所以工具栏能把顺序改动真正反映到侧边栏。
+const webMenuNodes = computed(() => orderedNodes('web', sidebarMenu))
+
+// 菜单配置在 main.js 挂载前已套用（移动端菜单不走本布局，必须在入口统一加载），
+// 这里只负责把用过的 ?gate= 参数从地址栏抹掉，避免外传时越滚越长
+
 // 生命周期钩子
 onMounted(() => {
   // 初始化当前用户（实际项目中应该从登录状态获取）
   currentUser.value = mockUsers[0] // 使用第一个模拟用户
-  
+
+  if (gateState.consumedFromLink) {
+    const restQuery = { ...route.query }
+    delete restQuery.gate
+    router.replace({ query: restQuery })
+    gateState.consumedFromLink = false
+  }
+
   // 根据当前路由设置激活菜单
   activeMenu.value = route.name || 'welcome'
 })
@@ -557,9 +256,10 @@ const handleLogout = () => {
   border-right: none;
 }
 
-/* 一级菜单项 */
+/* 一级菜单项：padding 16px + .el-menu-item 自带的 4px 左 margin = 内容起点 20px，
+   与下方子菜单标题（20px、无 margin）对齐 —— 此前 20px+4px 比标题靠右 4px，图标不齐 */
 .sidebar-nav :deep(.el-menu-item) {
-  padding-left: 20px !important;
+  padding-left: 16px !important;
   height: 48px;
   line-height: 48px;
 }

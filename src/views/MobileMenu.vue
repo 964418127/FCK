@@ -11,177 +11,32 @@
         </div>
       </div>
     </div>
-    
+
     <div class="menu-content">
-      <!-- 职能岗位分组 -->
-      <div class="menu-group">
-        <div class="group-title">职能岗位</div>
+      <!-- 菜单项来自 src/config/mobileMenu.js；是否显示由 /gate 的菜单配置决定 -->
+      <div v-for="group in visibleGroups" :key="group.id" class="menu-group">
+        <div class="group-title">{{ group.label }}</div>
         <div class="grid-menu">
-          <div class="grid-item" @click="goToStoreHanging">
+          <div
+            v-for="item in group.items"
+            :key="item.id"
+            class="grid-item"
+            @click="go(item)"
+          >
             <div class="grid-icon">
-              <el-icon><ShoppingBag /></el-icon>
+              <el-icon><component :is="item.icon" /></el-icon>
             </div>
-            <div class="grid-title">挂店申请审核</div>
-          </div>
-          
-          <div class="grid-item">
-            <div class="grid-icon">
-              <el-icon><Setting /></el-icon>
-            </div>
-            <div class="grid-title">系统设置</div>
-          </div>
-          
-          <div class="grid-item">
-            <div class="grid-icon">
-              <el-icon><Help /></el-icon>
-            </div>
-            <div class="grid-title">帮助中心</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 推拿师分组 -->
-      <div class="menu-group">
-        <div class="group-title">推拿师</div>
-        <div class="grid-menu">
-          <div class="grid-item" @click="goToStoreManagement">
-            <div class="grid-icon">
-              <el-icon><Shop /></el-icon>
-            </div>
-            <div class="grid-title">挂店管理</div>
-          </div>
-
-          <div class="grid-item" @click="goToStoreSelfOffline">
-            <div class="grid-icon">
-              <el-icon><CircleClose /></el-icon>
-            </div>
-            <div class="grid-title">自主下线</div>
-          </div>
-
-          <div class="grid-item" @click="goToStoreHangingNew">
-            <div class="grid-icon">
-              <el-icon><Connection /></el-icon>
-            </div>
-            <div class="grid-title">新挂店管理</div>
-          </div>
-
-          <div class="grid-item" @click="goToScheduleLeave">
-            <div class="grid-icon">
-              <el-icon><Calendar /></el-icon>
-            </div>
-            <div class="grid-title">排班排假</div>
-          </div>
-
-          <div class="grid-item" @click="goToSalaryDashboard">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">全职薪酬看板</div>
-          </div>
-
-          <div class="grid-item" @click="goToSalaryDashboard2">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">全职薪酬看板2</div>
-          </div>
-
-          <div class="grid-item" @click="goToPartTimeSalaryDashboard">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">非全日制薪酬看板</div>
-          </div>
-
-          <div class="grid-item" @click="goToPartTimeSalaryDashboard2">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">非全日制薪酬看板2</div>
-          </div>
-
-          <div class="grid-item" @click="goToBeanAccount">
-            <div class="grid-icon">
-              <el-icon><Coin /></el-icon>
-            </div>
-            <div class="grid-title">常乐豆账户</div>
-          </div>
-
-          <div class="grid-item" @click="goToBeanView">
-            <div class="grid-icon">
-              <el-icon><Document /></el-icon>
-            </div>
-            <div class="grid-title">示例自助查询</div>
-          </div>
-
-          <div class="grid-item" @click="goToNotification">
-            <div class="grid-icon">
-              <el-icon><Bell /></el-icon>
-            </div>
-            <div class="grid-title">通知</div>
-            <span v-if="unreadNoticeCount > 0" class="grid-badge">{{ unreadNoticeCount }}</span>
+            <div class="grid-title">{{ item.label }}</div>
+            <span v-if="item.badge && unreadNoticeCount > 0" class="grid-badge">{{ unreadNoticeCount }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 客户经理分组 -->
-      <div class="menu-group">
-        <div class="group-title">客户经理</div>
-        <div class="grid-menu">
-          <div class="grid-item" @click="goToAccountManagerSalaryDashboard">
-            <div class="grid-icon">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="grid-title">客户经理薪酬看板</div>
-          </div>
-          <div class="grid-item" @click="goToAccountManagerAttendance">
-            <div class="grid-icon">
-              <el-icon><Clock /></el-icon>
-            </div>
-            <div class="grid-title">客户经理考勤</div>
-          </div>
-          <div class="grid-item" @click="goToParttimeTasks">
-            <div class="grid-icon">
-              <el-icon><List /></el-icon>
-            </div>
-            <div class="grid-title">非全任务列表</div>
-          </div>
-          <div class="grid-item" @click="goToParttimeAccountManagerAttendance">
-            <div class="grid-icon">
-              <el-icon><Position /></el-icon>
-            </div>
-            <div class="grid-title">非全客户经理打卡</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 总部岗位分组 -->
-      <div class="menu-group">
-        <div class="group-title">总部岗位</div>
-        <div class="grid-menu">
-          <div class="grid-item" @click="goToReimbursement">
-            <div class="grid-icon">
-              <el-icon><Wallet /></el-icon>
-            </div>
-            <div class="grid-title">个人报销</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 请假模块 · 预设计分组 -->
-      <div class="menu-group">
-        <div class="group-title">请假模块 · 预设计</div>
-        <div class="grid-menu">
-          <div class="grid-item" @click="goToLeavePd">
-            <div class="grid-icon">
-              <el-icon><Calendar /></el-icon>
-            </div>
-            <div class="grid-title">请假</div>
-          </div>
-        </div>
+      <div v-if="!visibleGroups.length" class="menu-empty">
+        当前账号的菜单项都未开放
       </div>
     </div>
-    
+
     <div class="menu-footer">
       <el-button type="text" @click="handleLogout">
         <el-icon><SwitchButton /></el-icon>
@@ -192,85 +47,27 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, ShoppingBag, Setting, Help, ArrowRight, Shop, Calendar, DataLine, Bell, CircleClose, Connection, Coin, Wallet, Document, Clock, Position, List } from '@element-plus/icons-vue'
-import { ref } from 'vue'
+import { User, SwitchButton } from '@element-plus/icons-vue'
+import { mobileMenuGroups } from '../config/mobileMenu.js'
+import { isMenuVisible } from '../composables/useGateConfig.js'
 
 const router = useRouter()
 
 const unreadNoticeCount = ref(19)
 
-const goToStoreHanging = () => {
-  router.push('/mobile-store-hanging')
-}
+// 分组被隐藏 → 整组不出现；组内各项再按自己的开关过滤；组内全被隐藏时整组也不出现
+const visibleGroups = computed(() =>
+  mobileMenuGroups
+    .filter((g) => isMenuVisible(g.id))
+    .map((g) => ({ ...g, items: g.items.filter((i) => isMenuVisible(i.id)) }))
+    .filter((g) => g.items.length > 0)
+)
 
-const goToStoreManagement = () => {
-  router.push('/mobile-store-management')
-}
-
-const goToStoreSelfOffline = () => {
-  router.push('/mobile-store-self-offline')
-}
-
-const goToStoreHangingNew = () => {
-  router.push('/mobile-store-hanging-new')
-}
-
-const goToScheduleLeave = () => {
-  router.push('/mobile-schedule-leave')
-}
-
-const goToSalaryDashboard = () => {
-  router.push('/mobile-salary-dashboard')
-}
-
-const goToSalaryDashboard2 = () => {
-  router.push('/mobile-salary-dashboard-2')
-}
-
-const goToPartTimeSalaryDashboard = () => {
-  router.push('/mobile-part-time-salary-dashboard')
-}
-
-const goToPartTimeSalaryDashboard2 = () => {
-  router.push('/mobile-part-time-salary-dashboard-2')
-}
-
-const goToAccountManagerSalaryDashboard = () => {
-  router.push('/mobile-account-manager-salary-dashboard')
-}
-
-const goToAccountManagerAttendance = () => {
-  router.push('/mobile-account-manager-attendance')
-}
-
-const goToParttimeTasks = () => {
-  router.push('/mobile-parttime-tasks')
-}
-
-const goToParttimeAccountManagerAttendance = () => {
-  router.push('/mobile-account-manager-attendance?mode=parttime')
-}
-
-const goToBeanAccount = () => {
-  router.push('/mobile-bean-account')
-}
-
-const goToBeanView = () => {
-  router.push('/mobile-bean-view')
-}
-
-const goToNotification = () => {
-  router.push('/mobile-notification')
-}
-
-const goToReimbursement = () => {
-  router.push('/mobile-reimbursement-list')
-}
-
-const goToLeavePd = () => {
-  router.push({ name: 'mobile-leave-pd' })
+const go = (item) => {
+  if (item.to) router.push(item.to)
 }
 
 const handleLogout = () => {
@@ -397,6 +194,13 @@ const handleLogout = () => {
   font-weight: 600;
   color: #333;
   margin: 0;
+}
+
+.menu-empty {
+  padding: 60px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #999;
 }
 
 .menu-footer {

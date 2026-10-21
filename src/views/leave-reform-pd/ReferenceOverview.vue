@@ -1,9 +1,8 @@
 <template>
   <div class="ref-page">
-    <div class="page-header">
+    <div v-if="!embedded" class="page-header">
       <div class="header-main">
         <h1>引用总览</h1>
-        <el-tag type="warning" effect="plain" size="small">预设计 v2 · 非结论</el-tag>
       </div>
     </div>
 
@@ -19,11 +18,12 @@
       <el-table :data="rows" size="small" class="ref-table">
         <el-table-column label="岗位" width="110" fixed>
           <template #default="{ row }">
-            <span class="job-name">{{ row.job }}</span>
+            <span v-if="embedded" class="job-name pickable" @click="emit('pick', row.job)">{{ row.job }}</span>
+            <span v-else class="job-name">{{ row.job }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="工作日方案" min-width="150">
+        <el-table-column label="出勤方案" min-width="150">
           <template #default="{ row }">
             <span v-if="row.scheme" class="chip ref" :style="schemeStyle(row.scheme.id)">
               {{ row.scheme.name }}
@@ -32,10 +32,16 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="假期方案" min-width="220">
+        <el-table-column label="额度（方案 + 岗位）" min-width="250">
           <template #default="{ row }">
             <div v-if="row.quotas.length" class="chip-wrap">
-              <span v-for="q in row.quotas" :key="q.id" class="chip quota">{{ q.name }}</span>
+              <span
+                v-for="q in row.quotas"
+                :key="q.id"
+                class="chip"
+                :class="q.own ? 'own' : 'quota'"
+                :title="q.own ? '岗位私有额度' : q.chain"
+              >{{ q.own ? q.name : q.typeName }}{{ !q.own && q.diffs > 0 ? ` · ${q.diffs} 条差异` : '' }}</span>
             </div>
             <span v-else class="chip none">未引用</span>
           </template>
@@ -76,10 +82,23 @@ import { computed } from 'vue'
 import {
   scheduleSchemes,
   attendanceGroups,
-  quotaSchemes,
   jobWorkModes,
+  quotaEntriesOf,
+  quotaTypeName,
+  quotaChainOf,
+  dimLabel,
   backfillOptions
 } from '../../mock/leaveWorkMode.js'
+
+/**
+ * 嵌入模式：作为「岗位假勤方案」的矩阵视图使用时，隐藏自带页头。
+ * modes：可传入枢纽页的本地副本，保证抽屉里刚改的引用立刻反映到矩阵。
+ */
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  modes: { type: Array, default: null }
+})
+const emit = defineEmits(['pick'])
 
 const schemeColorMap = {
   'sch-store-year-round': 'hsl(210 80% 50%)',
@@ -93,12 +112,21 @@ const schemeStyle = (id) => {
 
 const subLabel = (v) => (backfillOptions.find(s => s.value === v) || {}).label || v
 
-const rows = computed(() => jobWorkModes.map(m => ({
+const rows = computed(() => (props.modes || jobWorkModes).map(m => ({
   job: m.job,
   mode: m,
   scheme: m.schemeId ? scheduleSchemes.find(s => s.id === m.schemeId) : null,
   att: m.attendanceGroupId ? attendanceGroups.find(a => a.id === m.attendanceGroupId) : null,
-  quotas: (m.quotaSchemeIds || []).map(id => quotaSchemes.find(q => q.id === id)).filter(Boolean)
+  quotas: quotaEntriesOf(m).map(q => {
+    const tiers = q.leaveTypeId ? quotaChainOf(q.leaveTypeId) : []
+    return {
+      ...q,
+      typeName: quotaTypeName(q),
+      own: (m.jobQuotas || []).some(x => x.id === q.id),
+      diffs: Math.max(tiers.length - 1, 0),
+      chain: tiers.map(t => `${t.base ? '标准' : dimLabel(t.scope.dimension)} ${t.amount}${t.unit}`).join(' → ')
+    }
+  })
 })))
 </script>
 
@@ -119,12 +147,20 @@ const rows = computed(() => jobWorkModes.map(m => ({
 .dot.decl { background: hsl(38 92% 50% / 0.5); }
 
 .job-name { font-size: 13.5px; font-weight: 500; color: hsl(var(--foreground)); }
+.job-name.pickable { cursor: pointer; color: hsl(var(--primary)); }
+.job-name.pickable:hover { text-decoration: underline; }
 .chip-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip {
   display: inline-block; font-size: 11.5px; padding: 2px 9px; border-radius: 10px;
   border: 1px solid hsl(var(--border)); background: hsl(var(--muted) / 0.45); color: hsl(var(--muted-foreground));
 }
 .chip.ref { border-width: 1px; font-weight: 500; }
+.chip.own {
+  background: hsl(var(--muted));
+  border: 1px dashed hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
 .chip.quota { color: hsl(150 45% 34%); border-color: hsl(150 45% 40% / 0.4); background: hsl(150 45% 40% / 0.1); }
 .chip.warn { color: hsl(38 92% 42%); border-color: hsl(38 92% 50% / 0.5); background: hsl(38 92% 50% / 0.1); }
 .chip.none { opacity: 0.6; }

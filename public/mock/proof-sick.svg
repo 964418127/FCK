@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480">
+  <rect x="8" y="8" width="344" height="464" rx="10" fill="#ffffff" stroke="#c3d4e8" stroke-width="2"/>
+  <rect x="24" y="24" width="312" height="432" fill="none" stroke="#dce7f2" stroke-width="1"/>
+  <rect x="24" y="24" width="312" height="56" fill="#2f6ba8"/>
+  <text x="180" y="60" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#fff">medical diagnosis 证明书</text>
+  <text x="36" y="120" font-family="sans-serif" font-size="13" fill="#555">患者姓名：</text><text x="116" y="120" font-family="sans-serif" font-size="13" fill="#333">王 强</text>
+  <text x="36" y="152" font-family="sans-serif" font-size="13" fill="#555">科 别：</text><text x="100" y="152" font-family="sans-serif" font-size="13" fill="#333">内科门诊</text>
+  <text x="36" y="184" font-family="sans-serif" font-size="13" fill="#555">诊 断：</text><text x="100" y="184" font-family="sans-serif" font-size="13" fill="#333">急性肠胃炎</text>
+  <text x="36" y="216" font-family="sans-serif" font-size="13" fill="#555">处 理：</text>
+  <text x="100" y="216" font-family="sans-serif" font-size="13" fill="#333">建议休息 3 天</text>
+  <text x="100" y="240" font-family="sans-serif" font-size="13" fill="#333">按时复诊</text>
+  <text x="36" y="296" font-family="sans-serif" font-size="13" fill="#555">医师签名：</text><text x="124" y="296" font-family="sans-serif" font-size="13" fill="#333">陈医生</text>
+  <text x="36" y="328" font-family="sans-serif" font-size="13" fill="#555">签发日期：</text><text x="124" y="328" font-family="sans-serif" font-size="13" fill="#333">2026-10-15</text>
+  <rect x="228" y="352" width="96" height="40" rx="4" fill="none" stroke="#c0392b" stroke-width="2" opacity="0.7"/>
+  <text x="276" y="378" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#c0392b" opacity="0.85">医院医务章</text>
+  <text x="180" y="440" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#bbb">原型演示用样张 · 非真实证明</text>
+</svg>

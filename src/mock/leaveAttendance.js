@@ -11,8 +11,9 @@
  * 3. 名额 ≠ 额度：名额 = 组织容量（周期生成、共享、会被抢）；额度 = 个人可休量（私有、只减不增）
  * 4. 交付形态：定义（只出契约，不建页面）/ 配置（我们建页，业务填值）/ 新建（完整设计）
  * 5. 可配置度阶梯：领域模型写死 → 算法只开参数 → 业务规则可配 → 展示随用户
- * 6. 产出边界（关键）：假勤最终只交付「休假时长」；带薪与否是**假种属性**（年假、婚假都带薪），
- *    不是岗位开关 —— 岗位级只声明班次假 / 临时假额度，扣款由模块化薪酬取走时长后自行配置
+ * 6. 产出边界（关键）：假勤最终只交付「休假时长 + 假种」。
+ *    **带薪与否、按什么比例结算，不在假勤** —— 由模块化薪酬按假种映射自行决定；
+ *    假种里不存带薪性 / 带薪比例，避免假勤越界替薪酬下结论。
  */
 
 /* ---------- 移动端请假：现状口径（2026-10-13 业务口述，重构待承接） ----------
@@ -36,7 +37,7 @@ export const mobileLeaveChannels = [
     id: 'special',
     name: '特殊情况请假',
     deductText: '依次扣：班次假 → 临时假时长 → 扣完后记录超出时长',
-    note: '兜底通道；超出时长的处理按岗位分流'
+    note: '兜底通道；超出时长的处理按岗位分流。历史大包假种：事假、病假等都混在此通道，重构后拆分'
   }
 ]
 
@@ -83,8 +84,8 @@ export const reformModels = [
   },
   {
     id: 'M5',
-    name: '分层继承与局部覆盖',
-    brief: '通用 → 城市 → 门店；按假种决定下沉深度；局部只能逐层收紧，不可放宽',
+    name: '统一配置 · 岗位声明',
+    brief: '假种与审核规则全公司各一条，不按城市 / 门店分层；差异只在岗位这一层表达',
     owner: '假勤'
   },
   {
@@ -303,7 +304,7 @@ export const jobRosterSource = {
   desc: '岗位的名称、编制人数、所属组织由组织架构维护，假勤侧只读引用。',
   syncedAt: '2026-10-13 06:00',
   readonlyFields: ['岗位名称', '编制人数', '所属组织'],
-  writableFields: ['排班', '打卡', '薪酬结构', '额度来源', '名额来源', '请假连带', '配置下沉']
+  writableFields: ['排班', '打卡', '薪酬结构', '额度来源', '名额来源', '请假连带']
 }
 
 /** 组织维度：岗位主数据挂在组织下 */
@@ -334,12 +335,10 @@ export const jobs = [
     headcount: 486,
     schedule: true,
     attendance: false,
-    quotaSource: 'performance',
     seatSource: 'cycle',
     shiftQuota: '4 天 / 月（32 小时）',
     tempQuota: '≤ 16 小时 / 月（上月业绩折算）',
     substitutable: 'high',
-    configDepth: 'store',
     note: '订单驱动岗：班次假 4 天/月 + 临时假（业绩折算）；请假只记时长，超出部分不扣薪资'
   },
   {
@@ -348,12 +347,10 @@ export const jobs = [
     headcount: 124,
     schedule: true,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'cycle',
     shiftQuota: '4 天 / 月',
     tempQuota: '无',
     substitutable: 'low',
-    configDepth: 'store',
     note: '编制少且技能特殊，缺一人需把原早班者改通班或外调顶替；现状只有班次假（4 天/月），超出部分扣薪资，但「超出如何审核」无管理入口 —— 重构需补'
   },
   {
@@ -362,12 +359,10 @@ export const jobs = [
     headcount: 62,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'low',
-    configDepth: 'store',
     note: '不参与一线排班，但需考勤打卡证明在岗；请假需上级代管门店'
   },
   {
@@ -376,12 +371,10 @@ export const jobs = [
     headcount: 98,
     schedule: true,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'cycle',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'medium',
-    configDepth: 'store',
     note: '现状无班次假；班次固定，缺一人通常可在店内微调'
   },
   {
@@ -390,12 +383,10 @@ export const jobs = [
     headcount: 12,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'city',
     note: '总部岗，标准工时制、周末双休；只考勤不排班，请假不影响他人排班'
   },
   {
@@ -404,12 +395,10 @@ export const jobs = [
     headcount: 18,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'city',
     note: '总部岗，标准工时制、周末双休；只考勤不排班'
   },
   {
@@ -418,12 +407,10 @@ export const jobs = [
     headcount: 10,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'city',
     note: '总部岗，标准工时制、周末双休；只考勤不排班'
   },
   {
@@ -432,12 +419,10 @@ export const jobs = [
     headcount: 16,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'city',
     note: '总部岗，标准工时制、周末双休；大促期可能有临时值班'
   },
   {
@@ -446,12 +431,10 @@ export const jobs = [
     headcount: 20,
     schedule: false,
     attendance: true,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'city',
     note: 'HR / 财务 / 行政，总部岗，标准工时制、周末双休'
   },
   {
@@ -460,12 +443,10 @@ export const jobs = [
     headcount: 18,
     schedule: false,
     attendance: false,
-    quotaSource: 'fixed',
     seatSource: 'none',
     shiftQuota: '无',
     tempQuota: '无',
     substitutable: 'high',
-    configDepth: 'general',
     note: '外勤岗，不排班不打卡；请假只记时长'
   }
 ]
@@ -514,7 +495,7 @@ export function consequenceOf(jobName) {
 }
 
 /* ============================================================
-   五、假种字典（假勤侧核心字典）
+   五、假种字典（假勤侧核心字典 · 只定性、不定量）
    「婚假、丧假等标准值参考通用和城市即可，不必全部下沉到门店」
    ============================================================ */
 export const leaveCategories = [
@@ -522,254 +503,253 @@ export const leaveCategories = [
   { value: 'company', label: '公司自定' }
 ]
 
-export const paidTypes = [
-  { value: 'paid', label: '带薪' },
-  { value: 'partial', label: '部分带薪' },
-  { value: 'unpaid', label: '无薪' }
+/** 凭证类型（枚举）。假种从这里多选，不再接受自由文本。
+ *  注：丧假不要求凭证——去世时间难以事先取得死亡证明，规则上不设凭证门槛。 */
+export const proofTypes = [
+  { value: 'medical', label: '医疗证明', desc: '病假条 / 就诊记录' },
+  { value: 'marriage', label: '结婚证', desc: '' },
+  { value: 'birth', label: '出生医学证明', desc: '' },
+  { value: 'maternity', label: '生育证明', desc: '生育登记 / 准生证' },
+  { value: 'other', label: '其他凭证', desc: '由审核人判断凭证是否充分' }
 ]
 
-export const unitTypes = [
-  { value: 'day', label: '天' },
-  { value: 'halfday', label: '半天' },
-  { value: 'hour', label: '小时' }
-]
-
-export const configDepths = [
-  { value: 'general', label: '通用' },
-  { value: 'city', label: '通用 → 城市' },
-  { value: 'store', label: '通用 → 城市 → 门店' }
-]
+/** 把凭证枚举值拼成可读文本；空数组即「无需凭证」 */
+export function proofTextOf(values) {
+  if (!values || !values.length) return '无需凭证'
+  return values
+    .map(v => (proofTypes.find(p => p.value === v) || {}).label || v)
+    .join('、')
+}
 
 export const leaveTypes = [
   {
     id: 'personal',
     name: '事假',
     category: 'company',
-    paid: 'unpaid',
-    paidRatio: 0,
-    unit: 'hour',
-    needProof: false,
-    proofText: '无需凭证',
-    advanceDays: 1,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '不设标准值，按需申请',
-    configDepth: 'store',
     enabled: true,
-    note: '无薪不计额度；需提前 1 天申请，计入考勤异常判定'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '按需申请，以小时为单位'
   },
   {
     id: 'sick',
     name: '病假',
     category: 'statutory',
-    paid: 'partial',
-    paidRatio: 60,
-    unit: 'day',
-    needProof: true,
-    proofText: '病假条 / 就诊记录',
-    advanceDays: 0,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '按工龄享 3–24 个月医疗期（法定）',
-    configDepth: 'city',
     enabled: true,
-    note: '部分带薪 60%；可事后补凭证；不计入固定休息额度'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '法定医疗期保护'
   },
   {
     id: 'annual',
     name: '年假',
     category: 'statutory',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'halfday',
-    needProof: false,
-    proofText: '无需凭证',
-    advanceDays: 3,
     exclusive: true,
-    countQuota: true,
-    quotaSource: 'fixed',
-    standard: '按工龄 5 / 10 / 15 天（法定），城市可上浮',
-    configDepth: 'store',
     enabled: true,
-    note: '计额度；额度按工龄在年度初一次性发放，支持跨年结转'
-  },
-  {
-    id: 'compensatory',
-    name: '调休',
-    category: 'company',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'halfday',
-    needProof: false,
-    proofText: '无需凭证',
-    advanceDays: 1,
-    exclusive: true,
-    countQuota: true,
-    quotaSource: 'overtime',
-    standard: '按加班时长累积，1 小时加班折 1 小时调休',
-    configDepth: 'store',
-    enabled: true,
-    note: '额度来自加班累积而非固定发放；建议放行自动审核'
-  },
-  {
-    id: 'rest',
-    name: '补休',
-    category: 'company',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'halfday',
-    needProof: false,
-    proofText: '无需凭证',
-    advanceDays: 1,
-    exclusive: true,
-    countQuota: true,
-    quotaSource: 'fixed',
-    standard: '由门店在业务周期内统一派发',
-    configDepth: 'store',
-    enabled: true,
-    note: '计额度；额度随业务周期派发，未休部分到期清零'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '按工龄分档'
   },
   {
     id: 'marriage',
     name: '婚假',
     category: 'statutory',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'day',
-    needProof: true,
-    proofText: '结婚证',
-    advanceDays: 7,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '法定 3 天；深圳市含地方奖励假共 10 天',
-    configDepth: 'city',
     enabled: true,
-    note: '法定假，标准值只需配到城市层；需人工核验结婚证'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '法定假，含地方奖励假'
   },
   {
     id: 'funeral',
     name: '丧假',
     category: 'statutory',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'day',
-    needProof: true,
-    proofText: '亲属关系证明 / 死亡证明',
-    advanceDays: 0,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '1–3 天，按亲属关系区分（各地口径略有差异）',
-    configDepth: 'city',
     enabled: true,
-    note: '可事后补凭证；标准值配到城市层，需人工核验'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '按亲属关系区分天数'
   },
   {
     id: 'maternity',
     name: '产假',
     category: 'statutory',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'day',
-    needProof: true,
-    proofText: '生育证明 / 出生医学证明',
-    advanceDays: 30,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '法定 98 天；深圳市含奖励假共 178 天',
-    configDepth: 'city',
     enabled: true,
-    note: '必为长假，批准后触发员工福利侧社保公积金结论'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '长假，产假与奖励假合并计算'
   },
   {
     id: 'paternity',
     name: '陪产假',
     category: 'statutory',
-    paid: 'paid',
-    paidRatio: 100,
-    unit: 'day',
-    needProof: true,
-    proofText: '生育证明 / 出生医学证明',
-    advanceDays: 7,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '深圳市 15 天',
-    configDepth: 'city',
     enabled: true,
-    note: '仅男性员工可选；标准值配到城市层'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '配偶生育时可申请，仅男性员工可选'
   },
   {
     id: 'long-personal',
     name: '长事假',
     category: 'company',
-    paid: 'unpaid',
-    paidRatio: 0,
-    unit: 'day',
-    needProof: false,
-    proofText: '无需凭证',
-    advanceDays: 7,
     exclusive: true,
-    countQuota: false,
-    quotaSource: 'none',
-    standard: '连续 ≥ 7 天，无上限但需逐级审批',
-    configDepth: 'store',
     enabled: true,
-    note: '无薪长假；批准后触发员工福利侧社保公积金结论，需追踪欠款余额'
+    applicability: 'all',
+    quotaSource: 'scheme',
+    note: '连续多日的长假'
+  },
+  {
+    id: 'shift',
+    name: '班次假',
+    category: 'company',
+    exclusive: true,
+    enabled: true,
+    applicability: 'jobs',
+    appJobs: ['推拿师', '客户经理'],
+    quotaSource: 'scheme',
+    note: '排班岗的月度休息额度，仅排班岗有'
+  },
+  {
+    id: 'temp',
+    name: '临时假',
+    category: 'company',
+    exclusive: true,
+    enabled: true,
+    applicability: 'jobs',
+    appJobs: ['推拿师'],
+    quotaSource: 'derived',
+    note: '按上月业绩折算发放，获取上限在「假期额度方案」设置'
+  },
+  {
+    id: 'special',
+    name: '特殊情况请假',
+    category: 'company',
+    exclusive: true,
+    enabled: true,
+    legacy: true,
+    applicability: 'jobs',
+    appJobs: ['推拿师', '客户经理'],
+    quotaSource: 'scheme',
+    note: '历史大包假种：现状把事假、病假等全部混在一个兜底通道，重构后拆分至事假 / 病假等标准类型'
   }
+]
+
+/** 假种适用性：决定「谁可能有这个假种」 */
+export const applicabilityOptions = [
+  { value: 'all', label: '岗位通用', desc: '所有岗位都可有此假种；额度值在「假期额度方案」按适用岗位给' },
+  { value: 'jobs', label: '指定岗位', desc: '仅勾选的岗位有此假种；额度值按来源配置' }
+]
+
+/** 额度来源：决定「给多少」在哪一层配置 */
+/** 额度来源（内部标记）：scheme = 值在「假期额度方案」配；derived = 系统折算，方案库里是「周期上限」方案 */
+export const quotaSourceOptions = [
+  { value: 'scheme', label: '假期额度方案', desc: '在「假期额度方案」里配标准值与差异化' },
+  { value: 'derived', label: '系统折算', desc: '由业绩折算等系统计算发放，方案库里以「周期上限」方案封顶；历史已折算的存量不在本系统处理' }
 ]
 
 /* ============================================================
-   六、审核规则（含层级继承与局部覆盖）
-   覆盖语义：继承优先、局部只能逐层收紧、不可放宽
-   数据只存「本层覆盖」，未出现即表示继承上层
+   六、审核规则（申请与审核要求）
+   每个假种一份规则，三项都是**全公司标准值**：
+     · autoApprove  审核方式：自动 / 人工
+     · proofTypes   凭证要求（枚举多选，空 = 无需凭证）
+     · advanceDays  提前申请期（0 = 可事后补）
+   三项都可以被**差异化条目**覆盖，维度仅城市 / 门店（门店优先）——
+   如「年假标准自动，深圳南山店转人工」「成都事假提前 2 天」。
+   同一道申请，假种层（含差异化后的结果）与岗位层审批方式**取严**。
    ============================================================ */
-export const ruleCities = ['深圳市', '成都市', '北京市', '上海市']
-export const ruleStores = {
-  深圳市: ['深圳南山店', '深圳福田店', '深圳宝安店', '深圳龙华店'],
-  成都市: ['成都春熙路店', '成都天府店', '成都武侯店'],
-  北京市: ['北京国贸店', '北京三里屯店', '北京望京店'],
-  上海市: ['上海陆家嘴店', '上海南京路店']
-}
-
 export const approvalRules = [
+  { leaveTypeId: 'personal', autoApprove: true, proofTypes: [], advanceDays: 1, overrides: [] },
+  { leaveTypeId: 'sick', autoApprove: false, proofTypes: ['medical'], advanceDays: 0, overrides: [] },
   {
     leaveTypeId: 'annual',
-    general: { autoApprove: true },
-    city: { 深圳市: { autoApprove: false } },
-    store: {}
+    autoApprove: true,
+    proofTypes: [],
+    advanceDays: 3,
+    overrides: [
+      {
+        id: 'ov-ap-annual-nanshan',
+        dimension: 'store',
+        values: ['深圳南山店'],
+        patch: { autoApprove: false },
+        note: '南山店旺季缺编，年假转人工控制连休'
+      }
+    ]
   },
+  { leaveTypeId: 'marriage', autoApprove: false, proofTypes: ['marriage'], advanceDays: 7, overrides: [] },
+  { leaveTypeId: 'funeral', autoApprove: false, proofTypes: [], advanceDays: 0, overrides: [] },
+  { leaveTypeId: 'maternity', autoApprove: false, proofTypes: ['birth', 'maternity'], advanceDays: 30, overrides: [] },
+  { leaveTypeId: 'paternity', autoApprove: false, proofTypes: ['birth', 'maternity'], advanceDays: 7, overrides: [] },
   {
-    leaveTypeId: 'compensatory',
-    general: { autoApprove: true },
-    city: {},
-    store: {}
+    leaveTypeId: 'long-personal',
+    autoApprove: false,
+    proofTypes: [],
+    advanceDays: 7,
+    overrides: [
+      {
+        id: 'ov-ap-longpersonal-cd',
+        dimension: 'city',
+        values: ['成都市'],
+        patch: { advanceDays: 3 },
+        note: '成都门店排班弹性大，长事假提前期放宽到 3 天'
+      }
+    ]
   },
-  {
-    leaveTypeId: 'personal',
-    general: { autoApprove: true },
-    city: { 深圳市: { autoApprove: false } },
-    store: { 深圳南山店: { autoApprove: false } }
-  },
-  {
-    leaveTypeId: 'sick',
-    general: { autoApprove: false },
-    city: {},
-    store: {}
-  },
-  {
-    leaveTypeId: 'rest',
-    general: { autoApprove: true },
-    city: {},
-    store: { 成都天府店: { autoApprove: false } }
-  }
+  { leaveTypeId: 'shift', autoApprove: true, proofTypes: [], advanceDays: 0, overrides: [] },
+  { leaveTypeId: 'temp', autoApprove: true, proofTypes: [], advanceDays: 0, overrides: [] },
+  { leaveTypeId: 'special', autoApprove: false, proofTypes: [], advanceDays: 0, overrides: [] }
 ]
 
-/* 自动通过条件集：全部满足才自动通过，任一不满足即转人工 */
+/** 审核差异化可用的维度：与额度一致，只有城市 / 门店（rank 越大越具体） */
+export const approvalScopeDims = [
+  { value: 'city', label: '城市', rank: 80 },
+  { value: 'store', label: '门店', rank: 100 }
+]
+
+export function approvalDimRank (dim) {
+  const hit = approvalScopeDims.find(d => d.value === dim)
+  return hit ? hit.rank : 0
+}
+
+/** 规则的标准值（三个字段），用于展示与对比 */
+export function approvalStandardOf (leaveTypeId) {
+  const rule = approvalRules.find(r => r.leaveTypeId === leaveTypeId)
+  if (!rule) return null
+  return { autoApprove: rule.autoApprove, proofTypes: [...(rule.proofTypes || [])], advanceDays: rule.advanceDays ?? 0 }
+}
+
+/**
+ * 解析某假种对某个人的「申请与审核要求」：
+ * 标准三项打底；命中的差异化只覆盖它声明的字段（patch）；多条命中取更具体的一条。
+ */
+export function resolveApprovalRule (leaveTypeId, profile = null) {
+  const rule = approvalRules.find(r => r.leaveTypeId === leaveTypeId)
+  if (!rule) return { rule: null, values: null, dimension: 'none', alsoMatched: [] }
+
+  const base = approvalStandardOf(leaveTypeId)
+  if (profile) {
+    const matched = (rule.overrides || [])
+      .filter(o => (o.values || []).includes(profile[o.dimension]))
+      .sort((a, b) => approvalDimRank(b.dimension) - approvalDimRank(a.dimension))
+    if (matched.length) {
+      const hit = matched[0]
+      return {
+        rule,
+        values: { ...base, ...(hit.patch || {}) },
+        dimension: hit.dimension,
+        alsoMatched: matched.slice(1)
+      }
+    }
+  }
+  return { rule, values: base, dimension: 'all', alsoMatched: [] }
+}
+
+/* 自动通过条件集（本轮撤出原型，见文档待决 8.20）
+   这里记录的是「自动放行要满足什么」的隐含口径；当前原型只到假种级自动 / 人工，
+   没有条件粒度，故暂不提供配置界面。 */
 export const autoApproveConditions = [
   { id: 'quota', label: '额度内', desc: '申请时长 ≤ 该假种当前剩余额度', enabled: true },
   { id: 'timeline', label: '时间线无冲突', desc: '申请时段在员工时间线上无其他排他占位', enabled: true },
@@ -781,7 +761,7 @@ export const autoApproveConditions = [
 
 /* 触发原因字典：单据必须能解释「为何走人工」 */
 export const approvalTriggers = [
-  { id: 'scope', label: '配置原因 · 该层级已关闭自动审核', tone: 'info' },
+  { id: 'scope', label: '配置原因 · 该假种统一设为人工审核', tone: 'info' },
   { id: 'quota', label: '业务原因 · 超出可用额度', tone: 'warning' },
   { id: 'timeline', label: '业务原因 · 时间线存在排他占位', tone: 'warning' },
   { id: 'advance', label: '业务原因 · 未满足提前申请期', tone: 'warning' },
@@ -794,41 +774,37 @@ export const ruleChangeLogs = [
     id: 1,
     time: '2026-09-28 14:22',
     operator: '李文静 · 人事经理',
-    scope: '门店 · 深圳南山店',
     target: '事假',
-    from: '自动审核',
-    to: '人工审核',
-    reason: '该店近期客诉集中，事假需店长确认排班影响'
+    from: '人工审核',
+    to: '自动审核',
+    reason: '事假不占额度、单次时长可控，规则内放行自动通过'
   },
   {
     id: 2,
     time: '2026-09-12 09:40',
     operator: '李文静 · 人事经理',
-    scope: '城市 · 深圳市',
     target: '年假',
-    from: '自动审核',
-    to: '人工审核',
-    reason: '九月旺季缺编，年假申请集中，改由人工排期'
-  },
-  {
-    id: 3,
-    time: '2026-08-30 16:05',
-    operator: '陈立 · 系统管理员',
-    scope: '通用',
-    target: '调休',
     from: '人工审核',
     to: '自动审核',
-    reason: '调休为员工加班累积所得，规则内放行自动通过'
+    reason: '额度与时间线都由系统校验，改为自动通过、人工只处理例外'
   },
   {
     id: 4,
     time: '2026-08-30 15:58',
     operator: '陈立 · 系统管理员',
-    scope: '门店 · 成都天府店',
-    target: '补休',
+    target: '病假',
     from: '自动审核',
     to: '人工审核',
-    reason: '该店人力紧张，补休需店长统一排期'
+    reason: '病假需核验医疗证明，统一改为人工审核'
+  },
+  {
+    id: 5,
+    time: '2026-10-21 10:12',
+    operator: '李文静 · 人事经理',
+    target: '年假 · 深圳南山店',
+    from: '自动审核',
+    to: '人工审核',
+    reason: '南山店旺季缺编，仅该门店转人工，其余门店仍自动'
   }
 ]
 
@@ -989,16 +965,16 @@ export function jobReferenceIndex(jobName) {
       warn: !!policy && policy.status === 'pending'
     },
     {
-      module: '审核规则',
+      module: '假期审核规则',
       byJob: false,
       route: 'leave-approval-rules',
-      detail: '按 城市 / 门店 分层，不按岗位区分'
+      detail: '全公司统一一条规则，不按岗位区分'
     },
     {
       module: '假种字典',
       byJob: false,
       route: 'leave-type-dictionary',
-      detail: '按 假种 × 下沉深度，不按岗位区分'
+      detail: '按假种统一定义，不按岗位区分'
     }
   ]
 }

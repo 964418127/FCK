@@ -4,6 +4,7 @@ import http from 'node:http'
 import { writeFileSync, existsSync, mkdirSync, statSync, createReadStream, readdirSync, readFileSync } from 'node:fs'
 import { resolve, join, extname, relative } from 'node:path'
 import { v2phase1Chapters } from './src/docs/chapters.js'
+import { gateMiddleware } from './scripts/gate-store.js'
 
 // 静态化白名单：只对 /docs/product-v2-phase1 这条线做预渲染
 // 业务路由（/welcome /job-compensation-template 等）保持 SPA 模式
@@ -19,6 +20,20 @@ const renderedPaths = new Set()
 const distDir = resolve(process.cwd(), 'dist')
 if (!existsSync(distDir)) {
   mkdirSync(distDir, { recursive: true })
+}
+
+// ============== 菜单门控（gate）服务端接口 ==============
+// 配置存在服务端（.gate-state.json），所有客户端读同一份 —— 多页签、多台电脑（局域网）都一致。
+// 没有这个接口的静态托管（如 GitHub Pages）会自动退化为「仅本机」模式，见 src/composables/useGateConfig.js
+const gateStatePlugin = {
+  name: 'gate-state',
+  configureServer(server) {
+    server.middlewares.use('/api/gate', gateMiddleware)
+    console.log('\n  ✓ [gate] 菜单配置已启用服务端共享：GET/POST /api/gate · SSE /api/gate/events\n')
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use('/api/gate', gateMiddleware)
+  }
 }
 
 // ============== Dev server 同时 serve dist/ 产物 ==============
@@ -198,6 +213,12 @@ function startDistStaticServer() {
 
   distServer = http.createServer((req, res) => {
     let urlPath = decodeURIComponent(req.url.split('?')[0])
+
+    // 菜单门控接口：与 dev / vite preview 共用同一份状态文件
+    if (urlPath === '/api/gate' || urlPath.startsWith('/api/gate/')) {
+      return gateMiddleware(req, res, urlPath.slice('/api/gate'.length) || '/')
+    }
+
     if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
     let filePath = join(distDir, urlPath)
 
@@ -205,6 +226,9 @@ function startDistStaticServer() {
       const withHtml = filePath + '.html'
       if (existsSync(withHtml) && statSync(withHtml).isFile()) {
         filePath = withHtml
+      } else if (!extname(urlPath)) {
+        // SPA 回退：/gate 这类没预渲染成 html 的路由，直接刷也交给前端路由处理
+        filePath = join(distDir, 'index.html')
       } else {
         res.statusCode = 404
         return res.end('404 not found: ' + urlPath)
@@ -241,7 +265,7 @@ function stopDistStaticServer() {
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.GITHUB_PAGES === 'true' ? '/FCK/' : '/',
-  plugins: [vue(), serveDistPlugin],
+  plugins: [vue(), serveDistPlugin, gateStatePlugin],
   server: {
     port: 5178,
     host: '0.0.0.0'

@@ -2,10 +2,13 @@
   <div class="scheme-page">
     <div class="page-header">
       <div class="header-main">
-        <h1>工作日方案</h1>
-        <el-tag type="warning" effect="plain" size="small">预设计 v2 · 非结论</el-tag>
-        <el-tag type="primary" effect="plain" size="small">配置层</el-tag>
+        <h1>出勤方案</h1>
       </div>
+      <p class="tip">
+        只定「哪天默认该上班」的<strong>日历口径</strong>（周基础模式 + 法定节假日解读 + 方案内特殊日）。
+        排班岗<strong>具体哪天上哪个班次由现有排班排假系统决定</strong>，本页不排班、不定班次、不生成名额；
+        对不排班的岗位，日历即考勤比对的计划基准。
+      </p>
     </div>
 
     <div class="section-card">
@@ -89,13 +92,12 @@
         <div class="cfg-block">
           <div class="cfg-label"><span>方案名称</span></div>
           <el-input v-model="current.name" size="small" style="max-width: 280px" />
-          <div class="field-desc">只影响识别，不改变行为。</div>
         </div>
 
         <div class="cfg-block">
           <div class="cfg-label">
-            <span>适用域（说明用）</span>
-            <span class="cfg-note">不参与判定，只帮人找方案</span>
+            <span>适用域</span>
+            <span class="cfg-note">仅作标签，不参与判定</span>
           </div>
           <el-input v-model="current.domain" size="small" style="max-width: 280px" />
         </div>
@@ -173,13 +175,10 @@
             </el-table-column>
           </el-table>
           <div v-else class="empty-hint">暂无特殊日。法定节假日之外的单日调整（团建、盘点、值班）放这里。</div>
-          <div class="field-desc warn-text">
-            作用于所有引用者；只改一个岗位请新建方案。
-          </div>
         </div>
 
         <div class="cfg-block">
-          <div class="cfg-label"><span>引用岗位</span><span class="cfg-note">只读 · 到「工作模式」页改归属</span></div>
+          <div class="cfg-label"><span>引用岗位</span><span class="cfg-note">只读 · 到「岗位假勤方案」页改归属</span></div>
           <div class="ref-jobs">
             <span v-for="j in jobsUsingScheme(current.id)" :key="j" class="ref-job">{{ j }}</span>
             <span v-if="!jobsUsingScheme(current.id).length" class="ref-none">暂无岗位引用</span>
@@ -202,14 +201,14 @@
     </el-drawer>
 
     <!-- ============ 新建方案 ============ -->
-    <el-dialog v-model="createVisible" title="新建工作日方案" width="620px">
+    <el-dialog v-model="createVisible" title="新建出勤方案" width="620px">
       <div class="dlg-body">
         <div class="dlg-row">
           <div class="dlg-label">方案名称</div>
           <el-input v-model="newForm.name" placeholder="如：门店 · 夜班岗" style="max-width: 300px" />
         </div>
         <div class="dlg-row">
-          <div class="dlg-label">适用域（说明用）</div>
+          <div class="dlg-label">适用域</div>
           <el-input v-model="newForm.domain" placeholder="如：门店一线" style="max-width: 300px" />
         </div>
         <div class="dlg-row">
@@ -365,7 +364,7 @@ const createScheme = () => {
     updatedAt: '2026-10-13'
   })
   createVisible.value = false
-  ElMessage.success('方案已创建，可在「工作模式」页被岗位引用')
+  ElMessage.success('方案已创建，可在「岗位假勤方案」页被岗位引用')
 }
 
 /* ---------- 复制 ---------- */

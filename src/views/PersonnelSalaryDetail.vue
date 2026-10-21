@@ -2,7 +2,7 @@
   <div class="personnel-salary-detail">
     <div class="page-header">
       <h1>人员薪酬明细</h1>
-      <p class="tip">查看各城市/门店/人员当月工资单与常乐豆结算单明细，支持按维度筛选并发起重算或测算</p>
+      <p class="tip">查看各城市/门店/人员当月工资单、常乐豆结算单与离职补偿金单明细，支持按维度筛选并发起重算或测算</p>
     </div>
 
     <div class="content-section">
@@ -70,14 +70,19 @@
         <el-table-column prop="storeName" label="门店名称" min-width="150" />
         <el-table-column prop="cooperateEntity" label="合作主体" min-width="180" />
         <el-table-column prop="employeeNo" label="工号" width="100" align="center" />
-        <el-table-column prop="name" label="姓名" width="90" />
+        <el-table-column label="姓名" width="140">
+          <template #default="{ row }">
+            <span>{{ row.name }}</span>
+            <el-tag v-if="row.status === 'left'" size="small" type="info" effect="plain" class="left-tag">离职</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="position" label="岗位" width="90" />
         <el-table-column prop="cooperateType" label="合作类型" width="90" />
         <el-table-column label="工资单" min-width="200">
           <template #default="{ row }">
             <span v-if="row.weekIncome === 0" class="text-muted">/</span>
             <a v-else class="cell-link" @click="handleViewPayroll(row)">
-              第四周收入：{{ row.weekIncome }}
+              {{ row.payrollLabel || `第四周收入：${row.weekIncome}` }}
             </a>
           </template>
         </el-table-column>
@@ -101,10 +106,29 @@
             <span v-else>¥ {{ row.beanSubtotal.toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="合计" width="110" align="right">
+        <el-table-column width="130" align="right">
+          <template #header>
+            <el-tooltip content="工资单 + 常乐豆结算单；补偿金单列，不并入" placement="top">
+              <span class="th-tip">收入合计</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <span v-if="row.total === 0" class="text-muted">/</span>
             <span v-else class="cell-total">¥ {{ row.total.toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="补偿金" min-width="180">
+          <template #default="{ row }">
+            <span v-if="!row.compBillNo" class="text-muted">/</span>
+            <a v-else class="cell-link" @click="handleViewCompensation(row)">
+              补偿金：¥ {{ row.compSubtotal.toFixed(2) }}
+            </a>
+          </template>
+        </el-table-column>
+        <el-table-column label="补偿金小计" width="120" align="right">
+          <template #default="{ row }">
+            <span v-if="!row.compSubtotal" class="text-muted">/</span>
+            <span v-else>¥ {{ row.compSubtotal.toFixed(2) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="薪酬周期" width="200" align="center">
@@ -351,6 +375,52 @@ const tableData = ref([
     total: 0,
     salaryPeriod: '2026-05-22 至 2026-05-31',
     calcTime: '2026-06-01'
+  },
+  {
+    talentId: '1092198374617003520',
+    cityCode: '010',
+    cityName: '北京市',
+    storeCode: '102087',
+    storeName: '凤凰汇',
+    cooperateEntity: '北京凤凰汇健康管理有限公司',
+    employeeNo: 'TL2203',
+    name: '欧跃',
+    position: '客户经理',
+    cooperateType: '全职',
+    status: 'left',
+    weekIncome: 3860.0,
+    payrollLabel: '月度收入：3,860.00',
+    incomeSubtotal: 3860.0,
+    beanBillNo: '',
+    beanSubtotal: 0,
+    compBillNo: '1118020941003720018',
+    compSubtotal: 1293.0,
+    total: 3860.0,
+    salaryPeriod: '2026-10-01 至 2026-10-31',
+    calcTime: '2026-11-05'
+  },
+  {
+    talentId: '1089374461552033792',
+    cityCode: '020',
+    cityName: '广州市',
+    storeCode: '102155',
+    storeName: '君超广场',
+    cooperateEntity: '广州君超健康管理有限公司',
+    employeeNo: 'TL2204',
+    name: '余晏慧',
+    position: '客户经理',
+    cooperateType: '全职',
+    status: 'left',
+    weekIncome: 2540.0,
+    payrollLabel: '月度收入：2,540.00',
+    incomeSubtotal: 2540.0,
+    beanBillNo: '',
+    beanSubtotal: 0,
+    compBillNo: '1118020941003720019',
+    compSubtotal: 1010.0,
+    total: 2540.0,
+    salaryPeriod: '2026-10-01 至 2026-10-31',
+    calcTime: '2026-11-05'
   }
 ])
 
@@ -412,6 +482,14 @@ const handleViewPayroll = (row) => {
 
 const handleViewBeanBill = (row) => {
   ElMessage.info(`查看 ${row.name} 常乐豆结算单`)
+}
+
+const handleViewCompensation = (row) => {
+  router.push({
+    name: 'personnel-salary-bill-detail',
+    params: { billNo: row.compBillNo },
+    query: { type: 'comp' }
+  })
 }
 
 const handleRecalculate = (row) => {
@@ -484,6 +562,17 @@ const handleEstimate = (row) => {
 .cell-total {
   color: #a40035;
   font-weight: 600;
+}
+
+.left-tag {
+  margin-left: 6px;
+  transform: scale(0.85);
+  transform-origin: left center;
+}
+
+.th-tip {
+  border-bottom: 1px dashed hsl(var(--muted-foreground) / 0.6);
+  cursor: help;
 }
 
 .pagination-wrapper {
