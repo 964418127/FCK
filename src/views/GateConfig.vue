@@ -173,6 +173,117 @@
 
         <div v-if="!rows.length" class="empty">没有匹配的菜单</div>
       </div>
+
+      <!-- ===== 模型配置：v2 事件树真实生成用，与菜单配置同一份登录态 ===== -->
+      <div class="section-card llm-card">
+        <div class="llm-head">
+          <div class="llm-title">
+            <h3>模型配置</h3>
+            <el-tag v-if="llmState.available" size="small" effect="plain" :type="llmReady ? 'success' : 'info'">
+              {{ llmReady ? '可直接生成' : '未配置 key' }}
+            </el-tag>
+            <el-tag v-else-if="llmState.available === false" size="small" effect="plain" type="warning">
+              无中转 · 只能回放
+            </el-tag>
+          </div>
+          <p class="llm-sub">
+            事件树由这里的模型真实生成。Key 只存在服务端 <code>.llm-config.json</code>（权限 600、已 gitignore），
+            页面永远只看到掩码，浏览器不接触原文。
+          </p>
+        </div>
+
+        <div v-if="llmState.available === false" class="llm-offline">
+          当前打开的是静态产物（<code>site/</code> 或 file://），没有 Node 中转，无法真实调用。
+          生成入口会自动退化为「回放归档结果」；要真跑，用 <code>npm run dev</code> 或 <code>npm run preview</code>。
+        </div>
+
+        <el-form v-else label-width="96px" size="default" class="llm-form">
+          <el-form-item label="服务商">
+            <el-select v-model="llmForm.provider" style="width: 240px" @change="onProviderChange">
+              <el-option v-for="p in LLM_PRESETS" :key="p.key" :label="p.label" :value="p.key" />
+            </el-select>
+            <span class="llm-note">{{ currentPreset.note }}</span>
+          </el-form-item>
+
+          <el-form-item label="Base URL">
+            <el-input v-model="llmForm.baseUrl" placeholder="https://api.deepseek.com/v1" style="max-width: 420px" />
+          </el-form-item>
+
+          <el-form-item label="模型">
+            <el-select
+              v-model="llmForm.model"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选一个或直接输入"
+              style="width: 240px"
+            >
+              <el-option v-for="m in modelOptions" :key="m" :label="m" :value="m" />
+            </el-select>
+            <el-button size="small" :loading="llmState.modelsLoading" @click="pullModels">拉取可用模型</el-button>
+            <span v-if="llmState.modelsMessage" class="llm-note">{{ llmState.modelsMessage }}</span>
+          </el-form-item>
+
+          <el-form-item label="API Key">
+            <el-input
+              v-model="llmForm.apiKey"
+              type="password"
+              show-password
+              autocomplete="off"
+              :placeholder="llmState.config.hasKey ? `已保存 ${llmState.config.keyMask}，留空表示不修改` : '粘贴 key'"
+              style="max-width: 420px"
+            />
+            <el-button
+              v-if="llmState.config.hasKey"
+              size="small"
+              text
+              type="danger"
+              @click="clearKey"
+            >清除</el-button>
+          </el-form-item>
+
+          <el-form-item label="温度">
+            <el-slider v-model="llmForm.temperature" :min="0" :max="1" :step="0.05" style="width: 220px" />
+            <span class="llm-note">{{ llmForm.temperature.toFixed(2) }} · 生成结构建议 0.2，越低越稳</span>
+          </el-form-item>
+
+          <el-form-item label="超时">
+            <el-input-number v-model="llmForm.timeoutMs" :min="10000" :max="300000" :step="10000" controls-position="right" style="width: 150px" />
+            <span class="llm-note">毫秒 · 一次生成通常 20–40 秒</span>
+          </el-form-item>
+
+          <el-form-item label="JSON 模式">
+            <el-switch v-model="llmForm.jsonMode" />
+            <span class="llm-note">支持的供应商会强制输出合法 JSON；不支持时靠提示词 + 校验兜底</span>
+          </el-form-item>
+
+          <el-form-item label="思考强度">
+            <el-select v-model="llmForm.reasoningEffort" style="width: 180px">
+              <el-option label="不发（普通模型）" value="auto" />
+              <el-option label="low · 快" value="low" />
+              <el-option label="medium" value="medium" />
+              <el-option label="high · 慢" value="high" />
+            </el-select>
+            <span class="llm-note">推理型模型（MiniMax M3 系列等）必须选 low，否则思考吃光输出预算、正文为空</span>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" :loading="llmSaving" @click="saveLlm">保存</el-button>
+            <el-button :loading="llmState.testing" @click="doTestLlm">测试连通性</el-button>
+            <span v-if="llmState.config.updatedAt" class="llm-note">上次保存 {{ llmStamp }}</span>
+          </el-form-item>
+        </el-form>
+
+        <div v-if="llmState.lastTest" class="llm-result" :class="llmState.lastTest.ok ? 'ok' : 'bad'">
+          <template v-if="llmState.lastTest.ok">
+            通路正常 · 延迟 {{ llmState.lastTest.latency }}ms · 模型回显「{{ llmState.lastTest.reply || '（空）' }}」
+            <span v-if="llmState.lastTest.usage" class="llm-dim">
+              · tokens {{ llmState.lastTest.usage.prompt_tokens }}/{{ llmState.lastTest.usage.completion_tokens }}
+            </span>
+          </template>
+          <template v-else>{{ llmState.lastTest.message }}</template>
+        </div>
+      </div>
     </template>
 
     <el-dialog v-model="shareVisible" title="分享链接" width="560px">
@@ -216,6 +327,8 @@ import { ArrowDown, Lock, Rank } from '@element-plus/icons-vue'
 import { sidebarMenu } from '../config/sidebarMenu.js'
 import { mobileMenuCatalog } from '../config/mobileMenu.js'
 import { docMenu } from '../docs/menu.js'
+import { LLM_PRESETS, presetOf } from '../config/llmPresets.js'
+import { llmState, loadLlmConfig, saveLlmConfig, testLlm, fetchLlmModels } from '../composables/useLlmConfig.js'
 import {
   gateState,
   isMenuVisible,
@@ -229,7 +342,9 @@ import {
   moveNode,
   resetOrder,
   undo,
-  canUndo
+  canUndo,
+  registerMenuTrees,
+  normalizeVisibility
 } from '../composables/useGateConfig.js'
 // three.js 只在切到 3D 视图时才加载，独立成 chunk，不影响首屏
 const GateMenu3D = defineAsyncComponent(() => import('../components/gate/GateMenu3D.vue'))
@@ -251,14 +366,20 @@ const loggingIn = ref(false)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 onMounted(async () => {
+  // 进页面先把历史配置收敛一次（watch 只在后续变化时触发）
+  normalizeVisibility()
   authed.value = await checkSession()
-  if (authed.value) return
+  if (authed.value) {
+    initLlm()
+    return
+  }
   // 等 main.js 里的 connectGate 判定完「能不能连上服务端」
   for (let i = 0; i < 15 && gateState.connected === null; i++) await sleep(100)
   if (gateState.connected === false) {
     // 没有服务端（静态托管）：密钥无从校验，放行为本机配置，并明确标注
     localOnly.value = true
     authed.value = true
+    initLlm()
   }
 })
 
@@ -277,6 +398,7 @@ const doLogin = async () => {
   }
   keyInput.value = ''
   authed.value = true
+  initLlm()
   ElMessage.success('已登录')
 }
 
@@ -308,6 +430,123 @@ const submitKey = async () => {
   if (!res.ok) return ElMessage.error(res.message)
   keyVisible.value = false
   ElMessage.success('密钥已修改')
+}
+
+// ---- 模型配置（v2 事件树生成用） ----
+const llmSaving = ref(false)
+const llmForm = reactive({
+  provider: 'deepseek',
+  baseUrl: '',
+  model: '',
+  apiKey: '',
+  temperature: 0.2,
+  timeoutMs: 120000,
+  jsonMode: false,
+  reasoningEffort: 'auto'
+})
+
+const currentPreset = computed(() => presetOf(llmForm.provider))
+
+const modelOptions = computed(() => {
+  // 三路合并：服务商拉到的真实列表 > 预置提示 > 当前值
+  const list = [...(llmState.models || []), ...(currentPreset.value.models || [])]
+  if (llmForm.model) list.unshift(llmForm.model)
+  return [...new Set(list)].filter(Boolean)
+})
+
+/** 能不能直接生成：有 key，或选了本地 ollama（不走鉴权） */
+const llmReady = computed(() => llmState.config.hasKey || llmForm.provider === 'ollama')
+
+const llmStamp = computed(() => {
+  const t = llmState.config.updatedAt
+  if (!t) return ''
+  const d = new Date(t)
+  if (Number.isNaN(d.getTime())) return ''
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+})
+
+const fillLlmForm = () => {
+  const c = llmState.config
+  const preset = presetOf(c.provider || 'deepseek')
+  llmForm.provider = c.provider || 'deepseek'
+  llmForm.baseUrl = c.baseUrl || preset.baseUrl
+  llmForm.model = c.model || preset.model
+  llmForm.temperature = typeof c.temperature === 'number' ? c.temperature : 0.2
+  llmForm.timeoutMs = c.timeoutMs || 120000
+  llmForm.jsonMode = Boolean(c.jsonMode)
+  llmForm.reasoningEffort = c.reasoningEffort || preset.reasoningEffort || 'auto'
+  llmForm.apiKey = ''
+}
+
+const initLlm = async () => {
+  await loadLlmConfig()
+  fillLlmForm()
+}
+
+/** 换服务商：直接跟到预设的端点和模型，用户随后可改 */
+const onProviderChange = (key) => {
+  const p = presetOf(key)
+  if (p.baseUrl) llmForm.baseUrl = p.baseUrl
+  llmForm.model = p.model || ''
+  llmForm.reasoningEffort = p.reasoningEffort || 'auto'
+  // 上一个服务商拉到的模型列表不能留着，会串台
+  llmState.models = []
+  llmState.modelsMessage = ''
+  llmState.lastTest = null
+}
+
+const saveLlm = async () => {
+  if (!llmForm.baseUrl.trim()) return ElMessage.warning('先填 Base URL')
+  if (!llmForm.model.trim()) return ElMessage.warning('先选模型')
+  llmSaving.value = true
+  const res = await saveLlmConfig({
+    provider: llmForm.provider,
+    baseUrl: llmForm.baseUrl,
+    model: llmForm.model,
+    temperature: llmForm.temperature,
+    timeoutMs: llmForm.timeoutMs,
+    jsonMode: llmForm.jsonMode,
+    reasoningEffort: llmForm.reasoningEffort,
+    ...(llmForm.apiKey ? { apiKey: llmForm.apiKey } : {})
+  })
+  llmSaving.value = false
+  if (!res.ok) {
+    ElMessage.error(res.message)
+    return res
+  }
+  llmForm.apiKey = ''
+  ElMessage.success('模型配置已保存')
+  return res
+}
+
+const clearKey = async () => {
+  const res = await saveLlmConfig({ clearKey: true })
+  if (!res.ok) return ElMessage.error(res.message)
+  llmState.lastTest = null
+  ElMessage.success('key 已清除')
+}
+
+const doTestLlm = async () => {
+  // 有未保存的 key 先落盘再测，否则测的是旧配置
+  if (llmForm.apiKey) {
+    const saved = await saveLlm()
+    if (!saved.ok) return
+  }
+  const r = await testLlm()
+  if (r.ok) ElMessage.success(`通路正常，延迟 ${r.latency}ms`)
+  else ElMessage.warning(r.message || '测试失败')
+}
+
+/** 问供应商要一次真实模型列表，省得下次模型改名又对不上 */
+const pullModels = async () => {
+  if (llmForm.apiKey) {
+    const saved = await saveLlm()
+    if (!saved.ok) return
+  }
+  const r = await fetchLlmModels()
+  if (r.ok) ElMessage.success(`拉到 ${r.count} 个模型`)
+  else ElMessage.warning(r.message || '该服务不支持自动拉取，手动填模型名')
 }
 
 // ---- 菜单树 ----
@@ -360,6 +599,17 @@ const TABS = [
 const activeTab = ref(TABS.some((t) => t.key === route.query.tab) ? route.query.tab : 'web')
 const currentTab = computed(() => TABS.find((t) => t.key === activeTab.value) || TABS[0])
 const currentTree = computed(() => currentTab.value.tree.value)
+
+// 父子索引：三份树一次注册好，之后任何显隐改动都会自动带上「父分组 / 整块子项」，
+// 不会再出现「子项开着、分组却被关掉」这种半截状态
+registerMenuTrees(webTree.value, mobileTree.value, docTree.value)
+
+// 收敛老配置里的孤儿状态（别人推来的、或者改这版之前留下的）
+watch(
+  () => [...gateState.hidden].sort().join(','),
+  () => normalizeVisibility(),
+  { flush: 'post' }
+)
 
 const treeOf = (key) => {
   const t = TABS.find((x) => x.key === key)
@@ -955,6 +1205,87 @@ const copyLink = async () => {
 .key-tip {
   margin: 4px 0 0;
   font-size: 12.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ===== 模型配置 ===== */
+.llm-card {
+  margin-top: 20px;
+}
+
+.llm-head {
+  margin-bottom: 16px;
+}
+
+.llm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.llm-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+.llm-sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: hsl(var(--muted-foreground));
+}
+
+.llm-sub code,
+.llm-offline code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: hsl(var(--muted));
+  font-size: 12px;
+}
+
+.llm-form {
+  max-width: 720px;
+}
+
+.llm-note {
+  margin-left: 10px;
+  font-size: 12.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+.llm-offline {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid hsl(38 92% 50% / 0.35);
+  background: hsl(38 92% 50% / 0.08);
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: hsl(28 80% 32%);
+}
+
+.llm-result {
+  margin-top: 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.llm-result.ok {
+  border: 1px solid hsl(142 71% 45% / 0.35);
+  background: hsl(142 71% 45% / 0.08);
+  color: hsl(142 71% 26%);
+}
+
+.llm-result.bad {
+  border: 1px solid hsl(0 72% 51% / 0.35);
+  background: hsl(0 72% 51% / 0.07);
+  color: hsl(0 72% 38%);
+}
+
+.llm-dim {
   color: hsl(var(--muted-foreground));
 }
 </style>

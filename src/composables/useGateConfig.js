@@ -8,7 +8,7 @@
  *   启动   bootstrapGate()  先用本机缓存铺一层（首帧不闪全套菜单）
  *          connectGate()    GET /api/gate 校正 → 打开 SSE，之后任何人的改动都会实时推过来
  *   改动   setItemVisible()  本地立即生效 → 防抖 POST /api/gate（带 Bearer token）→ 服务端广播给所有人
- *   登录   /gate 页需密钥；token 存 sessionStorage，写接口都要求它
+ *   登录   /gate 页需密钥；token 存 localStorage（跨页签共享，过期由 /api/gate/session 校验清理）
  *   降级   接口不存在（静态托管）或请求失败 → mode='local'，退回 localStorage + BroadcastChannel
  *
  * 链接 `?gate=<base64url(隐藏 id 数组)>` 仍然保留，作为「没有服务端接口」时的兜底。
@@ -20,9 +20,18 @@ const TOKEN_KEY = 'fck.gate-token'
 const API_BASE = '/api/gate'
 const CHANNEL_NAME = 'fck.menu-gate'
 
+/**
+ * 本地文件（file://）打开时没有可用的 HTTP 接口：fetch 到 `file:///api/gate` 会被 CORS 拦，
+ * 控制台一片红但其实只是降级。这里直接短路成「仅本机」，不发请求、不开 SSE。
+ * 离线静态包双击打开就走这条。
+ */
+const isFileProtocol = () => typeof location !== 'undefined' && location.protocol === 'file:'
+
 const readToken = () => {
   try {
-    return sessionStorage.getItem(TOKEN_KEY) || ''
+    // localStorage 优先（跨页签共享：在 /gate 登录过，工作台等其他页签直接可用）；
+    // sessionStorage 是老版本的存法，迁移期兜底读一次
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || ''
   } catch (e) {
     return ''
   }
@@ -126,8 +135,10 @@ const persistLocal = () => {
 const saveToken = (token) => {
   gateState.token = token || ''
   try {
-    if (token) sessionStorage.setItem(TOKEN_KEY, token)
-    else sessionStorage.removeItem(TOKEN_KEY)
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+    // 老版本写在 sessionStorage，清掉避免两处不一致
+    sessionStorage.removeItem(TOKEN_KEY)
   } catch (e) {
     /* ignore */
   }
@@ -231,6 +242,51 @@ const commit = ({ fromRemote = false } = {}) => {
   pushRemote()
 }
 
+// ---------- 父子关系（显隐联动） ----------
+/**
+ * 只存「隐藏了谁」会漏掉一种状态：父分组隐藏、子项却还是可见 ——
+ * 侧边栏里子项跟着分组一起消失，配置页却显示它是开着的，两边对不上。
+ * 所以记两份索引，把联动补在写入处：
+ *   显示某项 → 连带把它的祖先分组都显示（否则子项无处可挂）
+ *   隐藏某项 → 连带把它的后代都隐藏（分组关掉就该整块消失）
+ */
+let ancestorIndex = new Map() // id -> 祖先 id 数组（近 → 远）
+let descendantIndex = new Map() // id -> 全部后代 id 数组
+
+const collectDescendants = (node, out = []) => {
+  (node.children || []).forEach((child) => {
+    if (!child || !child.index) return
+    out.push(child.index)
+    collectDescendants(child, out)
+  })
+  return out
+}
+
+/** 注册菜单树，建立父子索引。页面有几种树（Web / 移动端 / 文档中心）就传几份 */
+export function registerMenuTrees (...trees) {
+  const walk = (list, chain) => {
+    (list || []).forEach((node) => {
+      if (!node || !node.index) return
+      ancestorIndex.set(node.index, chain)
+      descendantIndex.set(node.index, collectDescendants(node))
+      walk(node.children, [node.index, ...chain])
+    })
+  }
+  trees.forEach((tree) => walk(tree, []))
+}
+
+/** 把一次显隐改动扩展成「应该一起改」的完整 id 集合 */
+const expandForVisibility = (ids, visible) => {
+  const out = new Set()
+  ;(ids || []).forEach((id) => {
+    if (!id) return
+    out.add(id)
+    const related = visible ? ancestorIndex.get(id) : descendantIndex.get(id)
+    ;(related || []).forEach((x) => out.add(x))
+  })
+  return [...out]
+}
+
 // ---------- 对外 API ----------
 export function isMenuVisible (id) {
   if (!id) return true
@@ -239,15 +295,12 @@ export function isMenuVisible (id) {
 
 export function setItemVisible (id, visible) {
   if (!id) return
-  if (visible === isMenuVisible(id)) return
-  pushUndo()
-  if (visible) gateState.hidden.delete(id)
-  else gateState.hidden.add(id)
-  commit()
+  setManyVisible([id], visible)
 }
 
 export function setManyVisible (ids, visible) {
-  const changed = (ids || []).filter((id) => id && isMenuVisible(id) !== visible)
+  const all = expandForVisibility(ids, visible)
+  const changed = all.filter((id) => isMenuVisible(id) !== visible)
   if (!changed.length) return
   pushUndo()
   changed.forEach((id) => {
@@ -255,6 +308,26 @@ export function setManyVisible (ids, visible) {
     else gateState.hidden.add(id)
   })
   commit()
+}
+
+/**
+ * 收敛历史配置里的孤儿状态（父分组隐藏、子项可见）。
+ * 老数据、别人的分享链接都可能带这种组合，进来先修一次；
+ * 只做「取消隐藏」，方向单调，所以不会来回震荡。
+ * @returns {boolean} 是否真的修了
+ */
+export function normalizeVisibility () {
+  const toShow = new Set()
+  ancestorIndex.forEach((chain, id) => {
+    if (gateState.hidden.has(id)) return
+    chain.forEach((a) => {
+      if (gateState.hidden.has(a)) toShow.add(a)
+    })
+  })
+  if (!toShow.size) return false
+  toShow.forEach((id) => gateState.hidden.delete(id))
+  commit()
+  return true
 }
 
 // ---------- 撤销 ----------
@@ -302,6 +375,14 @@ function sortTree (tab, nodes) {
 }
 
 /**
+ * 分组自身被隐藏、但组里还有可见项时，这个分组仍然要画出来 ——
+ * 否则「子项开着、分组没了」就会出现半截菜单。写入侧已经会连带显示父分组，
+ * 这里是渲染侧的兜底（比如别人推来的老配置）。
+ */
+const hasVisibleDescendant = (node) =>
+  (node.children || []).some((c) => isMenuVisible(c.index) || hasVisibleDescendant(c))
+
+/**
  * 渲染用：按配置排序 + 剔除隐藏项。
  * 没进过 order 的新菜单 pos 为 Infinity，自动落到该组末尾（不会插到别人前面）。
  */
@@ -309,7 +390,7 @@ export function orderedNodes (tab, nodes) {
   const walk = (list) => {
     const out = []
     list.forEach((node) => {
-      if (!isMenuVisible(node.index)) return
+      if (!isMenuVisible(node.index) && !hasVisibleDescendant(node)) return
       if (node.children && node.children.length) {
         const kids = walk(node.children)
         if (kids.length) {
@@ -460,6 +541,13 @@ export function bootstrapGate (query) {
  * 链接带配置时以链接为准；已登录则顺手推给服务端，让所有人跟着变。
  */
 export async function connectGate () {
+  if (isFileProtocol()) {
+    gateState.mode = 'local'
+    gateState.connected = false
+    gateState.lastError = '本地文件打开，菜单配置只在本机生效'
+    return false
+  }
+
   let data = null
   try {
     const res = await fetch(API_BASE, { headers: { 'Cache-Control': 'no-cache' } })
@@ -566,7 +654,7 @@ export async function logout () {
 export function filterMenuTree (nodes) {
   const out = []
   ;(nodes || []).forEach((node) => {
-    if (!isMenuVisible(node.index)) return
+    if (!isMenuVisible(node.index) && !hasVisibleDescendant(node)) return
     if (node.children && node.children.length) {
       const kids = filterMenuTree(node.children)
       if (kids.length) {

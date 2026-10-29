@@ -7,6 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "generate": "vite-ssg build",
+    "static": "node scripts/build-static.mjs",
+    "static:docs": "node scripts/build-static.mjs --docs",
+    "static:offline": "node scripts/build-static.mjs --offline --out=site-offline",
+    "static:serve": "node scripts/serve-static.mjs",
+    "static:open": "node scripts/build-static.mjs && node scripts/serve-static.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

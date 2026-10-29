@@ -1,23 +1,36 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import http from 'node:http'
-import { writeFileSync, existsSync, mkdirSync, statSync, createReadStream, readdirSync, readFileSync } from 'node:fs'
-import { resolve, join, extname, relative } from 'node:path'
+import { writeFileSync, existsSync, mkdirSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { v2phase1Chapters } from './src/docs/chapters.js'
+import { leaveReformChapters } from './src/docs/leaveReformChapters.js'
+import { resignChapters } from './src/docs/resignChapters.js'
 import { gateMiddleware } from './scripts/gate-store.js'
+import { llmMiddleware } from './scripts/llm-proxy.js'
+import { printCommandHelp } from './scripts/commands.mjs'
 
-// 静态化白名单：只对 /docs/product-v2-phase1 这条线做预渲染
+// 静态化白名单：只对文档中心这几条线做预渲染
 // 业务路由（/welcome /job-compensation-template 等）保持 SPA 模式
+// 加线只需在这里补一条「线首页 + 章节 path」，章节数组是单一数据源
 const ssgIncludePaths = [
+  // 产品需求 v2（阶段1）
   '/docs/product-v2-phase1',
-  ...v2phase1Chapters.map(ch => ch.path)
+  ...v2phase1Chapters.map(ch => ch.path),
+  // 假勤重构
+  ...leaveReformChapters.map(ch => ch.path),
+  // 离职流程
+  ...resignChapters.map(ch => ch.path)
 ]
 
 // 收集本次 build 渲染过的所有路径
 const renderedPaths = new Set()
 
-// 确保 dist 目录存在（manifest 钩子要写到这里）
-const distDir = resolve(process.cwd(), 'dist')
+// 产物目录：默认 dist，可用 SSG_OUT_DIR 覆盖（vite-ssg 的 CLI 不认 --outDir，
+// 想在别处试跑只能走这个环境变量，例如 SSG_OUT_DIR=/tmp/fck-ssg npm run generate）
+const OUT_DIR = process.env.SSG_OUT_DIR || 'dist'
+
+// 确保产物目录存在（manifest 钩子要写到这里）
+const distDir = resolve(process.cwd(), OUT_DIR)
 if (!existsSync(distDir)) {
   mkdirSync(distDir, { recursive: true })
 }
@@ -29,256 +42,126 @@ const gateStatePlugin = {
   name: 'gate-state',
   configureServer(server) {
     server.middlewares.use('/api/gate', gateMiddleware)
-    console.log('\n  ✓ [gate] 菜单配置已启用服务端共享：GET/POST /api/gate · SSE /api/gate/events\n')
   },
   configurePreviewServer(server) {
     server.middlewares.use('/api/gate', gateMiddleware)
   }
 }
 
-// ============== Dev server 同时 serve dist/ 产物 ==============
-// 访问规则：
-//   /_static/                              → 简易导航页（manifest 里的所有页面）
-//   /_static/manifest.json                 → 静态化清单
-//   /_static/<path>.html                   → 直接访问（带 .html 后缀）
-//   /_static/<path>                        → 自动加 .html 后缀（clean URL）
-const STATIC_PREFIX = '/_static'
-
-const mimeTypes = {
-  '.html': 'text/html; charset=utf-8',
-  '.js':   'application/javascript; charset=utf-8',
-  '.mjs':  'application/javascript; charset=utf-8',
-  '.css':  'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg':  'image/svg+xml',
-  '.png':  'image/png',
-  '.jpg':  'image/jpeg',
-  '.ico':  'image/x-icon',
-}
-
-const serveDistPlugin = {
-  name: 'serve-static-dist',
+// ============== LLM 中转（v2 事件树生成） ==============
+// key 存在服务端 .llm-config.json，浏览器只拿掩码；静态产物没有这层，前端退化为回放。
+const llmProxyPlugin = {
+  name: 'llm-proxy',
   configureServer(server) {
-    if (!existsSync(distDir)) {
-      console.log('\n  ⚠  [serve-dist] dist/ 不存在。先跑 npm run generate 生成静态产物。\n')
-      return
-    }
+    server.middlewares.use('/api/llm', llmMiddleware)
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use('/api/llm', llmMiddleware)
+  }
+}
 
-    server.middlewares.use(STATIC_PREFIX, (req, res, next) => {
-      let urlPath = decodeURIComponent(req.url.split('?')[0])
-
-      // /_static/ → 简易导航页
-      if (urlPath === '/' || urlPath === '') {
-        return serveIndexPage(res)
-      }
-
-      // /_static/manifest.json
-      if (urlPath === '/manifest.json') {
-        const mp = join(distDir, 'manifest.json')
-        if (existsSync(mp)) return serveFile(res, mp)
-        res.statusCode = 404
-        return res.end('manifest.json not found, run npm run generate first')
-      }
-
-      // /_static/<path>  → dist/<path>（自动加 .html）
-      let filePath = join(distDir, urlPath)
-      if (!existsSync(filePath) || statSync(filePath).isDirectory()) {
-        const withHtml = filePath + '.html'
-        if (existsSync(withHtml) && statSync(withHtml).isFile()) {
-          filePath = withHtml
-        } else {
-          // 真的没有 → 404
-          res.statusCode = 404
-          return res.end(`404: ${urlPath} not found in dist/`)
-        }
-      }
-      serveFile(res, filePath)
+// ============== 启动横幅：把可用命令与作用打到控制台 ==============
+// 命令清单在 scripts/commands.mjs（单一数据源），这里只负责挑时机打印：
+// 等 httpServer 真正 listening 之后再打，才不会插在 vite 的 ready 之前显得突兀
+const commandHelpPlugin = {
+  name: 'command-help',
+  configureServer(server) {
+    const show = () => printCommandHelp({
+      mode: 'dev',
+      port: server.httpServer?.address()?.port,
+      notes: [
+        'gate 服务端共享已启用：GET/POST /api/gate · SSE /api/gate/events',
+        'LLM 中转已挂载：/api/llm（配置 / 连通性测试 / 流式生成），key 存 .llm-config.json',
+        '静态化产物：npm run static（site/）· npm run static:offline（site-offline/）'
+      ]
     })
-
-    const port = server.config.server.port || 5178
-    console.log(`\n  ✓ [serve-dist] dist/ 已挂载到 http://localhost:${port}${STATIC_PREFIX}/  (SSR HTML 预览)\n`)
-
-    // 同时启动独立 3000 端口的完整静态服务器（含 client script，菜单/markmap 可用）
-    startDistStaticServer()
-
-    // dev server 关闭时也关掉 3000 server
-    server.httpServer?.on('close', () => {
-      stopDistStaticServer()
+    if (server.httpServer?.listening) setTimeout(show, 0)
+    else server.httpServer?.once('listening', () => setTimeout(show, 0))
+  },
+  configurePreviewServer(server) {
+    const show = () => printCommandHelp({
+      mode: 'preview',
+      port: server.httpServer?.address()?.port
     })
-  }
-}
-
-function serveFile(res, filePath) {
-  const stat = statSync(filePath)
-  const mime = mimeTypes[extname(filePath)] || 'application/octet-stream'
-  res.statusCode = 200
-  res.setHeader('Content-Type', mime)
-  res.setHeader('Cache-Control', 'no-cache')
-
-  if (extname(filePath) === '.html') {
-    // 注入 <base href="/_static/"> + 把 /assets/ 改写为 /_static/assets/
-    // 移除 <script type="module" src="/_static/assets/app-*.js"> 客户端入口
-    //   → 静态预览不 hydrate，避免 vue-router 找不到 /_static/ 路径而清空 DOM
-    //   → 页面是纯静态，点击链接触发完整页面跳转（等同于部署到 CDN 的体验）
-    let html = readFileSync(filePath, 'utf-8')
-    html = html
-      .replace('<head>', '<head>\n    <base href="/_static/">')
-      .replace(/(["'])\/assets\//g, '$1/_static/assets/')
-      .replace(/<script[^>]*src="[^"]*\/assets\/app-[^"]*\.js"[^>]*><\/script>/, '')
-    res.setHeader('Content-Type', mime)
-    res.setHeader('Content-Length', Buffer.byteLength(html))
-    return res.end(html)
-  }
-
-  res.setHeader('Content-Length', stat.size)
-  createReadStream(filePath).pipe(res)
-}
-
-function serveIndexPage(res) {
-  let pages = []
-  try {
-    const manifest = JSON.parse(readFileSync(join(distDir, 'manifest.json'), 'utf-8'))
-    pages = manifest.pages || []
-  } catch {
-    // 没 manifest 就列 dist/docs/product-v2-phase1/ 下的 html
-    try {
-      const listDir = join(distDir, 'docs/product-v2-phase1')
-      pages = readdirSync(listDir).filter(f => f.endsWith('.html')).map(f => '/docs/product-v2-phase1/' + f.replace(/\.html$/, ''))
-      pages.unshift('/docs/product-v2-phase1')
-    } catch {}
-  }
-
-  const html = `<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<title>静态化文档预览（_static 模式）</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1f2937; }
-  h1 { font-size: 22px; border-bottom: 2px solid #ef4444; padding-bottom: 8px; }
-  .meta { color: #6b7280; font-size: 13px; margin: 8px 0 24px; }
-  .warn { background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 14px; border-radius: 4px; font-size: 13px; line-height: 1.6; margin: 0 0 20px; }
-  .warn strong { color: #b45309; }
-  ul { list-style: none; padding: 0; }
-  li { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
-  li a { color: #2563eb; text-decoration: none; font-family: ui-monospace, monospace; font-size: 14px; }
-  li a:hover { text-decoration: underline; }
-  .empty { color: #9ca3af; padding: 20px; text-align: center; }
-</style>
-</head>
-<body>
-  <h1>📚 静态化文档预览（_static 模式）</h1>
-  <div class="warn">
-    <strong>⚠ 此模式仅供快速预览 SSR HTML。</strong>菜单点击、markmap 等需要 JS 的功能不可用。
-    完整功能请访问 <a href="http://localhost:3000/">localhost:3000</a>（dist 独立服务器，dev 启动时自动起）。
-  </div>
-  <p class="meta">共 ${pages.length} 个页面。</p>
-  ${pages.length === 0
-    ? '<div class="empty">dist/ 是空的。先跑 npm run generate。</div>'
-    : '<ul>' + pages.map(p =>
-        `<li><a href="${STATIC_PREFIX}${p}.html">${p}</a></li>`
-      ).join('') + '</ul>'
-  }
-</body>
-</html>`
-  res.statusCode = 200
-  res.setHeader('Content-Type', 'text/html; charset=utf-8')
-  res.end(html)
-}
-
-// ============== 独立 dist 静态服务器（3000 端口）==============
-// 完整功能版：保留 client script，菜单/markmap 全部工作
-// dev 启动时自动 spawn，dev 关闭时自动 kill
-const DIST_PORT = 3000
-let distServer = null
-
-function startDistStaticServer() {
-  if (!existsSync(distDir)) {
-    console.log('\n  ⚠  [dist-3000] dist/ 不存在，跳过。先跑 npm run generate。\n')
-    return
-  }
-  if (distServer) return
-
-  const mime = {
-    '.html': 'text/html; charset=utf-8',
-    '.js':   'application/javascript; charset=utf-8',
-    '.mjs':  'application/javascript; charset=utf-8',
-    '.css':  'text/css; charset=utf-8',
-    '.json': 'application/json; charset=utf-8',
-    '.svg':  'image/svg+xml',
-    '.png':  'image/png',
-    '.jpg':  'image/jpeg',
-    '.ico':  'image/x-icon',
-  }
-
-  distServer = http.createServer((req, res) => {
-    let urlPath = decodeURIComponent(req.url.split('?')[0])
-
-    // 菜单门控接口：与 dev / vite preview 共用同一份状态文件
-    if (urlPath === '/api/gate' || urlPath.startsWith('/api/gate/')) {
-      return gateMiddleware(req, res, urlPath.slice('/api/gate'.length) || '/')
-    }
-
-    if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
-    let filePath = join(distDir, urlPath)
-
-    if (!existsSync(filePath) || statSync(filePath).isDirectory()) {
-      const withHtml = filePath + '.html'
-      if (existsSync(withHtml) && statSync(withHtml).isFile()) {
-        filePath = withHtml
-      } else if (!extname(urlPath)) {
-        // SPA 回退：/gate 这类没预渲染成 html 的路由，直接刷也交给前端路由处理
-        filePath = join(distDir, 'index.html')
-      } else {
-        res.statusCode = 404
-        return res.end('404 not found: ' + urlPath)
-      }
-    }
-
-    const stat = statSync(filePath)
-    res.setHeader('Content-Type', mime[extname(filePath)] || 'application/octet-stream')
-    res.setHeader('Content-Length', stat.size)
-    res.setHeader('Cache-Control', 'no-cache')
-    createReadStream(filePath).pipe(res)
-  })
-
-  distServer.listen(DIST_PORT, () => {
-    console.log(`\n  ✓ [dist-3000] http://localhost:${DIST_PORT}/  ← 完整静态产物（菜单/markmap 可用）\n`)
-  })
-
-  distServer.on('error', (e) => {
-    if (e.code === 'EADDRINUSE') {
-      console.log(`\n  ⚠  [dist-3000] 端口 ${DIST_PORT} 已被占用，跳过（可能你已经手动起了 serve）\n`)
-    } else {
-      console.error('[dist-3000]', e)
-    }
-  })
-}
-
-function stopDistStaticServer() {
-  if (distServer) {
-    distServer.close()
-    distServer = null
+    if (server.httpServer?.listening) setTimeout(show, 0)
+    else server.httpServer?.once('listening', () => setTimeout(show, 0))
   }
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: process.env.GITHUB_PAGES === 'true' ? '/FCK/' : '/',
-  plugins: [vue(), serveDistPlugin, gateStatePlugin],
+// 用函数式 config：vite-ssg 会连跑两次构建（client → server），
+// 只有 client 那次能改成 IIFE（server 那次必须是 ESM，否则渲染端加载不了）
+export default defineConfig(({ isSsrBuild } = {}) => ({
+  base: process.env.SSG_BASE || (process.env.GITHUB_PAGES === 'true' ? '/FCK/' : '/'),
+  plugins: [vue(), gateStatePlugin, llmProxyPlugin, commandHelpPlugin],
+  define: {
+    // 离线包（SSG_IIFE=1）用 hash 路由：file:// 下 pushState 会 SecurityError。
+    // main.js 据此给 ViteSSG 传自己的 history（vite-ssg 里 history 在 routerOptions 之前展开，传的会覆盖它）
+    'import.meta.env.VITE_HASH_ROUTER': JSON.stringify(process.env.SSG_IIFE === '1' ? '1' : '0')
+  },
+  // 离线包：把「构建期固定的 /assets/xxx.png」改成「运行时按页面深度拼」。
+  // 因为图片是 el-image 在 JS 里赋 src 的，HTML 层的路径改写管不到；
+  // 页面深度由 build-static 注入的 window.__FCK_ASSET_BASE__ 给出（如 '../../'）。
+  // 只在 client 那次构建生效：SSR 那次跑在 Node 里没有 window，会把带图的文档页直接渲染崩掉
+  experimental: process.env.SSG_IIFE === '1' && !isSsrBuild
+    ? {
+        renderBuiltUrl (filename, { hostType }) {
+          if (hostType === 'js') {
+            return { runtime: `(window.__FCK_ASSET_BASE__||"")+${JSON.stringify(filename)}` }
+          }
+          return { relative: true }
+        }
+      }
+    : undefined,
+  build: {
+    outDir: OUT_DIR,
+    // 离线包本来就是一个 6MB 的单文件（file:// 不能懒加载）；SSR 那次也是整包进内存，
+    // 两者的体积告警都没有意义，只对普通 client 构建保留（用来盯真实的首屏体积）
+    chunkSizeWarningLimit: process.env.SSG_IIFE === '1' || isSsrBuild ? 8000 : 500,
+    // SSG_IIFE=1 → 客户端打成单个经典脚本（非 ES module）。
+    // file:// 下 <script type="module"> 会被 CORS 拦，只有 classic script（IIFE）能跑，
+    // 且必须 inlineDynamicImports 把 135 个路由懒加载包并进一个文件。
+    // assetFileNames 两次构建必须一致：client 默认 `name.hash.ext`、SSR 默认 `name-hash.ext`，
+    // 预渲染出的 HTML 引用的是 SSR 那套（带短横线），到产物里就找不到文件了
+    rollupOptions: process.env.SSG_IIFE === '1'
+      ? {
+          // IIFE 下 rolldown 会对每个用到 import.meta 的模块喊一句 EMPTY_IMPORT_META，
+          // 全站 133 个模块 = 133 条警告，把真正的报错淹了。Vite 已经把 import.meta.env.*
+          // 静态替换掉，剩下的运行时 import.meta 在离线包里没有使用方，直接静音。
+          onwarn (warning, warn) {
+            if (warning.code === 'EMPTY_IMPORT_META') return
+            warn(warning)
+          },
+          output: {
+            assetFileNames: 'assets/[name].[hash].[ext]',
+            ...(isSsrBuild
+              ? {}
+              : {
+                  format: 'iife',
+                  inlineDynamicImports: true,
+                  entryFileNames: 'assets/app.[hash].js',
+                  chunkFileNames: 'assets/[name].[hash].js'
+                })
+          }
+        }
+      : undefined
+  },
   server: {
     port: 5178,
     host: '0.0.0.0'
   },
   ssgOptions: {
-    includedRoutes: async (paths) => paths.filter(p => ssgIncludePaths.includes(p)),
+    // SSG_ALL=1 → 全站预渲染（所有路由都出真 HTML）；否则走上面白名单
+    includedRoutes: async (paths) =>
+      process.env.SSG_ALL === '1' ? paths : paths.filter(p => ssgIncludePaths.includes(p)),
     script: 'async',
     formatting: 'minify',
     crittersOptions: {
       preload: 'swap',
     },
     onPageRendered: async (routePath, html) => {
-      renderedPaths.add(routePath)
+      // vite-ssg 传进来的 routePath 有时带前导斜杠、有时不带，统一成 /xxx
+      renderedPaths.add(routePath.startsWith('/') ? routePath : '/' + routePath)
       const manifest = {
         buildAt: new Date().toISOString(),
         total: renderedPaths.size,
@@ -290,4 +173,4 @@ export default defineConfig({
       )
     }
   },
-})
+}))

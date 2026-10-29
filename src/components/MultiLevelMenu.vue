@@ -51,10 +51,10 @@
               </div>
               <div v-show="expandedGroups.has(child.index)" class="menu-group-children">
                 <template v-for="grandchild in child.children" :key="grandchild.index">
-                  <!-- 3级是页面 -->
+                  <!-- 3级是页面（indent：挂在上一章之下的 6.x 子章节） -->
                   <div
                     class="menu-item level-3-item"
-                    :class="{ active: activeMenu === grandchild.index }"
+                    :class="{ active: activeMenu === grandchild.index, 'is-indent': grandchild.indent }"
                     @click="handleSelect(grandchild.index)"
                   >
                     <template v-if="!isCollapsed">
@@ -425,6 +425,20 @@ const handleSelect = (index, to) => {
 
 .level-3-item .el-icon {
   display: none;
+}
+
+/* 3级之下的子章节（如 6.x）：再缩进一档 + 字号降半级，作为上一章的从属 */
+.level-3-item.is-indent {
+  padding-left: 100px;
+  height: 32px;
+  line-height: 32px;
+  font-size: 12.5px;
+}
+.level-3-item.is-indent .menu-label {
+  color: hsl(var(--sidebar-foreground) / 0.85);
+}
+.level-3-item.is-indent.active .menu-label {
+  color: hsl(var(--primary-foreground));
 }
 
 .menu-label {

@@ -77,11 +77,20 @@ export const mobileMenuGroups = [
     ]
   },
   {
+    id: 'm-g-event',
+    label: '事件办理',
+    items: [
+      { id: 'm-event-todo', label: '事项办理', icon: List, to: { name: 'v2-m-instances' } },
+      { id: 'm-event-apply', label: '发起事项', icon: EditPen, to: { name: 'v2-m-apply' } }
+    ]
+  },
+  {
     id: 'm-g-resign',
     label: '离职模块',
     items: [
       { id: 'm-resign-apply', label: '离职需求', icon: EditPen, to: { name: 'mobile-resign-apply' } },
-      { id: 'm-resign-pd', label: '离职处理', icon: UserFilled, to: { name: 'mobile-resign-pd' } }
+      { id: 'm-resign-pd', label: '离职处理', icon: UserFilled, to: { name: 'mobile-resign-pd' } },
+      { id: 'm-resign-handover', label: '交接处理', icon: Check, to: { name: 'mobile-resign-handover-list' } }
     ]
   }
 ]

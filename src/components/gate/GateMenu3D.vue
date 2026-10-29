@@ -161,6 +161,10 @@ const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.28)
 let candidate = null // 按下但还没决定是点击还是拖拽
 let dragging = null // { kind: 'tile' | 'group', ... }
 let hoveredId = ''
+let hoveredGroupId = ''
+
+/** 悬停时卡牌抬起的距离（世界单位）：比描边更早被眼睛捕捉到 */
+const HOVER_LIFT = 0.055
 
 // 视图在「3D ↔ 列表」来回切时保留，别每次都回到默认角度
 let savedView = null
@@ -168,9 +172,25 @@ let savedView = null
 // ---------- 贴图 ----------
 const labelCache = new Map()
 
-function labelTexture (text, muted = false, aspect = TW / TH, accent = false) {
-  const key = `${text}|${muted ? 1 : 0}|${accent ? 1 : 0}|${aspect.toFixed(2)}`
+/**
+ * 卡牌正面的文字贴图。
+ * hot = 悬停态：底色跟着压深、文字换主色并加粗 —— 悬停时整张牌「亮」起来，而不是只换一圈描边。
+ */
+function labelTexture (text, muted = false, aspect = TW / TH, accent = false, hot = false) {
+  const key = `${text}|${muted ? 1 : 0}|${accent ? 1 : 0}|${hot ? 1 : 0}|${aspect.toFixed(2)}`
   if (labelCache.has(key)) return labelCache.get(key)
+
+  const skin = hot
+    ? muted
+      ? { bg: '#E4DAD3', bar: '#C9BDB4', text: '#A40035', weight: 600 }
+      : accent
+        ? { bg: '#F7DCE4', bar: '#E3B4C3', text: '#7C0026', weight: 600 }
+        : { bg: '#EFE5E0', bar: '#DCCEC6', text: '#A40035', weight: 600 }
+    : muted
+      ? { bg: '#F7F4F2', bar: '#D8D2CC', text: '#A79F9A', weight: 500 }
+      : accent
+        ? { bg: '#FDF1F4', bar: '#EFC9D2', text: '#A40035', weight: 500 }
+        : { bg: '#FFFFFF', bar: '#EDE7E2', text: '#2B2724', weight: 500 }
 
   const H = 118
   const W = Math.round(H * aspect)
@@ -179,20 +199,20 @@ function labelTexture (text, muted = false, aspect = TW / TH, accent = false) {
   canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  ctx.fillStyle = muted ? '#F7F4F2' : accent ? '#FDF1F4' : '#FFFFFF'
+  ctx.fillStyle = skin.bg
   ctx.fillRect(0, 0, W, H)
   // 左侧一道竖条，代替真实光照下的明暗差
-  ctx.fillStyle = muted ? '#D8D2CC' : accent ? '#EFC9D2' : '#EDE7E2'
+  ctx.fillStyle = skin.bar
   ctx.fillRect(0, 0, 5, H)
 
   let size = 34
-  const font = (s) => `500 ${s}px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif`
+  const font = (s) => `${skin.weight} ${s}px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif`
   ctx.font = font(size)
   while (ctx.measureText(text).width > W - 26 && size > 15) {
     size -= 2
     ctx.font = font(size)
   }
-  ctx.fillStyle = muted ? '#A79F9A' : accent ? '#A40035' : '#2B2724'
+  ctx.fillStyle = skin.text
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, W / 2 + 2, H / 2)
@@ -251,6 +271,67 @@ function refreshMesh (rec, text, { width = TW, accent = false, hidden = false } 
   rec.label = text
   rec.hidden = hidden
   rec.accent = accent
+}
+
+// ---------- 悬停 ----------
+/**
+ * 悬停配色：可见卡牌整体压深一档 + 主色描边，隐藏空壳提高不透明度。
+ * 不做发光 / 阴影 —— 一发光就变玩具；这里只需要「这一张被指到了」这一个信息。
+ */
+const HOVER_SKIN = {
+  flat: { body: 0xffffff },
+  flatOn: { body: 0xefe5e0 },
+  accent: { body: 0xfdf1f4 },
+  accentOn: { body: 0xf7dce4 },
+  ghost: { body: 0xf3efec },
+  ghostOn: { body: 0xe4dad3 }
+}
+const EDGE_COLOR = { flat: 0xded8d3, accent: 0xe7b9c4, ghost: 0xc4bdb8, on: 0xa40035 }
+
+/** 卡牌和分组牌各记一份命中，画面上统一按「这张被指到了」判断 */
+const isHoveredRec = (rec) => rec.id === hoveredId || rec.id === hoveredGroupId
+
+function paintTile (rec, accent = false) {
+  const mats = rec.mesh.material
+  if (!Array.isArray(mats)) return
+  const body = mats[0]
+  const face = mats[4]
+  if (!body || !face) return
+
+  // 拖拽过程中不保留悬停态：手已经抓住了，再压深反而分不清落点
+  const on = !dragging && isHoveredRec(rec)
+  const accentMode = accent || !!rec.accent
+  const tone = rec.hidden
+    ? (on ? 'ghostOn' : 'ghost')
+    : accentMode ? (on ? 'accentOn' : 'accent') : (on ? 'flatOn' : 'flat')
+  const skin = HOVER_SKIN[tone]
+
+  body.color.setHex(skin.body)
+
+  // 文字跟着悬停一起高亮：换一张贴图（主色字 + 加粗），底色与卡身对齐，接缝看不出来
+  const ratio = (rec.mesh.userData.width || TW) / TH
+  const nextMap = labelTexture(rec.label, rec.hidden, ratio, accentMode, on)
+  if (face.map !== nextMap) face.map = nextMap
+  face.color.setHex(0xffffff)
+
+  if (rec.hidden) {
+    body.opacity = on ? 0.42 : 0.22
+    face.opacity = on ? 0.6 : 0.3
+  }
+
+  const edges = rec.mesh.children[0]
+  if (edges && edges.material) {
+    edges.material.color.setHex(
+      on ? EDGE_COLOR.on : rec.hidden ? EDGE_COLOR.ghost : accent ? EDGE_COLOR.accent : EDGE_COLOR.flat
+    )
+    edges.material.opacity = on ? 1 : rec.hidden ? 0.9 : 0.85
+  }
+}
+
+/** 悬停状态一变就整体重刷：卡牌只有几十张，比维护「上一张要还原」可靠得多 */
+function paintAll () {
+  tileMap.forEach((rec) => paintTile(rec, false))
+  groupMap.forEach((rec) => paintTile(rec, true))
 }
 
 // ---------- 场景搭建 ----------
@@ -406,6 +487,9 @@ function syncScene () {
   tiles = nextTiles
   groupTiles = nextGroupTiles
 
+  // 新建 / 换材质之后要把悬停态重新铺一层，否则鼠标停着不动时高亮会「掉」
+  paintAll()
+
   computeBounds(model)
 
   if (lastTab !== props.tab) {
@@ -470,14 +554,19 @@ function setView (name) {
 }
 
 // ---------- 动效 ----------
+const _targetPos = new THREE.Vector3()
+
 function stepAnimations () {
   const skip = dragging && dragging.rec ? dragging.rec.mesh : null
   const step = (rec) => {
     const mesh = rec.mesh
     const target = mesh.userData.target
     if (!target || mesh === skip) return
-    mesh.position.lerp(target, EASE)
-    if (mesh.position.distanceToSquared(target) < 1e-5) mesh.position.copy(target)
+    // 悬停抬起也算在目标点里，这样抬起 / 落回和排序落位共用同一套缓动
+    const lift = !dragging && isHoveredRec(rec) ? HOVER_LIFT : 0
+    _targetPos.set(target.x, target.y + lift, target.z)
+    mesh.position.lerp(_targetPos, EASE)
+    if (mesh.position.distanceToSquared(_targetPos) < 1e-5) mesh.position.copy(_targetPos)
   }
   tileMap.forEach(step)
   groupMap.forEach(step)
@@ -590,6 +679,7 @@ function onPointerMove (event) {
       dragging = { ...candidate }
       const mesh = dragging.rec.mesh
       mesh.scale.setScalar(1.03)
+      paintAll() // 拖起来就撤掉悬停高亮，免得和落点指示抢注意力
     }
 
     // 把指针投影到卡牌高度的平面上，卡牌跟着走
@@ -612,29 +702,35 @@ function onPointerMove (event) {
     return
   }
 
-  // 悬停
+  // 悬停：卡牌优先于分组牌；命中对象变了才重刷材质与提示
   const tile = pickTile()
+  const group = tile ? null : pickGroup()
+  const nextTile = tile ? tile.id : ''
+  const nextGroup = group ? group.id : ''
+
+  if (nextTile !== hoveredId || nextGroup !== hoveredGroupId) {
+    hoveredId = nextTile
+    hoveredGroupId = nextGroup
+    paintAll()
+  }
+
   if (tile) {
-    if (hoveredId !== tile.id) {
-      hoveredId = tile.id
-      const model = gateModel.value.find((g) => g.id === tile.groupId)
-      const child = model && model.children.find((c) => c.id === tile.id)
-      hoverText.value = child
-        ? `${model.label} › ${child.label}${child.hasChildren ? '（整组）' : ''}`
-        : tile.id
-    }
+    const model = gateModel.value.find((g) => g.id === tile.groupId)
+    const child = model && model.children.find((c) => c.id === tile.id)
+    hoverText.value = child
+      ? `${model.label} › ${child.label}${child.hasChildren ? '（整组）' : ''}${child.hidden ? ' · 已隐藏，单击显示' : ''}`
+      : tile.id
     host.value.style.cursor = 'grab'
     return
   }
 
-  hoveredId = ''
-  const group = pickGroup()
   if (group) {
     const model = gateModel.value.find((g) => g.id === group.id)
     hoverText.value = model ? `${model.label}（整组）· 单击${model.hidden ? '显示' : '隐藏'}` : ''
     host.value.style.cursor = 'grab'
     return
   }
+
   hoverText.value = ''
   host.value.style.cursor = 'default'
 }
@@ -701,7 +797,9 @@ function modelIndex (id) {
 
 function onPointerLeave () {
   hoveredId = ''
+  hoveredGroupId = ''
   hoverText.value = ''
+  paintAll()
 }
 
 // ---------- 生命周期 ----------
@@ -872,7 +970,26 @@ function pickAt (clientX, clientY) {
   }
 }
 
-defineExpose({ setView, screenPosOf, pickAt })
+/** 某张卡牌当前的配色 / 不透明度 / 高度（测试用：验证悬停高亮真的画上去了） */
+function styleOf (id) {
+  const rec = tileMap.get(id) || groupMap.get(id)
+  if (!rec || !Array.isArray(rec.mesh.material)) return null
+  const mats = rec.mesh.material
+  const edges = rec.mesh.children[0]
+  const ratio = (rec.mesh.userData.width || TW) / TH
+  const hotMap = labelTexture(rec.label, rec.hidden, ratio, !!rec.accent, true)
+  return {
+    body: `#${mats[0].color.getHexString()}`,
+    tint: `#${mats[4].color.getHexString()}`,
+    text: mats[4].map === hotMap ? 'hot' : 'base',
+    bodyOpacity: Number(mats[0].opacity.toFixed(2)),
+    edge: edges && edges.material ? `#${edges.material.color.getHexString()}` : '',
+    y: Number(rec.mesh.position.y.toFixed(3)),
+    hovered: isHoveredRec(rec)
+  }
+}
+
+defineExpose({ setView, screenPosOf, pickAt, styleOf })
 </script>
 
 <style scoped>

@@ -15,7 +15,7 @@
  *   POST   /key           → body { oldKey, newKey }，需登录，改完签发新 token
  *   POST   /logout        → 作废当前 token
  *
- * 登录态只存在内存（服务重启后需重新登录），密钥本身以 sha256(salt + key) 落盘。
+ * 登录态落盘到 .gate-sessions.json（12 小时 TTL，重启服务不失效）；密钥本身以 sha256(salt + key) 落盘。
  * 默认密钥见 DEFAULT_KEY；首次使用（尚未改过密钥）时 keyIsDefault=true，前端会提示。
  *
  * 落盘文件：项目根 .gate-state.json（已 gitignore，属运行期状态）
@@ -25,13 +25,37 @@ import { dirname, resolve } from 'node:path'
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 
 const STATE_FILE = resolve(process.cwd(), '.gate-state.json')
+// 会话表落盘：重启 dev 不再把所有设备踢下线（局域网多台设备时尤其明显）
+const SESSIONS_FILE = resolve(process.cwd(), '.gate-sessions.json')
 
 /** 首次使用的默认密钥；改过之后 keyIsDefault 变 false，页面上就不再提示 */
 const DEFAULT_KEY = 'fck2026'
 const TOKEN_TTL = 12 * 60 * 60 * 1000 // 12 小时
 
 let cache = null
-const sessions = new Map() // token -> expiresAt
+
+/** 读会话表：过期的直接丢掉，文件损坏就当没有（不阻塞服务启动） */
+function loadSessions () {
+  try {
+    if (!existsSync(SESSIONS_FILE)) return new Map()
+    const raw = JSON.parse(readFileSync(SESSIONS_FILE, 'utf8'))
+    const now = Date.now()
+    const fresh = Object.entries(raw).filter(([, exp]) => typeof exp === 'number' && exp > now)
+    return new Map(fresh)
+  } catch (e) {
+    return new Map()
+  }
+}
+
+function persistSessions () {
+  try {
+    writeFileSync(SESSIONS_FILE, JSON.stringify(Object.fromEntries(sessions), null, 2), { mode: 0o600 })
+  } catch (e) {
+    /* 写不进去只影响"重启后免登录"，不影响当前会话 */
+  }
+}
+
+const sessions = loadSessions() // token -> expiresAt
 const sseClients = new Set()
 
 const hashKey = (key, salt) => createHash('sha256').update(`${salt}:${key}`).digest('hex')
@@ -123,11 +147,13 @@ function verifyKey (key) {
 function issueToken () {
   const token = randomBytes(24).toString('hex')
   sessions.set(token, Date.now() + TOKEN_TTL)
+  persistSessions()
   return token
 }
 
 function dropToken (token) {
   sessions.delete(token)
+  persistSessions()
 }
 
 function tokenOf (req) {
@@ -136,11 +162,30 @@ function tokenOf (req) {
   return m ? m[1].trim() : ''
 }
 
+/**
+ * 供其它中间件复用这份登录态的只读校验（当前用于 /api/llm 的配置读写）。
+ * 只查会话表，不写响应，调用方自己决定怎么拒绝。
+ */
+export function isValidToken (token) {
+  if (!token) return false
+  const exp = sessions.get(token)
+  if (!exp) return false
+  if (exp < Date.now()) {
+    sessions.delete(token)
+    persistSessions()
+    return false
+  }
+  return true
+}
+
 function requireAuth (req, res) {
   const token = tokenOf(req)
   const exp = token ? sessions.get(token) : 0
   if (!token || !exp || exp < Date.now()) {
-    if (token) sessions.delete(token)
+    if (token) {
+      sessions.delete(token)
+      persistSessions()
+    }
     sendJson(res, 401, { error: 'unauthorized', message: '登录已失效，请重新登录' })
     return null
   }

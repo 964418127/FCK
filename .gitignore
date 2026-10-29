@@ -31,3 +31,14 @@ dist-ssr
 
 # 菜单门控（gate）运行期状态，本机共享配置，不入库
 .gate-state.json
+# 登录会话表（12h TTL，重启免登录用）
+.gate-sessions.json
+
+# LLM 配置（含 API Key）与生成归档，只在本机
+.llm-config.json
+.llm-cache/
+
+# npm run static 的静态站点产物
+site/
+.vite-ssg-temp/
+site-offline/

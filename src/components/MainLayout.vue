@@ -1,6 +1,6 @@
 <template>
-  <div class="main-layout">
-    <aside :class="['sidebar', { collapsed: isSidebarCollapsed }]">
+  <div class="main-layout" :class="{ shot: shotMode }">
+    <aside v-if="!shotMode" :class="['sidebar', { collapsed: isSidebarCollapsed }]">
       <div class="sidebar-header">
         <h2 v-show="!isSidebarCollapsed">TLZJ 平台</h2>
         <el-icon class="collapse-icon" @click="toggleSidebar">
@@ -57,7 +57,7 @@
     <!-- 主内容区域 -->
     <div class="main-content">
       <!-- 顶部导航栏 -->
-      <header class="top-header">
+      <header v-if="!shotMode" class="top-header">
         <div class="header-left">
           <div class="brand-mark">
             <span class="brand-icon">TL</span>
@@ -121,7 +121,21 @@ const currentUser = ref(null)
 const route = useRoute()
 const router = useRouter()
 
-watch(() => route.name, name => { activeMenu.value = name || 'welcome' }, { immediate: true })
+/* 截图模式：?shot=1 时隐藏侧边栏与顶栏，只留页面内容 —— 供文档「功能页面示例」截图用 */
+const shotMode = computed(() => route.query.shot === '1')
+
+// 子流程页面不占菜单位，但点进来时父级要亮：新建根事件属于事件管理，工作台与批次页同理
+const MENU_ALIAS = {
+  'v2-compose': 'v2-events',
+  'v2-prompt': 'v2-events',
+  'v2-inst-tree': 'v2-instances',
+  'v2-sys-studio': 'v2-sys-items',
+  'v2-sys-batches': 'v2-sys-items',
+  'v2-catalog': 'v2-contract'
+}
+
+const menuIndexOf = (name) => MENU_ALIAS[name] || name || 'welcome'
+watch(() => route.name, name => { activeMenu.value = menuIndexOf(name) }, { immediate: true })
 
 // 侧边栏数据：sidebarMenu.js 是唯一数据源，orderedNodes 负责「按配置排序 + 剔除隐藏项」。
 // 顺序来自 /gate 的 order 配置，所以工具栏能把顺序改动真正反映到侧边栏。
@@ -142,8 +156,8 @@ onMounted(() => {
     gateState.consumedFromLink = false
   }
 
-  // 根据当前路由设置激活菜单
-  activeMenu.value = route.name || 'welcome'
+  // 根据当前路由设置激活菜单（子流程页归到父级，见 MENU_ALIAS）
+  activeMenu.value = menuIndexOf(route.name)
 })
 
 // 处理菜单选择
@@ -308,6 +322,9 @@ const handleLogout = () => {
 .sidebar.collapsed + .main-content {
   width: calc(100% - 64px); /* 占满剩余宽度 */
 }
+
+/* 截图模式：无侧边栏，内容占满 */
+.main-layout.shot .main-content { width: 100%; }
 
 /* 顶部导航栏 */
 .top-header {

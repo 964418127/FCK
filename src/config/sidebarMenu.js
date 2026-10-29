@@ -35,7 +35,8 @@ import {
   UserFilled,
   Operation,
   Money,
-  Tickets
+  Tickets,
+  Reading
 } from '@element-plus/icons-vue'
 
 import { employeeWelfareMenu, moduleSalaryMenu } from './menuData.js'
@@ -124,7 +125,23 @@ export const sidebarMenu = [
     index: 'resign-pd',
     label: '离职',
     icon: Money,
-    children: [{ index: 'resign-compensation-ledger', label: '离职补偿金明细', icon: Tickets }]
+    children: [
+      { index: 'resign-flow-template', label: '离职流程模板', icon: Setting },
+      { index: 'resign-system-checks', label: '系统检查项', icon: Operation },
+      { index: 'resign-compensation-ledger', label: '补偿金明细', icon: Tickets }
+    ]
+  },
+  {
+    index: 'vp2-orchestration',
+    label: '事件编排',
+    icon: Operation,
+    children: [
+      { index: 'v2-events', label: '事件管理', icon: Grid },
+      { index: 'v2-instances', label: '事件数据', icon: Tickets },
+      { index: 'v2-sys-items', label: '系统项', icon: Setting },
+      { index: 'v2-facts', label: '起草依据', icon: Reading },
+      { index: 'v2-contract', label: '契约全文', icon: Document }
+    ]
   },
   {
     index: 'bean-account',
