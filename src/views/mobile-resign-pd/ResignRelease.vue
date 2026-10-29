@@ -140,6 +140,21 @@
         </div>
       </div>
 
+      <!-- 交接清单：被动离职也生成，但不阻塞解除 -->
+      <div class="card">
+        <div class="sec-head">
+          <span class="sec-title">交接清单</span>
+          <span class="tag-readonly">事后补录</span>
+        </div>
+        <div class="info-row"><span>套用模板</span><b>{{ hView ? hView.templateName : '未配置模板' }}</b></div>
+        <div class="info-row"><span>进度</span><b>{{ hView ? hView.progress.text : '—' }}</b></div>
+        <div class="aft-note">
+          被动离职没有发起与审批，交接清单按岗位模板直接生成，<b>不阻塞解除</b>：
+          人事可强制解除，清单转「事后补录」，由门店与财务在解除后补齐确认与证据。
+        </div>
+        <button class="link-btn" @click="gotoHandover">查看交接清单 ›</button>
+      </div>
+
       <!-- 解除填写 -->
       <div class="card">
         <div class="sec-head"><span class="sec-title">解除确认</span></div>
@@ -155,18 +170,38 @@
           <el-input v-model="remark" type="textarea" :rows="3" placeholder="例：连续未出勤 3 天，电话联系未果，按异常监控流程解除用工" />
         </div>
 
+        <div class="field force-block">
+          <div class="force-head" @click="force = !force">
+            <span :class="['cbox', { on: force }]">
+              <el-icon v-if="force"><Select /></el-icon>
+            </span>
+            <span class="force-text">强制解除（交接未完成时由人事确认）</span>
+          </div>
+          <el-input
+            v-if="force"
+            v-model="forceReason"
+            type="textarea"
+            :rows="2"
+            placeholder="必填：说明为何不等交接完成，如「员工失联，门店已代管客户」"
+          />
+          <div class="field-hint">
+            {{ force ? '强制解除后交接清单转事后补录：门店、财务仍要补齐确认，但不再卡住用工关系。' : '不勾选时，交接必须全部完成才能解除。' }}
+          </div>
+        </div>
+
         <ul class="clause-list">
           <li>解除后员工状态标记为离职（系统离职），不再发起离职协议签署。</li>
           <li>解除后，该时点之后的排班将全部取消（推拿师 / 客户经理均适用）。</li>
           <li>解除后员工失去接单权限。</li>
           <li><strong>资产随本次提交一并处置</strong>：款项出口与本页录入的补偿金同时生效；补偿金不走签署，<strong>以本次提交为成立点</strong>，进入次月 5 日冻结后的跑批。</li>
+          <li>交接清单按岗位模板生成；强制解除时转事后补录，<strong>已确认的说明与附件只读留档</strong>。</li>
           <li>此操作不可撤销（出口与补偿金请在提交前确认）。</li>
         </ul>
         <div class="clause-tip">请确认已理解上述条款。如确定，请输入「确认」后提交。</div>
         <el-input v-model="confirmText" placeholder="请输入「确认」" />
       </div>
       <div class="disabled-note" v-if="!canSubmit">
-        提交条件：确认离职事实时点 + 输入「确认」{{ needAgreement && !agreementFiles.length ? ' + 上传补偿依据附件' : '' }}
+        提交条件：确认离职事实时点 + 输入「确认」{{ needAgreement && !agreementFiles.length ? ' + 上传补偿依据附件' : '' }}{{ (handoverPassed || (force && forceReason.trim())) ? '' : ' + 勾选强制解除并填写原因' }}
       </div>
     </div>
 
@@ -180,7 +215,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, User, Upload } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Upload, Select } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
   caseOf,
@@ -190,6 +225,7 @@ import {
   payoutItemsOf,
   compLimitOf
 } from '../../mock/mobileResignPd.js'
+import { handoverViewOf, canApprove } from '../../mock/resignHandoverPd.js'
 import AssetSnapshot from './AssetSnapshot.vue'
 
 const route = useRoute()
@@ -200,11 +236,15 @@ const snap = assetSnapshotOf(c)
 const bank = bankAccountOf(c)
 const limit = compLimitOf(c)
 const items = reactive(payoutItemsOf(c).map(it => ({ ...it })))
+const hView = handoverViewOf(c.id)
+const handoverPassed = canApprove(c.id)
 
 const leaveAt = ref(null)
 const remark = ref('')
 const confirmText = ref('')
 const agreementFiles = ref([])
+const force = ref(!handoverPassed)
+const forceReason = ref('')
 
 const compensation = reactive({
   amount: 0,
@@ -225,8 +265,11 @@ const pickChannel = (it, v) => {
 const canSubmit = computed(() =>
   !!leaveAt.value &&
   confirmText.value.trim() === '确认' &&
-  !(needAgreement.value && agreementFiles.value.length === 0)
+  !(needAgreement.value && agreementFiles.value.length === 0) &&
+  (handoverPassed || (force.value && forceReason.value.trim()))
 )
+
+const gotoHandover = () => router.push({ name: 'mobile-resign-handover', query: { id: c.id } })
 
 const pause = () => ElMessage.warning(`「${c.name}」已标记暂停用工（原型演示，不写库）`)
 const release = () => {
@@ -295,6 +338,16 @@ const goBack = () => router.back()
 .clause-list { margin: 0 0 0; padding-left: 18px; }
 .clause-list li { font-size: 12.5px; color: #666; line-height: 1.9; }
 .clause-tip { font-size: 11.5px; color: #a3a0a1; line-height: 1.6; margin: 10px 0; }
+
+.aft-note { font-size: 11.5px; color: #8a8586; line-height: 1.7; background: #fafafa; border-radius: 8px; padding: 9px 11px; margin-top: 8px; }
+.aft-note b { color: #a40035; font-weight: 600; }
+.link-btn { margin-top: 10px; width: 100%; height: 34px; border-radius: 17px; border: 1px solid #f2ccd8; background: #fffafb; color: #a40035; font-size: 12.5px; }
+
+.force-block { background: #faf9f9; border-radius: 10px; padding: 10px 12px; }
+.force-head { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.cbox { width: 17px; height: 17px; border-radius: 4px; border: 1px solid #d9d4d5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; background: #fff; }
+.cbox.on { background: #a40035; border-color: #a40035; }
+.force-text { font-size: 12.5px; color: #333; }
 
 .footer-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 10px 14px 16px; background: #fff; box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
 .ghost-btn, .solid-btn { flex: 1; height: 44px; border-radius: 22px; font-size: 15px; font-weight: 600; }

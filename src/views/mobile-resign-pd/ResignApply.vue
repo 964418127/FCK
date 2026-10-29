@@ -23,18 +23,24 @@
       <div class="card">
         <div class="sec-head"><span class="sec-title">处理进度</span></div>
         <div class="info-row"><span>当前状态</span><b class="waiting">待审核</b></div>
-        <div class="info-row"><span>期望离职日期</span><b>{{ form.expectLeaveDate }}</b></div>
         <div class="info-row">
           <span>审核人</span>
           <b>{{ preset.reviewers.map(r => r.name + '（' + r.role + '）').join('、') }}</b>
         </div>
+        <div class="info-row">
+          <span>交接</span>
+          <b>审核通过后，按模板生成清单</b>
+        </div>
+        <div class="info-row"><span>期望离职日期</span><b>{{ form.expectLeaveDate }}</b></div>
       </div>
 
       <div class="card">
         <div class="sec-head"><span class="sec-title">接下来</span></div>
-        <div class="next-item"><span class="nx-no">1</span><span>人事审核，确认实际离职日期</span></div>
-        <div class="next-item"><span class="nx-no">2</span><span>审批通过后，另行发起离职协议签署</span></div>
-        <div class="next-item"><span class="nx-no">3</span><span>离职当月的剩余权益由人事与你协商处理</span></div>
+        <div class="next-item"><span class="nx-no">1</span><span>人事确认：核对信息、确定实际离职日期与补偿金等处理事项；不通过会作废并通知你</span></div>
+        <div class="next-item"><span class="nx-no">2</span><span>进入交接：门店、财务、直属上级等按模板节点逐项确认</span></div>
+        <div class="next-item"><span class="nx-no">3</span><span>交接全部完成后，系统自动向你发出离职合同（无需人工再操作）</span></div>
+        <div class="next-item"><span class="nx-no">4</span><span>你在线签署离职合同</span></div>
+        <div class="next-item"><span class="nx-no">5</span><span>离职当月的剩余权益由人事与你协商处理</span></div>
       </div>
 
       <div class="footer-bar">
@@ -44,16 +50,26 @@
 
     <template v-else>
       <div class="content">
-        <!-- 步骤条 -->
+        <!-- 步骤条：与处理侧同一套大环节，最后一步都是推送离职合同（本页处于第 1 段） -->
         <div class="steps card">
-          <div class="step" :class="{ on: step >= 1 }">
+          <div class="step on">
             <span class="step-no">1</span>
-            <span class="step-text">申请离职</span>
+            <span class="step-text">申请</span>
           </div>
-          <div class="step-line" :class="{ on: step >= 2 }"></div>
-          <div class="step" :class="{ on: step >= 2 }">
+          <div class="step-line"></div>
+          <div class="step">
             <span class="step-no">2</span>
-            <span class="step-text">签字确认</span>
+            <span class="step-text">审核</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step">
+            <span class="step-no">3</span>
+            <span class="step-text">交接</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step">
+            <span class="step-no">4</span>
+            <span class="step-text">签署离职合同</span>
           </div>
         </div>
 
@@ -132,11 +148,11 @@
             <div class="field-hint">最后工资与补偿金将打入此账户；若信息有误，请先到新员工关系更新。</div>
           </div>
 
-          <!-- D 审批流程 -->
+          <!-- D 离职需求审核（复用模板配置的审核链） -->
           <div class="card">
             <div class="sec-head">
-              <span class="sec-title">审批流程</span>
-              <span class="tag-readonly">自动带出</span>
+              <span class="sec-title">离职需求审核</span>
+              <span class="tag-readonly">按配置带出</span>
             </div>
             <div class="flow-line">
               <div class="flow-node me">
@@ -145,13 +161,37 @@
               </div>
               <span class="fn-arrow">→</span>
               <div v-for="r in preset.reviewers" :key="r.name + r.role" class="flow-node">
-                <span class="fn-role">{{ r.role }}</span>
+                <span class="fn-role">审核人 · {{ r.role }}</span>
                 <span class="fn-name">{{ r.name }}</span>
               </div>
             </div>
-            <div class="cc-row">
-              <span class="cc-k">抄送</span>
-              <span class="cc-v">{{ preset.cc.map(x => x.name + '（' + x.role + '）').join('、') }}</span>
+            <div class="field-hint">提交后先由审核人判断是否进入交接流程；不通过将作废并通知你。</div>
+          </div>
+
+          <!-- E 离职交接（按岗位带出的模板） -->
+          <div class="card">
+            <div class="sec-head">
+              <span class="sec-title">离职交接</span>
+              <span class="tag-readonly">按岗位带出</span>
+            </div>
+
+            <template v-if="handoverTpl">
+              <div class="ho-tpl">
+                {{ handoverTpl.name }}
+                <span class="ho-ver">{{ handoverTpl.version }}</span>
+              </div>
+              <div v-for="(n, i) in handoverTpl.nodes" :key="n.id" class="ho-row">
+                <span class="ho-no">{{ i + 1 }}</span>
+                <span class="ho-name">{{ n.name }}</span>
+                <span class="ho-role">{{ roleLabel(n.role) }}</span>
+                <span :class="['ho-gate', n.gate]">{{ gateLabels[n.gate] }}</span>
+              </div>
+              <div class="field-hint">
+                交接全部完成后才会进入人事审核；负责人确认时会填写说明并上传证据附件，你可以在这里看到进度。
+              </div>
+            </template>
+            <div v-else class="field-warn">
+              你所在的岗位暂未命中交接流程模板：仍可正常提交，人事确认后系统将自动推送离职合同（不经交接），并提醒人事补配模板。
             </div>
           </div>
         </template>
@@ -197,8 +237,9 @@
 
           <div class="card note-card">
             <div class="sec-head"><span class="sec-title">提交后</span></div>
-            <div class="note-li">· 需求进入人事审核，审核中不可修改</div>
-            <div class="note-li">· 审批通过后，人事确定实际离职日期并另行发起离职协议签署</div>
+            <div class="note-li">· 先由审核人判断是否进入交接流程；不通过将作废并通知你</div>
+            <div class="note-li">· 进入交接后，负责人按模板节点逐项确认</div>
+            <div class="note-li">· 交接全部完成后，系统自动向你发出离职合同，在线签署即可</div>
             <div class="note-li">· 离职当月的剩余权益由人事与你协商处理</div>
           </div>
         </template>
@@ -215,10 +256,11 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Select } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { personaPresets, resignReasons } from '../../mock/mobileResignPd.js'
+import { matchTemplate, roleLabel, gateLabels } from '../../mock/resignHandoverPd.js'
 
 const router = useRouter()
 
@@ -231,9 +273,18 @@ const cyclePersona = () => {
   persona.value = personaKeys[(i + 1) % personaKeys.length]
 }
 
-const step = ref(1)
-const submitted = ref(false)
-const reqNo = ref('')
+const route = useRoute()
+/* 文档截图演示：?step=2 直达签字确认；?submitted=1 直达提交后的进度 */
+const step = ref(Number(route.query.step) === 2 ? 2 : 1)
+const submitted = ref(route.query.submitted === '1')
+const reqNo = ref(route.query.submitted === '1' ? 'RQ202610230001' : '')
+
+/* 交接模板按岗位 / 门店 / 用工形式匹配：正式开发从档案带出，原型跟随当前视角 */
+const handoverTpl = computed(() => matchTemplate({
+  job: preset.value.applicant.job,
+  store: preset.value.applicant.org,
+  employType: preset.value.applicant.employType
+}))
 
 const form = reactive({
   expectLeaveDate: '',
@@ -275,7 +326,7 @@ const submit = () => {
   if (!canSubmit.value) return
   reqNo.value = 'RQ' + '20261019' + '001'
   submitted.value = true
-  ElMessage.success('离职需求已提交，等待审核')
+  ElMessage.success('离职需求已提交，待审核')
 }
 
 const backToHome = () => router.push({ name: 'mobile-resign-pd' })
@@ -298,12 +349,12 @@ const goBack = () => router.back()
 .diff-sep { height: 0; margin: 8px 0 2px; border-top: 1px dashed #eceaec; }
 .info-row.diff span { color: #8a8586; }
 
-.steps { display: flex; align-items: center; gap: 8px; padding: 14px 18px; }.step { display: flex; align-items: center; gap: 6px; }
-.step-no { width: 20px; height: 20px; border-radius: 50%; background: #d8d4d5; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.steps { display: flex; align-items: center; gap: 5px; padding: 14px 12px; }.step { display: flex; align-items: center; gap: 4px; }
+.step-no { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: #d8d4d5; color: #fff; font-size: 10.5px; display: flex; align-items: center; justify-content: center; }
 .step.on .step-no { background: #a40035; }
-.step-text { font-size: 13px; color: #999; }
+.step-text { font-size: 12px; color: #999; white-space: nowrap; }
 .step.on .step-text { color: #a40035; font-weight: 600; }
-.step-line { flex: 1; height: 1.5px; background: #e6e2e3; }
+.step-line { flex: 1; min-width: 8px; height: 1.5px; background: #e6e2e3; }
 .step-line.on { background: #a40035; }
 
 .sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
@@ -359,6 +410,17 @@ const goBack = () => router.back()
 .waiting { color: #b45309 !important; }
 .next-item { display: flex; gap: 8px; font-size: 12.5px; color: #666; line-height: 1.9; }
 .nx-no { width: 16px; height: 16px; border-radius: 50%; background: #f0edee; color: #888; font-size: 10.5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 4px; }
+
+.ho-tpl { font-size: 13px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ho-ver { font-size: 10px; font-weight: 400; color: #999; border: 1px solid #eceaec; border-radius: 8px; padding: 0 5px; }
+.ho-row { display: flex; align-items: center; gap: 7px; padding: 6px 0; border-top: 1px dashed #f2f0f1; font-size: 12.5px; }
+.ho-row:first-of-type { border-top: none; }
+.ho-no { width: 15px; height: 15px; border-radius: 4px; background: #f5f5f5; color: #999; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ho-name { flex: 1; color: #333; min-width: 0; }
+.ho-role { font-size: 11px; color: #999; flex-shrink: 0; }
+.ho-gate { font-size: 10px; padding: 0 6px; border-radius: 8px; flex-shrink: 0; }
+.ho-gate.must { color: #a40035; background: #fff0f4; border: 1px solid #f2ccd8; }
+.ho-gate.optional { color: #8a8586; background: #f5f5f5; border: 1px solid #e6e2e3; }
 
 .footer-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 10px 14px 16px; background: #fff; box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
 .reject-btn, .approve-btn { flex: 1; height: 44px; border-radius: 22px; font-size: 15px; font-weight: 600; }
