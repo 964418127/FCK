@@ -9,17 +9,60 @@
     <div class="section-card">
       <div class="card-header">
         <span class="card-title">方案库</span>
-        <span class="card-sub">{{ quotas.length }} 个假期类型</span>
-        <span class="card-note">三类计量：周期发放 / 周期上限 / 按次上限 · 每个类型一份方案</span>
+        <span class="card-sub">{{ hasFilter ? `${filteredQuotas.length} / ${quotas.length} 个方案` : `${quotas.length} 个假期类型` }}</span>
+        <el-tooltip placement="top" effect="light" :show-after="120">
+          <template #content>
+            <div class="help-tip">
+              <p><b>三类计量</b>：周期发放 / 周期上限 / 按次上限，每个假种一份方案（按需不设值）。</p>
+              <p><b>差异化</b>：覆盖有数值的三档——标准额度 / 获取上限 / 每次上限，只有城市与门店两个维度。</p>
+              <p><b>结转</b>：周期发放 / 周期上限可配，按期末剩余额度的比例带入下一周期；与本期发放或折算合计后仍受获取上限封顶。</p>
+              <p>表格里的<b>岗位标签可点</b>，点一下按该岗位筛选。</p>
+            </div>
+          </template>
+          <span class="help-dot">?</span>
+        </el-tooltip>
         <div class="header-actions">
-          <el-select v-model="filterType" size="small" clearable placeholder="全部假种" style="width: 112px">
+          <el-select
+            v-model="filterType"
+            size="small"
+            clearable
+            filterable
+            placeholder="全部假种"
+            style="width: 132px"
+          >
             <el-option v-for="t in leaveTypes" :key="t.value" :label="t.label" :value="t.value" />
+          </el-select>
+          <el-select
+            v-model="filterJobs"
+            size="small"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            filterable
+            clearable
+            placeholder="全部岗位"
+            style="width: 200px"
+          >
+            <el-option v-for="j in jobOptions" :key="j" :label="j" :value="j" />
           </el-select>
           <el-button size="small" type="primary" @click="openCreate">+ 新建额度方案</el-button>
         </div>
       </div>
 
-      <el-table :data="filteredQuotas" size="small">
+      <div v-if="hasFilter" class="filter-bar">
+        <span class="filter-label">筛选</span>
+        <span v-if="filterType" class="filter-chip">
+          假种 · {{ typeNameOf(filterType) }}
+          <i class="chip-x" title="移除" @click="filterType = ''">×</i>
+        </span>
+        <span v-for="j in filterJobs" :key="j" class="filter-chip job">
+          岗位 · {{ j }}
+          <i class="chip-x" title="移除" @click="toggleFilterJob(j)">×</i>
+        </span>
+        <el-button size="small" link type="primary" class="filter-clear" @click="clearFilter">清空筛选</el-button>
+      </div>
+
+      <el-table :data="pagedRows" size="small" :empty-text="hasFilter ? '没有匹配的方案，试试清空筛选' : '暂无方案'">
         <el-table-column label="假种 / 方案" min-width="130">
           <template #default="{ row }">
             <div class="q-cell">
@@ -32,7 +75,14 @@
         <el-table-column label="适用岗位" min-width="280">
           <template #default="{ row }">
             <div v-if="(row.jobs || []).length" class="jobs-tags">
-              <span v-for="j in row.jobs" :key="j" class="job-tag">{{ j }}</span>
+              <span
+                v-for="j in row.jobs"
+                :key="j"
+                class="job-tag clickable"
+                :class="{ active: filterJobs.includes(j) }"
+                :title="filterJobs.includes(j) ? '取消该岗位筛选' : `筛选适用「${j}」的方案`"
+                @click="toggleFilterJob(j)"
+              >{{ j }}</span>
             </div>
             <span v-else class="jobs-empty">未指定</span>
           </template>
@@ -44,16 +94,19 @@
             <template v-else>
               <span class="q-amount">{{ row.measure === 'cap' ? '≤ ' : '' }}{{ row.amount }} {{ row.unit }}</span>
               <span class="q-period">{{ periodText(row) }}</span>
+              <span v-if="row.measure === 'cycle' && row.acquireCap != null" class="q-cap">
+                本期获取 ≤ {{ row.acquireCap }} {{ row.unit }}
+              </span>
             </template>
           </template>
         </el-table-column>
 
         <el-table-column label="差异化" min-width="330">
           <template #default="{ row }">
-            <span v-if="row.measure === 'cap'" class="q-plain">不适用</span>
+            <span v-if="row.measure === 'ondemand'" class="q-plain">不适用</span>
             <div v-else-if="(row.overrides || []).length" class="ov-wrap">
               <span v-for="o in row.overrides" :key="o.id" class="ov-chip" :title="scopeText({ dimension: o.dimension, values: o.values })">
-                {{ dimLabel(o.dimension) }} · {{ shortValues(o) }} <b>{{ o.amount }}{{ row.unit }}</b>
+                {{ dimLabel(o.dimension) }} · {{ shortValues(o) }} <b>{{ row.measure === 'cap' ? '≤ ' : '' }}{{ o.amount }}{{ row.unit }}</b>
               </span>
             </div>
             <span v-else class="q-plain">—</span>
@@ -66,9 +119,11 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="结转" width="70">
+        <el-table-column label="结转" width="86">
           <template #default="{ row }">
-            <span class="q-carry">{{ row.measure === 'cycle' ? (row.carryOver ? '可结转' : '不结转') : '—' }}</span>
+            <span class="q-carry" :class="{ on: canCarry(row) && row.carryOver > 0 }">
+              {{ canCarry(row) ? (row.carryOver > 0 ? `剩余 ${row.carryOver}%` : '不结转') : '—' }}
+            </span>
           </template>
         </el-table-column>
 
@@ -78,6 +133,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- ============ 配置抽屉 ============ -->
@@ -143,10 +199,40 @@
               <el-select v-model="current.unit" size="small" style="width: 96px">
                 <el-option v-for="u in units" :key="u" :label="u" :value="u" />
               </el-select>
-              <span v-if="current.measure === 'cycle'" class="inline-check">
-                <el-switch v-model="current.carryOver" size="small" />
-                <span class="inline-text">结转下期</span>
+              <span v-if="canCarry(current)" class="inline-check">
+                <span class="inline-text">结转</span>
+                <el-input-number
+                  v-model="current.carryOver"
+                  size="small"
+                  :min="0"
+                  :max="100"
+                  :step="10"
+                  controls-position="right"
+                  style="width: 100px"
+                />
+                <span class="inline-text">% 剩余额度</span>
               </span>
+            </div>
+            <div v-if="canCarry(current)" class="field-desc">
+              周期结束时按<strong>剩余额度 × 比例</strong>结转到下一周期，作为下期额度的来源之一：0 = 不结转，100 = 全额结转。
+              结转量与本期{{ current.measure === 'cap' ? '折算' : '发放' }}合计后<strong>仍受上限封顶</strong>（{{ current.measure === 'cap' ? '上限就是上面那个数' : '见下方「本期获取上限」' }}）。
+            </div>
+            <div v-if="current.measure === 'cycle'" class="cfg-row">
+              <span class="row-label">获取上限</span>
+              <el-input-number
+                v-model="current.acquireCap"
+                size="small"
+                :min="0"
+                :step="1"
+                :value-on-clear="null"
+                controls-position="right"
+                placeholder="不限"
+                style="width: 120px"
+              />
+              <span class="inline-text">{{ current.unit }} / 期（留空 = 不限）</span>
+            </div>
+            <div v-if="current.measure === 'cycle'" class="field-desc">
+              本期可得的封顶值：<strong>发放 + 结转</strong> 超过它时按它生效（如 8 天 + 结转 4 天 = 12 天，上限 10 天 → 生效 10 天）。
             </div>
           </template>
           <template v-else>
@@ -165,15 +251,17 @@
           </template>
         </div>
 
-        <!-- 差异化：只改数值（上限 / 按需方案不适用） -->
-        <div class="cfg-block" v-if="current.measure !== 'cap' && current.measure !== 'ondemand'">
+        <!-- 差异化：只改数值（按需档没有数值，不参与） -->
+        <div class="cfg-block" v-if="current.measure !== 'ondemand'">
           <div class="cfg-label">
             <span>差异化</span>
-            <span class="cfg-note">只改数值，仅城市 / 门店</span>
+            <span class="cfg-note">{{ current.measure === 'cap' ? '只改上限值，仅城市 / 门店' : '只改数值，仅城市 / 门店' }}</span>
             <el-button size="small" class="cfg-add" @click="addOverride">+ 添加差异化</el-button>
           </div>
 
-          <div v-if="!(current.overrides || []).length" class="field-desc">未配置差异化，按标准额度执行。</div>
+          <div v-if="!(current.overrides || []).length" class="field-desc">
+            未配置差异化，按标准{{ current.measure === 'cap' ? '上限' : '额度' }}执行。
+          </div>
 
           <div v-for="(o, idx) in current.overrides" :key="o.id" class="ov-row">
             <div class="ov-head">
@@ -191,6 +279,7 @@
               >
                 <el-option v-for="v in dimValues(o.dimension)" :key="v" :label="v" :value="v" />
               </el-select>
+              <span class="ov-key">{{ current.measure === 'cap' ? '上限' : '额度' }}</span>
               <el-input-number v-model="o.amount" size="small" :min="0" :step="1" controls-position="right" style="width: 104px" />
               <span class="ov-unit">{{ current.unit }}</span>
               <el-button size="small" link type="danger" @click="removeOverride(idx)">删除</el-button>
@@ -268,6 +357,13 @@
             </el-select>
           </div>
         </div>
+        <div v-if="newForm.measure === 'cycle' || newForm.measure === 'cap'" class="dlg-row">
+          <div class="dlg-label">结转比例</div>
+          <div class="row-inline">
+            <el-input-number v-model="newForm.carryOver" :min="0" :max="100" :step="10" controls-position="right" style="width: 120px" />
+            <span class="inline-text">% 剩余额度（0 = 不结转）</span>
+          </div>
+        </div>
         <div v-else-if="newForm.measure === 'ondemand'" class="dlg-row">
           <div class="field-desc" style="margin-top: 0">按需：不设额度值，只声明岗位有这个假种；天数按法定 / 医疗口径核定，人工审核。</div>
         </div>
@@ -291,7 +387,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   quotaSchemes,
@@ -306,6 +403,8 @@ import {
   jobWorkModes
 } from '../../mock/leaveWorkMode.js'
 
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 /* 方案库收全部假期类型：值（额度 / 上限）都只在这一层配置 */
 const leaveTypes = schemeLeaveTypeOptions
 const cycles = cycleOptions
@@ -327,6 +426,8 @@ const dimChoices = diffDimensions.filter(d => d.value !== 'all')
 const jobOptions = jobWorkModes.map(m => m.job)
 
 const typeName = (row) => quotaTypeName(row)
+/** 哪些档可以结转：周期发放、周期上限（上限档结转后仍按上限封顶） */
+const canCarry = (row) => !!row && (row.measure === 'cycle' || row.measure === 'cap')
 const measureLabel = (v) => (measures.find(m => m.value === v) || {}).label || v
 const periodText = (row) => (row.measure === 'event' ? (row.validWithin ? `/ ${row.validWithin}` : '') : row.cycle ? `/ ${row.cycle}` : '')
 const shortValues = (o) => {
@@ -336,11 +437,34 @@ const shortValues = (o) => {
   return `${list[0]} 等 ${list.length} 个`
 }
 
-/* ---------- 筛选 ---------- */
+/* ---------- 筛选：假种 + 岗位标签（多选，任一命中即显示） ---------- */
 const filterType = ref('')
+const filterJobs = ref([])
+const hasFilter = computed(() => Boolean(filterType.value) || filterJobs.value.length > 0)
+const typeNameOf = (id) => (leaveTypes.find(t => t.value === id) || {}).label || id
+
 const filteredQuotas = computed(() =>
-  quotas.value.filter(q => !filterType.value || q.leaveTypeId === filterType.value)
+  quotas.value.filter(q => {
+    if (filterType.value && q.leaveTypeId !== filterType.value) return false
+    if (filterJobs.value.length) {
+      const jobs = q.jobs || []
+      if (!filterJobs.value.some(j => jobs.includes(j))) return false
+    }
+    return true
+  })
 )
+
+/** 岗位标签既是筛选项也是筛选入口：点一次加上、再点一次去掉 */
+const toggleFilterJob = (job) => {
+  if (!job) return
+  const idx = filterJobs.value.indexOf(job)
+  if (idx === -1) filterJobs.value.push(job)
+  else filterJobs.value.splice(idx, 1)
+}
+const clearFilter = () => {
+  filterType.value = ''
+  filterJobs.value = []
+}
 
 /* ---------- 编辑 ---------- */
 const drawerVisible = ref(false)
@@ -356,16 +480,20 @@ const valueNote = computed(() => ({ cycle: '全公司打底值，预发给员工
 const onMeasureChange = (s) => {
   if (s.measure === 'cap') {
     s.validWithin = ''
-    s.carryOver = false
+    s.acquireCap = null
     if (!s.cycle) s.cycle = '自然月'
   } else if (s.measure === 'event') {
     s.cycle = ''
-    s.carryOver = false
+    s.carryOver = 0
+    s.acquireCap = null
   } else if (s.measure === 'ondemand') {
     s.cycle = ''
     s.validWithin = ''
-    s.carryOver = false
+    s.carryOver = 0
+    s.acquireCap = null
     s.amount = null
+    /* 按需档没有数值，差异化条目无处生效 —— 一并清掉，避免切回来时残留旧值 */
+    if (s.overrides) s.overrides = []
   } else {
     s.validWithin = ''
     if (!s.cycle) s.cycle = '自然月'
@@ -397,11 +525,20 @@ const removeQuota = () => {
   ElMessage.success('方案已删除')
 }
 
-/* ---------- 新建 ---------- */
+/* 文档截图入口：?open=<假种id> 时自动打开该假种的配置抽屉（配合 ?shot=1 截「功能页面示例」） */
+const route = useRoute()
+onMounted(() => {
+  const target = route.query.open
+  if (!target) return
+  const hit = quotas.value.find(q => q.leaveTypeId === target)
+  if (hit) openEdit(hit)
+})
+
+/* ---------- 新建 ----------
 const createVisible = ref(false)
 const emptyForm = () => ({
   name: '', leaveTypeId: 'annual', jobs: [], measure: 'cycle', cycle: '自然年',
-  amount: 5, unit: '天', carryOver: false, validWithin: ''
+  amount: 5, unit: '天', carryOver: 0, acquireCap: null, validWithin: ''
 })
 const newForm = reactive(emptyForm())
 const capAppJobs = computed(() => capAppJobsOf(newForm.leaveTypeId))
@@ -441,7 +578,8 @@ const createQuota = () => {
     validWithin: newForm.measure === 'event' ? newForm.validWithin : '',
     amount: newForm.amount,
     unit: newForm.unit,
-    carryOver: newForm.measure === 'cycle' ? newForm.carryOver : false,
+    carryOver: (newForm.measure === 'cycle' || newForm.measure === 'cap') ? Number(newForm.carryOver || 0) : 0,
+    acquireCap: newForm.measure === 'cycle' ? (newForm.acquireCap ?? null) : null,
     jobs: [...newForm.jobs],
     overrides: [],
     derivedFrom: derived ? '按上月业绩折算；折算值超过上限按上限计' : '',
@@ -452,6 +590,9 @@ const createQuota = () => {
   createVisible.value = false
   ElMessage.success('已创建')
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredQuotas)
 </script>
 
 <style scoped>
@@ -473,6 +614,21 @@ const createQuota = () => {
 .q-amount { font-size: 12.5px; font-weight: 500; color: hsl(var(--foreground)); margin-right: 4px; }
 .q-period { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
 .q-carry, .q-plain { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.q-carry.on { color: hsl(var(--primary)); font-weight: 500; }
+.q-cap { display: block; margin-top: 2px; font-size: 11px; color: hsl(38 92% 38%); }
+
+/* 说明气泡 */
+.help-dot {
+  width: 16px; height: 16px; flex-shrink: 0; cursor: help;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1; border-radius: 50%;
+  border: 1px solid hsl(var(--border)); background: hsl(var(--muted) / 0.55);
+  color: hsl(var(--muted-foreground));
+}
+.help-dot:hover { border-color: hsl(var(--primary) / 0.5); color: hsl(var(--primary)); }
+.help-tip { max-width: 300px; font-size: 12px; line-height: 1.75; color: hsl(var(--foreground)); }
+.help-tip p { margin: 0 0 5px; }
+.help-tip p:last-child { margin-bottom: 0; }
 .jobs-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .job-tag {
   font-size: 11px; line-height: 1.7; padding: 0 8px; border-radius: 9px;
@@ -480,6 +636,22 @@ const createQuota = () => {
   color: hsl(var(--primary)); white-space: nowrap;
 }
 .jobs-empty { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.job-tag.clickable { cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.job-tag.clickable:hover { background: hsl(var(--primary) / 0.16); }
+.job-tag.active { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: #fff; }
+
+/* 筛选条 */
+.filter-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: -2px 0 10px; padding: 7px 10px; border-radius: 8px; background: hsl(var(--muted) / 0.35); }
+.filter-label { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-right: 2px; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; padding: 1px 4px 1px 9px; border-radius: 10px;
+  border: 1px solid hsl(var(--primary) / 0.3); background: hsl(var(--primary) / 0.08); color: hsl(var(--primary));
+}
+.filter-chip.job { border-color: hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.chip-x { font-style: normal; cursor: pointer; padding: 0 3px; font-size: 13px; line-height: 1; color: hsl(var(--muted-foreground)); }
+.chip-x:hover { color: hsl(var(--primary)); }
+.filter-clear { margin-left: 4px; }
 
 .ov-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
 .ov-chip {
@@ -510,6 +682,7 @@ const createQuota = () => {
   background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 38%); font-weight: 600;
 }
 .ov-unit { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.ov-key { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
 .ov-sub { margin-top: 8px; }
 
 .drawer-foot { margin-top: 10px; padding-top: 12px; border-top: 1px solid hsl(var(--border)); }

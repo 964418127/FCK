@@ -19,12 +19,13 @@
           <div class="section-heading"><h2>{{ selectedCity }}城市保底</h2><div class="actions"><el-button :icon="Edit" @click="editCity(selectedRule)">编辑</el-button><el-button :icon="Delete" @click="removeCity">作废城市配置</el-button></div></div>
           <div class="base-amount">{{ money(selectedRule.amount) }}<span>元/月</span></div>
           <div class="store-heading"><h2>门店差异额</h2><el-button type="primary" :icon="Plus" :disabled="!availableStores.length" @click="editStore()">新增门店配置</el-button></div>
-          <el-table :data="storeRows" empty-text="暂无门店配置">
+          <el-table :data="pagedRows" empty-text="暂无门店配置">
             <el-table-column label="门店" min-width="180"><template #default="{ row }">{{ row.name }}<small>{{ row.code }}</small></template></el-table-column>
             <el-table-column label="门店差异额（元/月）" min-width="175"><template #default="{ row }">+ {{ money(row.amount) }}</template></el-table-column>
             <el-table-column label="最终保底（元/月）" min-width="175"><template #default="{ row }">{{ money(row.total) }}</template></el-table-column>
             <el-table-column label="操作" width="130"><template #default="{ row }"><el-button link type="primary" @click="editStore(row)">编辑</el-button><el-button link type="danger" @click="removeStore(row)">作废</el-button></template></el-table-column>
           </el-table>
+          <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
           <div v-if="voidedStores.length" class="voided-records"><strong>已作废门店配置</strong><p v-for="(row, index) in voidedStores" :key="index">{{ row.name }} · +{{ money(row.amount) }} 元/月</p></div>
         </section>
         <el-empty v-else description="暂无城市配置" :image-size="70" />
@@ -54,6 +55,8 @@ import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Check, Delete, Edit, Search } from '@element-plus/icons-vue'
 import { guaranteeStore, guaranteeCities, guaranteeStores, cityRuleFor, saveGeneralGuarantee, saveCityGuarantee, saveStoreGuarantee, deleteCityGuarantee, deleteStoreGuarantee, matchStoreGuarantee } from '../stores/parttimeGuarantee.js'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const selectedCity = ref(''), citySearch = ref('')
 const generalOpen = ref(false), generalAmount = ref(0), cityOpen = ref(false), editingCity = ref(false), cityForm = ref({}), storeOpen = ref(false), editingStore = ref(''), storeForm = ref({})
 const money = value => Number(value || 0).toFixed(2)
@@ -100,6 +103,9 @@ async function removeStore(row) {
   try { await ElMessageBox.confirm(`作废${row.name}差异额后，该门店仅使用城市保底。`, '作废门店配置', { confirmButtonText: '作废', cancelButtonText: '取消' }) } catch { return }
   deleteStoreGuarantee(row.storeId); ElMessage.success('已作废')
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(storeRows)
 </script>
 
 <style scoped>

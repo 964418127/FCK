@@ -13,7 +13,7 @@
         <span class="card-note">改动会记入下方变更记录</span>
       </div>
 
-      <el-table :data="rows" size="small" class="rule-table">
+      <el-table :data="pagedRows" size="small" class="rule-table">
         <el-table-column label="假种" min-width="230">
           <template #default="{ row }">
             <div class="type-cell">
@@ -74,13 +74,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <div class="section-card">
       <div class="card-header">
         <span class="card-title">配置变更记录</span>
       </div>
-      <el-table :data="changeLogs" size="small">
+      <el-table :data="pagedRows2" size="small">
         <el-table-column prop="time" label="时间" width="150" />
         <el-table-column prop="operator" label="操作人" width="160" />
         <el-table-column prop="target" label="对象" width="170" />
@@ -93,6 +94,7 @@
         </el-table-column>
         <el-table-column prop="reason" label="原因" min-width="240" show-overflow-tooltip />
       </el-table>
+      <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
     </div>
 
     <!-- ============ 配置抽屉 ============ -->
@@ -222,6 +224,8 @@ import {
 } from '../../mock/leaveAttendance.js'
 import { dimLabel, dimValues, diffDimensions } from '../../mock/leaveWorkMode.js'
 
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 const rules = ref(JSON.parse(JSON.stringify(rawRules)))
 const changeLogs = ref(ruleChangeLogs)
 
@@ -301,6 +305,10 @@ const setPatch = (o, k, v) => {
 }
 
 const removeOverride = (idx) => { current.value.overrides.splice(idx, 1) }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(rows)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(changeLogs)
 </script>
 
 <style scoped>

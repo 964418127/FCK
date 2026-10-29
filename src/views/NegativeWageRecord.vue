@@ -71,7 +71,7 @@
       </div>
 
       <!-- 流水表格 -->
-      <el-table :data="filteredData" stripe style="width: 100%; margin-top: 16px;">
+      <el-table :data="pagedRows" stripe style="width: 100%; margin-top: 16px;">
         <el-table-column prop="createTime" label="时间" width="160" />
         <el-table-column prop="type" label="类型" width="100">
           <template #default="{ row }">
@@ -112,6 +112,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
   </div>
 </template>
@@ -120,6 +121,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -295,6 +298,9 @@ onMounted(() => {
     router.push('/negative-wage-account')
   }
 })
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(filteredData)
 </script>
 
 <style scoped>

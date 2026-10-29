@@ -20,7 +20,7 @@
         </div>
       </div>
 
-      <el-table :data="schemes" size="small">
+      <el-table :data="pagedRows" size="small">
         <el-table-column label="方案" min-width="210">
           <template #default="{ row }">
             <div class="scheme-cell">
@@ -77,6 +77,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- ============ 配置抽屉 ============ -->
@@ -296,6 +297,8 @@ import {
   specialDayTypes
 } from '../../mock/leaveWorkMode.js'
 
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 const presets = weekPatternPresets
 const policies = holidayPolicies
 const schemes = ref(scheduleSchemes.map(s => ({ ...s, weekPattern: [...s.weekPattern], specialDays: (s.specialDays || []).map(d => ({ ...d })) })))
@@ -379,6 +382,9 @@ const duplicate = (row) => {
   })
   ElMessage.success(`已复制「${row.name}」`)
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(schemes)
 </script>
 
 <style scoped>

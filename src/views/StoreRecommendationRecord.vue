@@ -247,7 +247,7 @@
     <div class="table-section">
       <el-table
         ref="tableRef"
-        :data="filteredRecords"
+        :data="pagedRows"
         border
         stripe
         style="width: 100%"
@@ -340,6 +340,7 @@
 
 
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- 趋势变化弹窗 -->
@@ -394,6 +395,8 @@ import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, ArrowRight, QuestionFilled, Close } from '@element-plus/icons-vue'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 // 响应式数据
 const searchForm = reactive({
   type: '',
@@ -749,6 +752,9 @@ const handleRemoveStore = (row, store) => {
     // 取消操作
   })
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredRecords)
 </script>
 
 <style scoped>

@@ -40,7 +40,7 @@
       </div>
 
       <!-- 数据表格 -->
-      <el-table :data="filteredData" stripe style="width: 100%; margin-top: 12px;">
+      <el-table :data="pagedRows" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="employeeId" label="工号" width="100" />
         <el-table-column prop="employeeName" label="姓名" width="100" />
         <el-table-column prop="department" label="部门" width="120" />
@@ -83,6 +83,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- 新增来源弹窗 -->
@@ -164,6 +165,8 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 
 const router = useRouter()
 
@@ -433,6 +436,9 @@ const handleBatchConfirm = () => {
   fileList.value = []
   addSourceDialogVisible.value = false
 }
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(filteredData)
 </script>
 
 <style scoped>

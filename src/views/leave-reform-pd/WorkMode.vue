@@ -354,13 +354,14 @@ const jobList = computed(() => modes.value)
 const modeOf = (name) => modes.value.find(m => m.job === name) || { job: name, attendance: false }
 const schemeName = (id) => (scheduleSchemes.find(s => s.id === id) || {}).name || '—'
 const quotaCount = (m) => (m ? schemesOfJob(m.job).length : 0)
-/** 额度摘要：按计量方式表达（周期发放 / 周期上限 / 按次上限）+ 另有几条差异化 */
+/** 额度摘要：按计量方式表达（周期发放 / 周期上限 / 按次上限 / 按需）+ 另有几条差异化 */
 const quotaSummary = (leaveTypeId) => {
   const tiers = quotaChainOf(leaveTypeId)
   if (!tiers.length) return '—'
   const base = tiers.find(q => q.base) || tiers[0]
   let what
-  if (base.measure === 'cap') what = `≤ ${base.amount} ${base.unit} / ${base.cycle}（上限）`
+  if (base.measure === 'ondemand') what = '按需 · 无固定额度'
+  else if (base.measure === 'cap') what = `≤ ${base.amount} ${base.unit} / ${base.cycle}`
   else if (base.measure === 'event') what = `每次 ≤ ${base.amount} ${base.unit}`
   else what = `${base.amount} ${base.unit} / ${base.cycle}`
   return tiers.length > 1 ? `${what}（另 ${tiers.length - 1} 条差异化）` : what

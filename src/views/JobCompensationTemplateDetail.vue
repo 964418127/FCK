@@ -70,7 +70,7 @@
           <h3>关联薪酬项</h3>
           <span class="item-count">共 {{ incomeItems.length }} 项</span>
         </div>
-        <el-table :data="incomeItems" border style="width: 100%">
+        <el-table :data="pagedRows" border style="width: 100%">
           <el-table-column prop="id" label="编号" width="80" align="center" />
           <el-table-column prop="category" label="薪酬项类型" min-width="160" />
           <el-table-column prop="name" label="薪酬项名称" min-width="180" />
@@ -100,6 +100,7 @@
             </template>
           </el-table-column>
         </el-table>
+        <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
         <div v-if="isEdit" class="add-item-row">
           <el-button type="primary" size="small" link>+ 添加薪酬项</el-button>
         </div>
@@ -111,7 +112,7 @@
           <h3>关联扣缴项</h3>
           <span class="item-count">共 {{ deductItems.length }} 项</span>
         </div>
-        <el-table :data="deductItems" border style="width: 100%">
+        <el-table :data="pagedRows2" border style="width: 100%">
           <el-table-column prop="id" label="编号" width="80" align="center" />
           <el-table-column prop="category" label="扣缴项类型" min-width="160" />
           <el-table-column prop="name" label="扣缴项名称" min-width="180" />
@@ -141,6 +142,7 @@
             </template>
           </el-table-column>
         </el-table>
+        <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
         <div v-if="isEdit" class="add-item-row">
           <el-button type="primary" size="small" link>+ 添加扣缴项</el-button>
         </div>
@@ -163,6 +165,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { compensationTemplates } from '../mock/data.js'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const route = useRoute()
 const router = useRouter()
 
@@ -223,6 +227,10 @@ onMounted(() => {
     isEdit.value = true
   }
 })
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(incomeItems)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(deductItems)
 </script>
 
 <style scoped>

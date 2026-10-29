@@ -15,7 +15,7 @@
         </div>
       </div>
 
-      <el-table :data="rows" size="small" class="ref-table">
+      <el-table :data="pagedRows" size="small" class="ref-table">
         <el-table-column label="岗位" width="110" fixed>
           <template #default="{ row }">
             <span v-if="embedded" class="job-name pickable" @click="emit('pick', row.job)">{{ row.job }}</span>
@@ -73,6 +73,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
   </div>
 </template>
@@ -90,6 +91,8 @@ import {
   backfillOptions
 } from '../../mock/leaveWorkMode.js'
 
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 /**
  * 嵌入模式：作为「岗位假勤方案」的矩阵视图使用时，隐藏自带页头。
  * modes：可传入枢纽页的本地副本，保证抽屉里刚改的引用立刻反映到矩阵。
@@ -124,10 +127,16 @@ const rows = computed(() => (props.modes || jobWorkModes).map(m => ({
       typeName: quotaTypeName(q),
       own: (m.jobQuotas || []).some(x => x.id === q.id),
       diffs: Math.max(tiers.length - 1, 0),
-      chain: tiers.map(t => `${t.base ? '标准' : dimLabel(t.scope.dimension)} ${t.amount}${t.unit}`).join(' → ')
+      chain: tiers
+        .filter(t => t.measure !== 'ondemand')
+        .map(t => `${t.base ? '标准' : dimLabel(t.scope.dimension)} ${t.amount}${t.unit}`)
+        .join(' → ') || '按需 · 无固定额度'
     }
   })
 })))
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(rows)
 </script>
 
 <style scoped>

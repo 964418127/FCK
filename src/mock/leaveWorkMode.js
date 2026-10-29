@@ -252,10 +252,20 @@ export function profileOf(emp) {
    方案有三块，彼此独立：
      · 适用岗位 jobs —— 这份方案给哪些岗位用（岗位不参与差异化，只决定「有没有」）
      · 标准额度 amount —— 全公司打底值，规则（周期 / 计量 / 结转）也只有一份
-     · 差异化 overrides —— 只改「额度」这一个数，维度**仅城市 / 门店**
+     · 差异化 overrides —— 只改「数值」这一个数，维度**仅城市 / 门店**
    如「事假标准 4 天，成都市 6 天」。取值时命中的差异化覆盖 amount，
    多条同时命中按维度 rank 取最具体的一条，**不合并、不继承、不折算**；
    个人 / 岗位 / 职级等其它维度不支持差异化（按人差异化走「系统折算」）。
+
+   差异化对**有数值**的三档都适用，改的是该档位的那个数：
+     · 周期发放 → 改「标准额度」；周期上限 → 改「获取上限」；按次上限 → 改「每次上限」
+   按需档没有数值，不参与差异化（无值可覆盖）。
+   临时假 / 特殊情况请假都是「周期上限」，同样支持按城市 / 门店给不同的上限。
+
+   结转 carryOver —— 值是**比例**（0 = 不结转，100 = 全额结转）：
+   周期结束时按「剩余额度 × 比例」带入下一周期，作为下期额度的来源之一；其余作废。
+   与本期发放 / 折算合计后，**受「获取上限」封顶**：上限档（cap）的上限就是方案里的那个数，
+   周期发放档另有可选的 acquireCap（留空不限）；按次 / 按需档不结转。
 
    计量方式三种（值全部只在「假期额度方案」一层配置，没有岗位额度层）：
      · 周期发放 cycle —— 每周期预发固定额度给员工（年假 / 事假 / 班次假）
@@ -283,7 +293,9 @@ export const quotaSchemes = [
     cycle: '自然月',
     amount: 4,
     unit: '天',
-    carryOver: false,
+    carryOver: 50,
+    /* 本期获取上限：发放 + 结转 的合计不得超过；留空不限 */
+    acquireCap: 8,
     overrides: [
       { id: 'ov-personal-cd', dimension: 'city', values: ['成都市'], amount: 6, note: '成都门店排班弹性大，事假额度上浮到 6 天' }
     ],
@@ -300,7 +312,7 @@ export const quotaSchemes = [
     cycle: '',
     amount: null,
     unit: '天',
-    carryOver: false,
+    carryOver: 0,
     overrides: [],
     note: '按需申请，不设额度值；天数按法定医疗期核定（随工龄），人工审核',
     builtin: true,
@@ -315,7 +327,8 @@ export const quotaSchemes = [
     cycle: '自然年',
     amount: 5,
     unit: '天',
-    carryOver: true,
+    /* 结转比例：期末剩余额度 × 50% 带入下一周期（0 = 不结转） */
+    carryOver: 50,
     overrides: [
       { id: 'ov-annual-sz', dimension: 'city', values: ['深圳市'], amount: 8, note: '深圳口径高于公司基准' },
       { id: 'ov-annual-nanshan', dimension: 'store', values: ['深圳南山店'], amount: 10, note: '南山店招聘承诺 10 天' }
@@ -333,7 +346,7 @@ export const quotaSchemes = [
     validWithin: '领证后 12 个月内',
     amount: 3,
     unit: '天',
-    carryOver: false,
+    carryOver: 0,
     overrides: [
       { id: 'ov-marriage-sz', dimension: 'city', values: ['深圳市'], amount: 5, note: '广东婚假口径 5 天，深圳各店按此执行' }
     ],
@@ -350,7 +363,7 @@ export const quotaSchemes = [
     validWithin: '亲属去世后 3 天内',
     amount: 3,
     unit: '天',
-    carryOver: false,
+    carryOver: 0,
     overrides: [],
     note: '',
     builtin: true,
@@ -365,7 +378,7 @@ export const quotaSchemes = [
     validWithin: '',
     amount: 30,
     unit: '天',
-    carryOver: false,
+    carryOver: 0,
     overrides: [],
     note: '连续多日的事假（连续 ≥ 7 天走长事假），每次申请上限 30 天',
     builtin: true,
@@ -380,7 +393,7 @@ export const quotaSchemes = [
     cycle: '自然月',
     amount: 4,
     unit: '天',
-    carryOver: false,
+    carryOver: 0,
     overrides: [],
     note: '排班岗的月度休息额度，缺勤即扣',
     builtin: true,
@@ -395,8 +408,12 @@ export const quotaSchemes = [
     cycle: '自然月',
     amount: 16,
     unit: '小时',
-    carryOver: false,
-    overrides: [],
+    /* 上限档也可结转：上期剩余 × 50%，与本期折算合计后仍受 16 小时/月 封顶 */
+    carryOver: 50,
+    overrides: [
+      { id: 'ov-temp-cd', dimension: 'city', values: ['成都市'], amount: 24, note: '成都门店营业时段长（10:00–22:00），临时假获取上限上浮到 24 小时/月' },
+      { id: 'ov-temp-nanshan', dimension: 'store', values: ['深圳南山店'], amount: 20, note: '南山店夜班占比高，上限 20 小时/月' }
+    ],
     derivedFrom: '按上月业绩折算；折算值超过上限按上限计',
     note: '系统折算假种只设获取上限；历史已折算的存量不在本系统处理',
     builtin: true,
@@ -411,8 +428,11 @@ export const quotaSchemes = [
     cycle: '自然月',
     amount: 40,
     unit: '小时',
-    carryOver: false,
-    overrides: [],
+    carryOver: 0,
+    overrides: [
+      { id: 'ov-special-cd', dimension: 'city', values: ['成都市'], amount: 48, note: '成都门店兜底口径高于基准，本通道上限 48 小时/月' },
+      { id: 'ov-special-cm', dimension: 'store', values: ['深圳南山店'], amount: 44, note: '南山店客户经理占比高，兜底通道上限 44 小时/月' }
+    ],
     derivedFrom: '历史兜底通道：依次扣班次假 → 临时假时长，剩余记为本通道',
     note: '历史大包假种示例：现状无上限，此处 40 小时/月仅为示意；重构后由事假 / 病假承接，超出部分按岗位分流（推拿师不扣薪 / 客户经理扣薪）',
     builtin: true,
@@ -521,31 +541,16 @@ export function schemesOfJob(job) {
 }
 
 /**
- * 岗位的完整额度清单 = 岗位额度（字典「指定岗位」假种的岗位层配置）+ 系统折算假种（读方案库上限方案）
- * + 适用该岗位的额度方案（按假种）。
+ * 岗位的完整额度清单 = 系统折算假种的合成条目（读方案库里的「周期上限」方案）
+ * + 适用该岗位的其余额度方案（按假种）。
  * 「有哪些假种」由字典适用性与方案适用岗位决定；「给多少」按员工画像（城市 / 门店）解析 ——
- * 传 profile 得这个人的值，不传得标准额度。
+ * 传 profile 得这个人的值，不传得标准额度。上限方案同样按画像解档。
  */
 export function quotaEntriesOf(mode, profile = null) {
   if (!mode) return []
   const derived = leaveTypes
     .filter(t => t.quotaSource === 'derived' && (t.appJobs || []).includes(mode.job))
-    .map(t => {
-      const cap = quotaCapOf(t.id)
-      if (!cap) return null
-      return {
-        id: 'qt-' + t.id,
-        leaveTypeId: t.id,
-        name: t.name,
-        measure: 'cycle',
-        cycle: cap.cycle,
-        amount: cap.amount,
-        unit: cap.unit,
-        carryOver: false,
-        derivedFrom: cap.derivedFrom || '按上月业绩折算；历史已折算的存量不在本系统处理',
-        builtin: true
-      }
-    })
+    .map(t => derivedEntryOf(t, profile))
     .filter(Boolean)
   const refs = schemesOfJob(mode.job)
     .filter(s => s.measure !== 'cap') // 上限方案不预发，已由 derived 合成条目表达
@@ -562,28 +567,44 @@ export function quotaCapOf(leaveTypeId) {
   return quotaSchemes.find(q => q.leaveTypeId === leaveTypeId && q.measure === 'cap') || null
 }
 
-/** 按 id 找额度条目（方案库 → 各岗位的岗位额度 → 字典「系统折算」假种的合成条目） */
-export function findQuotaEntry(id) {
-  const inLibrary = quotaSchemes.find(q => q.id === id)
-  if (inLibrary) return inLibrary
-  const derived = leaveTypes.find(t => t.quotaSource === 'derived' && 'qt-' + t.id === id)
-  if (derived) {
-    const cap = quotaCapOf(derived.id)
-    if (!cap) return null
-    return {
-      id,
-      leaveTypeId: derived.id,
-      name: derived.name,
-      measure: 'cycle',
-      cycle: cap.cycle,
-      amount: cap.amount,
-      unit: cap.unit,
-      carryOver: false,
-      derivedFrom: cap.derivedFrom || '按上月业绩折算；历史已折算的存量不在本系统处理',
-      builtin: true
-    }
+/**
+ * 系统折算假种的合成条目（余额列表里那一行）。
+ * 上限方案同样带差异化：给 profile 就按城市 / 门店解档，不给就是标准上限。
+ */
+function derivedEntryOf(type, profile = null) {
+  const cap = quotaCapOf(type.id)
+  if (!cap) return null
+  const r = resolveQuotaScheme(type.id, profile)
+  const hit = r.scheme || cap
+  return {
+    id: 'qt-' + type.id,
+    leaveTypeId: type.id,
+    name: type.name,
+    measure: 'cycle',
+    cycle: cap.cycle,
+    amount: hit.amount,
+    capAmount: cap.amount,
+    unit: cap.unit,
+    /* 上限档也带结转配置：结转后与本期折算合计仍按 capAmount 封顶 */
+    carryOver: cap.carryOver || 0,
+    acquireCap: cap.acquireCap ?? null,
+    derived: true,
+    resolvedDimension: r.dimension,
+    alsoMatched: r.alsoMatched,
+    derivedFrom: cap.derivedFrom || '按上月业绩折算；历史已折算的存量不在本系统处理',
+    builtin: true
   }
-  return null
+}
+
+/** 按 id 找额度条目（方案库 → 字典「系统折算」假种的合成条目）；给了 profile 就按画像解档 */
+export function findQuotaEntry(id, profile = null) {
+  const inLibrary = quotaSchemes.find(q => q.id === id)
+  if (inLibrary) {
+    const r = resolveQuotaScheme(inLibrary.leaveTypeId, profile)
+    return r.scheme ? { ...r.scheme, resolvedDimension: r.dimension, alsoMatched: r.alsoMatched } : inLibrary
+  }
+  const derived = leaveTypes.find(t => t.quotaSource === 'derived' && 'qt-' + t.id === id)
+  return derived ? derivedEntryOf(derived, profile) : null
 }
 
 /** 这个假种的额度方案适用于哪些岗位（读方案自身的适用岗位声明） */
@@ -647,7 +668,7 @@ export const jobWorkModes = [
         cycle: '自然月',
         amount: 4,
         unit: '天',
-        carryOver: false,
+        carryOver: 0,
         note: '排班岗的月度休息额度，缺勤即扣',
         builtin: true
       }
@@ -673,7 +694,7 @@ export const jobWorkModes = [
         cycle: '自然月',
         amount: 4,
         unit: '天',
-        carryOver: false,
+        carryOver: 0,
         note: '只有班次假，无临时假',
         builtin: true
       }

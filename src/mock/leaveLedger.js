@@ -126,6 +126,47 @@ export const leaveRecords = [
     deduction: [{ schemeId: 'qs-annual-5d', label: '年假', value: 2, unit: '天' }] }
 ]
 
+/* ---------------- 结转（按方案配置算，不用手写数） ----------------
+   规则：周期结束时把「上期剩余额度 × 方案结转比例」带入本期，作为本期额度的来源之一。
+   上期剩余 = 上期名义额度（或折算值）− 上期已用；不足为 0 不结转（负余额不倒扣下期）。
+   结转进来的量与本期发放 / 折算合计后，**受「获取上限」封顶**：
+     · 上限档（cap）：上限 = 方案里的那个数（如临时假 16 小时/月）
+     · 周期发放档：s.acquireCap（可选，留空 = 不限）
+   ============================================================ */
+
+/** 上一周期（月 / 季 / 年同一套口径） */
+export function prevPeriodOf(mode, period) {
+  if (mode === 'year') return String(Number(period) - 1)
+  if (mode === 'quarter') {
+    const y = Number(period.slice(0, 4))
+    const q = Number(period.slice(-1))
+    return q === 1 ? `${y - 1}-Q4` : `${y}-Q${q - 1}`
+  }
+  const [y, m] = period.split('-').map(Number)
+  const d = new Date(y, m - 2, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** 某方案在指定周期的名义获取量（折算假种用员工身上的折算值） */
+const grantedAt = (s, mode, adjust) => (adjust ? adjust.amount : schemeAmount(s, mode))
+
+/** 月口径方案在所选周期里的放大倍数（季 ×3、年 ×12；年口径不缩放） */
+const monthFactorOf = (s, mode) => (s.cycle === '自然月' ? (mode === 'month' ? 1 : mode === 'quarter' ? 3 : 12) : 1)
+
+/**
+ * 本期获取上限：上限档用方案值，周期发放档看 acquireCap，其它档不限。
+ * 系统折算条目（临时假）在方案库合成时 measure 已被改写成 cycle，
+ * 上限取合成时保留的 capAmount，同样按周期倍数放大。
+ */
+const acquireLimitOf = (s, mode) => {
+  const f = monthFactorOf(s, mode)
+  /* 系统折算条目：amount 就是解档后的上限（capAmount 只是标准档的基数） */
+  if (s.derived) return Math.round(s.amount * f * 10) / 10
+  if (s.measure === 'cap') return schemeAmount(s, mode)
+  if (s.measure === 'cycle' && s.acquireCap != null) return Math.round(s.acquireCap * f * 10) / 10
+  return null
+}
+
 /* ---------------- 计算 ---------------- */
 
 const inPeriod = (date, mode, period) => {
@@ -166,12 +207,21 @@ export function balancesOf(emp, mode, period) {
       }
     }
 
+    if (s.measure === 'ondemand') {
+      /* 按需假种没有额度值，也没有发放 / 结转流水 */
+      return {
+        schemeId: s.id, leaveType: name, kind: 'ondemand',
+        unit: s.unit, quota: null, used: 0, remaining: null,
+        granted: null, carryIn: 0, grants: [],
+        scopeDim: s.resolvedDimension || 'all', scopeText: '按需'
+      }
+    }
+
     /* 年口径的方案（如年假）不随所选周期缩放：额度与已用都按自然年算 */
     const yearScoped = s.cycle === '自然年'
     const scopeMode = yearScoped ? 'year' : mode
     const scopePeriod = yearScoped ? period.slice(0, 4) : period
 
-    const quota = adjust ? adjust.amount : schemeAmount(s, mode)
     let used = 0
     recs.forEach(r => {
       if (!inPeriod(r.date, scopeMode, scopePeriod)) return
@@ -179,16 +229,96 @@ export function balancesOf(emp, mode, period) {
         if (hits(d)) used += d.value
       })
     })
+
+    /* 本期获取 = 发放（或折算）+ 上期结转；合计受「获取上限」封顶 */
+    const granted = grantedAt(s, scopeMode, adjust)
+    const prevPeriod = prevPeriodOf(scopeMode, scopePeriod)
+    const prevGranted = grantedAt(s, scopeMode, adjust)
+    let prevUsed = 0
+    recs.forEach(r => {
+      if (!inPeriod(r.date, scopeMode, prevPeriod)) return
+      ;(r.deduction || []).forEach(d => {
+        if (hits(d)) prevUsed += d.value
+      })
+    })
+    const prevLeft = Math.max(0, Math.round((prevGranted - prevUsed) * 10) / 10)
+    const carryAmount = s.carryOver > 0 ? Math.round(prevLeft * s.carryOver) / 100 : 0
+    const rawTotal = Math.round((granted + carryAmount) * 10) / 10
+    const limit = acquireLimitOf(s, scopeMode)
+    const quota = limit != null ? Math.min(rawTotal, limit) : rawTotal
+    const truncated = Math.round((quota - rawTotal) * 10) / 10
+
+    const factor = s.cycle === '自然月' ? (scopeMode === 'month' ? 1 : scopeMode === 'quarter' ? 3 : 12) : 1
+    const periodText = scopeMode === 'year' ? `${scopePeriod} 年度` : `${scopePeriod} 期`
+
+    const isDerived = !!s.derived
+    const grants = [{
+      kind: isDerived || adjust ? '折算' : '发放',
+      amount: granted,
+      unit: s.unit,
+      date: `${periodText}初`,
+      note: adjust
+        ? (adjust.note || '系统折算')
+        : isDerived
+          ? `按上月业绩折算${limit != null ? `，上限 ${limit} ${s.unit}` : ''}${s.carryOver > 0 ? `；期末剩余按 ${s.carryOver}% 结转` : ''}`
+          : `${s.cycle}发放${factor > 1 ? ` × ${factor}` : ''}${s.carryOver > 0 ? `；期末剩余按 ${s.carryOver}% 结转` : '；期末不结转'}`
+    }]
+    if (carryAmount > 0) {
+      grants.push({
+        kind: '结转',
+        amount: carryAmount,
+        unit: s.unit,
+        date: `${periodText}初`,
+        note: `${prevPeriod} 剩余 ${prevLeft} ${s.unit} × 结转比例 ${s.carryOver}%`
+      })
+    }
+    if (truncated < 0) {
+      grants.push({
+        kind: '上限',
+        amount: truncated,
+        unit: s.unit,
+        date: `${periodText}初`,
+        note: `发放 / 折算 ${granted} + 结转 ${carryAmount} = ${rawTotal} ${s.unit}，超过获取上限 ${limit} ${s.unit}，按上限生效`
+      })
+    }
+
     const remaining = Math.round((quota - used) * 10) / 10
 
     return {
       schemeId: s.id, leaveType: name, kind: 'cycle',
       unit: s.unit, quota, used, remaining, over: remaining < 0,
+      granted, carryIn: carryAmount, limit, truncated: truncated < 0 ? truncated : 0,
+      prevLeft, rawTotal, grants,
       adjusted: !!adjust, adjustNote: adjust ? adjust.note : '',
       scopeDim: s.resolvedDimension || 'all',
       scopeText: yearScoped ? '年' : mode === 'month' ? '月' : mode === 'quarter' ? '季' : '年'
     }
   })
+}
+
+/**
+ * 获取明细：某批员工在所选周期「怎么拿到这些额度」的流水 ——
+ * 发放（周期预发）/ 折算（系统折算）/ 结转（上期剩余按比例带入）。
+ * 一行一条获取记录，供盘点页的「获取明细」页签与员工抽屉使用。
+ */
+export function grantsOf(emps, mode, period) {
+  const out = []
+  emps.forEach(emp => {
+    balancesOf(emp, mode, period).forEach(b => {
+      if (b.kind !== 'cycle') return
+      ;(b.grants || []).forEach(g => out.push({
+        empId: emp.id,
+        staffNo: emp.staffNo,
+        empName: emp.name,
+        job: emp.job,
+        leaveType: b.leaveType,
+        scopeDim: b.scopeDim,
+        scopeText: b.scopeText,
+        ...g
+      }))
+    })
+  })
+  return out
 }
 
 /** 某员工在所选周期内的申请记录 */

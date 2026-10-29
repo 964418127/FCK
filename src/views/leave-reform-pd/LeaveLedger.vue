@@ -70,7 +70,7 @@
       <el-tabs v-model="tab">
         <!-- 余额盘点 -->
         <el-tab-pane label="余额盘点" name="balance">
-          <el-table :data="rows" size="small" class="bal-table">
+          <el-table :data="pagedRows" size="small" class="bal-table">
             <el-table-column label="员工" width="150" fixed>
               <template #default="{ row }">
                 <div class="emp-cell">
@@ -98,10 +98,20 @@
                       已用 {{ cellOf(row, t).used }} / 额度 {{ cellOf(row, t).quota }} {{ cellOf(row, t).unit }} · {{ cellOf(row, t).scopeText }}
                       <template v-if="cellOf(row, t).adjusted">（{{ cellOf(row, t).adjustNote }}）</template>
                     </span>
+                    <span v-if="cellOf(row, t).carryIn" class="bal-carry">
+                      含上期结转 +{{ cellOf(row, t).carryIn }} {{ cellOf(row, t).unit }}
+                      <template v-if="cellOf(row, t).truncated">
+                        · 超上限截断 {{ -cellOf(row, t).truncated }}
+                      </template>
+                    </span>
                   </template>
-                  <template v-else>
+                  <template v-else-if="cellOf(row, t).kind === 'event'">
                     <span class="bal-main">{{ cellOf(row, t).usedTimes }} 次</span>
                     <span class="bal-sub">每次 {{ cellOf(row, t).perTime }} {{ cellOf(row, t).unit }}</span>
+                  </template>
+                  <template v-else>
+                    <span class="bal-main ondemand">按需</span>
+                    <span class="bal-sub">无固定额度</span>
                   </template>
                 </div>
                 <span v-else class="none-text">—</span>
@@ -111,6 +121,56 @@
             <el-table-column label="操作" width="90" fixed="right">
               <template #default="{ row }">
                 <el-button size="small" link type="primary" @click="openDetail(row)">明细</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+            <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
+        </el-tab-pane>
+
+        <!-- 获取明细 -->
+        <el-tab-pane :label="`获取明细（${grantRows.length}）`" name="grant">
+          <div class="tab-note">
+            本期额度的来源流水：<b>发放</b>（周期预发）/ <b>折算</b>（系统折算假种）/ <b>结转</b>（上期剩余 × 方案结转比例）/ <b>上限</b>（合计超过获取上限时的截断量，为负）。额度 = 发放或折算 + 结转 − 上限截断。
+          </div>
+          <el-table :data="grantRows" size="small">
+            <el-table-column label="员工" width="150" fixed>
+              <template #default="{ row }">
+                <div class="emp-cell">
+                  <span class="emp-name">{{ row.empName }}</span>
+                  <span class="emp-sub">{{ row.staffNo }} · {{ row.job }}</span>
+                </div>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="假种" width="110">
+              <template #default="{ row }">
+                <span class="type-text">{{ row.leaveType }}</span>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="获取方式" width="104">
+              <template #default="{ row }">
+                <el-tag size="small" effect="plain" :type="grantTagType(row.kind)">{{ row.kind }}</el-tag>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="数量" width="110">
+              <template #default="{ row }">
+                <span class="grant-amount" :class="{ carry: row.kind === '结转', cut: row.kind === '上限' }">
+                  {{ row.kind === '结转' ? '+' : '' }}{{ row.amount }} {{ row.unit }}
+                </span>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="生效周期" width="150">
+              <template #default="{ row }">
+                <span class="dim-text">{{ row.date || '—' }} · {{ row.scopeText }}口径</span>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="说明" min-width="260">
+              <template #default="{ row }">
+                <span class="dim-text">{{ row.note }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -198,11 +258,28 @@
                   {{ b.over ? `超出 ${-b.remaining}` : `剩 ${b.remaining}` }} {{ b.unit }}
                 </span>
                 <span class="bc-sub">已用 {{ b.used }} / 额度 {{ b.quota }} {{ b.unit }} · {{ b.scopeText }}口径</span>
+                <div class="bc-grants">
+                  <span class="bc-grants-label">获取</span>
+                  <span
+                    v-for="(g, gi) in b.grants"
+                    :key="gi"
+                    class="grant-chip"
+                    :class="{ carry: g.kind === '结转', cut: g.kind === '上限' }"
+                    :title="g.note"
+                  >{{ g.kind }} {{ g.kind === '结转' ? '+' : '' }}{{ g.amount }} {{ g.unit }}</span>
+                </div>
+                <span v-if="b.truncated" class="bc-note">
+                  本期 {{ b.rawTotal }} 超获取上限 {{ b.limit }}，按上限 {{ b.quota }} {{ b.unit }} 生效
+                </span>
                 <span v-if="b.adjusted" class="bc-note">{{ b.adjustNote }}</span>
               </template>
-              <template v-else>
+              <template v-else-if="b.kind === 'event'">
                 <span class="bc-main">{{ b.usedTimes }} 次</span>
                 <span class="bc-sub">每次 {{ b.perTime }} {{ b.unit }}</span>
+              </template>
+              <template v-else>
+                <span class="bc-main ondemand">按需</span>
+                <span class="bc-sub">无固定额度，按规则核定</span>
               </template>
             </div>
             <div v-if="!current.balances.length" class="none-text">该岗位没有任何额度</div>
@@ -249,11 +326,14 @@ import {
   ledgerEmployees,
   balancesOf,
   recordsOf,
+  grantsOf,
   leaveRecords,
   ledgerSummary,
   excessText
 } from '../../mock/leaveLedger.js'
 import { dimLabel } from '../../mock/leaveWorkMode.js'
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 
 const modes = ledgerModes
 const jobs = ledgerJobOptions
@@ -308,6 +388,11 @@ const empName = (id) => (ledgerEmployees.find(e => e.id === id) || {}).name || i
 const empJob = (id) => (ledgerEmployees.find(e => e.id === id) || {}).job || ''
 const empNo = (id) => (ledgerEmployees.find(e => e.id === id) || {}).staffNo || ''
 
+/** 获取明细：发放 / 折算 / 结转，受顶部筛选影响 */
+const grantRows = computed(() => grantsOf(filteredEmps.value, mode.value, period.value))
+
+const grantTagType = (kind) => (kind === '结转' ? 'success' : kind === '上限' ? 'danger' : kind === '折算' ? 'warning' : 'primary')
+
 const recordRows = computed(() => {
   const ids = rows.value.map(r => r.emp.id)
   const list = leaveRecords.filter(r => ids.includes(r.empId))
@@ -330,6 +415,9 @@ const openDetail = (row) => {
   current.value = row
   drawerVisible.value = true
 }
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(rows)
 </script>
 
 <style scoped>
@@ -368,7 +456,15 @@ const openDetail = (row) => {
 .bal-cell { display: flex; flex-direction: column; gap: 1px; }
 .bal-main { font-size: 13px; font-weight: 500; color: hsl(var(--foreground)); }
 .bal-cell.over .bal-main { color: hsl(0 72% 51%); }
+.bal-main.ondemand { font-weight: 500; color: hsl(var(--muted-foreground)); }
 .bal-sub { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
+.bal-carry { font-size: 11px; color: hsl(150 45% 32%); }
+
+/* 获取明细 */
+.tab-note { font-size: 12px; line-height: 1.7; color: hsl(var(--muted-foreground)); margin: -2px 0 10px; }
+.grant-amount { font-size: 12.5px; font-weight: 500; color: hsl(var(--foreground)); }
+.grant-amount.carry { color: hsl(150 45% 32%); }
+.grant-amount.cut { color: hsl(0 72% 51%); }
 
 /* 明细 */
 .type-text { font-size: 12.5px; color: hsl(var(--foreground)); }
@@ -408,6 +504,14 @@ const openDetail = (row) => {
 .bc-main.over { color: hsl(0 72% 51%); }
 .bc-sub { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
 .bc-note { font-size: 11px; color: hsl(38 92% 38%); }
+.bc-grants { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+.bc-grants-label { font-size: 11px; color: hsl(var(--muted-foreground) / 0.85); }
+.grant-chip {
+  font-size: 10.5px; padding: 0 6px; border-radius: 8px; line-height: 1.7;
+  border: 1px solid hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--muted-foreground));
+}
+.grant-chip.carry { border-color: hsl(150 45% 40% / 0.45); background: hsl(150 45% 40% / 0.1); color: hsl(150 45% 32%); }
+.grant-chip.cut { border-color: hsl(0 72% 51% / 0.45); background: hsl(0 72% 51% / 0.08); color: hsl(0 72% 45%); }
 
 .rec-list { display: flex; flex-direction: column; gap: 8px; }
 .rec-item { padding: 9px 12px; border-radius: 6px; border: 1px solid hsl(var(--border)); }

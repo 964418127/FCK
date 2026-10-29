@@ -36,7 +36,13 @@ export const pdToday = { year: 2026, month: 10, day: 15 }
 /* ---------------- 离职案例 ----------------
    source = 'apply'   ：主动离职（有申请、有审批、有期望离职日期）
    source = 'monitor' ：异常监控（未出勤触发，无申请无审批，「最后工作日」语义模糊）
-   status = 'pending' | 'released'
+   status = 'pending' | 'released' | 'void'
+     void = 交接未通过、终止全部流程作废（员工仍在职，需重新发起）
+   admission = 'pending' | 'approved' | 'rejected'
+     发起后的第一道关口：**离职需求审核**——审核人判断是否进入交接流程；
+     不通过 → 作废并通知员工。确认人复用现有发起确认链的配置（门店侧分区、总部为部门设置的上级）。
+     缺省视为 approved（历史单已过准入）。
+   交接进度不在这里存，见 mock/resignHandoverPd.js（按 caseId 关联）
 */
 export const resignCases = [
   {
@@ -58,6 +64,9 @@ export const resignCases = [
     expectLeaveDate: '2026-10-20',
     reason: '照顾家庭',
     hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2011-03-08',
+    employType: '全职',
     lastMonth: { output: 19353, revisitRate: '39%', bookingRate: '52%', score: 4.6, techScore: 0 }
   },
   {
@@ -79,6 +88,9 @@ export const resignCases = [
     expectLeaveDate: '2026-09-23',
     reason: '照顾家庭',
     hasSocialInsurance: false,
+    admission: 'approved',
+    hireDate: '2009-06-15',
+    employType: '全职',
     lastMonth: { output: 19353, revisitRate: '39%', bookingRate: '52%', score: 4.6, techScore: 0 }
   },
   {
@@ -100,6 +112,9 @@ export const resignCases = [
     expectLeaveDate: '2026-10-15',
     reason: '自主创业',
     hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2023-04-12',
+    employType: '全职',
     lastMonth: { output: 8800, revisitRate: '31%', bookingRate: '44%', score: 4.3, techScore: 0 }
   },
   {
@@ -121,6 +136,9 @@ export const resignCases = [
     expectLeaveDate: '2026-10-14',
     reason: '离家太远',
     hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2022-08-01',
+    employType: '全职',
     lastMonth: { output: 9200, revisitRate: '35%', bookingRate: '47%', score: 4.5, techScore: 0 }
   },
   {
@@ -142,6 +160,9 @@ export const resignCases = [
     expectLeaveDate: '2026-10-14',
     reason: '工资太低',
     hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2020-11-23',
+    employType: '全职',
     lastMonth: { output: 10400, revisitRate: '42%', bookingRate: '55%', score: 4.7, techScore: 0 }
   },
   /* 总部员工：不排班、不接单、无技法无门店，只有部门 */
@@ -165,7 +186,60 @@ export const resignCases = [
     expectLeaveDate: '2026-10-31',
     reason: '工资太低',
     hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2025-07-28',
+    employType: '全职',
     lastMonth: null
+  },
+  /* 待审核：发起后第一道关口，确认人（现有发起确认链配置）判断是否进入交接流程 */
+  {
+    id: 'rs14',
+    source: 'apply',
+    status: 'pending',
+    admission: 'pending',
+    staffNo: 'TL2212',
+    name: '李诗琪',
+    gender: '女',
+    age: 26,
+    job: '客户经理',
+    level: '1.5',
+    technique: '—',
+    store: '凤凰汇',
+    tenureYears: 2,
+    postYears: 2,
+    phone: '13800001212',
+    appliedAt: '2026-10-23 09:41:07',
+    expectLeaveDate: '2026-11-05',
+    reason: '回老家发展',
+    hasSocialInsurance: true,
+    hireDate: '2024-09-02',
+    employType: '全职',
+    lastMonth: { output: 7600, revisitRate: '28%', bookingRate: '41%', score: 4.2, techScore: 0 }
+  },
+  /* 交接未通过 → 终止全部流程作废：员工仍在职，需人事处理后重新发起 */
+  {
+    id: 'rs13',
+    source: 'apply',
+    status: 'void',
+    staffNo: 'TL2207',
+    name: '周敏',
+    gender: '女',
+    age: 29,
+    job: '调理师',
+    level: '1.5',
+    technique: '精油',
+    store: '五棵松万达店',
+    tenureYears: 2,
+    postYears: 2,
+    phone: '13800001207',
+    appliedAt: '2026-10-13 09:05:12',
+    expectLeaveDate: '2026-10-24',
+    reason: '离家太远',
+    hasSocialInsurance: true,
+    admission: 'approved',
+    hireDate: '2024-05-20',
+    employType: '全职',
+    lastMonth: { output: 11800, revisitRate: '33%', bookingRate: '46%', score: 4.4, techScore: 0 }
   },
   /* 异常监控：无申请、无审批，未出勤触发的待处理项 */
   {
@@ -222,10 +296,10 @@ export function caseOf(id) {
    推拿师 / 客户经理 → 门店侧；总部 → 总部侧。
 */
 const personaMap = {
-  rs01: 'therapist', rs02: 'therapist',
-  rs03: 'manager', rs04: 'manager', rs05: 'manager',
+  rs01: 'therapist', rs02: 'therapist', rs13: 'therapist',
+  rs03: 'manager', rs04: 'manager', rs05: 'manager', rs14: 'manager',
   rs06: 'hq',
-  rs11: 'therapist', rs12: 'therapist'
+  rs11: 'therapist', rs12: 'therapist', rs13: 'therapist'
 }
 export const personaLabels = { therapist: '推拿师', manager: '客户经理', hq: '总部' }
 export function personaOf(c) { return personaMap[c.id] || 'therapist' }
@@ -255,8 +329,50 @@ export function empRowsOf(c) {
    口径：审批通过后，**实际离职日期之后的排班全部取消**。
    这里只放「待取消的排班条数」，用于审批页给人事看一眼影响面。
 */
-const scheduleAfterLeave = { rs01: 3, rs02: 0, rs03: 2, rs04: 1, rs05: 4, rs06: 0, rs11: 5, rs12: 2 }
+const scheduleAfterLeave = { rs01: 3, rs02: 0, rs03: 2, rs04: 1, rs05: 4, rs06: 0, rs11: 5, rs12: 2, rs13: 4, rs14: 6 }
 export function scheduleCountOf(c) { return scheduleAfterLeave[c.id] || 0 }
+
+/* ---------------- 离职需求审核（发起后的第一道关口） ----------------
+   员工发起后，先由**确认人**判断是否进入交接流程，通过后才生成交接清单。
+   确认人复用现有发起确认链的配置（personaPresets.reviewers）：
+     门店侧按分区配置（推拿师 / 客户经理各自的确认人），总部为部门设置的上级。
+   不通过 → 单据作废并通知员工。 */
+export function admissionOf(c) {
+  return c?.source === 'apply' ? (c.admission || 'approved') : 'none'
+}
+
+export function admissionLabelOf(c) {
+  return { pending: '待审核', approved: '已进入交接', rejected: '已作废', none: '—' }[admissionOf(c)] || '—'
+}
+
+/** 准入确认人：与发起确认链同一份配置 */
+export function admissionReviewersOf(c) {
+  return personaPresets[personaOf(c)]?.reviewers || []
+}
+
+/* ---------------- 离职合同信息（发起时即采集，最后一步只确认发出） ----------------
+   发起提交后即生成合同草稿：员工填报的（期望离职日期 / 原因 / 补充说明）+ 档案带出的
+   （姓名 / 岗位 / 用工类型 / 入职日期）。实际离职日期与补偿金由人事在发出前确认/录入。 */
+export function contractRowsOf(c) {
+  if (!c || c.source !== 'apply') return []
+  const stopMonth = (() => {
+    const m = /^(\d{4})-(\d{2})/.exec(c.expectLeaveDate || '')
+    if (!m) return '—'
+    const y = +m[1] + (m[2] === '12' ? 1 : 0)
+    const mm = m[2] === '12' ? '01' : String(+m[2] + 1).padStart(2, '0')
+    return `${y}-${mm}`
+  })()
+  return [
+    { k: '离职类型', v: '主动辞职', src: '发起带出' },
+    { k: '员工姓名', v: `${c.name}（${c.staffNo}）`, src: '档案带出' },
+    { k: '岗位 / 用工类型', v: `${c.job} · ${c.employType || '全职'}`, src: '档案带出' },
+    { k: '入职日期', v: c.hireDate || '—', src: '档案带出' },
+    { k: '最后工作日', v: c.expectLeaveDate, src: '员工填报 · 人事确认后锁定' },
+    { k: '离职原因', v: c.reason, src: '员工填报' },
+    { k: '社保公积金停缴', v: `${stopMonth} 起`, src: '按最后工作日自动算' },
+    { k: '一次性补偿金', v: '如有，人事协商后录入（协议附件留档）', src: '人事后补' }
+  ]
+}
 
 /* ---------------- 一次性补偿金的金额口径 ----------------
    上限 = 过去 12 个月平均收入 × (N + 1)   —— N+1 是唯一上限，不叠单笔封顶
@@ -269,7 +385,7 @@ export function scheduleCountOf(c) { return scheduleAfterLeave[c.id] || 0 }
 */
 const avgIncome12m = {
   rs01: 8200, rs02: 7900, rs03: 9600,
-  rs04: 8800, rs05: 10400, rs06: 15500
+  rs04: 8800, rs05: 10400, rs06: 15500, rs13: 9100, rs14: 8600
 }
 
 export function avgIncomeOf(c) {
@@ -286,15 +402,18 @@ export function compLimitOf(c) {
   return { avg, n, months, cap }
 }
 
-/** 卡片角标：单据状态（主动离职：待审核 / 已办结；异常监控：未处理 / 已解除） */
+/** 卡片角标：单据状态（主动离职：待准入 / 待审核 / 已办结 / 已作废；异常监控：未处理 / 已解除） */
 export function badgeOf(c) {
   if (c.source === 'monitor') return c.status === 'untreated' ? '未处理' : '已解除'
+  if (c.status === 'void') return '已作废'
+  if (c.status === 'pending' && admissionOf(c) === 'pending') return '待审核'
   return c.status === 'pending' ? '待审核' : '已办结'
 }
 
-/** 状态字：员工状态（在职 / 已离职） */
+/** 状态字：员工状态（在职 / 已离职）；作废单员工仍在职 */
 export function statusLabel(c) {
   if (c.source === 'monitor') return '未处理'
+  if (c.status === 'void') return '在职'
   return c.status === 'pending' ? '在职' : '已离职'
 }
 
@@ -313,7 +432,8 @@ const bankAccounts = {
   rs05: { holder: '祝金林', cardNo: '6222 0210 0088 3391', bankName: '中国工商银行' },
   rs06: { holder: '徐立', cardNo: '6217 0038 6620 4471', bankName: '中国建设银行' },
   rs11: { holder: '李明亮', cardNo: '6225 8801 5527 0134', bankName: '兴业银行' },
-  rs12: { holder: '丁雪梅', cardNo: '6214 8302 7730 5581', bankName: '招商银行' }
+  rs12: { holder: '丁雪梅', cardNo: '6214 8302 7730 5581', bankName: '招商银行' },
+  rs13: { holder: '周敏', cardNo: '6217 0038 1102 6690', bankName: '中国建设银行' }
 }
 
 export function bankAccountOf(c) {
@@ -344,10 +464,7 @@ export const personaPresets = {
       { k: '合同门店', v: '五棵松万达店' }
     ],
     bank: { holder: '王小宁', cardNo: '6229 0843 3251 7097', bankName: '兴业银行' },
-    reviewers: [
-      { name: '邓黎英', role: '人事经理' },
-      { name: '朱艳秋', role: '人事经理' }
-    ],
+    reviewers: [{ name: '邓黎英', role: '人事经理' }],
     cc: [
       { name: '龙春燕', role: '招生老师' },
       { name: '潘小娅', role: '技术副总' },
@@ -438,6 +555,12 @@ const assetSnapshots = {
     quota: { rows: [{ name: '年假', remain: 6, unit: '天' }], estimated: null },
     consult: null
   },
+  rs14: {
+    bean: { onBook: 520, pending: 180, withdrawable: 520, settled: true },
+    negative: { account: 0 },
+    quota: { rows: [{ name: '年假', remain: 3, unit: '天' }], estimated: null },
+    consult: null
+  },
   rs11: {
     bean: { onBook: 1580, pending: 320, withdrawable: 1580, settled: false },
     negative: { account: -80 },
@@ -448,6 +571,13 @@ const assetSnapshots = {
     bean: { onBook: 240, pending: 90, withdrawable: 240, settled: false },
     negative: { account: 0 },
     quota: { rows: [{ name: '年假', remain: 2.5, unit: '天' }], estimated: null },
+    consult: null
+  },
+  /* 作废单：交接未通过，未进入资产处理，资产只留发起时的快照 */
+  rs13: {
+    bean: { onBook: 180, pending: 0, withdrawable: 180, settled: false },
+    negative: { account: -3200 },
+    quota: { rows: [{ name: '年假', remain: 1.5, unit: '天' }], estimated: null },
     consult: null
   }
 }

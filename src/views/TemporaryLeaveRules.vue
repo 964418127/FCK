@@ -13,7 +13,7 @@
             <el-button type="primary" size="small" @click="openAddCityDialog">+ 新增城市</el-button>
           </div>
           <div class="config-content">
-            <el-table :data="configTableData" border style="width: 100%">
+            <el-table :data="pagedRows" border style="width: 100%">
               <el-table-column prop="type" label="类型" width="120"></el-table-column>
               <el-table-column label="临时休假时长获取" min-width="300">
                 <template #default="scope">
@@ -46,6 +46,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
           </div>
         </div>
       </div>
@@ -57,7 +58,7 @@
             <el-button type="primary" size="small" @click="openAddStoreDialog">+ 新增门店</el-button>
           </div>
           <div class="config-content">
-            <el-table :data="storeTableData" border style="width: 100%">
+            <el-table :data="pagedRows2" border style="width: 100%">
               <el-table-column prop="storeName" label="门店名称" width="150"></el-table-column>
               <el-table-column prop="cityName" label="所属城市" width="120"></el-table-column>
               <el-table-column label="临时休假时长获取" min-width="300">
@@ -91,6 +92,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
           </div>
         </div>
       </div>
@@ -307,6 +309,8 @@
 <script setup>
 import { reactive, ref, computed } from 'vue'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const globalConfig = reactive({
   turnoverRate: {
     percent: 10,
@@ -621,6 +625,10 @@ const deleteStore = (id) => {
     storeConfigs.value.splice(index, 1)
   }
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(configTableData)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(storeTableData)
 </script>
 
 <style scoped>

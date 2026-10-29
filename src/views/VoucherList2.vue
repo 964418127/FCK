@@ -127,7 +127,7 @@
         </div>
 
         <el-table
-          :data="tableRows"
+          :data="pagedRows"
           border
           stripe
           size="small"
@@ -337,6 +337,7 @@
             </template>
           </el-table-column>
         </el-table>
+        <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
       </template>
     </div>
   </div>
@@ -631,6 +632,8 @@ const hasEmptySlots = computed(() =>
 
 // ==================== 详情：跳转到独立页面 ====================
 import { useRouter } from 'vue-router'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const router = useRouter()
 
 const handleSlipDetail = (row, slip) => {
@@ -765,6 +768,9 @@ const getStatusLabel = (status) => {
   }
   return map[status] || status
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(tableRows)
 </script>
 
 <style scoped>

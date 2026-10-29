@@ -368,7 +368,7 @@
       width="900px"
       :before-close="handleHistoryDialogClose"
     >
-      <el-table :data="historyData" stripe style="width: 100%">
+      <el-table :data="pagedRows" stripe style="width: 100%">
         <el-table-column prop="updateTime" label="更新时间" width="160">
           <template #default="scope">
             {{ formatDate(scope.row.updateTime) }}
@@ -394,6 +394,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </el-dialog>
   </div>
 </template>
@@ -413,6 +414,8 @@ import {
   
 } from '@element-plus/icons-vue'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 // 响应式数据
 const searchForm = reactive({
   city: '',
@@ -569,9 +572,6 @@ const historyData = ref([
     updateNote: '系统初始化导入'
   }
 ])
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
 
 // 策略配置已简化，无需标签页切换
 
@@ -1474,7 +1474,6 @@ const filteredData = computed(() => {
     data = data.filter(item => item.endStore.id === searchForm.endStore)
   }
 
-  total.value = data.length
   return data
 })
 
@@ -1798,15 +1797,6 @@ const handleStandardDetailClose = () => {
   standardDetailDialogVisible.value = false
 }
 
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1
-}
-
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-}
-
 // 编辑门店关联
 const handleEdit = (row) => {
   currentEditItem.value = row
@@ -1838,9 +1828,7 @@ const formatDate = (dateStr) => {
 // 表单引用已移除
 
 // 生命周期
-onMounted(() => {
-  total.value = intervalData.value.length
-})
+onMounted(() => {})
 
 // 新增页面数据 & 状态
 const addDialogVisible = ref(false)
@@ -2207,6 +2195,9 @@ const confirmEditRoute = () => {
   ElMessage.success(`编辑路线已保存（${editForm.routePairs.length} 条记录）`)
   editDialogVisible.value = false
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(historyData)
 </script>
 
 <style scoped>

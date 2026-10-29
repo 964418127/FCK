@@ -96,7 +96,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td><strong>计量方式</strong></td><td>假期额度方案</td><td>四选一：周期发放（预发、可结转）/ 周期上限（不预发、封顶，系统折算）/ 按次上限（不预发、每次封顶 + 有效期）/ 按需（不设值，如病假按医疗期核定）。</td></tr>
+          <tr><td><strong>计量方式</strong></td><td>假期额度方案</td><td>四选一：周期发放（预发、可按剩余额度比例结转）/ 周期上限（不预发、封顶，系统折算）/ 按次上限（不预发、每次封顶 + 有效期）/ 按需（不设值，如病假按医疗期核定）。</td></tr>
           <tr><td><strong>额度来源</strong></td><td>假期类型字典</td><td>方案定值 / 系统折算两种；系统折算读方案库的周期上限（如临时假 16 时/月），历史存量不在本系统处理。</td></tr>
           <tr><td><strong>适用性</strong></td><td>假期类型字典</td><td>全岗位 / 指定岗位清单；决定移动端申请页能不能看到这个假种。</td></tr>
           <tr><td><strong>是否排他</strong></td><td>假期类型字典</td><td>写入员工时间线业务事件层时的排他占位声明。</td></tr>
@@ -104,7 +104,7 @@
           <tr><td><strong>提前申请期</strong></td><td>假期审核规则</td><td>单位天；0 = 无要求，界面不显示该行（病假事出突然，不体现「提前 N 天」）。</td></tr>
           <tr><td><strong>审核方式</strong></td><td>假期审核规则</td><td>自动 / 人工；自动审核单据不进审批列表。</td></tr>
           <tr><td><strong>差异化条目</strong></td><td>假期额度方案 · 假期审核规则</td><td>仅城市 / 门店，只改数值；门店优先、命中即停；岗位不参与差异化。</td></tr>
-          <tr><td><strong>结转下期</strong></td><td>假期额度方案</td><td>周期发放是否结转到下一周期；周期上限 / 按次上限 / 按需不适用。</td></tr>
+          <tr><td><strong>结转下期</strong></td><td>假期额度方案</td><td>周期发放 / 周期上限可配：期末剩余额度 × 比例带入下一周期（0 = 不结转、100 = 全额结转）；与本期发放或折算合计后受「获取上限」封顶。按次上限 / 按需不结转。</td></tr>
           <tr><td><strong>补缺路径</strong></td><td>岗位假勤方案</td><td>接班任务 / 改班次 / 无缺岗 三选一；决定请假生效后缺岗信号的去向。</td></tr>
           <tr><td><strong>扣减记录</strong></td><td>移动端休假记录</td><td>通过的额度段逐条落在方案上，「已用」由记录自动汇总。</td></tr>
         </tbody>
@@ -425,6 +425,11 @@
           <DocCopyButton section-id="lr-func-1" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期类型</strong>（<code>/leave-type-dictionary</code>）</div>
+        <DocScreens
+          :images="[
+            { src: typeDictShot, label: '假期类型字典：只定性（类别 / 排他 / 启用 / 适用性），额度与凭证在别处' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>字典只做<strong>定性</strong>——这个假种「是什么」。类别、是否排他、启用状态、适用性；<strong>有多少（额度）、怎么批（审核）、带不带薪（薪酬）都不在这里</strong>。
@@ -462,6 +467,13 @@
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期额度方案</strong>（<code>/leave-wm-quota</code>）</div>
 
+        <DocScreens
+          :images="[
+            { src: quotaListShot, label: '方案库：每个假种一份方案（标准值 / 差异化 / 结转一眼可见）' },
+            { src: quotaDrawerShot, label: '方案配置抽屉（以年假为例：计量方式 / 结转比例 / 获取上限 / 差异化条目）' }
+          ]"
+        />
+
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>定值层——这个假种「有多少」。方案三块独立：<strong>适用岗位 + 标准值 + 差异化条目</strong>；计量方式四选一。
         </div>
@@ -472,8 +484,8 @@
             <tr><th style="width: 110px;">计量档</th><th style="width: 300px;">发放方式</th><th>典型假种</th></tr>
           </thead>
           <tbody>
-            <tr><td><strong>周期发放</strong></td><td>按周期预发，可配置结转下期</td><td>年假等可预发的假种</td></tr>
-            <tr><td><strong>周期上限</strong></td><td>不预发、封顶控制；由系统按假种逐期折算合成余额</td><td>临时假（16 时/月）</td></tr>
+            <tr><td><strong>周期发放</strong></td><td>按周期预发，可按「期末剩余 × 比例」结转下期</td><td>年假等可预发的假种</td></tr>
+            <tr><td><strong>周期上限</strong></td><td>不预发、封顶控制；由系统按假种逐期折算合成余额。上限同样支持按城市 / 门店差异化</td><td>临时假（16 时/月）、特殊情况请假（兜底通道）</td></tr>
             <tr><td><strong>按次上限</strong></td><td>不预发；每次申请封顶，并限定自事件起的有效期</td><td>婚假（一次性、限期使用）</td></tr>
             <tr><td><strong>按需</strong></td><td>不设额度值，按需申请、按规则核定</td><td>病假（按医疗期核定）</td></tr>
           </tbody>
@@ -488,7 +500,13 @@
             <strong>标准值：</strong>该假种的统一额度口径；按需档无标准值，界面显示「按需」。
           </li>
           <li>
-            <strong>差异化条目：</strong>按城市 / 门店覆盖标准值，<strong>只改数值</strong>；门店优先、命中即停——地域决定「<strong>值多少</strong>」。
+            <strong>差异化条目：</strong>按城市 / 门店覆盖方案里的那个数值——周期发放改<strong>标准额度</strong>、周期上限改<strong>获取上限</strong>、按次上限改<strong>每次上限</strong>，<strong>只改数值</strong>；门店优先、命中即停——地域决定「<strong>值多少</strong>」。按需档没有数值，不参与差异化。
+          </li>
+          <li>
+            <strong>结转比例：</strong>周期发放与周期上限两档可配，填<strong>比例</strong>——周期结束时按「<strong>剩余额度 × 比例</strong>」带入下一周期作为下期额度的来源之一（0 = 不结转，100 = 全额结转），其余作废；按次 / 按需档不结转。
+          </li>
+          <li>
+            <strong>获取上限：</strong>本期可得的封顶值。上限档（如临时假 16 小时/月）的上限就是方案里的那个数；周期发放档可选填——<strong>发放 + 结转</strong> 合计超过时按上限生效（如 8 天 + 结转 4 天 = 12 天，上限 10 天 → 生效 10 天）。
           </li>
         </ul>
 
@@ -506,6 +524,11 @@
           <DocCopyButton section-id="lr-func-3" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期审核规则</strong>（<code>/leave-audit-consequence</code>）</div>
+        <DocScreens
+          :images="[
+            { src: auditRulesShot, label: '假期审核规则：每个假种的凭证要求 / 提前申请期 / 审核方式 + 城市 / 门店差异化' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>定流程——这个假种「怎么批」。每个假种<strong>三项基础规则</strong> + 可选差异化条目；与岗位审批方式<strong>合并取严</strong>。
@@ -553,6 +576,11 @@
           <DocCopyButton section-id="lr-func-4" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>出勤方案</strong>（<code>/leave-wm-scheme</code>）</div>
+        <DocScreens
+          :images="[
+            { src: schemeShot, label: '出勤方案：日历口径（周基础模式 + 法定节假日解读 + 特殊日），不排班次' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>日历口径——哪天默认该上班。周基础模式 + 法定节假日解读 + 特殊日。
@@ -567,6 +595,18 @@
         <div class="note">
           <strong>不做什么：</strong>不排班、不定班次、不生成名额——出勤方案是<strong>日历口径，不是班次计划</strong>。
         </div>
+
+        <h4 class="h4sub">设计参考 · 统一时间管理体系</h4>
+        <p style="font-size: 13px; color: hsl(var(--foreground)); line-height: 1.8; margin: 0 0 10px;">
+          时间维度的分层思路参考下方「统一时间管理体系」：出勤方案只 owning <strong>时间轴 + 用工基数层</strong>（哪天默认该上班），
+          考勤组 / 排班层与业务事件层归现有排班排假与业务系统（详见 6.6 与 5.1 边界）。
+          时间线本体在<strong>员工请假提交（6.8）与审批（6.9）</strong>时才真正被消费——两处都要拿申请时段到时间轴上做校验。
+        </p>
+        <DocFigure
+          :src="timeSystemImg"
+          title="统一时间管理体系 · 分层设计参考"
+          note="时间轴唯一；用工基数层定「哪天该上班」，其上各层由对应系统各自 owning"
+        />
       </div>
 
       <!-- ===== 6.5 岗位假勤方案 ===== -->
@@ -576,6 +616,11 @@
           <DocCopyButton section-id="lr-func-5" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>岗位假勤方案</strong>（<code>/leave-wm-work-mode</code>）</div>
+        <DocScreens
+          :images="[
+            { src: workModeShot, label: '岗位假勤方案（枢纽页）：按岗位装配出勤 / 额度 / 考勤 / 打卡，右侧日历预览' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>枢纽——岗位 × 四类配置（字典 / 额度 / 审核 / 出勤）的装配点，<strong>自己不定任何值</strong>。
@@ -616,6 +661,11 @@
           <DocCopyButton section-id="lr-func-6" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>考勤组</strong>（<code>/leave-wm-attendance</code>）</div>
+        <DocScreens
+          :images="[
+            { src: attendanceShot, label: '考勤组：比对范围与打卡方式配置' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>比对口径——比几层、比哪些。
@@ -635,6 +685,11 @@
           <DocCopyButton section-id="lr-func-7" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>Web 后台 → 假勤管理 → <strong>假期盘点</strong>（<code>/leave-wm-ledger</code>）</div>
+        <DocScreens
+          :images="[
+            { src: ledgerShot, label: '假期盘点：余额 / 获取明细 / 变动三页签，结转与上限截断可逐条解释' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>只读——余额与明细的统一出口。
@@ -642,6 +697,8 @@
 
         <ul class="lr-list">
           <li><strong>余额合成：</strong>系统折算部分按字典的周期上限合成 + 额度方案解档；周期上限方案不重复并入。</li>
+          <li><strong>三个页签：</strong>余额盘点（每人每假种一行）· <strong>获取明细</strong>（发放 / 折算 / 结转的流水）· 使用明细（申请与扣减链路）。</li>
+          <li><strong>额度 = 本期获取：</strong>发放（周期预发、按城市 / 门店解档）或折算（系统折算假种）+ <strong>上期结转</strong>（上期剩余 × 方案结转比例）− <strong>上限截断</strong>（合计超过获取上限的部分）；员工抽屉里每个假种卡片都带一行「获取」。</li>
           <li><strong>按需假种：</strong>不显示余额，只显示「按需」（如病假按医疗期核定，没有可盘点的数）。</li>
           <li><strong>不提供任何改数入口：</strong>与配置层没有反写路径；余额异常要回配置与记录层排查。</li>
         </ul>
@@ -654,6 +711,13 @@
           <DocCopyButton section-id="lr-func-8" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>移动端 → 假勤桌面 → <strong>请假</strong>（<code>/mobile-leave-pd/apply</code>）</div>
+        <DocScreens
+          mode="phone"
+          :images="[
+            { src: mLeaveApplyShot, label: '员工请假提交：提交时做一次额度 / 校验时间线验证（见 6.8）' },
+            { src: mLeaveApprovalShot, label: '假期审批：审批时做第二次时间线验证（见 6.9）' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>员工侧申请入口——只展示该岗位适用的假种，选完假种即见当前余额。
@@ -709,6 +773,11 @@
         <h4 class="h4sub">校验与提交</h4>
         <ul class="lr-list">
           <li><strong>额度型超额禁止提交</strong>——没有「超出折薪」通道，超额只能改天数或换假种。</li>
+          <li>
+            <strong>时间线校验（第一次）：</strong>提交前把申请时段放到「统一时间管理体系」的时间轴上过一遍——
+            休假日期是否落在出勤方案的应勤日（用工基数层）、是否与已排班次 / 已有业务事件（会议 / 培训 / 调整）冲突、
+            是否撞上外部事件层（培训 / 学习认证等占用）。校验不通过的时段<strong>拦截提交</strong>并标出冲突层。
+          </li>
           <li>提交后单据进入审批流；申请详情可见<strong>审批人（名 · 岗位）</strong>与审批流转状态。</li>
         </ul>
       </div>
@@ -720,6 +789,12 @@
           <DocCopyButton section-id="lr-func-9" />
         </div>
         <div class="func-entry"><strong>功能入口：</strong>移动端 → 假勤桌面 → <strong>假期审批</strong>（<code>/mobile-leave-pd/approval</code>）</div>
+        <DocScreens
+          mode="phone"
+          :images="[
+            { src: mLeaveApprovalShot, label: '假期审批列表：只列人工审批单据，自动审核假种不进入' }
+          ]"
+        />
 
         <div class="note" style="background: hsl(var(--primary) / 0.05); border-left: 3px solid hsl(var(--primary)); margin-bottom: 16px;">
           <strong>一句话定位：</strong>人事 / 总部侧处理端——审核规则里「人工审批」的落地入口。<strong>本期补齐的缺口</strong>：此前移动端只有员工申请，人工审批没有处理端，规则落不了地。
@@ -753,6 +828,11 @@
           <li><strong>申请信息：</strong>休假字段 + 凭证（可查看员工上传的证明材料）。</li>
           <li><strong>余额与本次扣除：</strong>本单占用多少、扣哪个方案的哪一段。</li>
           <li><strong>命中的审核规则：</strong>审批方式、本单审批人；提前申请期仅在有要求时显示（病假不显示）。</li>
+          <li>
+            <strong>时间线校验（第二次）：</strong>审批动作执行前对申请时段<strong>重新过一遍时间轴</strong>——
+            提交到审批之间隔了真实时间，排班可能改过、新的业务事件可能落进了休假时段，提交时的校验结果不能直接沿用。
+            二次校验不通过时，通过按钮置灰并提示冲突点，审批人只能驳回或让员工撤回重提。
+          </li>
         </ul>
 
         <div class="note">
@@ -804,7 +884,20 @@
 <script setup>
 import DocShell from '../../docs/components/DocShell.vue'
 import DocCopyButton from '../../docs/components/DocCopyButton.vue'
+import DocFigure from '../../docs/components/DocFigure.vue'
+import DocScreens from '../../docs/components/DocScreens.vue'
 import { Calendar, User, CollectionTag } from '@element-plus/icons-vue'
+import timeSystemImg from '../../docs/assets/unified-time-system.png'
+import quotaListShot from '../../docs/assets/pages/wm-quota-library.png'
+import quotaDrawerShot from '../../docs/assets/pages/wm-quota-drawer.png'
+import typeDictShot from '../../docs/assets/pages/wm-type-dict.png'
+import auditRulesShot from '../../docs/assets/pages/wm-audit-rules.png'
+import schemeShot from '../../docs/assets/pages/wm-scheme.png'
+import workModeShot from '../../docs/assets/pages/wm-work-mode.png'
+import attendanceShot from '../../docs/assets/pages/wm-attendance.png'
+import ledgerShot from '../../docs/assets/pages/wm-ledger.png'
+import mLeaveApplyShot from '../../docs/assets/pages/m-leave-apply.png'
+import mLeaveApprovalShot from '../../docs/assets/pages/m-leave-approval.png'
 
 const tocItems = [
   { id: 'lr-version', label: '一、版本信息' },

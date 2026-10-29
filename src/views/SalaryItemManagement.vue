@@ -31,7 +31,7 @@
       </div>
 
       <!-- 薪酬项列表 -->
-      <el-table :data="filteredSalaryItems" stripe style="width: 100%; margin-top: 16px;">
+      <el-table :data="pagedRows" stripe style="width: 100%; margin-top: 16px;">
         <el-table-column prop="id" label="编号" width="80" />
         <el-table-column prop="name" label="薪酬项名称" min-width="150" />
         <el-table-column prop="type" label="类型" width="120">
@@ -59,6 +59,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
 
       <el-empty v-if="filteredSalaryItems.length === 0" description="暂无薪酬项" />
     </div>
@@ -610,6 +611,8 @@ const rules = {
 // 过滤后的薪酬项列表
 const router = useRouter()
 import { storeSalaryStrategies as storeStrategies, INPUT_PARAM_TYPE_LABELS } from '../mock/storeSalaryStrategies.js'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 // ============ 数据源函数弹窗 ============
 const dsDialogVisible = ref(false)
 const dsTargetBranch = ref(null)
@@ -982,6 +985,9 @@ const handleSubmit = async () => {
     }
   })
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredSalaryItems)
 </script>
 
 <style scoped>

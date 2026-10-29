@@ -38,7 +38,7 @@
         </span>
       </div>
 
-      <el-table :data="filteredData" stripe style="width: 100%; margin-top: 12px;">
+      <el-table :data="pagedRows" stripe style="width: 100%; margin-top: 12px;">
         <el-table-column prop="employeeId" label="员工编号" width="100" />
         <el-table-column prop="employeeName" label="姓名" width="100" />
         <el-table-column prop="idCard" label="身份证号" width="160" />
@@ -117,6 +117,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- 新增/编辑弹窗 -->
@@ -242,6 +243,8 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 
 const searchForm = reactive({ keyword: '', month: '', recordType: '' })
 const monthOptions = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']
@@ -334,6 +337,9 @@ const handleImportSubmit = () => {
   importDialogVisible.value = false
   ElMessage.success('导入成功')
 }
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(filteredData)
 </script>
 
 <style scoped>

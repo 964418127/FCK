@@ -78,7 +78,7 @@
         </div>
       </div>
 
-      <el-table :data="rows" size="small" class="cl-table" row-key="id">
+      <el-table :data="pagedRows" size="small" class="cl-table" row-key="id">
         <!-- 展开：三段构成 -->
         <el-table-column type="expand" width="36">
           <template #default="{ row }">
@@ -232,6 +232,7 @@
           <div class="empty">没有匹配的录入记录</div>
         </template>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
 
     <!-- 明细抽屉 -->
@@ -350,9 +351,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Paperclip, Search } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 import {
   amountStages,
   compensationEntries,
@@ -383,6 +387,15 @@ const rows = computed(() => {
   })
 })
 
+/* 文档截图演示：?open=<编号|姓名> 直开某笔补偿金明细 */
+const route = useRoute()
+onMounted(() => {
+  const key = route.query.open
+  if (!key) return
+  const hit = compensationEntries.find(e => e.id === key || e.employee === key)
+  if (hit) open(hit)
+})
+
 const fmt = (n) => Number(n || 0).toLocaleString('zh-CN')
 const signed = (n) => (n === null ? '—' : `${n > 0 ? '+' : n < 0 ? '−' : ''}¥ ${fmt(Math.abs(n))}`)
 const deltaTone = (n) => (n === null ? '' : n > 0 ? 'plus' : n < 0 ? 'minus' : 'flat')
@@ -404,6 +417,9 @@ const open = (row) => {
 const openFile = (row) => {
   ElMessage.info(`原型演示：打开「${row.agreement.name}」（附件预览）`)
 }
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(rows)
 </script>
 
 <style scoped>

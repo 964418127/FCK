@@ -25,7 +25,7 @@
             </div>
           </div>
 
-          <el-table :data="filteredCityDetailData" border style="width: 100%">
+          <el-table :data="pagedRows" border style="width: 100%">
             <el-table-column prop="cityName" label="城市" width="150" fixed="left">
               <template #default="scope">
                 <span class="entity-name">🏢 {{ scope.row.cityName }}</span>
@@ -52,6 +52,7 @@
               </template>
             </el-table-column>
           </el-table>
+          <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
 
           <div class="legend-bar">
             <span class="legend-item modified">★ 已手动修改（特殊日期）</span>
@@ -79,7 +80,7 @@
             </div>
           </div>
 
-          <el-table :data="filteredStoreDetailData" border style="width: 100%">
+          <el-table :data="pagedRows2" border style="width: 100%">
             <el-table-column prop="storeName" label="门店" width="180" fixed="left">
               <template #default="scope">
                 <span class="entity-name">🏪 {{ scope.row.storeName }}</span>
@@ -107,6 +108,7 @@
               </template>
             </el-table-column>
           </el-table>
+          <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
 
           <div class="legend-bar">
             <span class="legend-item modified">★ 已手动修改（特殊日期）</span>
@@ -135,7 +137,7 @@
             </div>
           </div>
 
-          <el-table :data="filteredTherapistDetailData" border style="width: 100%">
+          <el-table :data="pagedRows3" border style="width: 100%">
             <el-table-column prop="therapistName" label="推拿师" width="180" fixed="left">
               <template #default="scope">
                 <span class="entity-name">👤 {{ scope.row.therapistName }}</span>
@@ -163,6 +165,7 @@
               </template>
             </el-table-column>
           </el-table>
+          <TablePagination v-model:page="page3" v-model:page-size="pageSize3" :total="total3" />
 
           <div class="legend-bar">
             <span class="legend-item modified">★ 已手动修改（特殊日期）</span>
@@ -207,6 +210,8 @@ import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, QuestionFilled } from '@element-plus/icons-vue'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 // 当前 Tab
 const activeTab = ref('city')
 
@@ -521,6 +526,11 @@ const getDateType = (dayOfWeek, isHoliday) => {
 loadCityDetail()
 loadStoreDetail()
 loadTherapistDetail()
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredCityDetailData)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(filteredStoreDetailData)
+const { page: page3, pageSize: pageSize3, total: total3, rows: pagedRows3 } = usePager(filteredTherapistDetailData)
 </script>
 
 <style scoped>

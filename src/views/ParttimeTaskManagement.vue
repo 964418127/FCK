@@ -71,16 +71,17 @@
           <el-table-column label="剩余名额" width="100"><template #default="{ row }">{{ isPublished ? slotRemaining(row) : row.quota }}</template></el-table-column>
         </el-table>
         <h3 class="weekly-heading">发布记录</h3>
-        <el-table :data="publicationRecords">
+        <el-table :data="pagedRows2">
           <el-table-column prop="releaseDate" label="发布周期日" width="135" />
           <el-table-column label="任务周期" min-width="230"><template #default="{ row }">{{ row.start }} 至 {{ row.end }}</template></el-table-column>
           <el-table-column prop="slotCount" label="时段数" width="100" /><el-table-column prop="quota" label="总名额" width="100" /><el-table-column prop="mode" label="发布方式" min-width="120" />
         </el-table>
+        <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
           </el-tab-pane>
           <el-tab-pane v-if="!isPublicationRoute" label="临时补人" name="temporary">
         <div class="section-heading"><h2>临时任务发布</h2><el-button type="primary" :icon="Plus" @click="openTemporaryDialog">发布临时任务</el-button></div>
         <div class="temporary-filters"><el-radio-group v-model="needFilter"><el-radio-button value="全部">全部</el-radio-button><el-radio-button value="待派发">待派发</el-radio-button><el-radio-button value="部分派发">部分派发</el-radio-button><el-radio-button value="已派发">已派发</el-radio-button></el-radio-group></div>
-        <el-table :data="filteredNeeds" empty-text="暂无临时任务">
+        <el-table :data="pagedRows" empty-text="暂无临时任务">
           <el-table-column prop="storeName" label="门店" min-width="120" /><el-table-column prop="date" label="日期" width="130" />
           <el-table-column label="任务时段" min-width="140"><template #default="{ row }">{{ row.startTime }} - {{ row.endTime }}</template></el-table-column>
           <el-table-column label="需求人数" width="90"><template #default="{ row }">{{ row.quota || 1 }}</template></el-table-column>
@@ -91,6 +92,7 @@
           <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
           <el-table-column label="操作" width="105" fixed="right"><template #default="{ row }"><el-button v-if="row.assignedCount < (row.quota || 1)" link type="primary" @click="retryDispatch(row)">重试派发</el-button><el-button v-else link type="primary" @click="router.push('/parttime-task-tracking')">任务跟踪</el-button></template></el-table-column>
         </el-table>
+        <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
           </el-tab-pane>
         </el-tabs>
       </main>
@@ -137,6 +139,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cellphone, Clock, Delete, Download, Plus, Promotion, Search, Upload } from '@element-plus/icons-vue'
 import { parttimeStore, stores, employees, weekdayOptions, dateKey, addDays, latestPublicationDate, publicationWindow, previewPublication, publishTasks, saveRequirement, deleteRequirementSlot, durationLabel, slotRemaining, publishTemporaryTask, dispatchPendingNeed, needAssignments } from '../stores/parttimeTasks'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const router = useRouter()
 const route = useRoute()
 const importInput = ref(null)
@@ -252,6 +256,10 @@ const retryDispatch = need => {
   if (!tasks.length) return ElMessage.warning('暂无符合商圈、时段及工时条件的客户经理')
   ElMessage.success(`已派发 ${tasks.length} 人`)
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredNeeds)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(publicationRecords)
 </script>
 
 <style scoped>

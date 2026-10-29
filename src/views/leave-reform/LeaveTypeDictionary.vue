@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredTypes" size="small" class="type-table">
+      <el-table :data="pagedRows" size="small" class="type-table">
         <el-table-column label="类型" min-width="168" fixed="left">
           <template #default="{ row }">
             <div class="type-cell">
@@ -91,6 +91,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
 
       <p class="foot-note">
         班次假 / 临时假这类<strong>岗位专属类型</strong>同样在此维护适用性。值不在本页：班次假在「岗位假勤方案」的岗位额度里按岗位配；
@@ -172,6 +173,8 @@ import {
   jobs as allJobs
 } from '../../mock/leaveAttendance.js'
 
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 const typeList = ref(rawTypes.map(t => ({ ...t, appJobs: [...(t.appJobs || [])] })))
 const filterCategory = ref('')
 
@@ -256,6 +259,9 @@ const removeType = (row) => {
     ElMessage.success('已删除')
   }).catch(() => {})
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredTypes)
 </script>
 
 <style scoped>

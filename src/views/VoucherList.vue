@@ -79,7 +79,7 @@
         </template>
 
         <div class="table-wrapper">
-          <el-table :data="filteredData" border stripe height="640" size="small" :key="activeTemplate.key">
+          <el-table :data="pagedRows" border stripe height="640" size="small" :key="activeTemplate.key">
             <!-- ========== 固定左：基础信息 ========== -->
             <el-table-column prop="talentId" label="人才库ID" min-width="160" fixed />
             <el-table-column prop="cityName" label="城市名称" min-width="100" />
@@ -238,6 +238,7 @@
               <template #default="{ row }">{{ formatAmount(row.socialPurchasingAmount) }}</template>
             </el-table-column>
           </el-table>
+          <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
         </div>
       </el-card>
     </div>
@@ -248,6 +249,8 @@
 import { ref, reactive, computed } from 'vue'
 import { Download, InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 
 // ==================== 薪酬模板配置 ====================
 // 关键：合作模式 → 模板结构（收入分组 / 扣款分组 / 代扣项）
@@ -555,6 +558,9 @@ const handleReset = () => {
 const handleExport = () => {
   ElMessage.success('导出任务已提交')
 }
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(filteredData)
 </script>
 
 <style scoped>

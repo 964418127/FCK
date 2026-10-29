@@ -67,7 +67,7 @@
             <el-button type="primary" size="small" @click="openAddStoreDialog">+ 新增门店</el-button>
           </div>
           <div class="config-content">
-            <el-table :data="displayStoreTableData" border style="width: 100%">
+            <el-table :data="pagedRows" border style="width: 100%">
               <el-table-column prop="storeName" label="门店名称" width="150"></el-table-column>
               <el-table-column prop="cityName" label="所属城市" width="120"></el-table-column>
               <el-table-column prop="unitPrice" label="班次单价">
@@ -84,6 +84,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
             <div v-if="displayStoreTableData.length === 0" class="empty-tip">
               <el-icon><Folder /></el-icon>
               <span v-if="selectedCityName">该城市暂无门店配置</span>
@@ -181,6 +182,8 @@
 import { reactive, ref, computed } from 'vue'
 import { Setting, ArrowRight, Close, Folder } from '@element-plus/icons-vue'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 // 通用配置
 const globalConfig = reactive({ unitPrice: 60 })
 
@@ -413,6 +416,9 @@ const deleteStore = (id) => {
   const index = storeConfigs.value.findIndex(s => s.id === id)
   if (index !== -1) storeConfigs.value.splice(index, 1)
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(displayStoreTableData)
 </script>
 
 <style scoped>

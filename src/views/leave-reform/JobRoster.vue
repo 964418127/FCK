@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredJobs" size="small" row-key="id">
+      <el-table :data="pagedRows" size="small" row-key="id">
         <el-table-column label="岗位" min-width="200">
           <template #default="{ row }">
             <span class="job-name">{{ row.name }}</span>
@@ -50,6 +50,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
   </div>
 </template>
@@ -57,6 +58,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { jobs, organizations, orgOf } from '../../mock/leaveAttendance.js'
+import { usePager } from '../../composables/usePager.js'
+import TablePagination from '../../components/TablePagination.vue'
 
 const keyword = ref('')
 const orgFilter = ref('all')
@@ -70,6 +73,9 @@ const filteredJobs = computed(() => jobs.filter(j => {
 }))
 
 const totalHeadcount = computed(() => jobs.reduce((s, j) => s + j.headcount, 0))
+
+/* 分页：列表数据已筛选 / 排序，这里只切片 */
+const { page, pageSize, total, rows: pagedRows } = usePager(filteredJobs)
 </script>
 
 <style scoped>

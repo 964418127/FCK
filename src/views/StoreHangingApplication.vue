@@ -74,7 +74,7 @@
     <!-- 表格区域 -->
     <div class="table-section">
       <el-table
-          :data="filteredApplications"
+          :data="pagedRows"
           stripe
           style="width: 100%"
           :max-height="600"
@@ -174,12 +174,15 @@
             </template>
           </el-table-column>
       </el-table>
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
         import { ElMessage, ElMessageBox } from 'element-plus'
         import { Search, Refresh } from '@element-plus/icons-vue'
 
@@ -504,6 +507,9 @@ const handleBatchReject = () => {
 const handleSelectionChange = (val) => {
   selectedRows.value = val
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredApplications)
 </script>
 
 <style scoped>

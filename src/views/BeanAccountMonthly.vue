@@ -300,7 +300,8 @@ import { Download, Search, Refresh, Calendar, Document, ArrowUp, ShoppingCart, W
 const router = useRouter()
 
 // 当前操作员角色（演示用：实际项目从登录态/权限系统读取）
-const currentRole = ref(localStorage.getItem('bean-current-role') || 'hr_manager')
+// 预渲染跑在 Node 里没有 localStorage，取值前必须先判断环境
+const currentRole = ref((typeof localStorage !== 'undefined' && localStorage.getItem('bean-current-role')) || 'hr_manager')
 
 // 搜索表单
 const searchForm = reactive({

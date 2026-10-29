@@ -21,7 +21,7 @@
               </div>
             </div>
 
-            <el-table :data="filteredSecurityConfig" stripe style="width: 100%; margin-top: 12px;">
+            <el-table :data="pagedRows" stripe style="width: 100%; margin-top: 12px;">
               <el-table-column prop="employeeId" label="员工编号" width="120" />
               <el-table-column prop="employeeName" label="员工姓名" width="120" />
               <el-table-column prop="securityGrade" label="缴费等级" width="100">
@@ -41,6 +41,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
           </div>
         </el-tab-pane>
 
@@ -57,7 +58,7 @@
               </div>
             </div>
 
-            <el-table :data="filteredFundConfig" stripe style="width: 100%; margin-top: 12px;">
+            <el-table :data="pagedRows2" stripe style="width: 100%; margin-top: 12px;">
               <el-table-column prop="employeeId" label="员工编号" width="120" />
               <el-table-column prop="employeeName" label="员工姓名" width="120" />
               <el-table-column prop="fundGrade" label="缴费等级" width="100">
@@ -77,6 +78,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            <TablePagination v-model:page="page2" v-model:page-size="pageSize2" :total="total2" />
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -146,6 +148,8 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 
+import { usePager } from '../composables/usePager.js'
+import TablePagination from '../components/TablePagination.vue'
 const activeTab = ref('security')
 
 // ========== 社保配置 ==========
@@ -205,6 +209,10 @@ const saveFundConfig = () => {
   }
   fundConfigVisible.value = false; ElMessage.success('保存成功')
 }
+
+/* 分页：数据已筛选 / 排序，这里只切片 */
+const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePager(filteredSecurityConfig)
+const { page: page2, pageSize: pageSize2, total: total2, rows: pagedRows2 } = usePager(filteredFundConfig)
 </script>
 
 <style scoped>
