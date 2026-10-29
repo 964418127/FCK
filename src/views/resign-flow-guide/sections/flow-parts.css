@@ -1,0 +1,175 @@
+/* 离职流程文档 · 流程/状态机/流向图专用样式（6.3–6.6 章节页 scoped 引入） */
+
+/* ===== 时间顺序编号列表（6.3） ===== */
+.chg-list { margin: 0; padding: 0; list-style: none; counter-reset: chg; }
+.chg-list > li {
+  counter-increment: chg;
+  position: relative; padding-left: 26px;
+  font-size: 13px; line-height: 1.8; color: hsl(var(--foreground) / 0.78);
+}
+.chg-list > li + li { margin-top: 7px; }
+.chg-list > li::before {
+  content: counter(chg) "、";
+  position: absolute; left: 0; top: 0;
+  color: hsl(var(--primary)); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chg-list > li strong { font-weight: 600; color: hsl(var(--foreground)); }
+
+/* ===== 状态机节点（6.3） ===== */
+.fsm-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.fsm-node {
+  font-size: 13px; padding: 5px 14px; border-radius: 16px;
+  background: hsl(var(--muted) / 0.4); border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+.fsm-node.final {
+  background: hsl(150 45% 42% / 0.12); border-color: hsl(150 45% 42% / 0.5);
+  color: hsl(150 45% 30%); font-weight: 600;
+}
+.fsm-node.bad { background: hsl(0 65% 50% / 0.1); border-color: hsl(0 65% 50% / 0.4); color: hsl(0 65% 45%); }
+.fsm-arrow { color: hsl(var(--muted-foreground) / 0.6); }
+
+/* 协议成立态文字（6.3 状态表） */
+.eff { font-size: 12.5px; font-weight: 600; }
+.eff.pending { color: hsl(38 92% 36%); }
+.eff.established { color: hsl(150 45% 32%); }
+.eff.void { color: hsl(var(--muted-foreground)); }
+
+/* ===== 资产流向图（6.6：来源卡 → 归集横幅 → 单据卡 → 计提横幅） ===== */
+.tf-sub { display: block; font-size: 10.5px; font-weight: 400; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+
+.mn-flow { margin: 14px 0 10px; }
+.mn-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.mn-row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+.mn-card {
+  border: 1px solid #e9e0d1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #faf6ee;
+}
+.mn-card-t {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #3d3a36;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ecdfc9;
+}
+.mn-list { margin: 0; padding-left: 16px; }
+.mn-list li { font-size: 12px; line-height: 1.9; color: #857d70; }
+.mn-list b { color: #a40035; font-weight: 600; }
+.mn-chip {
+  font-size: 10px; font-weight: 500; vertical-align: 2px;
+  color: #a4762a; background: hsl(38 92% 45% / 0.14);
+  border-radius: 8px; padding: 1px 7px; margin-left: 6px;
+}
+.mn-chip.ghost { color: #fff; background: transparent; border: 1px solid rgb(255 255 255 / 0.45); }
+
+.mn-card.dark {
+  background: #7d1233;
+  border-color: #7d1233;
+}
+.mn-card.dark .mn-card-t { color: #fff; border-bottom-color: rgb(255 255 255 / 0.22); }
+.mn-card.dark .mn-list li { color: rgb(255 255 255 / 0.82); }
+.mn-card.dark .mn-list b { color: #ffd9e3; }
+
+.mn-card.plain { background: hsl(var(--background)); border-color: hsl(var(--border)); }
+.mn-card.plain .mn-card-t { border-bottom-color: hsl(var(--border)); }
+.mn-card-sub { font-size: 11.5px; color: hsl(var(--muted-foreground)); line-height: 1.6; margin-bottom: 10px; }
+
+.mn-tax {
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+}
+.mn-tax span { display: block; font-size: 10px; font-weight: 400; margin-top: 2px; }
+.mn-tax.salary { background: hsl(var(--primary) / 0.07); border: 1px solid hsl(var(--primary) / 0.3); color: hsl(var(--primary)); }
+.mn-tax.comp { background: hsl(38 92% 45% / 0.13); border: 1px solid hsl(38 92% 45% / 0.45); color: hsl(30 85% 28%); }
+
+.mn-arrows { display: grid; gap: 0; color: #a40035; font-size: 15px; line-height: 1.4; padding: 4px 0; text-align: center; }
+.mn-arrows.cols3 { grid-template-columns: repeat(3, 1fr); }
+.mn-arrows.single { grid-template-columns: 1fr; }
+.mn-label { font-size: 11px; color: #b3a893; margin: 2px 0 8px; }
+
+.mn-banner {
+  border-radius: 14px;
+  padding: 13px 18px;
+  background: #630f28;
+  color: #fff;
+  text-align: center;
+}
+.mn-banner b { display: block; font-size: 14px; letter-spacing: 0.3px; }
+.mn-banner-sub { display: block; font-size: 11.5px; line-height: 1.7; color: rgb(255 255 255 / 0.72); margin-top: 4px; }
+.mn-banner.final { background: #a40035; }
+.mn-banner.final .mn-banner-sub { color: rgb(255 255 255 / 0.85); }
+
+@media (max-width: 960px) {
+  .mn-row3, .mn-row2 { grid-template-columns: 1fr; }
+}
+
+/* ===== 卡片网格（6.7 五件事 / 6.8 三个口子） ===== */
+.rf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+.rf-card {
+  background: hsl(var(--muted) / 0.3); border: 1px solid hsl(var(--border));
+  border-radius: 8px; padding: 14px 16px;
+}
+.rf-card-title { font-size: 14px; font-weight: 600; color: hsl(var(--primary)); margin-bottom: 6px; }
+.rf-card-desc { font-size: 12.5px; line-height: 1.65; color: hsl(var(--muted-foreground)); }
+
+/* ===== 序号流程（6.8 端到端链路） ===== */
+.rf-flow { margin: 14px 0 8px; }
+.rf-flow-phase {
+  font-size: 12.5px; font-weight: 600; color: hsl(var(--primary));
+  padding: 4px 0 8px;
+}
+.rf-flow-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: hsl(var(--muted) / 0.22);
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.rf-flow-arrow {
+  text-align: center; color: hsl(var(--muted-foreground) / 0.65);
+  font-size: 13px; line-height: 1; padding: 4px 0;
+}
+.rfs-idx {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: hsl(var(--primary) / 0.12); color: hsl(var(--primary));
+  font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rfs-body { flex: 1; min-width: 0; }
+.rfs-t { font-size: 13px; font-weight: 600; line-height: 1.5; color: hsl(var(--foreground)); }
+.rfs-d { font-size: 12px; line-height: 1.65; color: hsl(var(--muted-foreground)); margin-top: 3px; }
+
+/* ===== 图例标签 ===== */
+.rf-flow-tag-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; }
+.rfs-tag {
+  font-size: 10.5px; padding: 1px 7px; border-radius: 9px;
+  white-space: nowrap; vertical-align: middle;
+}
+.rfs-tag.ours { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.1); }
+.rfs-tag.dw { color: hsl(210 70% 40%); background: hsl(210 70% 50% / 0.12); }
+.rfs-tag.bean { color: hsl(38 85% 32%); background: hsl(38 92% 45% / 0.14); }
+.rfs-tag.pay { color: hsl(150 45% 30%); background: hsl(150 45% 42% / 0.13); }
+.rfs-tag.tax { color: hsl(275 45% 42%); background: hsl(275 45% 50% / 0.12); }
+
+/* 改动点性质标签 */
+.mech {
+  font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 9px;
+  color: hsl(0 65% 42%); background: hsl(0 65% 50% / 0.1);
+}
+.data {
+  font-size: 11.5px; padding: 1px 7px; border-radius: 9px;
+  color: hsl(210 70% 38%); background: hsl(210 70% 50% / 0.1);
+}
+.reuse {
+  font-size: 11.5px; padding: 1px 7px; border-radius: 9px;
+  color: hsl(150 40% 30%); background: hsl(150 45% 42% / 0.12);
+}
+tr.row-mech td { background: hsl(0 65% 50% / 0.03); }

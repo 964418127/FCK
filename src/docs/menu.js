@@ -15,10 +15,11 @@
  *   - 二级无 children → 二级页面（叶子）
  *   - 三级永远是叶子页面，点击 router.push({ name: index })
  */
-import { Document, InfoFilled, Reading, UserFilled, Clock, SwitchButton } from '@element-plus/icons-vue'
+import { Document, InfoFilled, Reading, UserFilled, Clock, SwitchButton, HomeFilled, Connection } from '@element-plus/icons-vue'
 import { v2phase1Chapters } from './chapters.js'
 import { leaveReformChapters } from './leaveReformChapters.js'
-import { resignChapters } from './resignChapters.js'
+import { resignChapters, featureChapters } from './resignChapters.js'
+import { orchChapters, orchFeatureChapters } from './orchestrationChapters.js'
 
 // 把 chapters 转换成菜单叶子节点
 const v2phase1MenuChildren = v2phase1Chapters.map(ch => ({
@@ -32,13 +33,35 @@ const leaveReformMenuChildren = leaveReformChapters.map(ch => ({
   label: `${ch.order}、${ch.title}`
 }))
 
-// 离职流程模块：同样由章节元数据生成
-const resignMenuChildren = resignChapters.map(ch => ({
-  index: ch.routeName,
-  label: `${ch.order}、${ch.title}`
-}))
+// 离职流程模块：一份文档（索引页）+ 章节叶子。
+// 侧边栏最多三级，「六、功能详细说明」的 6.x 不再往下嵌，改用一级缩进（indent）表示归属。
+const resignChapterMenu = resignChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.title}` }
+  if (ch.id !== 'features') return [node]
+  return [
+    node,
+    ...featureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.title}`, indent: true }))
+  ]
+})
+
+// 事件编排模块：同样由章节元数据展开（6.x 用一级缩进表示归属，与离职流程同一套写法）
+const orchChapterMenu = orchChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.title}` }
+  if (ch.id !== 'features') return [node]
+  return [
+    node,
+    ...orchFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.title}`, indent: true }))
+  ]
+})
 
 export const docMenu = [
+  {
+    // 目录页（/docs 默认落地页）：一级叶子，常驻最顶，方便从任何文档回到全局目录
+    index: 'doc-home',
+    label: '文档目录',
+    icon: HomeFilled,
+    to: '/docs'
+  },
   {
     index: 'doc-product',
     label: '模块化薪酬',
@@ -118,7 +141,27 @@ export const docMenu = [
     index: 'doc-resign-flow',
     label: '离职流程',
     icon: SwitchButton,
-    children: resignMenuChildren
+    children: [
+      {
+        index: 'doc-resign-flow-index',
+        label: '产品需求说明',
+        to: '/docs/resign-flow',
+        children: resignChapterMenu
+      }
+    ]
+  },
+  {
+    index: 'doc-orchestration',
+    label: '事件编排',
+    icon: Connection,
+    children: [
+      {
+        index: 'doc-orch-index',
+        label: '产品需求说明',
+        to: '/docs/orchestration',
+        children: orchChapterMenu
+      }
+    ]
   }
 ]
 
@@ -126,6 +169,7 @@ export const docMenu = [
 const plainDocMenu = (nodes) => nodes.map((n) => ({
   index: n.index,
   label: n.label,
+  ...(n.indent ? { indent: true } : {}),
   ...(n.children ? { children: plainDocMenu(n.children) } : {})
 }))
 

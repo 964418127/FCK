@@ -4,7 +4,7 @@
     <aside :class="['sidebar', { collapsed: isCollapsed }]">
       <div class="sidebar-header">
         <div v-show="!isCollapsed" class="header-content">
-          <h2>文档中心</h2>
+          <h2 class="home-link" title="回到文档中心目录页" @click="goHome">文档中心</h2>
           <el-button class="back-btn" size="small" link @click="goBack">
             <el-icon><Back /></el-icon>
             <span>返回主页</span>
@@ -48,6 +48,11 @@ const toggleSidebar = () => {
 // 返回主应用
 const goBack = () => {
   router.push('/welcome')
+}
+
+// 回到目录页（/docs 的默认落地页）
+const goHome = () => {
+  router.push('/docs')
 }
 </script>
 
@@ -94,6 +99,15 @@ const goBack = () => {
   gap: 8px;
   flex: 1;
   min-width: 0;
+}
+
+/* 标题可点：回到目录页（/docs） */
+.header-content .home-link {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.header-content .home-link:hover {
+  color: var(--el-color-primary);
 }
 
 .header-content h2 {

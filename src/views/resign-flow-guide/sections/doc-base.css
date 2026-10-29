@@ -1,0 +1,20 @@
+/* 离职流程文档 · 章节页公用样式（scoped 引入，配合 DocShell 的全局文档样式） */
+.doc-p { font-size: 13.5px; line-height: 1.8; color: hsl(var(--foreground)); margin: 10px 0; }
+.h4sub {
+  font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground));
+  margin: 20px 0 8px; padding-left: 9px;
+  border-left: 3px solid hsl(var(--primary) / 0.45);
+}
+.rf-list { margin: 10px 0; padding-left: 20px; }
+.rf-list li { font-size: 13.5px; line-height: 1.8; margin-bottom: 8px; color: hsl(var(--foreground)); }
+.rf-list strong { color: hsl(var(--foreground)); }
+.func-entry {
+  font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.3);
+  border-left: 3px solid hsl(var(--primary) / 0.6);
+  padding: 6px 10px; border-radius: 0 6px 6px 0;
+  margin: 0 0 14px;
+}
+.func-entry strong { color: hsl(var(--foreground)); }
+.doc-ul { margin: 10px 0; padding-left: 20px; }
+.doc-ul li { font-size: 13px; line-height: 1.8; margin-bottom: 6px; color: hsl(var(--foreground)); }

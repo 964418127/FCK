@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="100%" role="img">
+  <title>系统检查 · 两层频率（Agent 出批 vs 流程取数）</title>
+  <desc>Agent 按自身节奏每 6 小时出一批，流程按节点配置每小时取一次结果；同一批次反复取到不重复计数，批次上限只认消费到的不同未通过批次。</desc>
+  <defs>
+    <marker id="fc-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="60" y="34" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#2C2C2A">示例：Agent 每 6 小时出一批 · 流程每 1 小时取一次</text>
+  <text x="60" y="56" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#5F5E5A">同一检查项的同一段时间里，「出批」与「取数」是两条互不绑架的时间线</text>
+
+  <text x="60" y="106" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#0C447C">Agent 运行节奏</text>
+  <text x="60" y="124" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#185FA5">Agent 侧配置 · 流程侧不感知</text>
+
+  <path d="M300 152 H876" fill="none" stroke="#B5D4F4" stroke-width="2" stroke-dasharray="6 5"/>
+
+  <rect x="248" y="130" width="104" height="44" rx="9" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="300" y="150" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#0C447C">批次 1</text>
+  <text x="300" y="167" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#A32D2D">未通过</text>
+
+  <rect x="536" y="130" width="104" height="44" rx="9" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="588" y="150" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#0C447C">批次 2</text>
+  <text x="588" y="167" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#A32D2D">未通过</text>
+
+  <rect x="824" y="130" width="104" height="44" rx="9" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="876" y="150" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#085041">批次 3</text>
+  <text x="876" y="167" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#085041">通过</text>
+
+  <text x="300" y="196" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#888780">0h</text>
+  <text x="588" y="196" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#888780">6h</text>
+  <text x="876" y="196" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" fill="#888780">12h</text>
+
+  <text x="60" y="238" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#0F6E56">流程取数频率</text>
+  <text x="60" y="256" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#0F6E56">节点配置（间隔 + 单位 / 只取一次）</text>
+
+  <path d="M292 274 H940" fill="none" stroke="#D3D1C7" stroke-width="1"/>
+  <path d="M300 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M348 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M396 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M444 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M492 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M540 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M588 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M636 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M684 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M732 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M780 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M828 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+  <path d="M876 262 V286" fill="none" stroke="#0F6E56" stroke-width="1.6"/>
+
+  <path d="M300 306 H540" fill="none" stroke="#BA7517" stroke-width="1.2"/>
+  <path d="M300 300 V312" fill="none" stroke="#BA7517" stroke-width="1.2"/>
+  <path d="M540 300 V312" fill="none" stroke="#BA7517" stroke-width="1.2"/>
+  <text x="420" y="328" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">前 6 次取数都落在批次 1 → 不重复计数（白等，界面显式标出）</text>
+
+  <text x="60" y="366" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="600" fill="#A32D2D">批次上限计数</text>
+  <text x="60" y="384" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#A32D2D">只认消费到的不同未通过批次</text>
+
+  <path d="M292 394 H940" fill="none" stroke="#E5E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M292 376 H940" fill="none" stroke="#E5E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="286" y="398" text-anchor="end" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#888780">1</text>
+  <text x="286" y="380" text-anchor="end" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#888780">2</text>
+
+  <path d="M300 394 H588 V376 H876" fill="none" stroke="#A32D2D" stroke-width="2" stroke-linejoin="round"/>
+
+  <path d="M876 224 V394" fill="none" stroke="#0F6E56" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="884" y="120" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#085041">通过 → 立即办结</text>
+
+  <text x="60" y="446" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#5F5E5A">取数 12 次只消费到 2 个未通过批次（批次 1、2），批次 3 通过当场办结：上限按 2 计、不按 12 计 —— 取数比出批快时不会误判超时。</text>
+</svg>

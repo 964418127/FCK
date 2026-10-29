@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 740" width="100%" role="img">
+  <title>系统检查 · 检查 Agent 运行结构</title>
+  <desc>流程侧薄登记，Agent 侧条件管理、调度与判定，Agent 运行节奏与流程取数频率相互独立，批次反馈报文回写交接流程，Agent 执行日志支持溯源。</desc>
+  <defs>
+    <marker id="ag-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="70" y="36" width="860" height="92" rx="12" fill="#EEEDFE" stroke="#534AB7"/>
+  <text x="92" y="66" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#3C3489">① 检查项登记 —— 流程侧 · 薄字典</text>
+  <text x="92" y="98" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13" fill="#534AB7">key / 名称 / 来源系统 + 当前生效条件镜像（生效版本 · 配置人 · 上线时间）—— 条件不在这里定义、不在这里改</text>
+
+  <path d="M500 128 V150" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#ag-arrow)"/>
+
+  <rect x="70" y="156" width="860" height="192" rx="12" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="92" y="186" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#0C447C">② 检查 Agent —— 条件与执行都归它管</text>
+  <text x="92" y="212" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#185FA5">条件（结果域：通过 / 软性 / 未通过）由它管理；按自身节奏分批次运行，每批反馈「当批条件快照 + 逐单判定」</text>
+  <rect x="92" y="228" width="262" height="96" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="223" y="258" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" fill="#0C447C">条件管理</text>
+  <text x="223" y="282" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">相关人员对话式配置 · 测试后上线</text>
+  <text x="223" y="302" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">生效版本：配置人 + 上线时间</text>
+  <rect x="369" y="228" width="262" height="96" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="500" y="258" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" fill="#0C447C">运行调度</text>
+  <text x="500" y="282" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">多久盘查一轮、什么时候出新批次</text>
+  <text x="500" y="302" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">—— Agent 运行节奏：Agent 自身配置，流程侧不感知</text>
+  <rect x="646" y="228" width="262" height="96" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="777" y="258" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" fill="#0C447C">取数与判定</text>
+  <text x="777" y="282" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">到来源系统拉指标快照</text>
+  <text x="777" y="302" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5">按当批条件比对落判定</text>
+
+  <path d="M500 348 V372" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#ag-arrow)"/>
+  <text x="514" y="366" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">批次反馈报文：当批条件快照 + 逐单判定 + 指标原值 / 命中与差距</text>
+
+  <rect x="70" y="376" width="860" height="116" rx="12" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="92" y="404" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#085041">③ 交接流程节点（消费侧）—— 系统项取值 = 采纳 Agent 批次结果</text>
+  <text x="92" y="432" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13" fill="#0F6E56">节点只配 门禁（必过 / 软性）· 前置 · 取数频率 · 批次上限；终止 / 放行等后果都留在流程侧</text>
+  <text x="92" y="456" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#0F6E56">取数频率 = 流程多久去取一次结果值（流程侧配）；Agent 运行节奏 = 多久出新批次（Agent 侧配）—— 两者相互独立</text>
+  <text x="92" y="478" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#0F6E56">批次上限只计消费到的不同未通过批次：同一批次反复取到不重复计数（取数比出批快时不误判超时）</text>
+
+  <path d="M930 422 H962 V252 H936" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#ag-arrow)"/>
+  <text x="974" y="337" text-anchor="middle" transform="rotate(90 974 337)" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#888780">未通过 → 下一批次继续盘查</text>
+
+  <path d="M500 492 V516" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#ag-arrow)"/>
+  <text x="514" y="510" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">每批留痕 · 交接页检查明细每条携带批次号 · 流程侧按取数频率取</text>
+
+  <rect x="70" y="544" width="860" height="204" rx="12" fill="#FAEEDA" stroke="#854F0B"/>
+  <text x="92" y="550" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#633806">④ Agent 执行日志（执行明细页 · 批次浏览 + 员工查询）</text>
+  <text x="92" y="576" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#854F0B">逐批次记录：批次号 · 执行时间 · 当批条件快照 · 逐单结果值与指标原值 · 命中 / 差距 · 取数异常单独标记（不计未通过）</text>
+  <rect x="100" y="600" width="248" height="76" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="224" y="628" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">节点某次判断</text>
+  <text x="224" y="652" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">交接页检查明细（带批次号）</text>
+  <path d="M348 614 H370" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#ag-arrow)"/>
+  <rect x="376" y="600" width="248" height="76" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="500" y="628" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">Agent 执行日志</text>
+  <text x="500" y="652" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">该批执行的条件快照 + 逐单结果</text>
+  <path d="M624 614 H646" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#ag-arrow)"/>
+  <rect x="652" y="600" width="248" height="76" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="776" y="628" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">结果值 + 条件依据</text>
+  <text x="776" y="652" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">关联配置人 · 上线时间</text>
+</svg>
