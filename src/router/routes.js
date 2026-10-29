@@ -7,12 +7,20 @@ import MainLayout from '../components/MainLayout.vue'
 import Welcome from '../views/Welcome.vue'
 import { v2phase1Chapters } from '../docs/chapters.js'
 import { leaveReformChapters } from '../docs/leaveReformChapters.js'
-import { resignChapters } from '../docs/resignChapters.js'
+import { resignChapters, featureChapters } from '../docs/resignChapters.js'
+import { orchChapters, orchFeatureChapters } from '../docs/orchestrationChapters.js'
 
 // Vite 编译时把所有章节 SFC 转成静态映射（SSR 也能解析）
 const chapterModules = import.meta.glob('../views/v2phase1/*.vue')
 const leaveReformChapterModules = import.meta.glob('../views/leave-reform-guide/*.vue')
-const resignChapterModules = import.meta.glob('../views/resign-flow-guide/*.vue')
+const resignChapterModules = {
+  ...import.meta.glob('../views/resign-flow-guide/*.vue'),
+  ...import.meta.glob('../views/resign-flow-guide/sections/*.vue')
+}
+const orchChapterModules = {
+  ...import.meta.glob('../views/orchestration-guide/*.vue'),
+  ...import.meta.glob('../views/orchestration-guide/sections/*.vue')
+}
 
 export const routes = [
   {
@@ -350,13 +358,156 @@ export const routes = [
       },
       // ===== 离职重构（Web 端）=====
       {
+        path: 'resign-flow-template',
+        name: 'resign-flow-template',
+        component: () => import('../views/resign-flow-pd/ResignFlowTemplateList.vue'),
+        meta: {
+          title: '离职流程模板'
+        }
+      },
+      {
+        path: 'resign-system-checks',
+        name: 'resign-system-checks',
+        component: () => import('../views/resign-flow-pd/SystemCheckDict.vue'),
+        meta: {
+          title: '系统检查项'
+        }
+      },
+      {
+        path: 'resign-system-check-runs',
+        name: 'resign-system-check-runs',
+        component: () => import('../views/resign-flow-pd/SystemCheckRuns.vue'),
+        meta: {
+          title: '系统检查 · Agent 执行日志'
+        }
+      },
+      {
+        path: 'resign-flow-template-detail',
+        name: 'resign-flow-template-detail',
+        component: () => import('../views/resign-flow-pd/ResignFlowTemplateDetail.vue'),
+        meta: {
+          title: '交接流程 · 列表视图'
+        }
+      },
+      {
+        path: 'resign-flow-template-flow',
+        name: 'resign-flow-template-flow',
+        component: () => import('../views/resign-flow-pd/ResignFlowTemplateFlow.vue'),
+        meta: {
+          title: '交接流程 · 画布（已隐藏入口）'
+        }
+      },
+      {
+        path: 'resign-flow-template-timeline',
+        name: 'resign-flow-template-timeline',
+        component: () => import('../views/resign-flow-pd/ResignFlowTemplateTimeline.vue'),
+        meta: {
+          title: '交接流程编排'
+        }
+      },
+      {
         path: 'resign-compensation-ledger',
         name: 'resign-compensation-ledger',
         component: () => import('../views/resign-reform-pd/CompensationLedger.vue'),
         meta: {
-          title: '离职补偿金明细'
+          title: '补偿金明细'
         }
       },
+
+      /* ---------------- 事件编排（评审稿 v2） ----------------
+         与 v1 并列对照：v1 的离职模板/系统检查项/交接流程编排保持不动。 */
+      {
+        /* 入口只有事件管理的「新建根事件」：对话是起草方式，不是并列页面 */
+        path: 'v2/compose',
+        name: 'v2-compose',
+        component: () => import('../views/v2/ComposeStudio.vue'),
+        meta: { title: '起草新事件' }
+      },
+      {
+        path: 'v2/contract',
+        name: 'v2-contract',
+        component: () => import('../views/v2/ContractView.vue'),
+        meta: { title: '契约全文' }
+      },
+      {
+        /* 定义期事实：模型能看见什么。与契约全文成对（契约管形状，这里管事实） */
+        path: 'v2/facts',
+        name: 'v2-facts',
+        component: () => import('../views/v2/FactsView.vue'),
+        meta: { title: '起草依据' }
+      },
+      {
+        /* 同一份视图，打开即停在「系统项目录」标签；独立 name 只为了菜单能各自高亮 */
+        path: 'v2/catalog',
+        name: 'v2-catalog',
+        component: () => import('../views/v2/ContractView.vue'),
+        meta: { title: '系统项目录' }
+      },
+      {
+        /* 系统项：目录（判定 / 执行）+ 生成工作台。工作台用 query 传参，静态站可直达 */
+        path: 'v2/sys-items',
+        name: 'v2-sys-items',
+        component: () => import('../views/v2/SysItemList.vue'),
+        meta: { title: '系统项' }
+      },
+      {
+        path: 'v2/sys-studio',
+        name: 'v2-sys-studio',
+        component: () => import('../views/v2/SysItemStudio.vue'),
+        meta: { title: '系统项工作台' }
+      },
+      {
+        /* 判定项的批次结果：按条件版本分组，逐单到人（v1 执行日志的同构页） */
+        path: 'v2/sys-batches',
+        name: 'v2-sys-batches',
+        component: () => import('../views/v2/SysBatches.vue'),
+        meta: { title: '批次结果' }
+      },
+      {
+        path: 'v2/events',
+        name: 'v2-events',
+        component: () => import('../views/v2/EventCatalog.vue'),
+        meta: { title: '事件管理' }
+      },
+      {
+        /* 工作台：维护提示词与骨架，树在触发时生成 —— 这里不编排树 */
+        path: 'v2/prompt',
+        name: 'v2-prompt',
+        component: () => import('../views/v2/PromptStudio.vue'),
+        meta: { title: '提示词工作台' }
+      },
+      {
+        /* 旧地址保住：带 query 转过去 */
+        path: 'v2/studio',
+        redirect: (to) => ({ name: 'v2-prompt', query: to.query })
+      },
+      {
+        /* 旧入口已撤：「作用域覆盖」不再存在，差异落在子事件的承担者上；保住老地址不白屏 */
+        path: 'v2/overlays',
+        redirect: { name: 'v2-events' }
+      },
+      {
+        /* 旧入口并入「系统项」：同一页两个标签（判定 / 执行），这里重定向保住老地址 */
+        path: 'v2/ref/checks',
+        redirect: { name: 'v2-sys-items', query: { kind: 'check' } }
+      },
+      {
+        path: 'v2/ref/actions',
+        redirect: { name: 'v2-sys-items', query: { kind: 'action' } }
+      },
+      {
+        path: 'v2/instances',
+        name: 'v2-instances',
+        component: () => import('../views/v2/InstanceWalk.vue'),
+        meta: { title: '事件数据' }
+      },
+      {
+        path: 'v2/inst-tree',
+        name: 'v2-inst-tree',
+        component: () => import('../views/v2/InstTree.vue'),
+        meta: { title: '这一单的编排' }
+      },
+
       {
         path: 'parttime-task-management',
         name: 'parttime-task-management',
@@ -706,6 +857,51 @@ export const routes = [
     }
   },
   {
+    path: '/mobile-resign-handover/list',
+    name: 'mobile-resign-handover-list',
+    component: () => import('../views/mobile-resign-pd/ResignHandoverList.vue'),
+    meta: {
+      title: '移动端交接处理列表'
+    }
+  },
+  {
+    path: '/mobile-resign-handover',
+    name: 'mobile-resign-handover',
+    component: () => import('../views/mobile-resign-pd/ResignHandover.vue'),
+    meta: {
+      title: '移动端离职交接进度'
+    }
+  },
+  {
+    path: '/mobile-resign-handover/node',
+    name: 'mobile-resign-handover-node',
+    component: () => import('../views/mobile-resign-pd/ResignHandoverNode.vue'),
+    meta: {
+      title: '移动端交接节点确认'
+    }
+  },
+  /* ---------------- 事件编排（评审稿 v2）· 实例侧移动端 ----------------
+     定义在 PC 上编排发布，实例在移动端被办理：发起 → 待办 → 办结。
+     这三页只认实例快照，不改定义。 */
+  {
+    path: '/v2/m/list',
+    name: 'v2-m-instances',
+    component: () => import('../views/v2/mobile/MInstList.vue'),
+    meta: { title: '移动端事项办理' }
+  },
+  {
+    path: '/v2/m/inst',
+    name: 'v2-m-instance',
+    component: () => import('../views/v2/mobile/MInstDetail.vue'),
+    meta: { title: '移动端事项办理详情' }
+  },
+  {
+    path: '/v2/m/apply',
+    name: 'v2-m-apply',
+    component: () => import('../views/v2/mobile/MInstApply.vue'),
+    meta: { title: '移动端发起事项' }
+  },
+  {
     path: '/mobile-salary-dashboard',
     name: 'mobile-salary-dashboard',
     component: () => import('../views/MobileSalaryDashboard.vue'),
@@ -845,11 +1041,21 @@ export const routes = [
     path: '/docs',
     name: 'docs',
     component: () => import('../components/DocCenterLayout.vue'),
-    redirect: '/docs/product-v2',
+    // 主侧栏按 name 跳父路由时子路由不参与匹配（内容区空白），这里重定向到默认子路由
+    redirect: { name: 'doc-home' },
     meta: {
       title: '文档中心'
     },
     children: [
+      // 目录页：/docs 的默认落地页，列出全部文档并承接「我该看哪一份」
+      {
+        path: '',
+        name: 'doc-home',
+        component: () => import('../views/DocsHome.vue'),
+        meta: {
+          title: '文档中心'
+        }
+      },
       {
         path: 'product-v1',
         name: 'doc-product-v1',
@@ -927,12 +1133,45 @@ export const routes = [
         component: leaveReformChapterModules[`../views/leave-reform-guide/${ch.file}`],
         meta: { title: `假勤重构 / ${ch.order}、${ch.title}` }
       })),
-      // 离职流程模块：章节由 resignChapters 单一数据源展开
+      // 离职流程模块：索引页 + 章节由 resignChapters 单一数据源展开
+      {
+        path: 'resign-flow',
+        name: 'doc-resign-flow-index',
+        component: () => import('../views/resign-flow-guide/ResignFlowDocIndex.vue'),
+        meta: { title: '离职流程' }
+      },
       ...resignChapters.map(ch => ({
         path: `resign-flow/${ch.id}`,
         name: ch.routeName,
         component: resignChapterModules[`../views/resign-flow-guide/${ch.file}`],
-        meta: { title: `离职流程 / ${ch.order}、${ch.title}` }
+        meta: { title: `离职流程 / ${ch.no ? ch.no + ' ' : ch.order + '、'}${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...featureChapters.map(ch => ({
+        path: `resign-flow/${ch.id}`,
+        name: ch.routeName,
+        component: resignChapterModules[`../views/resign-flow-guide/${ch.file}`],
+        meta: { title: `离职流程 / 六、功能详细说明 / ${ch.no} ${ch.title}` }
+      })),
+      // 事件编排模块：索引页 + 章节由 orchChapters 单一数据源展开
+      {
+        path: 'orchestration',
+        name: 'doc-orch-index',
+        component: () => import('../views/orchestration-guide/OrchestrationDocIndex.vue'),
+        meta: { title: '事件编排' }
+      },
+      ...orchChapters.map(ch => ({
+        path: `orchestration/${ch.id}`,
+        name: ch.routeName,
+        component: orchChapterModules[`../views/orchestration-guide/${ch.file}`],
+        meta: { title: `事件编排 / ${ch.no ? ch.no + ' ' : ch.order + '、'}${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...orchFeatureChapters.map(ch => ({
+        path: `orchestration/${ch.id}`,
+        name: ch.routeName,
+        component: orchChapterModules[`../views/orchestration-guide/${ch.file}`],
+        meta: { title: `事件编排 / 六、功能详细说明 / ${ch.no} ${ch.title}` }
       })),
       {
         path: 'parttime-account-manager',
