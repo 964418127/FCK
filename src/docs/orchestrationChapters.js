@@ -7,7 +7,8 @@
  * 章节按公司 PRD 模板编号：一、版本信息 / 二、变更日志 / 三、文档说明 / 四、需求背景 / 五、需求范围 /
  * 六、功能详细说明（6.1–6.6 见 featureChapters）/ 七、附录。
  *
- * 字段：id / order / title / subtitle / routeName / path / file
+ * 字段：id / order / nav / title / subtitle / routeName / path / file
+ *       nav = 侧边栏菜单名，只写名词（不带括号补充、状态说明）；缺省时菜单退回 title
  */
 export const orchChapters = [
   {
@@ -67,6 +68,7 @@ export const orchChapters = [
   {
     id: 'appendix',
     order: '七',
+    nav: '附录',
     title: '附录：待决事项',
     subtitle: '已拍板的不再挂；仍挂起的写明归属方 + 卡在哪',
     routeName: 'doc-orch-appendix',
@@ -86,8 +88,9 @@ export const orchFeatureChapters = [
   {
     id: '6-1',
     no: '6.1',
+    nav: '事件定义',
     title: '事件定义（配置）',
-    subtitle: '管谁 / 提示词 / 子事件清单 / 怎么触发：一次定义，之后每一单按事实生成',
+    subtitle: '管谁 / 提示词 / 怎么触发 / 子事件：定义页只调提示词，清单是生成出来的结果，只读',
     routeName: 'doc-orch-6-1',
     path: '/docs/orchestration/6-1',
     file: 'sections/O61Define.vue'

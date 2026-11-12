@@ -18,7 +18,7 @@
         <strong>一句话定位：</strong>离职场景只做四件事 —— 承接发起 → 离职需求审核定实际离职日期 → 状态落地 + 日期锁定 → 交付「离职事实 + 实际离职日期」。其余各域按规则自行消费。
       </div>
 
-      <h3>5.1 做什么 / 不做什么</h3>
+      <h3 id="rf-scope-51-1">5.1 做什么 / 不做什么</h3>
       <table class="data-table">
         <thead>
           <tr>
@@ -267,7 +267,8 @@ import ChainOverview from './parts/ChainOverview.vue'
 import agentFlowImg from '../../../docs/assets/diagrams/system-check-agent.svg'
 
 const tocItems = [
-  { id: 'rf-scope-51', label: '5.1 做什么 / 不做什么' },
+  { id: 'rf-scope-51', label: '五、需求范围' },
+  { id: 'rf-scope-51-1', label: '5.1 做什么 / 不做什么' },
   { id: 'rf-scope-52', label: '5.2 方向是单向的' },
   { id: 'rf-chain', label: '5.3 全链路总览' },
   { id: 'rf-moneyflow', label: '5.4 资产流向与税务归集' },

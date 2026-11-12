@@ -74,8 +74,16 @@ export function unknownNeedsOf (skeleton, prompt) {
   return bad
 }
 
+/** 字段：rule 传字符串 = 说明；传数组 = 可选取值（单/多选必须给，界面与校验都靠它，不能靠拆说明文字猜） */
 const f = (key, label, type, required = false, rule = '', formats = '', from = '') => ({
-  key, label, type, required, rule, ...(formats ? { formats } : {}), ...(from ? { from } : {})
+  key,
+  label,
+  type,
+  required,
+  rule: Array.isArray(rule) ? '' : rule,
+  ...(Array.isArray(rule) ? { options: rule } : {}),
+  ...(formats ? { formats } : {}),
+  ...(from ? { from } : {})
 })
 const it = (id, title, require, fields) => ({ id, title, require, fields })
 const human = (role, items, owner = null) => ({ type: 'human', role, items, ...(owner ? { owner } : {}) })
@@ -83,7 +91,7 @@ const system = (sysKey, fetchFreq = '1d', maxRuns = 5) => ({ type: 'system', sys
 const action = (actionKey, targets, retry) => ({ type: 'action', actionKey, targets, retry })
 
 /**
- * 离职骨架（21 条）。
+ * 离职骨架（22 条）。
  * 顺序即「事后一眼看下来」的顺序，不参与执行 —— 执行先后由 after 决定。
  */
 export const resignSkeleton = [
@@ -98,7 +106,7 @@ export const resignSkeleton = [
         /* 前两格默认取员工提交时带进来的值 —— 审核人核对或改，不重填 */
         f('expectDate', '期望离职日期', 'date', true, '不早于今日', '', 'payload.expectDate'),
         /* 与登记一致：离职原因登记就是多选，审核只核对不重填 */
-        f('reason', '离职原因', 'multiselect', true, '工资太低 / 离家太远 / 结婚生子 / 自主创业 / 照顾家庭', '', 'payload.reason'),
+        f('reason', '离职原因', 'multiselect', true, ['工资太低', '离家太远', '结婚生子', '自主创业', '照顾家庭'], '', 'payload.reason'),
         f('actualDate', '实际离职日期', 'date', true, '不早于今日', '', 'payload.expectDate'),
         f('reviewNote', '审核意见', 'textarea')
       ])
@@ -112,22 +120,64 @@ export const resignSkeleton = [
     gate: 'must',
     after: ['review.city'],
     paths: [human('hr', [
-      it('it.review', '离职需求审核 · 人事', '复核城市总结论与交接范围，定下这一笔常乐豆走哪条通道，写清审核意见', [
-        /* 审核这一环才产生的值：下游执行项按字段名取，不重复让人填 */
-        { key: 'payout', label: '款项出口', type: 'select', required: true, rule: '一次性补偿金/并入薪金', prefill: '并入薪金' },
+      it('it.review', '离职需求审核 · 人事', '复核城市总结论与交接范围，写清审核意见', [
         f('reviewNote', '审核意见', 'textarea')
       ])
     ])],
-    note: '第二关：人事复核并定款项出口；两条审核是两条结论，先后由「需等」表达'
+    note: '第二关：人事复核。钱的事不在这条结论上定 —— 补偿金与常乐豆余额另立一条（见下），审核只管「这个人能不能走、范围对不对」'
   },
   {
-    key: 'bean.intent',
-    goal: '常乐豆处理意向已写入业务系统',
-    needs: 'always',
+    key: 'comp.read',
+    goal: '待执行补偿金已从补偿金系统取回',
+    needs: 'severance',
     gate: 'must',
     after: ['review'],
-    paths: [action('act.beanPayoutIntent', '常乐豆账户系统 · 薪酬系统', { times: 3, interval: '30m', onExhaust: 'human' })],
-    note: '读审核定下的款项出口，把「这条余额走哪条通道」写回业务系统；结算与计税不在这里做'
+    /*
+     * 补偿金不算在这一侧：补偿金系统已经核定过，还没有执行发放。
+     * 这一条只把它取回来（金额 / 协议号 / 协议文件），本流程不重算、不改口径。
+     */
+    paths: [system('compPending', '1d', 3)],
+    note: '按工号查补偿金系统里「已核定、未执行」的那一笔，把金额与协议带回来。读不到说明补偿金系统还没建单 —— 不阻断，下一条由人事补录'
+  },
+  {
+    key: 'comp.confirm',
+    goal: '离职补偿金与常乐豆余额处置已确认',
+    needs: 'severance',
+    gate: 'must',
+    /* 不把 comp.read 写进前置：补偿金系统里还没建单时读取会不通过，
+       硬依赖会让这一条永远出不来。读取只是把数带回来，读不到就由人事补录。 */
+    after: ['review'],
+    /*
+     * 一条结论管两笔钱，因为它们在业务上本来就是一笔：
+     *   员工到手的离职补偿金 = 协商的补偿金 + 从补偿金口出去的常乐豆余额。
+     * 所以金额与豆出口必须由同一个人在同一次填写里定下来 —— 拆成两条，
+     * 就会出现「金额填了、豆走哪条却没人定」或者反过来。
+     *
+     * 存在与否仍按事实判断（needs: severance）：不涉补偿的人没有补偿金单可并，
+     * 常乐豆由薪酬系统按余额自动结转进当期薪金，这里不长出这一条。
+     * 但子事件的形状只有一种 —— 不按「纯补偿金 / 纯常乐豆 / 两样都有」写三种版本。
+     */
+    paths: [human('hr', [
+      it('it.comp', '补偿金与常乐豆处置', '金额与协议按补偿金系统读回的待执行记录核对（读不到就补录）；常乐豆余额与员工协商后选一条出口', [
+        f('compAmount', '协商补偿金', 'number', true, '按补偿金系统已核定的金额带出；读不到填 0，不许为负；上限 = 月均 ×（N+1）', '', '结果：待执行补偿金已从补偿金系统取回 · 协商补偿金'),
+        /* 强制上传：金额为 0 也要有一份「无补偿确认」，否则「没赔」这件事没有任何凭证 */
+        f('compProof', '补偿协议', 'file', true, '按补偿金系统读回的协议核对；读不到或未签时必须补传，金额为 0 附无补偿确认', 'PDF'),
+        /* 全流程唯一一处表达这笔豆怎么走 —— 下游按 key 取，不许在别处再设一格 */
+        { key: 'beanPayout', label: '常乐豆余额出口', type: 'select', required: true, options: ['并入一次性补偿金', '并入当期薪金'], prefill: '并入当期薪金' },
+        f('compNote', '说明', 'textarea')
+      ])
+    ])],
+    note: '人事独立确认这一笔钱：协商金额 + 协议 + 常乐豆走哪条出口。只给结论、不算钱 —— 员工到手多少由薪酬系统按「协商金额 + 常乐豆余额」合并计算'
+  },
+  {
+    key: 'comp.push',
+    goal: '补偿金与常乐豆处置已写入薪酬系统',
+    needs: 'severance',
+    gate: 'must',
+    after: ['comp.confirm'],
+    /* 只执行、不表达：金额与出口都在上一条结论上，这里只把值搬进薪酬系统并取回执 */
+    paths: [action('act.compPayout', '薪酬系统', { times: 3, interval: '30m', onExhaust: 'human' })],
+    note: '把「协商金额 + 常乐豆走哪条通道 + 实际离职日期」一起写进薪酬系统，由它按补偿金逻辑统一处理（常乐豆并入、冻结、跑批、发放、个税）；本流程不算钱、不判个税'
   },
   {
     key: 'handover.client',
@@ -210,7 +260,7 @@ export const resignSkeleton = [
     paths: [human('store-manager', [
       it('it.aacb', 'AACB 交还', '员工本人交还 AACB，店长核对编号与外观后验收', [
         f('aacbNo', '设备编号', 'text', true),
-        f('aacbState', '外观状态', 'select', true, '完好 / 轻微磨损 / 损坏'),
+        f('aacbState', '外观状态', 'select', true, ['完好', '轻微磨损', '损坏']),
         f('aacbPhoto', '验收照片', 'file', true, '', 'JPG / PNG')
       ])
     ])],
@@ -282,21 +332,6 @@ export const resignSkeleton = [
     paths: [system('complaint', '2h', 5)]
   },
   {
-    key: 'compensation',
-    goal: '补偿金金额与协议已确认',
-    needs: 'severance',
-    gate: 'optional',
-    after: ['review'],
-    paths: [human('finance', [
-      it('it.comp', '补偿金录入', '默认 0；大于 0 必须上传协议，上限 = 月均 ×（N+1）', [
-        f('monthlyAvg', '月均工资', 'number', true, '取近 12 个月'),
-        f('compAmount', '补偿金金额', 'number', true, '≤ 月均 ×（N+1）'),
-        f('compProof', '补偿协议', 'file', false, '', 'PDF')
-      ])
-    ], { kind: 'person', name: '周芸' })],
-    note: '总部财务固定责任人，不按门店 / 城市解析'
-  },
-  {
     key: 'interview',
     goal: '离职面谈已完成并留痕',
     needs: 'always',
@@ -305,7 +340,7 @@ export const resignSkeleton = [
     paths: [human('hr', [
       it('it.talk', '离职面谈记录', '面谈结论与员工反馈，对照前置结论逐项确认无未结事项', [
         f('talkDate', '面谈日期', 'date', true),
-        f('conclusion', '面谈结论', 'select', true, '顺利 / 有异议 / 需跟进'),
+        f('conclusion', '面谈结论', 'select', true, ['顺利', '有异议', '需跟进']),
         f('talkProof', '面谈记录', 'file', false, '', 'PDF / DOCX')
       ])
     ])]
@@ -323,7 +358,7 @@ export const resignSkeleton = [
     goal: '离职合同已送达员工签署',
     needs: 'always',
     gate: 'must',
-    after: ['interview', 'attendance.check', 'compensation'],
+    after: ['interview', 'attendance.check', 'comp.confirm'],
     paths: [action('act.pushContract', '员工本人', { times: 2, interval: '1h', onExhaust: 'human' })]
   },
   {
@@ -399,3 +434,10 @@ export const pathSummary = (item) => {
   if (has('external')) out.push('外部回执')
   return out.join(' + ') || '—'
 }
+
+/**
+ * 骨架构造器外露给「其它事件的模板」用（scenes.js）。
+ * 不另写一套写法：字段、事项、路径的说法只有这一处定义，
+ * 否则场景模板迟早与离职骨架长得不一样，生成器要认两种形状。
+ */
+export const SK_BUILD = { field: f, item: it, human, system, action }

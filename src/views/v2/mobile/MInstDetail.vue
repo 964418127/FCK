@@ -8,8 +8,8 @@
     <div class="page-header">
       <el-icon class="back-icon" @click="back"><ArrowLeft /></el-icon>
       <h1>{{ ev?.name || '事项' }}</h1>
-      <!-- 原型辅助：正式开发就是登录账号，不需要切换；这里只用于演示不同处理人的视角 -->
-      <span class="persona-hint" title="原型演示：切换处理人视角（正式开发为登录账号，无需切换）" @click="cyclePersona">{{ me?.name || '—' }}</span>
+      <!-- 视角切换：正式开发就是登录账号，这里只为演示不同处理人看到什么 -->
+      <PersonaSwitch :rank="rankOf" />
       <span :class="['hd-chip', inst?.state]">{{ instStateLabel(inst?.state) }}</span>
     </div>
 
@@ -29,21 +29,38 @@
         </div>
       </div>
 
-      <!-- 这一单的账（约数）：审核人定款项出口时要看的就是这几个数，发起时不给员工看 -->
+      <!-- 这单涉及的钱（参考值）：审核人定常乐豆余额出口时要看的就是这几个数，发起时不给员工看 -->
       <div v-if="assetRows.length" class="card">
         <div class="sec-head">
-          <span class="sec-title">这一单的账</span>
-          <span class="tag-ro">约数 · 按工号取</span>
+          <span class="sec-title">这单涉及的钱</span>
+          <span class="tag-ro">参考值 · 按工号查</span>
         </div>
         <div v-for="r in assetRows" :key="r.k" class="sum-row">
           <span class="k">{{ r.k }}</span>
           <span :class="['v', { lk: r.link }]">{{ r.v }}</span>
         </div>
-        <div class="asset-note">账户与薪酬台账按工号取；常乐豆以次月 5 日冻结后的余额为准，这里只是约数。</div>
+        <div class="asset-note">账户与薪酬台账按工号查；常乐豆以次月 5 日冻结后的余额为准，这里是参考值。</div>
+      </div>
+
+      <!-- 同时轮到你多件：并联的事互不阻塞，给个 tab 先办任意一件，不必按顺序等 -->
+      <div v-if="todo.length > 1" class="todo-switch">
+        <div class="ts-h">同时轮到你 {{ todo.length }} 件 · 先办哪件由你定</div>
+        <div class="ts-tabs">
+          <button
+            v-for="(s, i) in todo"
+            :key="s.id"
+            :class="['ts-tab', { on: s.id === activeTodoId }]"
+            @click="chooseTodo(s.id, $event)"
+          >
+            <span class="ts-i">{{ i + 1 }}</span>
+            <span class="ts-g">{{ s.goal }}</span>
+            <em v-if="s.gate === 'must'">必过</em>
+          </button>
+        </div>
       </div>
 
       <!-- 待我办 -->
-      <div v-for="s in todo" :key="s.id" class="card todo-card">
+      <div v-for="s in shownTodo" :key="s.id" class="card todo-card">
         <div class="td-head">
           <span class="td-tag">轮到你了</span>
           <span class="td-goal">{{ s.goal }}</span>
@@ -61,8 +78,7 @@
           <div v-for="f in g.fields" :key="f.key" class="field">
             <label>
               {{ f.label }}<i v-if="f.required">*</i>
-              <em v-if="f.prefill && fromPayload(f)" class="pre">已按申请单填好，可改</em>
-              <em v-else-if="f.prefill" class="pre">已按默认值填好，可改</em>
+              <em v-if="preTag(f)" class="pre">{{ preTag(f) }}</em>
               <em v-else-if="fromPayload(f) && f.required" class="pre miss">申请单没填，这里补</em>
             </label>
             <el-input
@@ -108,19 +124,19 @@
         <div class="td-foot">经办人 {{ ownerOfSub(s, inst).name }} · 提交后按前置推进下一环</div>
       </div>
 
-      <!-- 在别人手上：只有负责人能看见能办，别人只读 -->
+      <!-- 由其他人办理：只有负责人能看见能办，别人只读 -->
       <div v-if="others.length" class="card other-card">
-        <div class="wc-h">这一环在别人手上</div>
+        <div class="wc-h">由其他人办理</div>
         <div v-for="s in others" :key="s.id" class="wc-row">
           <div class="wc-g">{{ s.goal }}</div>
           <div class="wc-s">{{ ownerOfSub(s, inst).label }} · {{ ownerOfSub(s, inst).name }} 负责</div>
         </div>
-        <div v-if="!todo.length" class="oc-note">{{ firstOtherName }} 负责办理，办结后自动推进下一环</div>
+        <div v-if="!todo.length" class="oc-note">由 {{ firstOtherName }} 办理，办结后自动推进下一环</div>
       </div>
 
       <!-- 等机器 / 等对方 -->
       <div v-if="wait.length" class="card wait-card">
-        <div class="wc-h">在等系统 / 对方</div>
+        <div class="wc-h">等系统或对方回执</div>
         <div v-for="s in wait" :key="s.id" class="wc-row">
           <div class="wc-g">{{ s.goal }}</div>
           <div class="wc-s">{{ waitText(s) }}</div>
@@ -190,7 +206,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -202,6 +218,7 @@ import {
   waitingOf, openSubs, needsHuman, canHandle, formOf, ownerOfSub, myTodoOf, identitiesOf,
   progressOf, timelineOf, instStateLabel
 } from '../../../v2/instance.js'
+import PersonaSwitch from '../../../components/v2/PersonaSwitch.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -211,25 +228,35 @@ const ev = computed(() => (inst.value ? getEvent(inst.value.eventKey) : null))
 const tree = computed(() => (inst.value ? resolveForInstance(inst.value).tree : []))
 const prog = computed(() => progressOf(inst.value, tree.value))
 const me = computed(() => v2state.me)
-/** 可切换的处理人视角：在这一单里手上有活的排前面，只读的排后面 */
-const pool = computed(() => {
-  const base = identitiesOf(v2state.instances, (i) => resolveForInstance(i).tree)
-  return [...base]
-    .map((p) => ({ p, n: myTodoOf(inst.value, tree.value, p).length }))
-    .sort((a, b) => b.n - a.n)
-    .map((x) => x.p)
-})
-/** 原型辅助：点页角的名字依次换处理人视角（正式开发为登录账号） */
-const cyclePersona = () => {
-  if (!pool.value.length) return
-  const i = pool.value.findIndex((p) => p.name === me.value?.name)
-  setMe(pool.value[(i + 1) % pool.value.length] || null)
-}
 const todo = computed(() => myTodoOf(inst.value, tree.value, me.value))
+/**
+ * 并联的子事件互不阻塞：同时轮到我几件时，用 tab 切换，只渲染当前这一件的表单。
+ * 一件办完，下一件自动顶上 —— 不让人对着几屏表单从头翻到底。
+ */
+const activeId = ref('')
+const shownTodo = computed(() => {
+  const list = todo.value
+  if (list.length <= 1) return list
+  return [list.find((s) => s.id === activeId.value) || list[0]]
+})
+const activeTodoId = computed(() => shownTodo.value[0]?.id || '')
+/* 标签一多就横向溢出：点了后面那件，得把它滚进视野，否则看不出当前选的是哪件 */
+const chooseTodo = (id, e) => {
+  activeId.value = id
+  const el = e?.currentTarget
+  if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+}
+watch(todo, (list) => {
+  if (!list.length) { activeId.value = ''; return }
+  if (!list.some((s) => s.id === activeId.value)) activeId.value = list[0].id
+}, { immediate: true })
+/** 这一单里出现过的人（详情页排序用：手上有活的排前面），也用于直接打开时挑一个默认身份 */
+const people = computed(() => identitiesOf(v2state.instances, (i) => resolveForInstance(i).tree))
+const rankOf = (p) => myTodoOf(inst.value, tree.value, p).length
 /* 直接打开详情时也要有身份：给「这单里真有活」的那个，否则看不到轮到谁 */
 onMounted(() => {
   if (me.value) return
-  const cand = pool.value.find((p) => myTodoOf(inst.value, tree.value, p).length) || pool.value[0]
+  const cand = people.value.find((p) => myTodoOf(inst.value, tree.value, p).length) || people.value[0]
   setMe(cand || null)
 })
 /** 提示里直接点名，别让人自己去找谁 */
@@ -259,8 +286,14 @@ const subOf = (id) => inst.value?.subs?.[id] || { state: 'pending', records: {} 
 /**
  * 这一单的账（约数）：按工号从账户 / 薪酬台账取。
  * 取不到这个人就不显示 —— 不编数，也不在发起页给员工看。
+ *
+ * 还有一条前提：只有这一单里真有「常乐豆 / 补偿金」这类结论时才显示。
+ * 转正、调岗、调薪这些单跟常乐豆没有关系，把它们摆在最上面只会让人以为这单要结算他的豆。
  */
+const usesLedger = computed(() => (inst.value?.tree || []).some((s) => /常乐豆|补偿金/.test(s.goal || '')))
+
 const assetRows = computed(() => {
+  if (!usesLedger.value) return []
   const emp = inst.value?.emp || {}
   const rec = staffById(emp.empNo || emp.id)
   if (!rec) return []
@@ -275,23 +308,53 @@ const assetRows = computed(() => {
 
 /* ---------------- 表单草稿：按节点各存一份，互不干扰 ---------------- */
 const drafts = reactive({})
+
+/**
+ * 上游结论里已经给出的值：字段写 from = '结果：<结论> · <字段>'。
+ * 补偿金就是这样来的 —— 系统先从补偿金系统读回待执行那一笔，人事这一格不必再敲一遍。
+ */
+function upstreamValue (f) {
+  const src = String(f.from || '')
+  if (!src.startsWith('结果：')) return ''
+  /* from 写的是人看的样子「结果：<结论> · <字段>」；取值按字段 key 去记录里捞，
+     与执行项取上游值同一条规矩 —— 中文标签只用来让人读懂，不做寻址 */
+  const goal = src.slice(3).split('·')[0].trim()
+  if (!goal) return ''
+  const sub = (tree.value || []).find((x) => x.goal === goal)
+  if (!sub) return ''
+  const st = inst.value?.subs?.[sub.id]
+  for (const rec of Object.values(st?.records || {})) {
+    const v = rec?.values?.[f.key]
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v
+  }
+  return ''
+}
+/** 这一格的值从哪来 —— 标签要说清，人才知道该核对还是该自己填 */
+const preTag = (f) => {
+  if (fromPayload(f)) return f.prefill ? '已按申请单填好，可改' : ''
+  if (upstreamValue(f) !== '') return '已按系统读取值填好，可改'
+  if (f.prefill) return '已按默认值填好，可改'
+  return ''
+}
+
 function draftOf (sub) {
   if (!drafts[sub.id]) {
-    // 预填：单据带过来的值（from: payload.xxx）先填进格子，人核对或改 —— 不让他重填一遍
+    // 预填：单据带过来的值（from: payload.xxx）、上游系统读回的值（from: 结果：…）先填进格子，人核对或改
     const vals = {}
     formOf(sub).forEach((g) => {
       ;(g.fields || []).forEach((f) => {
         if (f.type === 'file') return
+        const up = upstreamValue(f)
+        const pre = (f.prefill !== undefined && f.prefill !== '') ? f.prefill : up
         /* 多选的值必须是数组：单据带过来的可能是一句「工资太低、离家太远」，
            直接塞给 multiple 的 select 会渲染成空 —— 这里归一成数组 */
         if (f.type === 'multiselect') {
-          const v = f.prefill
-          vals[f.key] = Array.isArray(v)
-            ? [...v]
-            : (v ? String(v).split(/[、,，/]/).map((x) => x.trim()).filter(Boolean) : [])
+          vals[f.key] = Array.isArray(pre)
+            ? [...pre]
+            : (pre ? String(pre).split(/[、,，/]/).map((x) => x.trim()).filter(Boolean) : [])
           return
         }
-        if (f.prefill !== undefined && f.prefill !== '') vals[f.key] = f.prefill
+        if (pre !== undefined && pre !== '') vals[f.key] = pre
       })
     })
     drafts[sub.id] = { vals, files: {}, note: '' }
@@ -300,7 +363,10 @@ function draftOf (sub) {
 }
 /** 这一格本该由申请单带过来（声明了 from: payload.xxx）；带不过来时要说清楚 */
 const fromPayload = (f) => String(f.from || '').startsWith('payload.')
-const optionsOf = (f) => String(f.rule || '').split(/[/、,，]/).map((s) => s.trim()).filter(Boolean)
+/* 可选取值以字段上登记的 options 为准；没有才退回拆说明文字（那只是兜底，拆出来的可能是半句话） */
+const optionsOf = (f) => (Array.isArray(f.options) && f.options.length
+  ? f.options
+  : String(f.rule || '').split(/[/、,，]/).map((s) => s.trim()).filter(Boolean))
 
 function fieldLabel (subId, itemId, key) {
   const s = tree.value.find((x) => x.id === subId)
@@ -382,7 +448,9 @@ function runSys (s) {
 </script>
 
 <style scoped>
-.m-page { min-height: 100vh; background: #f5f5f5; }
+/* 自己滚：全局 #app 是 height:100vh + overflow:hidden，靠 min-height 撑不开页面，
+   内容一长底部就被裁掉（与 MInstList / MInstApply 保持同一套写法） */
+.m-page { height: 100vh; min-height: 100vh; overflow-y: auto; background: #f5f5f5; -webkit-overflow-scrolling: touch; }
 .page-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #fff; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 .back-icon { font-size: 22px; color: #333; }
 .page-header h1 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; margin: 0; }
@@ -408,12 +476,20 @@ function runSys (s) {
 .bar i { display: block; height: 100%; background: #a40035; border-radius: 2px; }
 .pg { font-size: 11px; color: #a3a0a1; }
 
-.persona-hint { font-size: 10.5px; color: #cdc7c9; letter-spacing: .3px; padding: 2px 4px; user-select: none; flex: none; }
-.persona-hint:active { color: #a40035; }
 .other-card { border: 1px solid #f0eef0; }
 .oc-note { margin-top: 8px; padding-top: 7px; border-top: 1px dashed #f0eef0; font-size: 11px; color: #a40035; line-height: 1.55; }
 .oc-note { margin-top: 8px; padding-top: 7px; border-top: 1px dashed #f0eef0; font-size: 11px; color: #a40035; line-height: 1.55; }
 
+.todo-switch { margin-bottom: 10px; }
+.ts-h { font-size: 11px; color: #a3a0a1; padding: 0 4px 6px; }
+.ts-tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.ts-tabs::-webkit-scrollbar { display: none; }
+.ts-tab { flex: none; display: flex; align-items: center; gap: 5px; max-width: 240px; padding: 7px 10px; border: 1px solid #ececf0; background: #fff; border-radius: 10px; font-size: 12px; color: #6b6567; }
+.ts-tab.on { border-color: #f2c9d6; background: #fff0f4; color: #a40035; }
+.ts-i { flex: none; width: 15px; height: 15px; border-radius: 50%; background: #f4f2f4; color: #a3a0a1; font-size: 10px; line-height: 15px; text-align: center; }
+.ts-tab.on .ts-i { background: #a40035; color: #fff; }
+.ts-g { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-tab em { flex: none; font-style: normal; font-size: 9.5px; color: #a40035; border: 1px solid #f2c9d6; border-radius: 7px; padding: 0 4px; }
 .todo-card { border: 1px solid #f6dfe6; box-shadow: 0 2px 10px rgba(164, 0, 53, .06); }
 .td-head { display: flex; align-items: baseline; gap: 8px; }
 .td-tag { flex: none; font-size: 10.5px; color: #a40035; background: #fff0f4; border-radius: 9px; padding: 2px 7px; }

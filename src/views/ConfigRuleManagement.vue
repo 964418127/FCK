@@ -23,10 +23,7 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="通用参数配置" name="general-param">
-        <div v-if="activeTab === 'general-param'" class="tab-placeholder">
-          <el-icon :size="32"><Document /></el-icon>
-          <p>通用参数配置（开发中）</p>
-        </div>
+        <GeneralParamManagement v-if="activeTab === 'general-param'" />
       </el-tab-pane>
       <el-tab-pane label="数据源策略配置" name="ds-strategy">
         <StoreSalaryStrategy v-if="activeTab === 'ds-strategy'" :embedded="true" />
@@ -36,12 +33,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Document } from '@element-plus/icons-vue'
 import SalaryItemManagement from './SalaryItemManagement.vue'
 import StoreSalaryStrategy from './StoreSalaryStrategy.vue'
+import GeneralParamManagement from './GeneralParamManagement.vue'
 
-const activeTab = ref('ds-strategy')
+const route = useRoute()
+const router = useRouter()
+
+// 页签跟着 ?tab 走：数据表配置页返回时能回到「通用参数配置」这一页签
+const activeTab = ref(route.query.tab || 'ds-strategy')
+watch(() => route.query.tab, (tab) => { if (tab && tab !== activeTab.value) activeTab.value = tab })
+watch(activeTab, (tab) => {
+  if (route.query.tab === tab) return
+  router.replace({ query: { ...route.query, tab } })
+})
 </script>
 
 <style scoped>

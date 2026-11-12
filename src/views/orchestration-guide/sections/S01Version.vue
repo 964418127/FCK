@@ -43,12 +43,8 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
-const tocItems = [{ id: 'orch-ver', label: '版本信息' }]
-
-const breadcrumbs = [
-  { label: '文档中心', to: '/docs' },
-  { label: '事件编排', to: '/docs/orchestration' },
-  { label: '一、版本信息' }
+const tocItems = [
+  { id: 'orch-ver', label: '一、版本信息' }
 ]
 </script>
 

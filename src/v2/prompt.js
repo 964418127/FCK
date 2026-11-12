@@ -10,7 +10,7 @@ import { permCatalog, org, jobPerms, permName } from './base.js'
 import { jobs, cities, stores, employTypes, roles } from './model.js'
 import { eventPoints } from './seed.js'
 import { BASE_NEEDS } from './skeleton.js'
-import { renderTemplate } from './template.js'
+import { renderForModel } from './template.js'
 import { CONTRACT, renderSystemPrompt } from './contract.js'
 
 export const SYSTEM_PROMPT = renderSystemPrompt(CONTRACT)
@@ -190,12 +190,15 @@ export function instanceFactsText (emp = {}) {
  *
  * 模板由 template.js 渲染（骨架 → 文本），不再在这里手拼 ——
  * 手拼的那份迟早与界面上展示的那份不一样，走查时会问「到底发给模型的是哪段」。
+ *
+ * 发出去的是两段：人写的模板（口径 / 结构约束 / 粒度 / 结论清单）+ 系统附的结构对齐表。
+ * 对齐表里的 key 不是给人写的，业务人员看不到也不必写。
  */
 export function buildGenerateMessages ({ prompt, emp, factsText }) {
   const parts = [
-    '## 这套提示词（模板：口径 + 结构约束 + 必须交付的结论）',
-    /* 与工作台展示的是同一个函数 —— 页面上看到的模板，就是这里发出去的 */
-    renderTemplate(prompt || {}),
+    '## 这套提示词（人写的口径与写法 + 系统附的结构对齐）',
+    /* 与工作台「看生成原文」是同一个函数 —— 那里看到的，就是这里发出去的 */
+    renderForModel(prompt || {}),
     '',
     '## 这一单的人与事实（只能用这些）',
     factsText || instanceFactsText(emp),
@@ -203,6 +206,12 @@ export function buildGenerateMessages ({ prompt, emp, factsText }) {
     '## 现在要做的',
     '按上面的事实判断每一条结论成立不成立：成立就生成一个子事件（一条结论 + 一个事项 + 一组字段），不成立就不要生成（不要为了流程完整补一条空的）。',
     '一个子事件只挂一个事项；要凭证的环节把附件字段写全（类型 = 附件、必传 = 是、写明格式）。',
+    '「结构对齐」里每条前面的方括号是它的 key：生成的 subs[].skeletonKey 必须原样用它，不要自己起名字，也不要用结论的中文当 key；依赖写 se.<key>，也只能指向清单里有的 key。',
+    '路径上的 key 同样照抄对齐表：人的负责人写 owner.role，系统判定写 sysKey，系统执行写 actionKey，外部回执的 via 写动作 key —— 这些都不许自造。',
+    '事项字段的 key 照抄对齐表里 `字段` 那一行（如 expectDate / beanPayout）：上游预填、下游引用都是按它找的，改了名字就取不到值。字段可增不可改 —— 要补就补对齐表里没有的。',
+    '单选 / 多选字段必须带 options 数组，取值照抄对齐表括号里的可选值，不要自己编选项，也不要只把选项写进 rule —— 界面按 options 出下拉，写进说明文字只会显示成半句话。',
+    '字段名点到具体对象：写「常乐豆余额出口」不写「款项出口」—— 泛称会让备用金、欠款这些同名口径混进来，下游按 key 取数就取错了。',
+    '清单之外的补充结论才用新 key，并把 key 写清楚；但必过的那些一条都不能少。',
     '只输出生成结果的 JSON：{ step: "generate", subs: [{ skeletonKey, goal, gate, deps, ways, ... }], dropped: [{ key, why }] }。'
   ]
   return [

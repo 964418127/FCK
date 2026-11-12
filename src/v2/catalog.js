@@ -307,6 +307,64 @@ export const systemChecks = [
         ]
       }
     ]
+  },
+  {
+    key: 'compPending',
+    name: '待执行补偿金读取',
+    source: '补偿金系统',
+    desc: '按工号查已核定、尚未执行发放的那一笔补偿金，把金额与协议带回来；本流程不重算',
+    pass: { logic: 'and', items: ['存在未执行的补偿金记录'] },
+    soft: { logic: 'or', items: ['协议已双方签署', '协议待签署'] },
+    fetch: {
+      fields: [
+        { key: 'compAmount', label: '协商补偿金' },
+        { key: 'monthlyAvg', label: '月均工资（近 12 个月）' },
+        { key: 'agreementNo', label: '协议编号' },
+        { key: 'agreementFile', label: '协议文件' }
+      ],
+      cadenceHint: '人事审核通过后查一次；读不到即视为补偿金系统尚未建单'
+    },
+    defaultFetch: { freq: '1d', maxRuns: 3 },
+    mirror: { version: 'v1', configuredBy: '邓黎英', condAt: '2026-10-26 09:00' },
+    batches: [
+      {
+        batchNo: 'B-20261026-01',
+        ranAt: '2026-10-26 09:00',
+        version: 'v1',
+        condAt: '2026-10-26 09:00',
+        configuredBy: '邓黎英',
+        scanned: 2,
+        passN: 1,
+        softN: 0,
+        failN: 1,
+        errN: 0,
+        note: '只读，不改补偿金系统里的任何数值',
+        pass: { logic: 'and', items: ['存在未执行的补偿金记录'] },
+        soft: { logic: 'or', items: ['协议已双方签署', '协议待签署'] },
+        verdicts: [
+          {
+            empNo: 'M00690',
+            name: '吴芳',
+            job: '客户经理',
+            store: '上海徐汇店',
+            result: '通过',
+            metrics: '读到 CP-2026-0087：协商补偿金 ¥12,800，月均 ¥8,600，协议已签署',
+            /* 取回的字段值随批次带回，下游按「结果：<结论> · <字段>」取 */
+            values: { compAmount: 12800, monthlyAvg: 8600, agreementNo: 'CP-2026-0087', agreementFile: 'CP-2026-0087.pdf' }
+          },
+          {
+            empNo: 'T01660',
+            name: '杨春燕',
+            job: '城市总',
+            store: '杭州西湖店',
+            result: '通过',
+            metrics: '读到 CP-2026-0091：协商补偿金 ¥26,400，月均 ¥13,200，协议待签署',
+            values: { compAmount: 26400, monthlyAvg: 13200, agreementNo: 'CP-2026-0091', agreementFile: 'CP-2026-0091.pdf' }
+          },
+          { empNo: 'T00676', name: '张三', job: '推拿师', store: '上海徐汇店', result: '未通过', metrics: '补偿金系统无未执行记录' }
+        ]
+      }
+    ]
   }
 ]
 
@@ -356,26 +414,27 @@ export const actions = [
     note: '与撤销业务系统权限分开：域账号停用影响登录，通常要求当日生效'
   },
   {
-    key: 'act.beanPayoutIntent',
-    name: '写入常乐豆处理意向',
-    source: '常乐豆账户系统 · 薪酬系统',
+    key: 'act.compPayout',
+    name: '写入补偿金与常乐豆处置',
+    source: '薪酬系统',
     mode: 'execute',
-    target: '员工常乐豆余额',
-    targetFrom: '按工号定位这一单的员工账户（余额含待结）',
+    target: '离职结算单据',
+    targetFrom: '按工号定位这一单的补偿金单据（含待执行的那一笔）',
     args: [
       { key: 'empNo', label: '员工工号', from: 'facts' },
-      { key: 'payout', label: '款项出口', from: '结果：人事已审核通过 · 款项出口' },
+      { key: 'compAmount', label: '协商补偿金', from: '结果：离职补偿金与常乐豆余额处置已确认 · 协商补偿金' },
+      { key: 'beanPayout', label: '常乐豆余额出口', from: '结果：离职补偿金与常乐豆余额处置已确认 · 常乐豆余额出口' },
       { key: 'actualDate', label: '实际离职日期', from: '结果：城市总已审核通过 · 实际离职日期' }
     ],
     receipt: [
-      { key: 'account', label: '账户' },
-      { key: 'intent', label: '写入的意向（通道 + 生效日）' },
+      { key: 'billNo', label: '补偿金单据号' },
+      { key: 'beanIntent', label: '常乐豆处置（通道 + 生效日）' },
       { key: 'result', label: '写入结果' },
       { key: 'at', label: '完成时间' }
     ],
-    idempotent: '工号 + 单据号 + 通道：重复触发不重复写入',
+    idempotent: '工号 + 单据号：重复触发不重复写入',
     fallback: '写入失败重试 3 次，仍失败转薪酬人工处理，本流程记未取得回执',
-    note: '只写「这条余额走哪条通道、从哪天生效」的意向，不结算、不扣减；冻结与跑批由薪酬侧按意向执行'
+    note: '只写「协商金额 + 常乐豆走哪条通道 + 实际离职日期」，不结算、不扣减；并入、冻结、跑批、发放、个税全部由薪酬系统按补偿金逻辑处理'
   },
   {
     key: 'act.freezePayroll',
@@ -488,6 +547,93 @@ export const actions = [
     idempotent: '工号 + 归档批次',
     fallback: '失败转档案管理员，不影响离职生效',
     note: '收尾动作，可与其他收尾并存'
+  },
+  /* ---------------- 人事变更类事件（转正 / 调岗 / 调薪）引用的动作 ----------------
+   * 与离职场合一类：都是「改一条台账、发一份东西、拿回执」，只是变更对象不同。
+   * 不另立一套动作模型 —— 动作就是系统真的能做的那件事，不分事件。
+   */
+  {
+    key: 'act.grantPerm',
+    name: '开通系统权限',
+    source: '统一身份平台',
+    mode: 'execute',
+    target: '账号',
+    targetFrom: '新岗位应有的权限配置（按岗位基线给出）',
+    args: [
+      { key: 'empNo', label: '员工工号', from: 'facts' },
+      { key: 'account', label: '账号标识', from: 'facts' },
+      { key: 'effectiveAt', label: '生效时间', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'account', label: '账号' },
+      { key: 'result', label: '开通结果（成功 / 已存在 / 失败）' },
+      { key: 'at', label: '完成时间' }
+    ],
+    idempotent: '工号 + 账号 + 生效日：重复触发不重复开通',
+    fallback: '单账号失败重试 3 次，仍失败转 IT 人工，其余账号照常推进',
+    note: '与撤销权限成对：撤销的是原岗位的，开通的是新岗位的，一次变更两笔账'
+  },
+  {
+    key: 'act.updateStaffProfile',
+    name: '更新员工档案',
+    source: '员工档案系统',
+    mode: 'execute',
+    target: '档案',
+    targetFrom: '按工号定位这一单的员工档案',
+    args: [
+      { key: 'empNo', label: '员工工号', from: 'facts' },
+      { key: 'changeType', label: '变更项（转正 / 调岗 / 调薪）', from: 'payload' },
+      { key: 'effectiveAt', label: '生效日期', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'changeNo', label: '变更单号' },
+      { key: 'result', label: '写入结果' },
+      { key: 'at', label: '完成时间' }
+    ],
+    idempotent: '工号 + 变更项 + 生效日',
+    fallback: '失败转人事人工补录，不阻塞后续通知',
+    note: '档案是下游口径的来源：这一条不落，薪酬与权限拿到的新岗位就没有依据'
+  },
+  {
+    key: 'act.notifyPayrollChange',
+    name: '通知薪酬变更',
+    source: '薪酬系统',
+    mode: 'notify',
+    target: '单据',
+    targetFrom: '按工号生成的变更通知单',
+    args: [
+      { key: 'empNo', label: '员工工号', from: 'facts' },
+      { key: 'changeType', label: '变更类型', from: 'payload' },
+      { key: 'effectiveAt', label: '生效日期', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'subscriber', label: '订阅方' },
+      { key: 'result', label: '投递结果' },
+      { key: 'at', label: '投递时间' }
+    ],
+    idempotent: '工号 + 变更类型 + 生效日',
+    fallback: '投递失败重试 2 次，仍失败转薪酬人工接收',
+    note: '只证明送达，不证明薪酬已按新口径算过 —— 算账在薪酬侧，不在我们这一步'
+  },
+  {
+    key: 'act.pushContractChange',
+    name: '推送合同变更',
+    source: '电子签平台',
+    mode: 'execute',
+    target: '单据',
+    targetFrom: '按工号生成的合同变更文本',
+    args: [
+      { key: 'empNo', label: '员工工号', from: 'facts' },
+      { key: 'changeType', label: '变更类型', from: 'payload' },
+      { key: 'effectiveAt', label: '生效日期', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'docNo', label: '外部单号' },
+      { key: 'result', label: '送达结果' }
+    ],
+    idempotent: '工号 + 变更类型 + 生效日',
+    fallback: '推送失败重试 3 次，仍失败转人事线下处理',
+    note: '送达不等于签完：签署状态要另一条外部回执认，别拿送达当签署'
   }
 ]
 export const actionByKey = (k) => actions.find((a) => a.key === k) || null

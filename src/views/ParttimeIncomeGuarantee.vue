@@ -2,49 +2,50 @@
   <div class="guarantee-page">
     <header><h1>收入保底配置</h1><p>非全客户经理</p></header>
     <section class="general-bar" aria-label="通用保底配置">
-      <h2>通用保底</h2><strong>{{ money(guaranteeStore.generalAmount) }}<span>元/月</span></strong>
+      <h2>通用保底</h2><strong>{{ money(guaranteeStore.generalAmount) }}<span>元/小时</span></strong>
       <span class="general-scope">未配置城市默认使用</span>
+      <span class="general-formula">保底金额 = 打卡有效工时 × 保底时薪，按周结算</span>
       <el-tooltip content="编辑通用保底" placement="top"><el-button :icon="Edit" text aria-label="编辑通用保底" @click="editGeneral" /></el-tooltip>
     </section>
     <div class="configuration-layout">
       <aside class="scope-sidebar" aria-label="配置范围">
         <div class="scope-heading"><span>城市配置</span><el-tooltip content="新增城市" placement="top"><el-button :icon="Plus" text aria-label="新增城市" @click="editCity()" /></el-tooltip></div>
         <el-input v-if="guaranteeStore.cityRules.length" v-model="citySearch" placeholder="搜索城市" clearable :prefix-icon="Search" aria-label="搜索城市" />
-        <button v-for="rule in filteredCities" :key="rule.city" :class="['scope-item', { active: selectedCity === rule.city }]" :aria-pressed="selectedCity === rule.city" @click="selectedCity = rule.city"><span>{{ rule.city }}</span><small>{{ money(rule.amount) }} 元/月</small></button>
-        <div v-if="voidedCities.length" class="voided-records"><strong>已作废</strong><p v-for="(rule, index) in voidedCities" :key="index">{{ rule.city }} · {{ money(rule.amount) }} 元/月</p></div>
+        <button v-for="rule in filteredCities" :key="rule.city" :class="['scope-item', { active: selectedCity === rule.city }]" :aria-pressed="selectedCity === rule.city" @click="selectedCity = rule.city"><span>{{ rule.city }}</span><small>{{ money(rule.amount) }} 元/小时</small></button>
+        <div v-if="voidedCities.length" class="voided-records"><strong>已作废</strong><p v-for="(rule, index) in voidedCities" :key="index">{{ rule.city }} · {{ money(rule.amount) }} 元/小时</p></div>
         <p v-if="!filteredCities.length" class="empty-city">{{ citySearch ? '暂无匹配城市' : '暂无城市配置' }}</p>
       </aside>
       <main class="scope-content">
         <section v-if="selectedRule">
           <div class="section-heading"><h2>{{ selectedCity }}城市保底</h2><div class="actions"><el-button :icon="Edit" @click="editCity(selectedRule)">编辑</el-button><el-button :icon="Delete" @click="removeCity">作废城市配置</el-button></div></div>
-          <div class="base-amount">{{ money(selectedRule.amount) }}<span>元/月</span></div>
+          <div class="base-amount">{{ money(selectedRule.amount) }}<span>元/小时</span></div>
           <div class="store-heading"><h2>门店差异额</h2><el-button type="primary" :icon="Plus" :disabled="!availableStores.length" @click="editStore()">新增门店配置</el-button></div>
           <el-table :data="pagedRows" empty-text="暂无门店配置">
             <el-table-column label="门店" min-width="180"><template #default="{ row }">{{ row.name }}<small>{{ row.code }}</small></template></el-table-column>
-            <el-table-column label="门店差异额（元/月）" min-width="175"><template #default="{ row }">+ {{ money(row.amount) }}</template></el-table-column>
-            <el-table-column label="最终保底（元/月）" min-width="175"><template #default="{ row }">{{ money(row.total) }}</template></el-table-column>
+            <el-table-column label="门店差异额（元/小时）" min-width="175"><template #default="{ row }">+ {{ money(row.amount) }}</template></el-table-column>
+            <el-table-column label="最终保底（元/小时）" min-width="175"><template #default="{ row }">{{ money(row.total) }}</template></el-table-column>
             <el-table-column label="操作" width="130"><template #default="{ row }"><el-button link type="primary" @click="editStore(row)">编辑</el-button><el-button link type="danger" @click="removeStore(row)">作废</el-button></template></el-table-column>
           </el-table>
           <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
-          <div v-if="voidedStores.length" class="voided-records"><strong>已作废门店配置</strong><p v-for="(row, index) in voidedStores" :key="index">{{ row.name }} · +{{ money(row.amount) }} 元/月</p></div>
+          <div v-if="voidedStores.length" class="voided-records"><strong>已作废门店配置</strong><p v-for="(row, index) in voidedStores" :key="index">{{ row.name }} · +{{ money(row.amount) }} 元/小时</p></div>
         </section>
         <el-empty v-else description="暂无城市配置" :image-size="70" />
       </main>
     </div>
     <el-dialog v-model="generalOpen" title="通用保底" width="min(460px, 94vw)">
-      <el-form label-width="100px"><el-form-item label="保底金额"><el-input-number v-model="generalAmount" :min="0" :precision="2" controls-position="right" aria-label="通用保底金额" /><span class="unit">元/月</span></el-form-item></el-form>
+      <el-form label-width="100px"><el-form-item label="保底时薪"><el-input-number v-model="generalAmount" :min="0" :precision="2" controls-position="right" aria-label="通用保底金额" /><span class="unit">元/小时</span></el-form-item></el-form>
       <template #footer><el-button @click="generalOpen = false">取消</el-button><el-button type="primary" :icon="Check" @click="saveGeneral">保存</el-button></template>
     </el-dialog>
     <el-dialog v-model="cityOpen" :title="editingCity ? '编辑城市保底' : '新增城市保底'" width="min(460px, 94vw)">
       <el-form label-width="100px">
         <el-form-item label="城市"><span v-if="editingCity">{{ cityForm.city }}</span><el-select v-else v-model="cityForm.city" filterable placeholder="选择城市" aria-label="城市"><el-option v-for="city in availableCities" :key="city" :label="city" :value="city" /></el-select></el-form-item>
-        <el-form-item label="保底金额"><el-input-number v-model="cityForm.amount" :min="0" :precision="2" controls-position="right" aria-label="城市保底金额" /><span class="unit">元/月</span></el-form-item>
+        <el-form-item label="保底时薪"><el-input-number v-model="cityForm.amount" :min="0" :precision="2" controls-position="right" aria-label="城市保底金额" /><span class="unit">元/小时</span></el-form-item>
       </el-form><template #footer><el-button @click="cityOpen = false">取消</el-button><el-button type="primary" :icon="Check" @click="saveCity">保存</el-button></template>
     </el-dialog>
     <el-dialog v-model="storeOpen" :title="editingStore ? '编辑门店差异额' : '新增门店差异额'" width="min(460px, 94vw)">
       <el-form label-width="100px">
         <el-form-item label="门店"><span v-if="editingStore">{{ editingStore }}</span><el-select v-else v-model="storeForm.storeId" filterable placeholder="选择门店" aria-label="门店"><el-option v-for="store in availableStores" :key="store.id" :label="store.name" :value="store.id" /></el-select></el-form-item>
-        <el-form-item label="差异金额"><el-input-number v-model="storeForm.amount" :min="0" :precision="2" controls-position="right" aria-label="门店差异金额" /><span class="unit">元/月</span></el-form-item>
+        <el-form-item label="差异时薪"><el-input-number v-model="storeForm.amount" :min="0" :precision="2" controls-position="right" aria-label="门店差异金额" /><span class="unit">元/小时</span></el-form-item>
       </el-form><template #footer><el-button @click="storeOpen = false">取消</el-button><el-button type="primary" :icon="Check" @click="saveStore">保存</el-button></template>
     </el-dialog>
   </div>
@@ -113,7 +114,7 @@ const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePag
 header { margin-bottom:28px; } h1 { font-size:22px; margin:0 0 8px; } header p { color:#777; font-size:13px; margin:0; } h2 { font-size:16px; margin:0; }
 .configuration-layout { display:grid; grid-template-columns:200px minmax(0,1fr); min-height:560px; border-top:1px solid #e5e7eb; }
 .general-bar { display:flex; align-items:center; gap:20px; flex-wrap:wrap; padding:16px 0; border-top:1px solid #e5e7eb; }
-.general-bar strong { font-size:18px; font-variant-numeric:tabular-nums; } .general-bar strong span { font-size:13px; font-weight:400; color:#888; margin-left:8px; } .general-scope { color:#888; font-size:13px; } .general-bar .el-button { margin-left:auto; }
+.general-bar strong { font-size:18px; font-variant-numeric:tabular-nums; } .general-bar strong span { font-size:13px; font-weight:400; color:#888; margin-left:8px; } .general-scope { color:#888; font-size:13px; } .general-formula { color:#a50034; font-size:12.5px; background:#faf0f3; border-radius:4px; padding:4px 10px; } .general-bar .el-button { margin-left:auto; }
 .scope-sidebar { padding:20px 16px 20px 0; border-right:1px solid #e5e7eb; } .scope-sidebar .el-input { margin-bottom:12px; } .scope-heading { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#888; margin:0 0 8px 12px; }
 .scope-item { display:block; width:100%; text-align:left; border:0; border-left:3px solid transparent; background:transparent; padding:12px; font:inherit; color:#303133; cursor:pointer; } .scope-item:hover { background:#f7f8fa; } .scope-item.active { background:#faf0f3; border-left-color:#a50034; color:#a50034; } .scope-item span { font-size:14px; font-weight:600; } small { display:block; color:#888; font-size:12px; margin-top:6px; }
 .scope-content { min-width:0; padding:24px 0 24px 24px; } .section-heading,.store-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; } .store-heading { border-top:1px solid #e5e7eb; padding-top:24px; margin:28px 0 16px; }

@@ -3,6 +3,11 @@
     <div class="page-header">
       <el-icon @click="goBack" class="back-icon"><ArrowLeft /></el-icon>
       <h1>非全任务列表</h1>
+      <!-- 演示辅具：转发要两个人，?dev=1 时能切到对方视角接受 / 拒绝 -->
+      <el-select v-if="devMode" v-model="session.employeeId" size="small" class="persona-switch" style="width: 108px">
+        <el-option v-for="person in employees.filter(p => p.position === 'am')" :key="person.id" :label="person.name" :value="person.id" />
+      </el-select>
+      <button v-if="devMode" class="dev-remind" @click="simulateReminder">补推提醒</button>
     </div>
 
     <div class="content-container">
@@ -13,7 +18,7 @@
       <section v-if="taskView === 'available'" class="available-section">
         <div class="release-banner">
           <el-icon><Clock /></el-icon>
-          <div><strong>每周四上午 10:00 发布</strong><p>下周六至下下周五 · 名额有限，先到先得</p></div>
+          <div><strong>每周四 06:00 发布</strong><p>下周六至下下周五 · 名额有限，先到先得</p></div>
         </div>
         <div class="available-filters">
           <el-select v-model="selectedRelease" placeholder="选择任务周期" style="width: 100%"><el-option v-for="batch in availableBatches" :key="batch.releaseDate" :label="`${batch.start} 至 ${batch.end}`" :value="batch.releaseDate" /></el-select>
@@ -32,9 +37,31 @@
           <div class="available-action"><span :class="{ full: slotRemaining(slot) === 0 }">{{ slotRemaining(slot) ? `剩余 ${slotRemaining(slot)} / ${slot.quota} 个名额` : '名额已满' }}</span><el-button :class="{ 'selected-slot-button': isSlotSelected(slot) }" type="primary" :disabled="isSlotSelected(slot) || !!slotBlockReason(slot)" @click="chooseSlot(slot)">{{ isSlotSelected(slot) ? '已选择' : slotBlockReason(slot) ? '不可选择' : '选择任务' }}</el-button></div>
           <p v-if="slotBlockReason(slot)" class="slot-reason">{{ slotBlockReason(slot) }}</p>
         </div>
-        <el-empty v-if="!availableSlots.length" description="暂无可选任务" :image-size="70" />
+        <el-empty v-if="!availableSlots.length" description="当前没有可接的任务" :image-size="70" />
       </section>
       <template v-else>
+      <!-- 转发给我、还没表态的任务：接受才落到我名下，拒绝就还给原承接人 -->
+      <div v-if="incomingForwards.length" class="incoming-block">
+        <div class="incoming-title">
+          <span class="red-bar"></span>
+          <span class="section-title">待您接受</span>
+          <span class="incoming-count">{{ incomingForwards.length }}</span>
+        </div>
+        <div v-for="task in incomingForwards" :key="task.id" class="incoming-card">
+          <div class="incoming-head">
+            <span class="incoming-from">{{ task.forwardRequest.fromName }} 转发给您</span>
+            <span class="status-badge status-waiting">待接受</span>
+          </div>
+          <div class="task-store"><el-icon><Location /></el-icon><span>{{ task.storeName }}</span></div>
+          <div class="task-time"><el-icon><Clock /></el-icon><span>{{ task.date }} · {{ task.startTime }} - {{ task.endTime }} · {{ durationLabel(task) }}</span></div>
+          <p class="incoming-deadline">请在 <strong>{{ forwardLeft(task) }} 分钟</strong>内选择，超时未接受将自动退回 {{ task.forwardRequest.fromName }}</p>
+          <div class="incoming-actions">
+            <button class="action-btn secondary" @click="onRejectForward(task)">拒绝</button>
+            <button class="action-btn primary" @click="onAcceptForward(task)">接受任务</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 概览：今日任务进度 -->
       <div class="overview-card">
         <div class="overview-row">
@@ -145,21 +172,28 @@
             </div>
           </div>
 
-          <!-- 已取消 / 已转发 / 等待接单 的备注 -->
+          <!-- 已取消 / 已转发 / 转出中 的备注 -->
           <div v-if="task.status === '已取消' && task.cancelReason" class="task-remark">
             取消原因：{{ task.cancelReason }}
           </div>
           <div v-if="task.status === '已转发' && task.forwardTo" class="task-remark">
             已转发至：{{ task.forwardTo }}
           </div>
-          <div v-if="task.status === '等待接单' && task.forwardTo" class="task-remark">
-            {{ task.forwardTo }}
+          <div v-if="pendingForwardOf(task)" class="task-remark pending-forward">
+            已转发给 {{ pendingForwardOf(task).toName }}，等待对方接受（{{ forwardLeft(task) }} 分钟内未接受自动退回）
+          </div>
+
+          <!-- 打卡提醒：开始前 1 小时 / 30 分钟 / 5 分钟各一次 -->
+          <div v-if="task.status === '待到店'" class="reminder-line">
+            <el-icon><Bell /></el-icon>
+            <span>打卡提醒：开始前 {{ reminderText(task) }}</span>
           </div>
 
           <!-- 操作区：仅 待到店 状态可见 -->
           <div v-if="task.status === '待到店'" class="task-actions">
             <button class="action-btn secondary" @click="onCancel(task)">取消任务</button>
-            <button class="action-btn primary" @click="onForward(task)">转发任务</button>
+            <button v-if="pendingForwardOf(task)" class="action-btn secondary" @click="onWithdrawForward(task)">撤回转发</button>
+            <button v-else class="action-btn primary" @click="onForward(task)">转发任务</button>
           </div>
 
           <!-- 已到店/已离店不提供打卡入口，仅展示 -->
@@ -213,16 +247,16 @@
     <!-- 转发任务弹窗 -->
     <el-dialog v-model="forwardDialogVisible" title="转发任务" width="90%">
       <p class="dialog-tip">
-        选择接替人员，或转发到任务池供同商圈非全客户经理抢单。
+        选一位接替人员发起转发，<strong>对方接受后任务才转出</strong>；30 分钟内未接受自动退回给您。
       </p>
 
       <!-- 2 小时门禁 -->
-      <div v-if="isWithin2Hours(forwardTarget)" class="forward-blocked">
+      <div v-if="forwardGateError(forwardTarget)" class="forward-blocked">
         <el-icon class="block-icon"><WarningFilled /></el-icon>
         <div class="block-content">
-          <div class="block-title">距任务开始不足 2 小时，不允许转发</div>
+          <div class="block-title">{{ forwardGateError(forwardTarget) }}</div>
           <div class="block-desc">
-            转发任务需要任务开始前 2 小时以上，否则无法保证同商圈有足够时间找到接单人。
+            转发需在任务开始前 2 小时以上，否则对方来不及安排、也说不清是谁的责任。
             如无法按时到店，请取消任务并填写原因。
           </div>
           <el-button
@@ -236,12 +270,7 @@
       </div>
 
       <template v-else>
-      <el-radio-group v-model="forwardMode" class="forward-mode">
-        <el-radio-button label="指定人员">指定人员</el-radio-button>
-        <el-radio-button label="任务池抢单">任务池抢单</el-radio-button>
-      </el-radio-group>
-
-      <div v-if="forwardMode === '指定人员'" class="candidate-list">
+      <div class="candidate-list">
         <div
           v-for="emp in candidatesWithAvailability(forwardTarget)"
           :key="emp.id"
@@ -254,19 +283,14 @@
           <div class="candidate-avatar">{{ emp.name.charAt(0) }}</div>
           <div class="candidate-info">
             <div class="candidate-name">{{ emp.name }}</div>
-            <div class="candidate-meta">{{ emp.businessArea }} · {{ emp.intent }}</div>
+            <div class="candidate-meta">签约：{{ emp.signedStores }} · {{ emp.intent }}</div>
           </div>
           <div :class="['availability-badge', emp.available ? 'free' : 'busy']">
             <el-icon><component :is="emp.available ? Check : Close" /></el-icon>
-            <span>{{ emp.available ? '可接替' : '不可接替' }}</span>
+            <span>{{ emp.available ? '可接替' : emp.rejected ? '已拒绝' : '不可接替' }}</span>
           </div>
           <el-icon v-if="forwardSelected === emp.id" class="check-icon"><Check /></el-icon>
         </div>
-      </div>
-
-      <div v-else class="pool-tip">
-        <el-icon><InfoFilled /></el-icon>
-        <span>任务将进入同商圈任务池，<strong>30 分钟内</strong>未有人接单则自动回到原派单人。</span>
       </div>
       </template>
 
@@ -274,10 +298,10 @@
         <el-button @click="forwardDialogVisible = false">取消</el-button>
         <el-button
           type="primary"
-          :disabled="isWithin2Hours(forwardTarget) || (forwardMode === '指定人员' && !forwardSelected)"
+          :disabled="!!forwardGateError(forwardTarget) || !forwardSelected"
           @click="confirmForward"
         >
-          提交转发
+          发起转发
         </el-button>
       </template>
     </el-dialog>
@@ -296,17 +320,25 @@ import {
   Check,
   Close,
   WarningFilled,
-  InfoFilled,
-  DocumentRemove
+  DocumentRemove,
+  Bell
 } from '@element-plus/icons-vue'
-import { parttimeStore, stores, employees, currentEmployeeId, employeeTasks, dateKey, addDays, durationLabel, slotRemaining, eligibilityError, claimSlot, cancelAssignment, dispatchNeed, syncScheduledPublication, createTaskId } from '../stores/parttimeTasks'
+import { parttimeStore, stores, employees, session, setSessionEmployee, employeeTasks, dateKey, addDays, durationLabel, slotRemaining, eligibilityError, slotVisibility, claimSlot, cancelAssignment, dispatchNeed, syncScheduledPublication, forwardGateError, forwardTask, acceptForward, rejectForward, withdrawForwardRequest, expireForwardRequests, forwardRequestDeadline } from '../stores/parttimeTasks'
+import { reminderText, syncCheckinReminders, remindNow } from '../stores/checkinReminders'
 
 const router = useRouter()
 const route = useRoute()
+// 演示辅具：视角切换只在 ?dev=1 出现（?shot=1 出文档图时隐藏）；?as=<id> 直接落到对方视角
+const isDev = computed(() => route.query.dev === '1' && route.query.shot !== '1')
+const devMode = isDev
+watch(() => route.query.as, id => { if (route.query.dev === '1' && id) setSessionEmployee(Number(id)) }, { immediate: true })
 const currentTime = ref(new Date())
 const taskView = ref(route.query.view === 'available' ? 'available' : 'mine')
-const availableBatches = computed(() => [...parttimeStore.publications].filter(batch => batch.end >= dateKey(new Date())).sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)))
-const selectedRelease = ref(availableBatches.value[0]?.releaseDate || '')
+// 按周次从近到远排：本周在生效的那一批在最上面，往后是已经提前公布、但还没到排班日的周
+const availableBatches = computed(() => [...parttimeStore.publications].filter(batch => batch.end >= dateKey(new Date())).sort((a, b) => a.releaseDate.localeCompare(b.releaseDate)))
+// 默认落在「正在生效的这一批」：接单只在排班日当天，先给出今天能接的那一批
+const runningBatch = () => availableBatches.value.find(batch => batch.start <= dateKey(new Date()) && batch.end >= dateKey(new Date()))
+const selectedRelease = ref((runningBatch() || availableBatches.value[0])?.releaseDate || '')
 const selectedStoreFilter = ref('')
 watch(availableBatches, batches => {
   if (!batches.some(batch => batch.releaseDate === selectedRelease.value)) selectedRelease.value = batches[0]?.releaseDate || ''
@@ -314,25 +346,31 @@ watch(availableBatches, batches => {
 watch(() => route.query.view, view => { taskView.value = view === 'available' ? 'available' : 'mine' })
 const weekdayLabel = date => `周${'日一二三四五六'[new Date(`${date}T12:00:00`).getDay()]}`
 const selectedTaskDate = ref('')
+// 可见 ≠ 可接：先按时段上的分配策略挡掉还没轮到本人的班次；轮到之后，还要等排班日当天才能接单，资格校验留给下面的 slotBlockReason
+const visibleSlots = computed(() => parttimeStore.slots.filter(slot => slotVisibility(slot, session.employeeId, currentTime.value).visible))
 const availableDates = computed(() => {
   const batch = availableBatches.value.find(item => item.releaseDate === selectedRelease.value)
   if (!batch) return []
   return Array.from({ length: 7 }, (_, index) => {
     const date = addDays(batch.start, index)
-    return { date, weekday: weekdayLabel(date).replace('周', '星期'), slotCount: parttimeStore.slots.filter(slot => slot.releaseDate === selectedRelease.value && slot.date === date && (!selectedStoreFilter.value || slot.storeId === selectedStoreFilter.value)).length }
+    return { date, weekday: weekdayLabel(date).replace('周', '星期'), slotCount: visibleSlots.value.filter(slot => slot.releaseDate === selectedRelease.value && slot.date === date && (!selectedStoreFilter.value || slot.storeId === selectedStoreFilter.value)).length }
   })
 })
 watch([availableDates, () => dateKey(currentTime.value)], ([dates, today]) => {
   if (!dates.some(day => day.date === selectedTaskDate.value && day.date >= today)) selectedTaskDate.value = dates.find(day => day.date >= today)?.date || ''
 }, { immediate: true })
-const availableSlots = computed(() => parttimeStore.slots.filter(slot => slot.releaseDate === selectedRelease.value && slot.date === selectedTaskDate.value && slot.date >= dateKey(currentTime.value) && (!selectedStoreFilter.value || slot.storeId === selectedStoreFilter.value)).sort((a, b) => a.startTime.localeCompare(b.startTime)))
-const selectedSlotIds = computed(() => new Set(employeeTasks(currentEmployeeId).filter(task => task.slotId && !['已取消', '已转发'].includes(task.status)).map(task => task.slotId)))
+const availableSlots = computed(() => visibleSlots.value.filter(slot => slot.releaseDate === selectedRelease.value && slot.date === selectedTaskDate.value && slot.date >= dateKey(currentTime.value) && (!selectedStoreFilter.value || slot.storeId === selectedStoreFilter.value)).sort((a, b) => a.startTime.localeCompare(b.startTime)))
+const selectedSlotIds = computed(() => new Set(employeeTasks(session.employeeId).filter(task => task.slotId && !['已取消', '已转发'].includes(task.status)).map(task => task.slotId)))
 const isSlotSelected = slot => selectedSlotIds.value.has(slot.id)
 const slotBlockReason = slot => {
   if (isSlotSelected(slot)) return ''
   if (!slotRemaining(slot)) return '该时段名额已满'
   if (new Date(`${slot.date}T${slot.startTime}:00`) <= currentTime.value) return '该时段已开始'
-  return eligibilityError(currentEmployeeId, slot)
+  // 冲突是硬约束，哪怕还没到排班日也先说出来：同一天的时间轴只有一条，A 店选过就接不了 B 店的交叉段
+  const error = eligibilityError(session.employeeId, slot)
+  if (error) return error
+  if (slot.date > dateKey(currentTime.value)) return '排班日当天可接'
+  return ''
 }
 const chooseSlot = async slot => {
   if (isSlotSelected(slot)) return
@@ -357,10 +395,20 @@ const filters = [
 ]
 const activeFilter = ref('all')
 
-const taskList = computed(() => employeeTasks(currentEmployeeId))
+const taskList = computed(() => employeeTasks(session.employeeId))
 
-// 候选人（同商圈非全）
-const candidates = computed(() => employees.filter(person => person.id !== currentEmployeeId).map(person => ({ ...person, businessArea: person.areas.join('、') })))
+// 转发给我、还等着表态的任务：在别人名下，接受之前不算我的任务，也不占我的时间轴
+const incomingForwards = computed(() => parttimeStore.assignments.filter(task =>
+  task.status === '待到店' &&
+  task.forwardRequest?.status === '待接受' &&
+  task.forwardRequest.toId === session.employeeId &&
+  task.assigneeId !== session.employeeId
+))
+const pendingForwardOf = task => (task?.forwardRequest?.status === '待接受' ? task.forwardRequest : null)
+const forwardLeft = task => forwardRequestDeadline(task.forwardRequest, currentTime.value)
+
+// 候选人（同商圈非全）；展示签约门店，商圈是门店的业务归组属性
+const candidates = computed(() => employees.filter(person => person.position === 'am' && person.id !== session.employeeId).map(person => ({ ...person, signedStores: person.signedStoreIds.map(id => (stores.find(s => s.id === id) || {}).name).filter(Boolean).join('、') })))
 
 // 计算属性
 const todayTotal = computed(() => taskList.value.filter(t => t.date === dateKey(currentTime.value)).length)
@@ -376,8 +424,7 @@ const filteredTasks = computed(() => {
   } else if (activeFilter.value === 'cancelled') {
     list = list.filter(t =>
       t.status === '已取消' ||
-      t.status === '已转发' ||
-      t.status === '等待接单'
+      t.status === '已转发'
     )
   }
   // 待到店按日期升序在前；同一天内按 startTime 升序（最早的在最前）
@@ -398,7 +445,6 @@ const recipientDispatch = ref(null)
 const dispatchTimers = new Set()
 
 const forwardDialogVisible = ref(false)
-const forwardMode = ref('指定人员')
 const forwardSelected = ref(null)
 const forwardTarget = ref(null)
 
@@ -462,36 +508,26 @@ const badgeKey = (status) => {
     '已到店': 'arrived',
     '已离店': 'done',
     '已取消': 'cancelled',
-    '已转发': 'forwarded',
-    '等待接单': 'pooling'
+    '已转发': 'forwarded'
   }[status] || 'pending'
 }
 
 // ============ 时间门禁：转发需 ≥2 小时 ============
 let clockTimer = null
 
-const minutesUntilStart = (task) => {
-  if (!task) return Infinity
-  const taskStart = new Date(`${task.date}T${task.startTime}:00`)
-  return Math.floor((taskStart - currentTime.value) / 60000)
-}
-
-const isWithin2Hours = (task) => {
-  if (!task) return false
-  return minutesUntilStart(task) < 120 && minutesUntilStart(task) >= 0
-}
-
-// 候选列表：根据当前任务判断每个人空闲状态，空闲排前
+// 候选列表：根据当前任务判断每个人空闲状态，空闲排前；拒绝过的人不再出现在「可接替」里
 const isCandidateAvailable = (candidateId, task) => {
   if (!task) return true
+  if ((task.forwardRejected || []).includes(candidateId)) return false
   return !eligibilityError(candidateId, task)
 }
 
 const candidatesWithAvailability = (task) => {
   const list = candidates.value.map(emp => ({
     ...emp,
+    rejected: (task?.forwardRejected || []).includes(emp.id),
     available: isCandidateAvailable(emp.id, task),
-    unavailableReason: task ? eligibilityError(emp.id, task) : ''
+    unavailableReason: emp.rejected ? '已拒绝过该任务' : task ? eligibilityError(emp.id, task) : ''
   }))
   return list.sort((a, b) => {
     if (a.available && !b.available) return -1
@@ -526,7 +562,6 @@ const confirmCancel = () => {
 
 const onForward = (task) => {
   forwardTarget.value = task
-  forwardMode.value = '指定人员'
   forwardSelected.value = null
   forwardDialogVisible.value = true
 }
@@ -534,21 +569,32 @@ const onForward = (task) => {
 const confirmForward = () => {
   const task = taskList.value.find(t => t.id === forwardTarget.value.id)
   if (!task || task.status !== '待到店') return
-  if (isWithin2Hours(task)) return ElMessage.warning('距任务开始不足 2 小时，无法转发')
-
-  if (forwardMode.value === '指定人员') {
-    const target = candidates.value.find(c => c.id === forwardSelected.value)
-    if (!target || !isCandidateAvailable(target.id, task)) return ElMessage.warning('该人员当前无法接替任务')
-    task.status = '已转发'
-    task.forwardTo = `${target.name}（同商圈）`
-    parttimeStore.assignments.push({ ...task, id: createTaskId('forward'), sourceTaskId: task.id, source: '已生成任务被转移', status: '待到店', assigneeId: target.id, forwardTo: undefined, assignedAt: new Date().toISOString() })
-    ElMessage.success(`已转发至 ${target.name}`)
-  } else {
-    task.status = '等待接单'
-    task.forwardTo = '同商圈任务池抢单中（30 分钟内未接单自动回退）'
-    ElMessage.success('已转发至任务池')
-  }
+  const result = forwardTask(task.id, forwardSelected.value)
+  if (result.error) return ElMessage.warning(result.error)
+  ElMessage.success(`已向 ${result.request.toName} 发起转发，等待对方接受`)
   forwardDialogVisible.value = false
+}
+
+const onWithdrawForward = (task) => {
+  const error = withdrawForwardRequest(task.id)
+  if (error) return ElMessage.warning(error)
+  ElMessage.success('已撤回转发，任务仍由您执行')
+}
+
+const onAcceptForward = (task) => {
+  const error = acceptForward(task.id)
+  if (error) return ElMessage.warning(error)
+  ElMessage.success('已接受任务，可在「待到店」中查看')
+  generateCalendar()
+}
+
+const onRejectForward = async (task) => {
+  try {
+    await ElMessageBox.confirm(`拒绝后任务将退回 ${task.forwardRequest.fromName}，本次拒绝也会告知对方。`, '确认拒绝该任务？', { confirmButtonText: '确认拒绝', cancelButtonText: '再想想' })
+  } catch { return }
+  const error = rejectForward(task.id)
+  if (error) return ElMessage.warning(error)
+  ElMessage.success('已拒绝，任务已退回原承接人')
 }
 
 const goBack = () => {
@@ -557,8 +603,26 @@ const goBack = () => {
 
 onMounted(() => {
   generateCalendar()
-  clockTimer = setInterval(() => { currentTime.value = new Date(); syncScheduledPublication() }, 60000)
+  // 进页面先补一次：到点没发的提醒、超时没回应的转发，都在挂载时结算
+  settleTimeBound()
+  clockTimer = setInterval(() => {
+    currentTime.value = new Date()
+    syncScheduledPublication()
+    settleTimeBound()
+  }, 30000)
 })
+
+const settleTimeBound = () => {
+  expireForwardRequests(currentTime.value)
+  syncCheckinReminders(currentTime.value)
+}
+
+const simulateReminder = () => {
+  const task = taskList.value.filter(t => t.status === '待到店').sort((a, b) => a.date.localeCompare(b.date))[0]
+  if (!task) return ElMessage.warning('当前没有待到店的任务')
+  const plan = remindNow(task, currentTime.value)
+  ElMessage.success(`已推送打卡提醒（开始前 ${plan.offset} 分钟），可在消息中心查看`)
+}
 
 watch(taskList, generateCalendar, { deep: true })
 
@@ -887,9 +951,41 @@ onUnmounted(() => {
   color: #4b5563;
 }
 
-.status-badge.status-pooling {
-  background: #ede9fe;
-  color: #6d28d9;
+.status-badge.status-waiting {
+  background: #a40035;
+  color: #fff;
+}
+
+/* ========== 转发给我 / 待接受 ========== */
+.incoming-block { margin-bottom: 14px; }
+.incoming-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.incoming-count { font-size: 12px; color: #fff; background: #a40035; border-radius: 10px; padding: 1px 8px; }
+.incoming-card {
+  background: #fff;
+  border: 1px solid #f3c7d5;
+  border-left: 3px solid #a40035;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(164, 0, 53, 0.06);
+}
+.incoming-card + .incoming-card { margin-top: 10px; }
+.incoming-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.incoming-from { font-size: 14px; font-weight: 600; color: #333; }
+.incoming-deadline { margin: 10px 0 0; font-size: 12px; color: #8a5a2b; line-height: 1.6; background: #fff8ec; border-radius: 6px; padding: 8px 10px; }
+.incoming-deadline strong { color: #b45309; }
+.incoming-actions { display: flex; gap: 10px; margin-top: 12px; }
+
+/* 转出中：任务仍在自己名下，只是等对方表态 */
+.task-remark.pending-forward { color: #a40035; background: #fdf2f6; border-radius: 6px; padding: 8px 10px; }
+
+/* 打卡提醒：三次节点时刻 */
+.reminder-line { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12px; color: #6b7280; }
+.reminder-line .el-icon { font-size: 14px; color: #a40035; }
+
+/* 演示辅具：只在 ?dev=1 出现 */
+.dev-remind {
+  font-size: 12px; color: #a40035; background: #fdf2f6; border: 1px solid #f3c7d5;
+  border-radius: 12px; padding: 3px 8px; margin-left: 6px; cursor: pointer; white-space: nowrap;
 }
 
 @keyframes pulse-badge {
@@ -1164,34 +1260,6 @@ onUnmounted(() => {
   font-size: 13px;
   color: #4b5563;
   margin-bottom: 6px;
-}
-
-.forward-mode {
-  display: flex;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-.forward-mode .el-radio-button {
-  flex: 1;
-}
-
-.pool-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 16px 12px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #1e40af;
-  line-height: 1.6;
-}
-
-.pool-tip .el-icon {
-  font-size: 18px;
-  flex-shrink: 0;
 }
 
 /* ========== 转发 2 小时门禁 ========== */

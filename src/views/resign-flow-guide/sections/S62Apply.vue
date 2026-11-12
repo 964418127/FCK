@@ -7,7 +7,7 @@
     date="2026-10-26"
     :breadcrumbs="breadcrumbs"
   >
-    <div class="section">
+    <div id="rf-62-overview" class="section">
       <div class="section-header">
         <h2>6.2 离职需求发起</h2>
         <DocCopyButton section-id="rf-61" />
@@ -192,7 +192,8 @@ import mApplyShot from '../../../docs/assets/pages/m-resign-apply.png'
 import mApplySignShot from '../../../docs/assets/pages/m-resign-apply-sign.png'
 
 const tocItems = [
-  { id: 'rf-61-fill', label: '6.2.1 员工填报（两步 + 结果页）' },
+  { id: 'rf-62-overview', label: '6.2 离职需求发起' },
+  { id: 'rf-61-fill', label: '6.2.1 员工填报' },
   { id: 'rf-61-check', label: '6.2.2 校验与提示' },
   { id: 'rf-61-after', label: '6.2.3 提交后系统做什么' },
   { id: 'rf-61-people', label: '6.2.4 三类人员的差异' },

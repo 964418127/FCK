@@ -358,7 +358,8 @@
                     <el-button size="small" @click="insertFormula(branch, '最小值()')">最小值</el-button>
                     <el-button size="small" @click="insertFormula(branch, '向上取整()')">向上取整</el-button>
                     <el-button size="small" @click="insertFormula(branch, '向下取整()')">向下取整</el-button>
-                    <el-button size="small" type="primary" plain @click="openDsFunctionDialog(branch, null)">数据源函数</el-button>
+                    <!-- 数据源函数入口暂不开放：插入按钮隐藏，已有配置的 chip 仍可查看 -->
+                    <el-button size="small" type="primary" plain @click="openParamFunctionDialog(branch, null)">通用参数</el-button>
                   </div>
                   <div v-if="branch.dsFunctions && branch.dsFunctions.length" class="ds-chips-row">
                     <span class="ds-chips-label">数据源函数：</span>
@@ -368,6 +369,22 @@
                       class="ds-chip"
                       @click="openDsFunctionDialog(branch, dsf)"
                     >{{ dsf.token }}</span>
+                  </div>
+                  <div v-if="branch.paramFunctions && branch.paramFunctions.length" class="param-refs">
+                    <div
+                      v-for="pf in branch.paramFunctions"
+                      :key="pf.uid"
+                      class="param-ref"
+                      @click="openParamFunctionDialog(branch, pf)"
+                    >
+                      <div class="param-ref-head">
+                        <span class="param-ref-name">{{ paramRefName(pf) }}</span>
+                        <span class="param-ref-ops">
+                          <span class="param-ref-op" @click.stop="openParamFunctionDialog(branch, pf)">修改</span>
+                          <span class="param-ref-op danger" @click.stop="removeParamRef(branch, pf)">移除</span>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </el-col>
               </el-row>
@@ -414,18 +431,7 @@
               <el-table-column label="传入值（订单字段）" min-width="180">
                 <template #default="{ row }">
                   <el-select v-model="row.mappedField" placeholder="选择或输入字段" size="small" filterable allow-create default-first-option style="width: 100%;">
-                    <el-option label="实付金额" value="实付金额" />
-                    <el-option label="原价" value="原价" />
-                    <el-option label="订单数量" value="订单数量" />
-                    <el-option label="回头客次数" value="回头客次数" />
-                    <el-option label="门店编码" value="门店编码" />
-                    <el-option label="技法" value="技法" />
-                    <el-option label="项目" value="项目" />
-                    <el-option label="时段" value="时段" />
-                    <el-option label="日期类型" value="日期类型" />
-                    <el-option label="员工工号" value="员工工号" />
-                    <el-option label="岗位" value="岗位" />
-                    <el-option label="合作模式" value="合作模式" />
+                    <el-option v-for="f in CONTEXT_FIELDS" :key="f" :label="f" :value="f" />
                   </el-select>
                 </template>
               </el-table-column>
@@ -445,6 +451,85 @@
         </template>
       </el-dialog>
 
+      <!-- 通用参数插入弹窗 -->
+      <el-dialog
+        v-model="paramDialogVisible"
+        title="插入通用参数"
+        width="800px"
+        append-to-body
+        destroy-on-close
+      >
+        <el-form label-width="100px" size="small">
+          <el-form-item label="选择参数">
+            <el-select v-model="paramForm.paramId" placeholder="选择通用参数" filterable style="width: 100%;" @change="onParamChange">
+              <el-option
+                v-for="p in enabledParams"
+                :key="p.id"
+                :label="`${p.name}（数据表）`"
+                :value="p.id"
+              />
+            </el-select>
+            <span class="strategy-hint">只提供通用参数里的数据表：简单值没有取值要求，直接在公式框里写</span>
+          </el-form-item>
+          <el-form-item v-if="selectedParam && isParamTable" label="取值函数">
+            <div class="prio-box">
+              <el-radio-group v-model="paramForm.mode" size="small" class="prio-mode" @change="onParamModeChange">
+                <el-radio value="single">取 1 列（第一个取到值的列生效）</el-radio>
+                <el-radio value="sum">取多列相加（各自穿透后求和）</el-radio>
+              </el-radio-group>
+              <div class="rowmode-line">
+                <span class="rowmode-label">取值列</span>
+                <el-select v-model="paramForm.valueCols" multiple size="small" style="flex: 1;" placeholder="选择取值列">
+                  <el-option v-for="c in valueColOptions" :key="c.name" :label="colOptionLabel(c)" :value="c.name" />
+                </el-select>
+              </div>
+              <p v-if="paramForm.mode === 'sum' && !numericCols.length" class="strategy-hint warn">这张表没有数值列，不能相加。</p>
+              <p class="strategy-hint block">{{ paramForm.mode === 'single'
+                ? '按选择顺序，第一个有值的列生效；显式 0 也算值；所有列都取不到时按取不到值提示，不按 0 计。'
+                : '只可选数值列；各列分别取第一个有值的再相加，取不到按 0。' }}</p>
+            </div>
+          </el-form-item>
+          <el-form-item v-if="selectedParam && isParamTable" label="查询条件">
+            <div class="cond-box">
+              <div v-for="(row, i) in paramForm.conds" :key="i" class="cond-row">
+                <el-select v-model="row.col" placeholder="条件列" size="small" class="cond-col" @change="onCondColChange(row)">
+                  <el-option v-for="c in conditionColOptions(row)" :key="c.name" :label="c.name" :value="c.name" />
+                </el-select>
+                <el-select v-model="row.op" size="small" class="cond-op">
+                  <el-option v-for="o in opsForRow(row)" :key="o.value" :label="`${o.symbol} ${o.label}`" :value="o.value" />
+                </el-select>
+                <el-select
+                  v-model="row.fact"
+                  placeholder="传入的值（上下文）"
+                  size="small"
+                  clearable
+                  filterable
+                  allow-create
+                  default-first-option
+                  class="cond-fact"
+                >
+                  <el-option v-for="f in CONTEXT_FIELDS" :key="f" :label="f" :value="f" />
+                </el-select>
+                <el-button size="small" link type="danger" @click="removeCondition(i)">删除</el-button>
+              </div>
+              <div v-if="!paramForm.conds.length" class="cond-empty">还没有查询条件</div>
+              <el-button size="small" plain type="primary" :disabled="!conditionColOptions().length" @click="addCondition">+ 添加条件</el-button>
+              <p v-if="uncoveredCols.length" class="strategy-hint block warn">
+                这些列还没配条件，表里有值的行不会参与：{{ uncoveredCols.join('、') }}
+              </p>
+              <p class="strategy-hint block">
+                按「条件列 符号 传入值」读：行里这一列有值就要传入并命中，留空不约束；都没命中就取条件列全空的通用行。
+              </p>
+            </div>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="paramDialogVisible = false">取消</el-button>
+          <el-button v-if="paramEditingUid" type="danger" link @click="removeParamFunction">移除</el-button>
+          <el-button type="primary" @click="confirmParamFunction">{{ paramEditingUid ? '更新' : '插入参数' }}</el-button>
+        </template>
+      </el-dialog>
+
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">提交</el-button>
@@ -454,7 +539,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
@@ -611,6 +696,8 @@ const rules = {
 // 过滤后的薪酬项列表
 const router = useRouter()
 import { storeSalaryStrategies as storeStrategies, INPUT_PARAM_TYPE_LABELS } from '../mock/storeSalaryStrategies.js'
+import { paramList } from '../mock/generalParamStore.js'
+import { opsForType } from '../mock/generalParams.js'
 import { usePager } from '../composables/usePager.js'
 import TablePagination from '../components/TablePagination.vue'
 // ============ 数据源函数弹窗 ============
@@ -718,6 +805,253 @@ const removeDsFunction = () => {
   }
   ElMessage.success('已移除数据源函数')
   dsDialogVisible.value = false
+}
+
+// ============ 通用参数弹窗 ============
+const paramDialogVisible = ref(false)
+const paramTargetBranch = ref(null)
+const paramEditingUid = ref(null)
+const paramForm = reactive({ paramId: '', mode: 'single', valueCols: [], conds: [] })
+let paramUidCounter = 0
+
+/** 插入通用参数只提供数据表：简单值没有取值要求，直接写在公式里 */
+const enabledParams = computed(() => paramList.filter(p => p.enabled && p.kind === 'table'))
+const selectedParam = computed(() => paramList.find(p => p.id === paramForm.paramId) || null)
+const isParamTable = computed(() => selectedParam.value?.kind === 'table')
+
+/** 结算上下文常用字段池（可自由输入扩展） */
+const CONTEXT_FIELDS = ['门店所在城市', '门店名称', '门店人数', '当月客次', '回头客次数', '日期类型', '岗位', '员工工号', '结算周']
+
+/** 列名到常用取数上下文的默认映射，减少手选 */
+const PARAM_FIELD_DEFAULTS = {
+  '城市': '门店所在城市',
+  '门店': '门店名称',
+  '岗位': '岗位',
+  '回头客次数': '回头客次数',
+  '日期类型': '日期类型',
+  '门店人数': '门店人数',
+  '月均客次': '当月客次',
+  '客次量档': '当月客次',
+  '天均客次档': '当月客次',
+  '客次下限': '当月客次',
+  '客次上限': '当月客次',
+  '次数下限': '回头客次数',
+  '次数上限': '回头客次数',
+  '人数档': '门店人数',
+  '工号': '员工工号'
+}
+
+/** 条件映射清单：按需添加，只在配置者主动「添加条件」时出现 */
+const buildConds = () => []
+
+/** 数值列：相加只允许数值列（文本 / 日期列无法求和） */
+const numericCols = computed(() => (selectedParam.value?.columns || []).filter(c => c.type === 'number'))
+
+/** 取值列候选：相加模式只列数值列；取 1 列模式列全部列 */
+const valueColOptions = computed(() => {
+  const cols = selectedParam.value?.columns || []
+  return paramForm.mode === 'sum' ? cols.filter(c => c.type === 'number') : cols
+})
+
+const colOptionLabel = (c) => {
+  if (paramForm.mode !== 'sum') return c.name
+  return `${c.name}（数值）`
+}
+
+/** 切换取值方式：相加模式把已选的文本 / 日期列剔掉，空了就给一个数值列默认值 */
+const onParamModeChange = () => {
+  if (paramForm.mode !== 'sum') return
+  const numeric = new Set(numericCols.value.map(c => c.name))
+  paramForm.valueCols = paramForm.valueCols.filter(n => numeric.has(n))
+  if (!paramForm.valueCols.length && numericCols.value.length) {
+    paramForm.valueCols = [numericCols.value[numericCols.value.length - 1].name]
+  }
+  pruneConditions()
+}
+
+/** 换参数时给一份开箱可用的默认取值函数：默认取最后一列、单值模式；查询条件留空待按需添加 */
+const onParamChange = () => {
+  const p = selectedParam.value
+  if (p && p.kind === 'table') {
+    const cols = p.columns || []
+    paramForm.mode = 'single'
+    paramForm.valueCols = cols.length ? [cols[cols.length - 1].name] : []
+    paramForm.conds = buildConds()
+  } else {
+    paramForm.mode = 'single'
+    paramForm.valueCols = []
+    paramForm.conds = []
+  }
+}
+
+const colTypeOf = (name) => (selectedParam.value?.columns || []).find(c => c.name === name)?.type
+
+/** 这一行能配的符号：跟着条件列的类型走（文本只能 = / ≠） */
+const opsForRow = (row) => opsForType(colTypeOf(row.col))
+
+/** 条件列候选：排除取值列、排除其他条件行已占用的列 */
+const conditionColOptions = (current) => {
+  const valueSet = new Set(paramForm.valueCols)
+  const used = new Set()
+  paramForm.conds.forEach(m => {
+    if (m === current) return
+    if (String(m.col ?? '').trim()) used.add(String(m.col).trim())
+  })
+  return (selectedParam.value?.columns || []).filter(c => !valueSet.has(c.name) && !used.has(c.name))
+}
+
+/** 配了条件却还有列在表里有值 → 试探提示：那些行会因为没有条件而不参与 */
+const uncoveredCols = computed(() => {
+  const p = selectedParam.value
+  if (!p || p.kind !== 'table') return []
+  const valueSet = new Set(paramForm.valueCols)
+  const declared = new Set(paramForm.conds.map(c => String(c.col ?? '').trim()).filter(Boolean))
+  return (p.columns || [])
+    .filter(c => !valueSet.has(c.name) && !declared.has(c.name))
+    .filter(c => (p.rows || []).some(r => String(r.cells?.[c.name] ?? '').trim() !== ''))
+    .map(c => c.name)
+})
+
+const addCondition = () => {
+  const next = conditionColOptions()[0]
+  paramForm.conds.push({
+    col: next?.name || '',
+    op: 'eq',
+    fact: next ? (PARAM_FIELD_DEFAULTS[next.name] || next.name) : ''
+  })
+}
+
+/** 换条件列：带入默认上下文；符号不适用这个列类型时回到等于 */
+const onCondColChange = (row) => {
+  row.fact = PARAM_FIELD_DEFAULTS[row.col] || row.col
+  if (!opsForRow(row).some(o => o.value === row.op)) row.op = 'eq'
+}
+
+const removeCondition = (index) => {
+  paramForm.conds.splice(index, 1)
+}
+
+/** 取值列变了之后，把已经成为取值列的条件行去掉 */
+const pruneConditions = () => {
+  const valueSet = new Set(paramForm.valueCols)
+  paramForm.conds = paramForm.conds.filter(m => !valueSet.has(String(m.col ?? '').trim()))
+}
+
+// 取值列改动后，条件行里不能留着同一列（值列与条件列互斥）
+watch(() => paramForm.valueCols.slice(), pruneConditions)
+
+/** 公式里的引用写法：数据表名.取值列（多列相加用 +）。不用符号包裹，写出来就是表名 */
+const buildParamToken = (param) => {
+  if (param.kind !== 'table' || !paramForm.valueCols.length) return param.name
+  return `${param.name}.${paramForm.valueCols.join('+')}`
+}
+
+const paramOfRef = (pf) => paramList.find(p => p.id === pf.paramId) || null
+
+/** 引用在薪酬项上的显示名：表名 · 取值列 */
+const paramRefName = (pf) => {
+  const p = paramOfRef(pf)
+  if (!p) return '（参数已删除）'
+  const cols = (pf.valueCols || []).join(' + ')
+  return cols ? `${p.name} · ${cols}` : p.name
+}
+
+/** 从薪酬项上摘掉一条引用：公式里对应的文字一起删，不留悬空写法 */
+const removeParamRef = (branch, pf) => {
+  const list = branch.paramFunctions || []
+  const idx = list.findIndex(d => d.uid === pf.uid)
+  if (idx < 0) return
+  branch.formula = String(branch.formula || '').replace(pf.token, '').replace(/\s{2,}/g, ' ').trim()
+  list.splice(idx, 1)
+  ElMessage.success('已移除，公式里对应的文字也删掉了')
+}
+
+const openParamFunctionDialog = (branch, existing) => {
+  paramTargetBranch.value = branch
+  if (!branch.paramFunctions) branch.paramFunctions = []
+  if (existing) {
+    paramEditingUid.value = existing.uid
+    paramForm.paramId = existing.paramId
+    paramForm.conds = (existing.conds || []).map(c => ({ col: c.col, op: c.op || 'eq', fact: c.fact || '' }))
+    paramForm.mode = existing.mode || 'single'
+    const numeric = new Set(
+      (paramList.find(p => p.id === existing.paramId)?.columns || [])
+        .filter(c => c.type === 'number').map(c => c.name)
+    )
+    paramForm.valueCols = (existing.valueCols || []).filter(n => paramForm.mode !== 'sum' || numeric.has(n))
+  } else {
+    paramEditingUid.value = null
+    paramForm.paramId = ''
+    paramForm.mode = 'single'
+    paramForm.valueCols = []
+    paramForm.conds = []
+  }
+  paramDialogVisible.value = true
+}
+
+const confirmParamFunction = () => {
+  const param = selectedParam.value
+  if (!param) { ElMessage.warning('请选择通用参数'); return }
+  if (param.kind === 'table' && !paramForm.valueCols.length) { ElMessage.warning('请选择取值列'); return }
+  if (param.kind === 'table' && paramForm.mode === 'sum') {
+    const numeric = new Set(numericCols.value.map(c => c.name))
+    if (paramForm.valueCols.some(n => !numeric.has(n))) { ElMessage.warning('相加只支持数值列，请重新选择'); return }
+  }
+  const branch = paramTargetBranch.value
+  if (!branch.paramFunctions) branch.paramFunctions = []
+  const token = buildParamToken(param)
+  // 数据表：取值列 / 相加方式 / 查询条件一起存进取值函数配置；条件没填全的不存（= 那几列不参与身份检查之外，也不约束）
+  const mode = param.kind === 'table' ? paramForm.mode : ''
+  const valueCols = param.kind === 'table' ? [...paramForm.valueCols] : []
+  const condRows = paramForm.conds.filter(c => String(c.col ?? '').trim())
+  const badCond = condRows.find(c => !String(c.fact ?? '').trim())
+  if (param.kind === 'table' && badCond) { ElMessage.warning(`「${badCond.col}」这条条件要指定传入的值`); return }
+  const conds = param.kind === 'table'
+    ? condRows.map(c => ({ col: String(c.col).trim(), op: c.op || 'eq', fact: String(c.fact).trim() }))
+    : []
+
+  if (paramEditingUid.value) {
+    const idx = branch.paramFunctions.findIndex(d => d.uid === paramEditingUid.value)
+    if (idx > -1) {
+      const oldToken = branch.paramFunctions[idx].token
+      branch.formula = branch.formula.replaceAll(oldToken, token)
+      branch.paramFunctions[idx] = {
+        uid: paramEditingUid.value,
+        paramId: param.id,
+        mode,
+        valueCols,
+        conds,
+        token
+      }
+    }
+    ElMessage.success('已更新通用参数')
+  } else {
+    paramUidCounter++
+    branch.formula += (branch.formula ? ' ' : '') + token
+    branch.paramFunctions.push({
+      uid: 'pf_' + paramUidCounter,
+      paramId: param.id,
+      mode,
+      valueCols,
+      conds,
+      token
+    })
+    ElMessage.success('已插入通用参数')
+  }
+  paramDialogVisible.value = false
+}
+
+const removeParamFunction = () => {
+  const branch = paramTargetBranch.value
+  if (!branch.paramFunctions || !paramEditingUid.value) return
+  const idx = branch.paramFunctions.findIndex(d => d.uid === paramEditingUid.value)
+  if (idx > -1) {
+    const oldToken = branch.paramFunctions[idx].token
+    branch.formula = branch.formula.replaceAll(oldToken, '').trim()
+    branch.paramFunctions.splice(idx, 1)
+  }
+  ElMessage.success('已移除通用参数')
+  paramDialogVisible.value = false
 }
 
 const filteredSalaryItems = computed(() => {
@@ -1144,10 +1478,39 @@ const { page: page, pageSize: pageSize, total: total, rows: pagedRows } = usePag
   margin-bottom: 12px;
 }
 .return-key-chip { background: #f0f0f5; border: 1px solid #d8d8e0; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-family: 'SF Mono', monospace; }
+.return-key-chip.active { background: #a40035; border-color: #a40035; color: #fff; }
+.param-chip { background: #eef4fb; border-color: #a9c8ea; color: #185FA5; }
+.prio-box { width: 100%; padding: 10px 12px; border: 1px solid #e4e7ed; border-radius: 6px; background: #fafafa; }
+.prio-mode { margin-bottom: 10px; }
+.rowmode-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rowmode-label { flex: none; font-size: 12px; color: #606266; }
+.strategy-hint.block { display: block; margin: 6px 0 0; line-height: 1.6; }
+.strategy-hint.warn { color: #c45656; }
+.cond-box { width: 100%; padding: 10px 12px; border: 1px solid #e4e7ed; border-radius: 6px; background: #fafafa; }
+.cond-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.cond-col { width: 132px; flex: none; }
+.cond-op { width: 112px; flex: none; }
+.cond-fact { flex: 1 1 120px; min-width: 108px; }
+.cond-empty { font-size: 12px; color: #909399; margin-bottom: 8px; }
+.prio-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.prio-order { width: 20px; text-align: center; color: #909399; font-size: 12px; flex: none; }
+.prio-col { min-width: 88px; font-size: 13px; font-weight: 500; flex: none; }
+.prio-bind { flex: 1; }
+.level-warn { width: 100%; margin-top: 8px; }
 .ds-chips-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .ds-chips-label { font-size: 12px; color: #999; }
 .ds-chip { background: #fff0f3; border: 1px solid #f5b0c0; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-family: 'SF Mono', monospace; cursor: pointer; transition: all 0.15s; color: #a40035; }
 .ds-chip:hover { background: #a40035; color: #fff; border-color: #a40035; }
+.param-refs { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-width: 640px; }
+.param-ref { border: 1px solid #f2e3e7; background: #fffbfc; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
+.param-ref:hover { border-color: #a40035; background: #fff0f3; }
+.param-ref-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.param-ref-name { font-size: 13px; font-weight: 600; color: #a40035; }
+.param-ref-ops { display: flex; gap: 10px; flex: none; }
+.param-ref-op { font-size: 12px; color: #a40035; cursor: pointer; }
+.param-ref-op:hover { text-decoration: underline; }
+.param-ref-op.danger { color: #999; }
+.param-ref-op.danger:hover { color: #c0392b; }
 .strategy-hint {
   font-size: 12px;
   color: #999;

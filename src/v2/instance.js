@@ -124,7 +124,17 @@ export function identitiesOf (insts = [], treeOf = () => []) {
   }
   insts.forEach((inst) => {
     const emp = inst.emp || {}
-    put({ name: emp.name, empNo: emp.empNo || '', job: emp.job || '', store: emp.store || '', city: emp.city || '', from: '单上的人' })
+    /* 用工类型必须带上：人群范围（scope）按岗位 / 城市 / 门店 / 用工类型四维命中，
+       缺一维就会把这个人判成「不在范围内」—— 切过去看到的是空列表，而不是他没资格 */
+    put({
+      name: emp.name,
+      empNo: emp.empNo || '',
+      job: emp.job || '',
+      store: emp.store || '',
+      city: emp.city || '',
+      employType: emp.employType || '',
+      from: '单上的人'
+    })
     ;(treeOf(inst) || []).forEach((s) => {
       const w = humanOf(s)
       if (!w) return

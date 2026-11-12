@@ -62,7 +62,7 @@
                 <span class="line-value">{{ item.desc }}</span>
               </div>
               <div class="item-line">
-                <span class="line-label">{{ ['system_dispatch', 'task_publication'].includes(item.type) ? '通知时间：' : '申请时间：' }}</span>
+                <span class="line-label">{{ timeLabelOf(item) }}</span>
                 <span class="line-value">{{ item.applyTime }}</span>
               </div>
               <div v-if="item.type !== 'system_dispatch' && item.status" class="item-line">
@@ -239,9 +239,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Close, BellFilled, ArrowRight, Document, MoreFilled, VideoCameraFilled } from '@element-plus/icons-vue'
 import { notificationStore } from '../stores/notifications'
-import { syncScheduledPublication } from '../stores/parttimeTasks'
+import { syncScheduledPublication, session, expireForwardRequests } from '../stores/parttimeTasks'
+import { syncCheckinReminders } from '../stores/checkinReminders'
 
 syncScheduledPublication()
+// 打开消息中心也结算一次：到点的打卡提醒、超时未接受的转发，不该等用户先进任务列表才发生
+expireForwardRequests()
+syncCheckinReminders()
 
 const router = useRouter()
 
@@ -257,12 +261,19 @@ const tabs = [
 const searchKeyword = ref('')
 
 // ==================== 通知数据 ====================
-// 来源：共享通知 store。
-const notifications = notificationStore.list
+// 来源：共享通知 store。转发 / 打卡提醒是定向通知，只给指定收件人看
+const notifications = computed(() => notificationStore.list.filter(item => item.employeeId == null || item.employeeId === session.employeeId))
+
+/** 时间字段口径：系统推送类写「通知时间」，工资单确认写「推送时间」，待本人处理的确认单沿用「申请时间」 */
+const timeLabelOf = (item) => {
+  if (['system_dispatch', 'task_publication', 'checkin_reminder', 'forward_request', 'forward_result'].includes(item.type)) return '通知时间：'
+  if (item.type === 'salary_confirm') return '推送时间：'
+  return '申请时间：'
+}
 
 // 过滤
 const filteredNotifications = computed(() => {
-  let result = notifications
+  let result = notifications.value
   // Tab 过滤
   if (activeTab.value === 'unread') {
     result = result.filter(n => !n.read)
@@ -296,6 +307,16 @@ const openDetail = (item) => {
   }
   if (item.type === 'task_publication') {
     router.push({ path: '/mobile-parttime-tasks', query: { view: 'available' } })
+    return
+  }
+  // 转发邀请去「我的任务」表态；转发结果与原任务有关，也回任务列表
+  if (item.type === 'forward_request' || item.type === 'forward_result') {
+    router.push('/mobile-parttime-tasks')
+    return
+  }
+  // 打卡提醒直接进打卡页，少一步找门店
+  if (item.type === 'checkin_reminder') {
+    router.push('/mobile-account-manager-attendance?mode=parttime')
     return
   }
   currentDetail.value = item

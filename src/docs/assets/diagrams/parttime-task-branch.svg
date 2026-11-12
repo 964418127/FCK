@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="100%" role="img">
+  <title>非全客户经理 · 一个时段怎么变成一条任务、再怎么结束</title>
+  <desc>五类产生需求的来源在生成任务实例这一步合流，按来源分可选与派单两条承接路（策略档位累计开放，先开的档不关），承接成功即待到店；执行段分正常履约、取消、转移、提前下线四种去向，取消、转移与提前下线都只追加关联任务、不覆盖原任务。</desc>
+  <defs>
+    <marker id="tb-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="70" y="36" width="860" height="178" rx="12" fill="#EEEDFE" stroke="#534AB7"/>
+  <text x="92" y="66" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#3C3489">① 来源 —— 一个待履约时段，五种来路</text>
+  <text x="92" y="90" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#534AB7">来路决定来源字段与承接方式，不决定对象与状态；这里画「产生新需求」的五类，任务转移只换承接人，落在第 ④ 段</text>
+
+  <rect x="92" y="104" width="154" height="88" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="169" y="127" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">周期需求</text>
+  <text x="169" y="147" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">门店排班排假配置</text>
+  <text x="169" y="162" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">周四 06:00 生成下一批 7 天</text>
+  <text x="169" y="177" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">上线首周补当周（6.2）</text>
+
+  <rect x="258" y="104" width="154" height="88" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="335" y="130" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">请假缺岗</text>
+  <text x="335" y="152" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">全职客户经理请假</text>
+  <text x="335" y="170" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">拆成 ≤4 小时接班段（6.3）</text>
+
+  <rect x="424" y="104" width="154" height="88" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="501" y="130" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">取消缺口</text>
+  <text x="501" y="152" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">非全已承接任务被取消</text>
+  <text x="501" y="170" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">原任务保留 · 建重派（6.3）</text>
+
+  <rect x="590" y="104" width="154" height="88" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="667" y="130" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">运营临时</text>
+  <text x="667" y="152" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">线下确认需要加人</text>
+  <text x="667" y="170" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">手填门店·时段·人数（6.3）</text>
+
+  <rect x="756" y="104" width="154" height="88" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.5"/>
+  <text x="833" y="128" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#9A3412">提前下线</text>
+  <text x="833" y="147" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#C2410C">到店后提前离店</text>
+  <text x="833" y="164" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#C2410C">剩余扣通勤够 2 小时</text>
+  <text x="833" y="181" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#C2410C">才补 → 建剩余段需求（6.1.3）</text>
+
+  <path d="M500 214 V238" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#tb-arrow)"/>
+  <text x="514" y="232" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">五类来源都落到同一步：生成任务实例，不再各自走一套</text>
+
+  <rect x="70" y="242" width="860" height="124" rx="12" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="92" y="272" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#0C447C">② 生成 —— 合流点：一个名额 = 一个任务</text>
+  <text x="92" y="296" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#185FA5">从这里开始，五个来路产生的对象、状态机与事件完全一致；差别只剩字段里的「来源」与一条关联 ID</text>
+  <rect x="92" y="306" width="816" height="48" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="500" y="328" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">生成即快照：来源 · 计划时段 · 门店 · 人数 · 关联任务 ID</text>
+  <text x="500" y="346" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">之后改需求、改配置都不回流到已生成任务（5.6 生成存快照）</text>
+
+  <path d="M500 366 V390" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#tb-arrow)"/>
+  <text x="514" y="384" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">按来源分两条承接路，承接完成后又合回同一套状态</text>
+
+  <rect x="70" y="394" width="860" height="132" rx="12" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="92" y="424" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#0C447C">③ 承接 —— 只有两种方式，别混成一个</text>
+  <text x="92" y="448" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#185FA5">跟踪页必须能回答「这个人是自己抢的还是被派的」，所以承接方式要落字段，不能只在日志里</text>
+  <rect x="92" y="460" width="396" height="54" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="290" y="482" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">周期任务 → 可选列表自选</text>
+  <text x="290" y="502" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">已开放档的人群都可见（累计开放），排班日当天先到先得（6.5）</text>
+  <rect x="512" y="460" width="396" height="54" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="710" y="482" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">事件 / 临时 / 提前下线 → 派单</text>
+  <text x="710" y="502" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">系统匹配承接人，派不出去留 Web 重试（6.3）</text>
+
+  <path d="M500 526 V550" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#tb-arrow)"/>
+  <text x="514" y="544" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">承接成功即「待到店」，执行段不再区分来源</text>
+
+  <rect x="70" y="554" width="860" height="212" rx="12" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="92" y="584" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#085041">④ 执行与结束 —— 四种去向，只有正常履约不追加任务</text>
+  <text x="92" y="608" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#0F6E56">打卡事实只追加不修改；实际到离店时间与时长只在 Web 留存，移动端不展示内部原因</text>
+
+  <rect x="92" y="620" width="195" height="72" rx="10" fill="#FFFFFF" stroke="#1D9E75"/>
+  <text x="189" y="646" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#085041">正常履约</text>
+  <text x="189" y="668" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#0F6E56">到店 → 离店（6.6）</text>
+
+  <rect x="299" y="620" width="195" height="72" rx="10" fill="#FFFFFF" stroke="#1D9E75"/>
+  <text x="396" y="646" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#085041">取消</text>
+  <text x="396" y="668" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#0F6E56">原任务保留 + 重派（6.3）</text>
+
+  <rect x="506" y="620" width="195" height="72" rx="10" fill="#FFFFFF" stroke="#1D9E75"/>
+  <text x="603" y="646" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#085041">转移</text>
+  <text x="603" y="668" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#0F6E56">原任务保留 + 新承接人（6.3）</text>
+
+  <rect x="713" y="620" width="195" height="72" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.5"/>
+  <text x="810" y="646" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#9A3412">提前下线</text>
+  <text x="810" y="668" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#C2410C">原任务截断 + 补剩余段（6.1.3）</text>
+
+  <text x="92" y="722" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#0F6E56">四处都收口到同一条事实链：Web 任务跟踪记实际到离店时间与实际时长（6.4）→ 薪酬按已完成任务读取（6.7）</text>
+  <text x="92" y="744" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#0F6E56">移动端只看得到「可选任务 / 我的任务 / 到店 / 离店」——来源、批次、关联任务与派单失败原因都留在 Web</text>
+
+  <path d="M930 640 H952 V318 H936" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#tb-arrow)"/>
+  <text x="912" y="782" text-anchor="end" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#888780">虚线：取消 / 转移 / 提前下线 → 追加关联任务，原任务保留（回到生成段，不覆盖原记录）</text>
+</svg>

@@ -40,7 +40,7 @@
         </thead>
         <tbody>
           <tr><td><strong>这件事要办成什么</strong></td><td><router-link to="/docs/orchestration/6-1">6.1 事件定义</router-link>：管谁、提示词怎么写、子事件清单长什么样</td></tr>
-          <tr><td><strong>一条子事件怎么写</strong></td><td>6.1.5 清单的六列 + 6.4 的办理口径：结论、门禁、谁给结论、交什么</td></tr>
+          <tr><td><strong>一条子事件怎么写</strong></td><td>6.1.7 清单的四列 + 每条的「子事件预览」+ 6.4 的办理口径：结论、事实、必过、谁给结论、交什么</td></tr>
           <tr><td><strong>为什么这一单没有那一条</strong></td><td><router-link to="/docs/orchestration/6-3">6.3 子事件生成</router-link>：清单 × 事实，事实取不到就不长</td></tr>
           <tr><td><strong>审核放在哪</strong></td><td><router-link to="/docs/orchestration/6-4">6.4 办理</router-link>：审核是一条结论 + 人办路径，有几级就几条结论</td></tr>
           <tr><td><strong>系统自己判 / 自己执行</strong></td><td><router-link to="/docs/orchestration/6-5">6.5 系统判定与系统执行</router-link>：批次、取数频率、回执字段</td></tr>

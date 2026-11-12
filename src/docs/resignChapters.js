@@ -7,7 +7,8 @@
  * 章节按公司 PRD 模板编号：一、版本信息 / 二、变更日志 / 三、文档说明 / 四、需求背景 / 五、需求范围 /
  * 六、功能详细说明（6.1–6.6 见 featureChapters）/ 七、附录。
  *
- * 字段：id / order / title / subtitle / routeName / path / file
+ * 字段：id / order / nav / title / subtitle / routeName / path / file
+ *       nav = 侧边栏菜单名，只写名词（不带括号补充、状态说明）；缺省时菜单退回 title
  */
 export const resignChapters = [
   {
@@ -67,6 +68,7 @@ export const resignChapters = [
   {
     id: 'appendix',
     order: '七',
+    nav: '附录',
     title: '附录：待决事项',
     subtitle: '不在本场景拍板但必须挂起的条目：归属方 + 卡在哪',
     routeName: 'doc-resign-flow-appendix',
@@ -87,6 +89,7 @@ export const featureChapters = [
   {
     id: '6-1',
     no: '6.1',
+    nav: '离职交接',
     title: '离职交接（配置 + 执行）',
     subtitle: '先配模板与系统检查（谁审、谁交接、卡什么），再走每笔单的交接清单与办结推送',
     routeName: 'doc-resign-flow-6-1',
@@ -114,6 +117,7 @@ export const featureChapters = [
   {
     id: '6-4',
     no: '6.4',
+    nav: '签署与补偿金',
     title: '签署与补偿金明细',
     subtitle: '协议先走、金额后置：电子签状态机 + 一条补偿金的时间顺序与三段金额 + 明细要回答的五件事',
     routeName: 'doc-resign-flow-6-4',
@@ -123,6 +127,7 @@ export const featureChapters = [
   {
     id: '6-5',
     no: '6.5',
+    nav: '补偿金计算发放',
     title: '一次性补偿金的计算与发放',
     subtitle: '作为发放策略第三类单据：配置段 + 运行段 11 步、两个数据对象、补偿金个税系统项',
     routeName: 'doc-resign-flow-6-5',

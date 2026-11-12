@@ -9,6 +9,14 @@
     </div>
 
     <div class="content">
+      <!-- 当日无任务：打卡页没有可执行对象，不进打卡流程，直接给空态（见 6.6.2） -->
+      <div v-if="mode === 'parttime' && !todayTasks.length" class="empty-card">
+        <div class="empty-icon"><el-icon><Calendar /></el-icon></div>
+        <h2 class="empty-title">今日没有任务安排</h2>
+        <p class="empty-text">先领一个任务，领到后这里才有门店与任务时段。</p>
+        <button class="empty-action" @click="goAvailable">去看可选任务</button>
+      </div>
+      <template v-else>
       <!-- 任务门店切换（非全） -->
       <div v-if="mode === 'parttime'" class="store-switcher">
         <button
@@ -37,7 +45,7 @@
           <div class="form-value">{{ employee.name }}</div>
         </div>
         <div class="form-row">
-          <label>考勤日期</label>
+          <label>{{ mode === 'parttime' ? '打卡日期' : '考勤日期' }}</label>
           <el-date-picker
             v-model="attendanceDate"
             type="date"
@@ -49,7 +57,7 @@
           />
         </div>
         <div class="form-row">
-          <label>考勤地点</label>
+          <label>{{ mode === 'parttime' ? '打卡地点' : '考勤地点' }}</label>
           <div class="form-value">{{ employeeLocation }}</div>
         </div>
         <div class="form-row">
@@ -71,7 +79,8 @@
           <div class="picker-handle"></div>
           <h3 class="picker-title">选择今日打卡门店</h3>
           <p class="picker-tip">请选择您今天要打卡的门店</p>
-          <div class="picker-list">
+          <p v-if="!todayTasks.length" class="picker-empty">今日没有可打卡的任务</p>
+          <div v-else class="picker-list">
             <div
               v-for="task in todayTasks"
               :key="task.id"
@@ -175,7 +184,7 @@
                   </button>
                   <div class="image-label image-label--warn">
                     <el-icon class="warn-icon"><CircleClose /></el-icon>
-                    未进入考勤范围
+                    未进入{{ mode === 'parttime' ? '打卡' : '考勤' }}范围
                   </div>
                 </div>
               </div>
@@ -258,16 +267,7 @@
                     <el-icon class="state-icon"><Lock /></el-icon>
                     <span class="state-label">待到店打卡</span>
                   </div>
-                  <div class="image-label image-label--warn">
-                    <el-icon class="warn-icon"><CircleClose /></el-icon>
-                    未进入考勤范围
-                  </div>
                 </div>
-              </div>
-              <div class="meta-row">
-                <el-icon class="meta-icon"><Location /></el-icon>
-                <span class="meta-key">打卡距离：</span>
-                <span class="meta-value">{{ checkIn.distance }}</span>
               </div>
               <div class="meta-row meta-row--flex">
                 <div class="meta-left">
@@ -281,6 +281,7 @@
                   </span>
                 </div>
               </div>
+              <div v-if="leaveResult" class="backfill-note">{{ leaveResult }}</div>
             </div>
           </template>
         </div>
@@ -335,6 +336,7 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
   </div>
 </template>
@@ -342,17 +344,16 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Bell, Location, Clock, Grid, CircleClose, CircleCheckFilled, Lock } from '@element-plus/icons-vue'
-import { currentEmployeeId, employeeTasks, dateKey, durationLabel, summarizeAttendance } from '../stores/parttimeTasks'
+import { Bell, Calendar, Location, Clock, Grid, CircleClose, CircleCheckFilled, Lock } from '@element-plus/icons-vue'
+import { currentEmployeeId, employees, employeeTasks, dateKey, durationLabel, summarizeAttendance, earlyOfflineBackfill } from '../stores/parttimeTasks'
 
 const router = useRouter()
 const route = useRoute()
 
 const mode = computed(() => route.query.mode === 'parttime' ? 'parttime' : 'fulltime')
 
-const employee = {
-  name: '杨小雪'
-}
+const employee = computed(() => employees.find(person => person.id === currentEmployeeId) || { name: '杨小雪' })
+const goAvailable = () => router.push('/mobile-parttime-tasks?view=available')
 
 const shiftLabel = computed(() =>
   mode.value === 'parttime' ? (selectedTask.value ? `${selectedTask.value.startTime}-${selectedTask.value.endTime}（${durationLabel(selectedTask.value)}）` : '暂无任务') : '通班'
@@ -418,6 +419,7 @@ const taskPickerVisible = ref(false)
 function pickTask(id) {
   selectedTaskId.value = id
   taskPickerVisible.value = false
+  leaveResult.value = ''
 }
 
 function openPicker() {
@@ -445,7 +447,7 @@ const checkInGate = computed(() => {
   if (!task) return { canCheckIn: false, message: '请先选择今日任务' }
   const startMin = parseHHMM(task.startTime)
   const diff = startMin - nowMinutes.value
-  if (diff > 30) return { canCheckIn: false, message: '请在任务开始前 30 分钟内再试' }
+  if (diff > 60) return { canCheckIn: false, message: '请在任务开始前 1 小时内再试' }
   return { canCheckIn: true, message: null }
 })
 
@@ -470,10 +472,18 @@ function onArrive() {
   selectedTask.value.arriveTime = snapshotTime()
   selectedTask.value.status = '已到店'
 }
+const leaveResult = ref('')
 function onLeave() {
   if (!selectedTask.value || selectedTask.value.status !== '已到店') return
   selectedTask.value.leaveTime = snapshotTime()
   selectedTask.value.status = '已离店'
+  // 提前下线：剩下的那段还值不值得再派一个人，由时段挂的分配策略判（6.1.3 异常补人）
+  // 移动端只说结果，不解释派给了谁、哪一档兜底 —— 调度过程留在 Web
+  const result = earlyOfflineBackfill(selectedTask.value)
+  leaveResult.value = !result ? ''
+    : result.outcome === 'assigned' ? '已离店。剩余时段已转派给其他同事承接，本单按实际在店时长结算。'
+      : result.outcome === 'pending' ? '已离店。剩余时段暂时没有承接人，运营会跟进。'
+        : '已离店。剩余时段不足补人门槛，不再转派。'
 }
 
 const arriveStatus = computed(() => {
@@ -788,6 +798,17 @@ const calendarCells = computed(() => {
 .meta-value { color: #a40035; font-weight: 500; }
 .meta-value--warn { color: #e65100; }
 
+/* 提前下线后的结果提示：只说结论，不解释调度 */
+.backfill-note {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdf2f5;
+  color: #7a1c33;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
 .update-btn {
   background: #fff;
   color: #a40035;
@@ -951,6 +972,13 @@ const calendarCells = computed(() => {
   color: #888;
   margin: 0 0 14px;
 }
+.picker-empty {
+  margin: 4px 0 12px;
+  padding: 28px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}
 .picker-list {
   display: flex;
   flex-direction: column;
@@ -1033,6 +1061,52 @@ const calendarCells = computed(() => {
   font-size: 14px;
   margin-top: 2px;
 }
+
+/* ====== 今日无任务空态 ====== */
+.empty-card {
+  margin-top: 8px;
+  padding: 40px 24px 32px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #fdf0f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: #a40035;
+}
+.empty-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+.empty-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #888;
+  margin: 0 0 22px;
+}
+.empty-action {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  background: #a40035;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.empty-action:active { background: #8d002d; }
 
 /* ====== 月历 ====== */
 .record-view { padding: 8px 0; }

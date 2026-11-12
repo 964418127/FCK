@@ -53,6 +53,9 @@ const { copyToClipboard, exportToPdf } = useDocCopy()
 <style>
 /* ===== 共享布局（不 scoped，子页 slot 内容继承） ===== */
 .v2-phase1-guide { padding: 0; max-width: 1400px; margin: 0 auto; }
+/* 宽账表页：flex 子项默认 min-width:auto 会被表撑开、再被父级 overflow:hidden 裁掉，
+   只有含 .ledger-wrap 的页放开收缩，让宽表在自身容器里横向滚动 */
+.main-content > *:has(.ledger-wrap) { min-width: 0; width: 100%; max-width: 100%; }
 
 /* 面包屑 */
 .v2-phase1-guide .doc-hero-breadcrumbs {

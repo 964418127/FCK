@@ -242,7 +242,7 @@ import verdictImg from '../../../docs/assets/diagrams/system-check-verdict.svg'
 import cadenceImg from '../../../docs/assets/diagrams/system-check-cadence.svg'
 
 const tocItems = [
-  { id: 'rf-handover', label: '6.1 离职交接（概述）' },
+  { id: 'rf-handover', label: '6.1 离职交接' },
   { id: 'rf-hd-tpl', label: '6.1.1 配置层：模板' },
   { id: 'rf-hd-check', label: '6.1.2 系统检查节点' },
   { id: 'rf-hd-agent', label: '6.1.3 检查 Agent 运行机制' },

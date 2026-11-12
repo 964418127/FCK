@@ -1,0 +1,117 @@
+/* 非全客户经理文档 · 章节页公用样式（scoped 引入，配合 DocShell 的全局文档样式） */
+.doc-p { font-size: 13.5px; line-height: 1.8; color: hsl(var(--foreground)); margin: 10px 0; }
+.h4sub {
+  font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground));
+  margin: 20px 0 8px; padding-left: 9px;
+  border-left: 3px solid hsl(var(--primary) / 0.45);
+}
+.doc-ul { margin: 10px 0; padding-left: 20px; }
+.doc-ul li { font-size: 13px; line-height: 1.8; margin-bottom: 6px; color: hsl(var(--foreground)); }
+.doc-ol { margin: 10px 0; padding-left: 22px; }
+.doc-ol li { font-size: 13px; line-height: 1.8; margin-bottom: 6px; color: hsl(var(--foreground)); }
+.func-entry {
+  font-size: 12px; line-height: 1.6; color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.3);
+  border-left: 3px solid hsl(var(--primary) / 0.6);
+  padding: 6px 10px; border-radius: 0 6px 6px 0;
+  margin: 0 0 14px;
+}
+.func-entry strong { color: hsl(var(--foreground)); }
+.lead-note { border-left: 3px solid hsl(var(--primary) / 0.5); }
+.warn-note { border-left: 3px solid hsl(var(--warning) / 0.6); background: hsl(var(--warning) / 0.08); }
+
+/* 决议块：章节开头先落结论，再讲设计 */
+.decision-note { border-left: 3px solid hsl(var(--primary) / 0.85); background: hsl(var(--primary) / 0.05); }
+.decision-tag {
+  display: inline-block; margin-right: 8px; padding: 0 5px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  color: hsl(var(--primary)); border: 1px solid hsl(var(--primary) / 0.45);
+  border-radius: 3px; line-height: 1.6;
+}
+.decision-note a { color: hsl(var(--primary)); text-decoration: underline; font-weight: 600; }
+
+/* 宽账表：一张表放十几列，压紧内边距、数字不换行，分组表头单独一层底色；窄屏改为容器内横向滚动 */
+.ledger-wrap { width: 100%; overflow-x: auto; margin: 10px 0; }
+.data-table.ledger { font-size: 12px; min-width: max(1120px, 100%); }
+.data-table.ledger th,
+.data-table.ledger td { padding: 6px 6px; line-height: 1.6; }
+.data-table.ledger th { white-space: normal; }
+.data-table.ledger td { white-space: nowrap; }
+.data-table.ledger tbody td:first-child { white-space: normal; }
+.data-table.ledger th.group { text-align: center; font-weight: 600; background: hsl(var(--muted) / 0.7); }
+.data-table.ledger td.num { text-align: right; }
+.data-table.ledger th.num { text-align: right; }
+
+/* 链路：横向条 + 箭头，窄屏换行 */
+.chain { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.chain-node {
+  flex: 1 1 150px; min-width: 140px;
+  border: 1px solid hsl(var(--border)); border-radius: 9px;
+  padding: 10px 12px; background: hsl(var(--card));
+}
+.chain-node .cn-t { font-size: 12.5px; font-weight: 600; margin-bottom: 4px; }
+.chain-node .cn-d { font-size: 11.5px; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.chain-node.on { border-color: hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.04); }
+.chain-node.on .cn-t { color: hsl(var(--primary)); }
+.chain-arrow { align-self: center; color: hsl(var(--muted-foreground)); font-size: 14px; }
+
+/* 对照型双列卡 */
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 14px 0; }
+.duo-card { border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 14px 16px; background: hsl(var(--card)); }
+.duo-card h4 { margin: 0 0 8px; font-size: 13.5px; color: hsl(var(--primary)); }
+.duo-card p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.8; color: hsl(var(--foreground) / 0.86); }
+
+/* 分支流程图：四类来源 → 生成任务 → 两种承接 → 三种结束 → 跟踪与结算 */
+.business-flow {
+  margin: 14px 0 8px; padding: 20px 16px;
+  border: 1px solid hsl(var(--primary) / 0.22); border-radius: 10px;
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.04) 0%, hsl(var(--card)) 100%);
+  text-align: center;
+}
+.flow-node {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 42px; padding: 8px 12px;
+  border: 1px solid hsl(var(--border)); border-radius: 7px;
+  background: hsl(var(--card)); color: hsl(var(--foreground));
+  font-size: 13px; line-height: 1.45;
+}
+.flow-node small { display: block; margin-top: 3px; color: hsl(var(--muted-foreground)); font-size: 11px; }
+.flow-root, .flow-task, .flow-common, .flow-end {
+  border-color: hsl(var(--primary) / 0.55); color: hsl(var(--primary));
+  font-weight: 600; background: hsl(var(--primary) / 0.06);
+}
+.flow-node.source { border-color: hsl(var(--primary) / 0.42); color: hsl(var(--primary)); font-weight: 600; }
+.flow-node.route { border-color: hsl(210 50% 72%); color: hsl(210 55% 32%); font-weight: 600; background: hsl(210 60% 97%); }
+.flow-node.action { border-color: hsl(40 55% 72%); color: hsl(38 60% 30%); background: hsl(45 75% 97%); }
+.flow-stem { width: 2px; height: 18px; margin: 0 auto; background: hsl(var(--border)); }
+.flow-branches { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 18px; }
+.flow-branches::before {
+  content: ''; position: absolute; top: 0; left: 12.5%; right: 12.5%;
+  height: 1px; background: hsl(var(--border));
+}
+.flow-branch { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.flow-branch::before { content: ''; position: absolute; top: -18px; width: 1px; height: 18px; background: hsl(var(--border)); }
+.flow-caption { color: hsl(var(--muted-foreground)); font-size: 11px; line-height: 1.4; }
+.flow-arrow { color: hsl(var(--primary)); font-size: 18px; line-height: 1; }
+.flow-branches.two { grid-template-columns: repeat(2, minmax(180px, 300px)); justify-content: center; }
+.flow-branches.three { grid-template-columns: repeat(3, minmax(150px, 240px)); justify-content: center; }
+.flow-merge {
+  width: 50%; height: 18px; margin: 0 auto;
+  border-right: 1px solid hsl(var(--border)); border-bottom: 1px solid hsl(var(--border));
+  border-left: 1px solid hsl(var(--border)); border-radius: 0 0 6px 6px;
+}
+.flow-note { margin-top: 10px; color: hsl(var(--muted-foreground)); font-size: 12px; line-height: 1.8; }
+@media (max-width: 900px) {
+  .business-flow { padding: 14px 8px; }
+  .flow-branches, .flow-branches.two, .flow-branches.three { grid-template-columns: 1fr; gap: 10px; }
+  .flow-branches::before, .flow-branch::before, .flow-merge { display: none; }
+  .flow-branch:not(:last-child)::after { content: '↓'; color: hsl(var(--primary)); font-size: 18px; margin-top: 2px; }
+  .flow-arrow { display: none; }
+}
+
+/* 截图：原型页信息密度高（表头 + 数据行），200px 只能看到表头，本模块统一加高 */
+:deep(.ds-row:not(.phone) .ds-img) { height: 300px; }
+
+.tag-must { color: hsl(var(--primary)); font-weight: 600; }
+.tag-opt { color: hsl(var(--muted-foreground)); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }

@@ -31,8 +31,10 @@
         class="df-img"
         :alt="title"
       />
-      <figcaption class="df-caption">图 · {{ title }}<template v-if="note"> —— {{ note }}</template></figcaption>
     </div>
+    <!-- figcaption 必须是 figure 的直接子元素（规范要求，且只能首个或末个），
+         不能塞在 .df-body 里面；收起时随图一起隐藏 -->
+    <figcaption v-show="open" class="df-caption">图 · {{ title }}<template v-if="note"> —— {{ note }}</template></figcaption>
   </figure>
 </template>
 

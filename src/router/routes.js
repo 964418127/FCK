@@ -9,10 +9,17 @@ import { v2phase1Chapters } from '../docs/chapters.js'
 import { leaveReformChapters } from '../docs/leaveReformChapters.js'
 import { resignChapters, featureChapters } from '../docs/resignChapters.js'
 import { orchChapters, orchFeatureChapters } from '../docs/orchestrationChapters.js'
+import { parttimeChapters, parttimeFeatureChapters } from '../docs/parttimeChapters.js'
+import { generalParamChapters, generalParamFeatureChapters } from '../docs/generalParamChapters.js'
+import { hrScheduleChapters, hrScheduleFeatureChapters } from '../docs/hrScheduleChapters.js'
 
 // Vite 编译时把所有章节 SFC 转成静态映射（SSR 也能解析）
 const chapterModules = import.meta.glob('../views/v2phase1/*.vue')
 const leaveReformChapterModules = import.meta.glob('../views/leave-reform-guide/*.vue')
+const parttimeChapterModules = {
+  ...import.meta.glob('../views/parttime-account-manager/*.vue'),
+  ...import.meta.glob('../views/parttime-account-manager/sections/*.vue')
+}
 const resignChapterModules = {
   ...import.meta.glob('../views/resign-flow-guide/*.vue'),
   ...import.meta.glob('../views/resign-flow-guide/sections/*.vue')
@@ -20,6 +27,14 @@ const resignChapterModules = {
 const orchChapterModules = {
   ...import.meta.glob('../views/orchestration-guide/*.vue'),
   ...import.meta.glob('../views/orchestration-guide/sections/*.vue')
+}
+const generalParamChapterModules = {
+  ...import.meta.glob('../views/general-param-guide/*.vue'),
+  ...import.meta.glob('../views/general-param-guide/sections/*.vue')
+}
+const hrScheduleChapterModules = {
+  ...import.meta.glob('../views/hr-schedule/*.vue'),
+  ...import.meta.glob('../views/hr-schedule/sections/*.vue')
 }
 
 export const routes = [
@@ -679,6 +694,67 @@ export const routes = [
         }
       },
       {
+        // 通用参数 · 数据表的列与数据配置（独立页，不占菜单位）
+        path: 'config-rule-management/general-param/:id',
+        name: 'general-param-detail',
+        component: () => import('../views/GeneralParamDetail.vue'),
+        meta: {
+          title: '数据表配置'
+        }
+      },
+      {
+        path: 'schedule-strategy',
+        name: 'schedule-strategy',
+        component: () => import('../views/ScheduleStrategyList.vue'),
+        meta: {
+          title: '排班策略'
+        }
+      },
+      {
+        // 排班策略 · 槽位配置（独立页，不占菜单位）
+        path: 'schedule-strategy/:id',
+        name: 'schedule-strategy-detail',
+        component: () => import('../views/ScheduleStrategyDetail.vue'),
+        meta: {
+          title: '排班策略详情'
+        }
+      },
+      {
+        // 时段与名额 v2 —— 模型主语是时段（与岗位无关），独立于排班策略 v1
+        path: 'slot-model',
+        name: 'slot-model',
+        component: () => import('../views/SlotModelList.vue'),
+        meta: {
+          title: '时段与名额'
+        }
+      },
+      {
+        // 时段与名额 · 时段配置（独立页，不占菜单位）
+        path: 'slot-model/:id',
+        name: 'slot-model-detail',
+        component: () => import('../views/SlotModelDetail.vue'),
+        meta: {
+          title: '时段配置'
+        }
+      },
+      {
+        // 排班策略 v3 —— 设计基线：容器 → 时段（时间形态）→ 获取规则（轮/余额）→ 结果直写
+        path: 'schedule-v3',
+        name: 'schedule-v3',
+        component: () => import('../views/ScheduleV3Console.vue'),
+        meta: {
+          title: '排班策略 v3'
+        }
+      },
+      {
+        path: 'schedule-v3/slot/:id',
+        name: 'schedule-v3-slot',
+        component: () => import('../views/ScheduleV3SlotDetail.vue'),
+        meta: {
+          title: '时段配置 v3'
+        }
+      },
+      {
         path: 'store-salary-strategy',
         name: 'store-salary-strategy',
         component: () => import('../views/StoreSalaryStrategy.vue'),
@@ -889,6 +965,19 @@ export const routes = [
     component: () => import('../views/v2/mobile/MInstList.vue'),
     meta: { title: '移动端事项办理' }
   },
+  /* 排班策略 v3 · 移动端：选班 / 我的排班（一套壳，按岗位资格过滤） + 排班通知（独立入口） */
+  {
+    path: '/v3/m',
+    name: 'v3-mobile',
+    component: () => import('../views/ScheduleV3Mobile.vue'),
+    meta: { title: '移动端排班' }
+  },
+  {
+    path: '/v3/m/notice',
+    name: 'v3-mobile-notice',
+    component: () => import('../views/ScheduleV3MobileNotice.vue'),
+    meta: { title: '移动端排班通知' }
+  },
   {
     path: '/v2/m/inst',
     name: 'v2-m-instance',
@@ -947,6 +1036,14 @@ export const routes = [
     component: () => import('../views/MobileAttendance.vue'),
     meta: {
       title: '客户经理考勤'
+    }
+  },
+  {
+    path: '/mobile-parttime-am-salary',
+    name: 'mobile-parttime-am-salary',
+    component: () => import('../views/MobileParttimeAmSalary.vue'),
+    meta: {
+      title: '非全客户经理薪酬'
     }
   },
   {
@@ -1173,30 +1270,85 @@ export const routes = [
         component: orchChapterModules[`../views/orchestration-guide/${ch.file}`],
         meta: { title: `事件编排 / 六、功能详细说明 / ${ch.no} ${ch.title}` }
       })),
+      // 非全客户经理模块：产品需求说明（索引 + 七章 + 6.x）
       {
         path: 'parttime-account-manager',
-        name: 'doc-parttime-account-manager',
+        name: 'doc-parttime-index',
         component: () => import('../views/parttime-account-manager/ParttimeAccountManagerGuide.vue'),
-        meta: {
-          title: '非全客户经理'
-        }
+        meta: { title: '非全客户经理 / 产品需求说明' }
       },
       {
+        path: 'parttime-account-manager/prd',
+        redirect: '/docs/parttime-account-manager'
+      },
+      ...parttimeChapters.map(ch => ({
+        path: `parttime-account-manager/${ch.id}`,
+        name: ch.routeName,
+        component: parttimeChapterModules[`../views/parttime-account-manager/${ch.file}`],
+        meta: { title: `非全客户经理 / ${ch.order}、${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...parttimeFeatureChapters.map(ch => ({
+        path: `parttime-account-manager/${ch.id}`,
+        name: ch.routeName,
+        component: parttimeChapterModules[`../views/parttime-account-manager/${ch.file}`],
+        meta: { title: `非全客户经理 / 六、功能详细说明 / ${ch.no} ${ch.title}` }
+      })),
+      // 旧路径（合并前的两页）重定向到新章节，避免外部收藏失效
+      {
         path: 'parttime-account-manager/attendance',
-        name: 'doc-parttime-am-attendance',
-        component: () => import('../views/parttime-account-manager/sections/Attendance.vue'),
-        meta: {
-          title: '非全客户经理 / 考勤打卡'
-        }
+        redirect: '/docs/parttime-account-manager/6-6'
       },
       {
         path: 'parttime-account-manager/functions',
-        name: 'doc-parttime-am-functions',
-        component: () => import('../views/parttime-account-manager/sections/Functions.vue'),
-        meta: {
-          title: '非全客户经理 / 功能模块（Web 端与移动端）'
-        }
-      }
+        redirect: '/docs/parttime-account-manager/features'
+      },
+      // 通用参数（升级）模块：索引 + 七章 + 6.x
+      {
+        path: 'general-param',
+        name: 'doc-gp-index',
+        component: () => import('../views/general-param-guide/GeneralParamGuide.vue'),
+        meta: { title: '通用参数（升级） / 产品需求说明' }
+      },
+      ...generalParamChapters.map(ch => ({
+        path: `general-param/${ch.id}`,
+        name: ch.routeName,
+        component: generalParamChapterModules[`../views/general-param-guide/${ch.file}`],
+        meta: { title: `通用参数 / ${ch.order}、${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...generalParamFeatureChapters.map(ch => ({
+        path: `general-param/${ch.id}`,
+        name: ch.routeName,
+        component: generalParamChapterModules[`../views/general-param-guide/${ch.file}`],
+        meta: { title: `通用参数（升级） / 六、功能详细说明 / ${ch.no} ${ch.title}` }
+      })),
+      // 旧路径（拆分前的 6.4–6.8）重定向到合并后的三节
+      { path: 'general-param/6-4', redirect: '/docs/general-param/6-2' },
+      { path: 'general-param/6-5', redirect: '/docs/general-param/6-1' },
+      { path: 'general-param/6-6', redirect: '/docs/general-param/6-3' },
+      { path: 'general-param/6-7', redirect: '/docs/general-param/6-1' },
+      { path: 'general-param/6-8', redirect: '/docs/general-param/6-1' },
+      // 人事中心 · 排班策略模块：索引 + 七章 + 6.x
+      {
+        path: 'hr-schedule',
+        name: 'doc-hr-schedule-index',
+        component: () => import('../views/hr-schedule/HrScheduleGuide.vue'),
+        meta: { title: '人事中心 / 排班策略 / 产品需求说明' }
+      },
+      ...hrScheduleChapters.map(ch => ({
+        path: `hr-schedule/${ch.id}`,
+        name: ch.routeName,
+        component: hrScheduleChapterModules[`../views/hr-schedule/${ch.file}`],
+        meta: { title: `排班策略 / ${ch.order}、${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...hrScheduleFeatureChapters.map(ch => ({
+        path: `hr-schedule/${ch.id}`,
+        name: ch.routeName,
+        component: hrScheduleChapterModules[`../views/hr-schedule/${ch.file}`],
+        meta: { title: `排班策略 / 六、功能详细说明 / ${ch.no} ${ch.title}` }
+      }))
     ]
   },
   // 向后兼容：旧路径重定向到文档中心

@@ -131,7 +131,9 @@ const MENU_ALIAS = {
   'v2-inst-tree': 'v2-instances',
   'v2-sys-studio': 'v2-sys-items',
   'v2-sys-batches': 'v2-sys-items',
-  'v2-catalog': 'v2-contract'
+  'v2-catalog': 'v2-contract',
+  'general-param-detail': 'config-rule-management',
+  'schedule-v3-slot': 'schedule-v3'
 }
 
 const menuIndexOf = (name) => MENU_ALIAS[name] || name || 'welcome'

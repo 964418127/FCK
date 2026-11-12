@@ -10,6 +10,7 @@
 
 import { clone } from './model.js'
 import { skeletonOf, needOk, unknownNeedsOf } from './skeleton.js'
+import { decisionIssues } from './validate.js'
 
 /** 骨架 → 树 */
 export function generateTree ({ prompt, emp = {}, facts = null } = {}) {
@@ -162,6 +163,12 @@ export function checkGenerated ({ tree = [], prompt, facts = {} } = {}) {
         }
       })
     })
+  })
+
+  /* 处置意见唯一性：模型最容易在这里多长一个口子（两处都能改款项出口） */
+  decisionIssues(tree).forEach((x) => {
+    const hit = { code: x.code, key: x.target, text: x.text }
+    ;(x.level === 'error' ? errors : warnings).push(hit)
   })
 
   return { ok: errors.length === 0, errors, warnings }

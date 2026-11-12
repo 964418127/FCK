@@ -1,0 +1,12 @@
+import puppeteer from 'puppeteer-core'
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+const browser = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: 'new', args: ['--no-sandbox','--disable-gpu'] })
+const page = await browser.newPage()
+await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 })
+await page.goto('http://127.0.0.1:5177/config-rule-management/general-param?shot=1', { waitUntil: 'networkidle2' })
+await sleep(2500)
+console.log('url:', page.url())
+console.log('title:', await page.title())
+console.log('bodyText:', (await page.evaluate(() => document.body.innerText)).slice(0, 300))
+await page.screenshot({ path: '/tmp/gp-list-probe.png' })
+await browser.close()

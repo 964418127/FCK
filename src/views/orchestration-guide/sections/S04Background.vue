@@ -18,7 +18,7 @@
         图能回答「谁来办」，回答不了「这件事到底要交出什么」—— 于是「办完了没有」只能靠人记、靠事后追。
       </div>
 
-      <h3>4.1 现在配一件事要付出什么</h3>
+      <h3 id="orch-bg-41">4.1 现在配一件事要付出什么</h3>
       <table class="data-table">
         <thead>
           <tr><th style="width: 150px;">环节</th><th style="width: 190px;">现在的做法</th><th>代价</th></tr>
@@ -78,7 +78,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
-  { id: 'orch-bg-now', label: '4.1 现在配一件事要付出什么' },
+  { id: 'orch-bg-now', label: '四、需求背景' },
+  { id: 'orch-bg-41', label: '4.1 现在配一件事的代价' },
   { id: 'orch-bg-gap', label: '4.2 真正的缺口' }
 ]
 

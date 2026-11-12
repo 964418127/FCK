@@ -161,10 +161,11 @@ import DocScreens from '../../../docs/components/DocScreens.vue'
 import applyShot from '../../../docs/assets/pages/v2-m-apply.png'
 
 const tocItems = [
+  { id: 'orch-62', label: '6.2 发起与触发取数' },
   { id: 'orch-62-1', label: '6.2.1 员工发起：两步' },
   { id: 'orch-62-2', label: '6.2.2 提交之后做什么' },
-  { id: 'orch-62-3', label: '6.2.3 触发取数：固定两步' },
-  { id: 'orch-62-4', label: '6.2.4 没有 / 没取到' }
+  { id: 'orch-62-3', label: '6.2.3 触发取数：两步' },
+  { id: 'orch-62-4', label: '6.2.4 取到了，只是没有' }
 ]
 
 const breadcrumbs = [

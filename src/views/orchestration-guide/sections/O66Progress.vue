@@ -91,7 +91,7 @@
         <tbody>
           <tr><td><strong>这件事发生了</strong></td><td>事件 + 员工 + 单号 + 办结时间</td><td>所有需要知道「这个人状态变了」的系统</td></tr>
           <tr><td><strong>关键日期</strong></td><td>如实际离职日期（审核环节定稿、不可撤销）</td><td>薪酬（算到哪天）、假勤（额度截断）、排班（取消未开始班次）</td></tr>
-          <tr><td><strong>结果字段</strong></td><td>审核/办理环节填下的可核对值（款项出口、补偿金额、签署状态…）</td><td>需要这些值做自己那一段计算的系统</td></tr>
+          <tr><td><strong>结果字段</strong></td><td>审核/办理环节填下的可核对值（常乐豆余额出口、补偿金额、签署状态…）</td><td>需要这些值做自己那一段计算的系统</td></tr>
           <tr><td><strong>凭证索引</strong></td><td>附件与签字的存在与位置（不复制内容）</td><td>事后审计、争议处理</td></tr>
         </tbody>
       </table>
@@ -127,6 +127,7 @@ import treeShot from '../../../docs/assets/pages/v2-inst-tree.png'
 import instancesShot from '../../../docs/assets/pages/v2-instances.png'
 
 const tocItems = [
+  { id: 'orch-66', label: '6.6 进度与交付' },
   { id: 'orch-66-1', label: '6.6.1 一单的状态' },
   { id: 'orch-66-2', label: '6.6.2 看进度用画布' },
   { id: 'orch-66-3', label: '6.6.3 中期调整' },

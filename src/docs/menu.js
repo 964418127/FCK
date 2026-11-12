@@ -15,11 +15,14 @@
  *   - 二级无 children → 二级页面（叶子）
  *   - 三级永远是叶子页面，点击 router.push({ name: index })
  */
-import { Document, InfoFilled, Reading, UserFilled, Clock, SwitchButton, HomeFilled, Connection } from '@element-plus/icons-vue'
+import { Document, InfoFilled, Reading, UserFilled, Clock, SwitchButton, HomeFilled, Connection, OfficeBuilding } from '@element-plus/icons-vue'
 import { v2phase1Chapters } from './chapters.js'
 import { leaveReformChapters } from './leaveReformChapters.js'
 import { resignChapters, featureChapters } from './resignChapters.js'
 import { orchChapters, orchFeatureChapters } from './orchestrationChapters.js'
+import { parttimeChapters, parttimeFeatureChapters } from './parttimeChapters.js'
+import { generalParamChapters, generalParamFeatureChapters } from './generalParamChapters.js'
+import { hrScheduleChapters, hrScheduleFeatureChapters } from './hrScheduleChapters.js'
 
 // 把 chapters 转换成菜单叶子节点
 const v2phase1MenuChildren = v2phase1Chapters.map(ch => ({
@@ -36,21 +39,52 @@ const leaveReformMenuChildren = leaveReformChapters.map(ch => ({
 // 离职流程模块：一份文档（索引页）+ 章节叶子。
 // 侧边栏最多三级，「六、功能详细说明」的 6.x 不再往下嵌，改用一级缩进（indent）表示归属。
 const resignChapterMenu = resignChapters.flatMap(ch => {
-  const node = { index: ch.routeName, label: `${ch.order}、${ch.title}` }
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
   if (ch.id !== 'features') return [node]
   return [
     node,
-    ...featureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.title}`, indent: true }))
+    ...featureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
   ]
 })
 
 // 事件编排模块：同样由章节元数据展开（6.x 用一级缩进表示归属，与离职流程同一套写法）
 const orchChapterMenu = orchChapters.flatMap(ch => {
-  const node = { index: ch.routeName, label: `${ch.order}、${ch.title}` }
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
   if (ch.id !== 'features') return [node]
   return [
     node,
-    ...orchFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.title}`, indent: true }))
+    ...orchFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
+  ]
+})
+
+// 非全客户经理模块：同离职流程写法，6.x 用一级缩进表示归属。
+// 菜单名取 nav（纯名词），不取 title —— title 带定语与括号说明，塞进侧栏太长。
+const parttimeChapterMenu = parttimeChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
+  if (ch.id !== 'features') return [node]
+  return [
+    node,
+    ...parttimeFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
+  ]
+})
+
+// 人事中心 · 排班策略模块：同离职流程写法，6.x 用一级缩进表示归属。
+const hrScheduleChapterMenu = hrScheduleChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
+  if (ch.id !== 'features') return [node]
+  return [
+    node,
+    ...hrScheduleFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
+  ]
+})
+
+// 通用参数（升级）模块：与非全同一套写法，6.x 用一级缩进表示归属。
+const generalParamChapterMenu = generalParamChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
+  if (ch.id !== 'features') return [node]
+  return [
+    node,
+    ...generalParamFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
   ]
 })
 
@@ -61,6 +95,20 @@ export const docMenu = [
     label: '文档目录',
     icon: HomeFilled,
     to: '/docs'
+  },
+  {
+    index: 'doc-hr-center',
+    label: '人事中心',
+    icon: OfficeBuilding,
+    children: [
+      {
+        index: 'doc-hr-schedule',
+        label: '排班策略',
+        icon: Reading,
+        to: '/docs/hr-schedule',
+        children: hrScheduleChapterMenu
+      }
+    ]
   },
   {
     index: 'doc-product',
@@ -87,6 +135,14 @@ export const docMenu = [
         index: 'doc-product-v1',
         label: '产品需求v1',
         icon: Reading
+      },
+      // 通用参数升级：模块化薪酬下的一份升级说明，不单独占一级分组
+      {
+        index: 'doc-general-param',
+        label: '通用参数（升级）',
+        icon: Reading,
+        to: '/docs/general-param',
+        children: generalParamChapterMenu
       }
     ]
   },
@@ -117,17 +173,13 @@ export const docMenu = [
     index: 'doc-parttime-account-manager',
     label: '非全客户经理',
     icon: UserFilled,
-    to: '/docs/parttime-account-manager',
     children: [
       {
-        index: 'doc-parttime-am-attendance',
-        label: '考勤打卡',
-        icon: Reading
-      },
-      {
-        index: 'doc-parttime-am-functions',
-        label: '功能模块',
-        icon: Reading
+        index: 'doc-parttime-index',
+        label: '产品需求说明',
+        icon: Reading,
+        to: '/docs/parttime-account-manager',
+        children: parttimeChapterMenu
       }
     ]
   },
@@ -145,6 +197,7 @@ export const docMenu = [
       {
         index: 'doc-resign-flow-index',
         label: '产品需求说明',
+        icon: Reading,
         to: '/docs/resign-flow',
         children: resignChapterMenu
       }
@@ -158,6 +211,7 @@ export const docMenu = [
       {
         index: 'doc-orch-index',
         label: '产品需求说明',
+        icon: Reading,
         to: '/docs/orchestration',
         children: orchChapterMenu
       }

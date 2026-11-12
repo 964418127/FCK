@@ -7,25 +7,26 @@
  *   ② 骨架是下限：必办项缺一条即不合格，不适用的生成了只提醒
  *   ③ 生成是确定性的：同骨架 + 同事实 → 同一棵树（可解释、可回归）
  */
-import { resignPrompt, previewPeople, systemChecks, actions } from '../src/v2/seed.js'
+import { resignPrompt, previewPeople, systemChecks, actions, seedEvents } from '../src/v2/seed.js'
+import { regularEvent, transferEvent, raiseEvent } from '../src/v2/scenes.js'
 import { composeFor, checkGenerated, degradedTree } from '../src/v2/blueprint.js'
 import {
   needOk, skeletonOf, NEEDS, NEED_LABEL, NEED_ABSENT,
   BASE_NEEDS, RESIGN_FACTS, needsOf, unknownNeedsOf
 } from '../src/v2/skeleton.js'
 import { validateTree, validateEvent, validateSkeleton } from '../src/v2/validate.js'
-import { layersOf, topoSort, ownerOfWay, resolveOwner } from '../src/v2/model.js'
+import { layersOf, topoSort, ownerOfWay, resolveOwner, scopeHit } from '../src/v2/model.js'
 import { CONTRACT, renderSystemPrompt } from '../src/v2/contract.js'
 import { designFactsText, instanceFactsText, buildGenerateMessages, buildAskMessages } from '../src/v2/prompt.js'
-import { renderTemplate } from '../src/v2/template.js'
+import { renderTemplate, renderForModel, alignTextOf, ALIGN_HEAD } from '../src/v2/template.js'
 import { todoOf, depsMet, progressOf, canHandle, formOf } from '../src/v2/instance.js'
-import { runReceipt } from '../src/v2/sysRun.js'
+import { runReceipt, runCheck } from '../src/v2/sysRun.js'
 import { createInstance, submitInstanceSub, resolveForInstance, addInstanceSub, removeInstanceSub, updateInstanceSub, subLocked, getEvent, v2state } from '../src/v2/store.js'
 import { factsOfPerson, staffById } from '../src/v2/base.js'
 import { eventPoints, eventPointFields } from '../src/v2/points.js'
 import {
   payloadPlanOf, checkPayload, normalizePayloadMap, unknownPayloadOf,
-  keepKnownPayload, empNoOfPayload, payloadDefaultsOf
+  keepKnownPayload, empNoOfPayload, payloadDefaultsOf, prefillTree
 } from '../src/v2/payload.js'
 
 let fail = 0
@@ -51,7 +52,9 @@ ok(!ids(A).has('se.handover.team'), '推拿师没有团队 → 不长团队交�
 ok(ids(B).has('se.handover.team'), '店长带 5 个人 → 长出团队交接')
 ok(!ids(A).has('se.cash') && ids(B).has('se.cash'), '只有管备用金的店长才有现金结清')
 ok(!ids(C).has('se.handover.client') && ids(C).has('se.handover.team'), '城市总没有在跟客户、但有团队')
-ok(ids(C).has('se.compensation') && !ids(A).has('se.compensation'), '只有需支付补偿的人才有补偿金确认')
+ok(!ids(A).has('se.comp.confirm'), '不涉补偿的人没有补偿金这条 —— 存在与否仍按事实判断')
+ok(ids(C).has('se.comp.read') && ids(C).has('se.comp.confirm') && ids(C).has('se.comp.push'), '涉补偿的人三条都在：读回待执行记录 → 人事确认（含豆出口）→ 写薪酬系统')
+ok(ids(C).has('se.comp.confirm') && !ids(C).has('se.bean.intent'), '常乐豆出口只有一处表达 —— 不再另立一条常乐豆子事件')
 ok(A.dropped.every((d) => d.key && d.goal && d.needs), '被裁掉的每一条都记了目标与「缺什么事实」')
 ok(NEEDS.filter((n) => n.key !== 'always').every((n) => NEED_ABSENT[n.key] && NEED_ABSENT[n.key] !== NEED_LABEL[n.key]), '每种事实都有「这一单没有」的说法，能解释为什么不长')
 
@@ -92,7 +95,9 @@ const missing = A.tree.filter((s) => s.skeletonKey !== 'goods')
 const missCheck = checkGenerated({ tree: missing, prompt: resignPrompt, facts: tuina.facts })
 ok(missCheck.errors.some((e) => e.code === 'SKELETON_MISSING' && e.key === 'goods'), '必办项被删 → 报缺项错误')
 
-const extra = [...A.tree, { ...A.tree.find((s) => s.skeletonKey === 'review'), id: 'se.cash', skeletonKey: 'cash', goal: '备用金已结清' }]
+/* 拿一条不含「常乐豆余额出口」的节点当样板 —— 用 review 克隆会带出第二个出口字段，
+   那是另一条断言（DECISION_MANY）要管的事，别混在这里 */
+const extra = [...A.tree, { ...A.tree.find((s) => s.skeletonKey === 'handover.client'), id: 'se.cash', skeletonKey: 'cash', goal: '备用金已结清' }]
 const extraCheck = checkGenerated({ tree: extra, prompt: resignPrompt, facts: tuina.facts })
 ok(extraCheck.ok && extraCheck.warnings.some((w) => w.code === 'SKELETON_EXTRA'), '不适用却生成了 → 只提醒，不拦')
 
@@ -161,9 +166,18 @@ const payOf = (emp = {}) => ({
 const ho = A.tree.find((s) => s.skeletonKey === 'handover.client')
 ok(ownerOfWay(ho.ways[0]).kind === 'role' && ownerOfWay(ho.ways[0]).role === 'store-manager', '客户交接的负责人是店长（核对签收的人）')
 ok((ho.ways[0].items || []).some((it) => (it.require || '').includes('员工本人')), '动手的人是员工本人：写在完成口径里，不占字段')
-const compSub = C.tree.find((s) => s.skeletonKey === 'compensation')
-ok(ownerOfWay(compSub.ways[0]).kind === 'person' && resolveOwner(ownerOfWay(compSub.ways[0])) === '周芸', '指定的人：负责人就是他本人，不按门店城市解析')
-ok(resolveOwner({ kind: 'role', role: 'hr' }, { city: '杭州' }) === '李文静', '角色的负责人仍按城市解析到人')
+const compSub = C.tree.find((s) => s.skeletonKey === 'comp.confirm')
+ok(ownerOfWay(compSub.ways[0]).kind === 'role' && ownerOfWay(compSub.ways[0]).role === 'hr', '补偿金固定在人事那一环确认（角色，按城市解析），不再另开一道财务节点')
+ok(resolveOwner(ownerOfWay(compSub.ways[0]), { city: '杭州' }) === '李文静', '角色的负责人仍按城市解析到人')
+const compFields = compSub.ways[0].items[0].fields
+ok(compFields.find((f) => f.key === 'compAmount')?.from === '结果：待执行补偿金已从补偿金系统取回 · 协商补偿金', '协商补偿金从「系统读回」那一格取，人不用再敲一遍')
+ok(!!compFields.find((f) => f.key === 'compProof' && f.required && /PDF/.test(f.formats || '')), '协商解除协议强制上传（PDF）—— 金额为 0 也要有凭证')
+ok(compFields.filter((f) => /常乐豆/.test(f.label || '')).length === 1, '常乐豆余额出口在这张表上只有一格')
+
+/* 判定项把取回的字段值随结论落库：下游（人事那一格）按字段名取，不用人重录 */
+const readSt = { state: 'checking', records: {} }
+runCheck({ emp: { empNo: 'T01660' }, subs: {} }, { ways: [{ type: 'system', sysKey: 'compPending', fetch: { maxRuns: 3 } }] }, readSt)
+ok(readSt.state === 'done' && readSt.records?.['sys.compPending']?.values?.compAmount === 26400, '系统读回的补偿金金额随结论落库，下游按字段取')
 
 const inst0 = createInstance({ eventKey: 'resign', emp: tuina, payload: payOf(tuina) })
 const mgr = { name: '刘丹', job: '店长', store: '上海徐汇店', city: '上海' }
@@ -343,13 +357,33 @@ ok(shape1 === shape2, '换一张申请单（日期 / 原因不同）→ 树的�
 /* ---------------- 提示词模板：骨架 → 生成时那段文本 ----------------
  * 模板不是给人看的说明，它就是要发给模型的那段；两条结构约束必须在里面，
  * 否则「一个子事件一个事项」「要凭证必传附件」只是口头约定。
+ *
+ * 但模板分两层，不能混：
+ *   第一层 renderTemplate = 人写的那部分（也是界面的「写作样板」）→ 一个 key 都没有；
+ *   第二层 renderForModel = 第一层 + 系统按骨架附的结构对齐表 → 生成时真正发出去的。
+ * 混在一起就是把内部命名当业务语言教给用户。
  */
 const tpl = renderTemplate(resignPrompt)
+const modelText = renderForModel(resignPrompt)
 ok(tpl.includes('一个子事件 = 一条结论 = 一个事项'), '模板里写明「一个子事件 = 一条结论 = 一个事项」')
 ok(tpl.includes('附件') && tpl.includes('必传 = 是'), '模板里写明要凭证的环节附件必传、并写允许格式')
 ok(tpl.includes('移交清单（附件 · 必传 · PDF / JPG / PNG）'), '骨架里的附件要求渲染成字段（含格式），不是一句话带过')
+
+/* 写作样板是给业务人员学的：里面不许出现任何 key —— 他写的是「人事经理」，不是 role: hr */
+ok(!/key[:：]/.test(tpl) && !/role[:：]/.test(tpl) && !/sysKey|actionKey/.test(tpl) && !/\[[a-z][\w.]*\]/.test(tpl), '写作样板里没有任何 key（子事件 / 角色 / 系统项 / 字段）—— 业务人员不用写 key')
+ok(tpl.includes('负责人 人事经理') || tpl.includes('人事经理｜'), '样板里负责人写的是角色名（人事经理），不是 role 标识')
+ok(tpl.includes('key 由系统按骨架分配'), '样板里明说 key 由系统给，不用人写')
+
+/* 系统附的对齐表：骨架里每个 key 都要在，模型才照抄得到 */
+const align = alignTextOf(resignPrompt)
+ok(resignPrompt.skeleton.every((s) => align.includes(`[${s.key}]`)), '对齐表覆盖骨架里每一条子事件的 key')
+ok(align.includes('owner.role = hr') && align.includes('sysKey = ') && align.includes('actionKey = '), '对齐表给出 role / sysKey / actionKey')
+const fieldKeys = resignPrompt.skeleton.flatMap((s) => (s.paths || []).flatMap((w) => (w.items || []).flatMap((it) => it.fields || [])))
+ok(fieldKeys.every((f) => align.includes(`${f.key}=`)), `对齐表覆盖全部字段 key（${fieldKeys.length} 个）`)
+ok(modelText.includes(ALIGN_HEAD) && modelText.includes(tpl), '发给模型的是两段：人写的模板 + 系统附的对齐表')
+
 const genMsgs = buildGenerateMessages({ prompt: resignPrompt, emp: previewPeople[0] })
-ok(genMsgs[1].content.includes(tpl), '生成时用的就是这段模板（所见即所发），不另拼一份')
+ok(genMsgs[1].content.includes(modelText), '生成时用的就是这段原文（所见即所发），不另拼一份')
 
 /* 结构约束真的在校验：一条结论挂两个事项 → 不合格 */
 const pv0 = composeFor({ prompt: resignPrompt, emp: previewPeople[0] })
@@ -361,14 +395,15 @@ const hacked = pv0.tree.map((s) => {
 const hackCheck = checkGenerated({ tree: hacked, prompt: resignPrompt, facts: previewPeople[0].facts })
 ok(!hackCheck.ok && hackCheck.errors.some((e) => e.code === 'ITEM_MANY'), '一条结论挂两个事项 → 判定不合格（与模板同一条判据）')
 
-/* 首次生成快照：起草那一次产出的清单留档，之后加的要能对出来 */
+/* 生成留档：定义页只调提示词、不改结果，所以留档必须与清单逐条一致（没有「后加 / 改过」） */
 const g0 = resignPrompt.firstGen.items
 const g0Added = resignPrompt.skeleton.filter((s) => !g0.some((x) => x.key === s.key)).length
 const g0Edited = resignPrompt.skeleton.filter((s) => {
   const x = g0.find((y) => y.key === s.key)
   return x && x.goal !== s.goal
 }).length
-ok(g0.length === 17 && g0Added === 4 && g0Edited === 2, '首次生成留了快照：17 条 → 现 21 条（后加 4、改过 2）')
+ok(g0.length === resignPrompt.skeleton.length && g0Added === 0 && g0Edited === 0,
+  `生成留档与清单一致：${g0.length} 条，无后加、无改过（定义页只读）`)
 
 /* ---------------- 12. 审核与回执：两个最容易「说不清」的地方 ---------------- */
 section('12. 审核是一条结论，回执要有字段')
@@ -457,6 +492,135 @@ const noFmt = pv0.tree.map((s) => {
   return { ...s, ways: [{ ...w, items: [{ ...w.items[0], fields }] }] }
 })
 ok(validateTree(noFmt, { checks, actions }).some((i) => i.code === 'FILE_NO_FORMAT' && i.level === 'error'), '附件没写允许格式 → 判错')
+
+/* ---------------- 常乐豆：意见只有一处，系统项只执行 ---------------- */
+section('13. 常乐豆：处理意见只有一处表达，系统项只写不判')
+
+const beanSub = resignPrompt.skeleton.find((s) => s.key === 'comp.push')
+ok(!!beanSub && /已写入/.test(beanSub.goal || ''), '骨架里有「把结论写给关联系统」的系统项')
+ok((beanSub.paths || []).every((w) => w.type === 'action'), '它是系统执行，不是人办 —— 不产生意见、不算钱')
+ok(!(beanSub.paths || []).some((w) => (w.items || []).length), '系统项不挂事项：没有让人填的表单')
+
+const payoutFields = resignPrompt.skeleton
+  .flatMap((s) => (s.paths || []).flatMap((w) => (w.items || []).flatMap((it) => (it.fields || []).filter((f) => f.key === 'beanPayout'))))
+ok(payoutFields.length === 1, `常乐豆余额出口在骨架里只有一处（现在 ${payoutFields.length} 处）`)
+ok(payoutFields[0]?.label === '常乐豆余额出口', `出口字段名点到是哪一笔钱（现在叫「${payoutFields[0]?.label}」）`)
+
+const vagueSk = {
+  ...resignPrompt,
+  skeleton: resignPrompt.skeleton.map((s) => (s.key !== 'comp.confirm' ? s : {
+    ...s,
+    paths: s.paths.map((w) => ({
+      ...w,
+      items: (w.items || []).map((it) => ({ ...it, fields: (it.fields || []).map((f) => (f.key === 'beanPayout' ? { ...f, label: '款项出口' } : f)) }))
+    }))
+  }))
+}
+ok(validateSkeleton(vagueSk).some((x) => x.code === 'DECISION_VAGUE' && x.level === 'error'), '字段只写「款项出口」这种泛称 → 发布前就拒（DECISION_VAGUE）')
+
+const dupSk = {
+  ...resignPrompt,
+  skeleton: resignPrompt.skeleton.map((s) => (s.key !== 'review' ? s : {
+    ...s,
+    paths: s.paths.map((w) => ({
+      ...w,
+      items: (w.items || []).map((it) => ({ ...it, fields: [...(it.fields || []), { key: 'beanPayout', label: '常乐豆余额出口', type: 'select', required: true }] }))
+    }))
+  }))
+}
+ok(validateSkeleton(dupSk).some((x) => x.code === 'DECISION_MANY' && x.level === 'error'), '第二处「常乐豆余额出口」→ 发布前就拒（DECISION_MANY）')
+
+/* 涉补偿的人树上才有那一处「常乐豆余额出口」，要在别处再加一个才构成两处 */
+const sevPerson = previewPeople.find((p) => p.facts?.severance) || previewPeople[0]
+const sevTree = composeFor({ prompt: resignPrompt, emp: sevPerson }).tree
+const dupTree = sevTree.map((s) => (s.skeletonKey !== 'review.city' ? s : {
+  ...s,
+  ways: [{
+    type: 'human',
+    owner: { kind: 'role', role: 'cityHead' },
+    items: [{ id: 'it.dup', title: '又设一个出口', require: '无可核对口径', fields: [{ key: 'beanPayout', label: '常乐豆余额出口', type: 'select', required: true }] }]
+  }]
+}))
+ok(checkGenerated({ tree: dupTree, prompt: resignPrompt, facts: sevPerson.facts }).errors.some((e) => e.code === 'DECISION_MANY'), '模型多长一个出口 → 生成自检也拦')
+
+ok(/常乐豆余额的处置意见只能有一处表达/.test(resignPrompt.body || ''), '口径里写死：常乐豆余额处置意见只有一处表达')
+ok(renderTemplate(resignPrompt).includes('同一个处置意见只能有一处表达'), '模板里带这条结构约束（发给模型的就是这一段）')
+
+/* 选项类字段：可选值必须登记在字段上，不能只写在说明文字里 —— 界面按 options 出下拉 */
+const optFields = resignPrompt.skeleton
+  .flatMap((s) => (s.paths || []).flatMap((w) => (w.items || []).flatMap((it) => (it.fields || []).filter((f) => f.type === 'select' || f.type === 'multiselect'))))
+ok(optFields.length >= 4 && optFields.every((f) => Array.isArray(f.options) && f.options.length >= 2), `选项类字段都登记了可选取值（${optFields.length} 个，含离职原因 / 常乐豆余额出口 / 外观状态 / 面谈结论）`)
+ok(renderForModel(resignPrompt).includes('可选：并入一次性补偿金 / 并入当期薪金'), '发给模型的可选值原样带上，不用模型自己编选项')
+
+/* ---------------- 14. 三套场景模板：同一套写法搬到别的事件 ----------------
+ * 这一段回答的是「这套东西是不是只会写离职」：
+ * 换三件事，契约、生成器、字段与路径构造器一条不改，只换「必须交出什么结论」。
+ */
+section('14. 转正 / 调岗 / 调薪：同一套写法搬到别的事件')
+
+const scenes = seedEvents.filter((e) => e.key !== 'resign')
+ok(scenes.length === 3, `事件目录里有三套场景模板（${scenes.map((e) => `${e.name} ${e.skeleton.length} 条`).join('、')}）`)
+
+scenes.forEach((ev) => {
+  const skErr = validateSkeleton(ev).filter((x) => x.level === 'error')
+  const evErr = validateEvent(ev).filter((x) => x.level === 'error')
+  ok(!skErr.length && !evErr.length, `「${ev.name}」发布前 0 个不合规错误（骨架 ${ev.skeleton.length} 条）`)
+  ok(unknownPayloadOf(ev.trigger).length === 0, `「${ev.name}」的载荷只挑了登记过的字段`)
+  ok(eventPoints.some((p) => p.key === ev.trigger.eventPoint), `「${ev.name}」的触点在登记表里（${ev.trigger.eventPoint}）`)
+  ok(alignTextOf(ev).includes(`[${ev.skeleton[0].key}]`), `「${ev.name}」也有结构对齐表，模型不用猜 key`)
+})
+
+/* 发起只到「期望」：发起侧能填的字段，名字一律是「期望 ××」；确定口径的字段只能在人办结论里
+   —— 生效日期、调入门店、核定月薪、评估结论都不该出现在发起表单上，那是后面的人拍的板 */
+scenes.forEach((ev) => {
+  const typed = payloadPlanOf(ev.trigger).filter((f) => f.use === 'bind')
+  ok(typed.length > 0 && typed.every((f) => /^期望/.test(f.label)), `「${ev.name}」发起页只填期望值（${typed.map((f) => f.label).join('、')}）`)
+})
+ok(payloadPlanOf(raiseEvent.trigger).every((f) => f.key !== 'proposedSalary'), '调薪发起不填建议月薪：金额是城市总那条建议的字段')
+ok(payloadPlanOf(transferEvent.trigger).every((f) => f.key !== 'toJob'), '调岗发起不填调入岗位：岗位由城市总核定')
+ok(payloadPlanOf(regularEvent.trigger).every((f) => f.key !== 'verdict'), '转正发起不填评估结论：评估结论是直属上级那条结论的字段')
+
+/* 期望值只是预填：处理人打开那张表就看到它，改不改由他定（不是替他拍板） */
+const tfCity = composeFor({ prompt: transferEvent, emp: previewPeople[0] }).tree.find((s) => s.skeletonKey === 'review.city')
+prefillTree([tfCity], { expectDate: '2026-11-10' })
+const tfFields = tfCity.ways[0].items[0].fields
+ok(tfFields.find((f) => f.key === 'effectDate')?.prefill === '2026-11-10', '调岗：期望生效日期预填到城市总的「实际生效日期」，由他核定')
+ok(tfFields.find((f) => f.key === 'toStore')?.prefill === undefined, '调岗：调入门店不预填 —— 发起人没填过它，城市总自己定')
+
+const rsHr = composeFor({ prompt: raiseEvent, emp: previewPeople[0] }).tree.find((s) => s.skeletonKey === 'review.hr')
+prefillTree([rsHr], { expectMonth: '2026-12' })
+ok(rsHr.ways[0].items[0].fields.find((f) => f.key === 'effectiveMonth')?.prefill === '2026-12', '调薪：期望生效月份预填到人事的「生效月份」，由他核定')
+
+/* 转正：只对试用期的人存在；带团队才多一条团队评估 */
+const chen = previewPeople.find((p) => p.name === '陈思远')
+ok(chen && chen.employType === '试用', '预览池里有试用期的人 —— 不然「转正」这套根本没法试跑')
+ok(!scopeHit(regularEvent.scope, previewPeople[0]), '转正的人群不命中全职的人：张三不在覆盖里')
+const rg = composeFor({ prompt: regularEvent, emp: chen })
+ok(rg.tree.length === 8 && rg.dropped.some((d) => d.key === 'eval.team'), '转正 · 陈思远（不带团队）→ 8 条：团队评估按事实不长')
+ok(rg.check.ok, '转正 · 生成自检通过（两级审核 + 合同签署 + 权限/档案/薪酬）')
+
+/* 调岗：同一个人换一处事实，树就跟着变 */
+const liu = previewPeople.find((p) => p.name === '刘丹')
+const tf1 = composeFor({ prompt: transferEvent, emp: previewPeople[0] })
+const tf2 = composeFor({ prompt: transferEvent, emp: liu })
+ok(tf1.tree.length === 9 && tf1.dropped.some((d) => d.key === 'handover.cash'), '调岗 · 张三（不保管备用金）→ 9 条，现金结清不长')
+ok(tf2.tree.length === 10 && tf2.tree.some((s) => s.skeletonKey === 'handover.cash'), '调岗 · 刘丹（店长管备用金）→ 10 条：差异只来自事实')
+ok(tf1.check.ok && tf2.check.ok, '调岗两种人都过自检')
+
+/* 调薪：金额只有一个口径 —— 与常乐豆出口同一条判据，不用另写一套 */
+const rs = composeFor({ prompt: raiseEvent, emp: previewPeople[0] })
+ok(rs.tree.length === 6 && rs.check.ok, '调薪 → 6 条（提议 / 核定 / 审批 / 生效 / 签署 / 归档）')
+const salFields = raiseEvent.skeleton
+  .flatMap((s) => (s.paths || []).flatMap((w) => (w.items || []).flatMap((it) => (it.fields || []).filter((f) => f.key === 'approvedSalary'))))
+ok(salFields.length === 1, '核定月薪在骨架里只有一处（总经理那一关不能再录一遍）')
+const dupRaise = {
+  ...raiseEvent,
+  skeleton: raiseEvent.skeleton.map((s) => (s.key !== 'review.gm' ? s : {
+    ...s,
+    paths: s.paths.map((w) => ({ ...w, items: (w.items || []).map((it) => ({ ...it, fields: [...(it.fields || []), { key: 'approvedSalary', label: '核定月薪', type: 'number' }] })) }))
+  }))
+}
+ok(validateSkeleton(dupRaise).some((x) => x.code === 'DECISION_MANY' && x.level === 'error'), '第二处「核定月薪」→ 发布前就拒（同一条 DECISION_MANY）')
 
 console.log(fail ? `\n${fail} 项断言失败` : '\n全部通过')
 process.exit(fail ? 1 : 0)

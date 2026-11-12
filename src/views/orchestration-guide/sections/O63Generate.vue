@@ -133,7 +133,7 @@
 
       <h3 id="orch-63-6">6.3.6 同一套定义，三个人长出三棵树</h3>
       <p class="doc-p">
-        下面三个人用<strong>同一套</strong>离职定义（清单 21 条、必过 18 条），差别只在取回的事实。这才是「定义一次、按人生成」的实际形状：
+        下面三个人用<strong>同一套</strong>离职定义（清单 22 条、必过 20 条），差别只在取回的事实。这才是「定义一次、按人生成」的实际形状：
       </p>
       <table class="data-table">
         <thead>
@@ -148,27 +148,29 @@
           <tr>
             <td><strong>张三</strong><br /><span class="mono">推拿师</span></td>
             <td>在跟客户 4 · 在办事项 2 · 资产含 AACB · 欠款 320 · 账号 4 个</td>
-            <td><strong>18 条</strong><br /><span class="tag-opt">裁掉 3</span></td>
-            <td>团队与在管门店已交接（不带团队）· 备用金与收银现金已结清（不保管备用金）· 补偿金金额与协议已确认（不涉补偿）</td>
+            <td><strong>17 条</strong><br /><span class="tag-opt">裁掉 5</span></td>
+            <td>团队与在管门店已交接（不带团队）· 备用金与收银现金已结清（不保管备用金）· 补偿金三条（不涉补偿）</td>
           </tr>
           <tr>
             <td><strong>刘丹</strong><br /><span class="mono">店长</span></td>
             <td>在跟客户 3 · 带团队 5 人 · 备用金 2000 · 无欠款 · 无 AACB</td>
-            <td><strong>17 条</strong><br /><span class="tag-opt">裁掉 4</span></td>
-            <td>AACB 已交还并验收（名下无 AACB）· 欠款与借款已结清、财务台账侧无未结清负债（无欠款）· 补偿金…（不涉补偿）</td>
+            <td><strong>16 条</strong><br /><span class="tag-opt">裁掉 6</span></td>
+            <td>AACB 已交还并验收（名下无 AACB）· 欠款与借款已结清、财务台账侧无未结清负债（无欠款）· 补偿金三条（不涉补偿）</td>
           </tr>
           <tr>
             <td><strong>杨春燕</strong><br /><span class="mono">城市总</span></td>
             <td>不带客户 · 带团队 9 人 · 无资产异常 · 无欠款 · 无客诉 · 涉补偿</td>
-            <td><strong>15 条</strong><br /><span class="tag-opt">裁掉 6</span></td>
-            <td>在跟客户已交接完毕 · AACB 已交还并验收 · 备用金… · 欠款与借款、财务台账负债 · 无未完结客诉与纠纷</td>
+            <td><strong>16 条</strong><br /><span class="tag-opt">裁掉 6</span></td>
+            <td>在跟客户已交接完毕 · AACB 已交还并验收 · 备用金与收银现金已结清 · 欠款与财务台账两条 · 无未完结客诉与纠纷</td>
           </tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>这张表就是本版的核心论据：</strong>同一套提示词，三个人相差 3 条子事件 ——
+        <strong>这张表就是本版的核心论据：</strong>同一套提示词，三个人长出的树<strong>差在哪几条、为什么差</strong>都能逐条说清 ——
         不是谁写了两份流程，也不是谁在图上加了分支，而是<strong>事实不同</strong>。
-        而且每一条「没有」都能指名道姓说清是哪个事实为假，不需要人去解释。
+        条数也不按岗位递增：张三 17 条、刘丹与杨春燕各 16 条，缺的<strong>却不是同一批</strong> ——
+        杨春燕有补偿金三条与团队，却没有客户、AACB、备用金与欠款台账；刘丹正好反过来，有客户、AACB、备用金，没有补偿金。
+        每一条「没有」都能指名道姓说清是哪个事实为假，不需要人去解释。
       </div>
     </div>
   </DocShell>
@@ -179,11 +181,12 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
+  { id: 'orch-63', label: '6.3 子事件生成' },
   { id: 'orch-63-1', label: '6.3.1 模型只参与一次' },
   { id: 'orch-63-2', label: '6.3.2 事实两层' },
   { id: 'orch-63-3', label: '6.3.3 三条生成规则' },
   { id: 'orch-63-4', label: '6.3.4 位次由前置推导' },
-  { id: 'orch-63-5', label: '6.3.5 每一单自带一份' },
+  { id: 'orch-63-5', label: '6.3.5 每单自带一份' },
   { id: 'orch-63-6', label: '6.3.6 三个人、三棵树' }
 ]
 

@@ -11,6 +11,7 @@
           hide-on-click-modal
           fit="cover"
           class="ds-img"
+          :style="imgHeight ? { height: `${imgHeight}px` } : null"
           :alt="img.label"
         />
         <span v-if="img.label" class="ds-cap">{{ img.label }}</span>
@@ -32,8 +33,10 @@ import { computed } from 'vue'
 const props = defineProps({
   images: { type: Array, required: true }, // [{ src, label? }]
   label: { type: String, default: '功能页面示例' },
-  mode: { type: String, default: 'desktop' } // desktop | phone（移动端截图用竖版窄图）
+  mode: { type: String, default: 'desktop' }, // desktop | phone（移动端截图用竖版窄图）
+  height: { type: Number, default: 0 } // 不传则用默认高度（桌面 200 / 移动 400）；弹窗类截图可传大一点，避免被裁掉下半截
 })
+const imgHeight = computed(() => props.height || 0)
 
 const srcList = computed(() => props.images.map(i => i.src))
 </script>

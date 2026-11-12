@@ -18,6 +18,22 @@
  */
 export const docGroups = [
   {
+    key: 'hr-center',
+    label: '人事中心',
+    desc: '排班这件事的对象怎么分：容器承接什么、时段说什么、谁能占由谁定',
+    docs: [
+      {
+        gateId: 'doc-hr-center',
+        title: '排班策略 · 产品需求说明',
+        meta: 'v3.0 基线 · 2026-11-12',
+        desc: '四岗位现行排班现状 + 架构对比（一条策略装四件事 vs 四层各管一件事）+ v3 框架：容器 → 时段 → 获取规则 → 排班结果表',
+        scope: '7 章 + 5 个功能章节',
+        updated: '2026-11-12',
+        path: '/docs/hr-schedule'
+      }
+    ]
+  },
+  {
     key: 'payroll',
     label: '模块化薪酬',
     desc: '薪酬项怎么配、钱怎么算出来、工资条怎么组装',
@@ -47,6 +63,15 @@ export const docGroups = [
         scope: '单页',
         updated: '2026-05-22',
         path: '/docs/product-v1'
+      },
+      {
+        gateId: 'doc-general-param',
+        title: '通用参数（升级）',
+        meta: 'v1.0 · 2026-11-10',
+        desc: '会变的数字从公式里搬出来：参数存数据、引用处定怎么取；含保底时薪与客次单价的配置示例',
+        scope: '7 章 + 3 个功能章节',
+        updated: '2026-11-10',
+        path: '/docs/general-param'
       }
     ]
   },
@@ -119,9 +144,11 @@ export const docGroups = [
     docs: [
       {
         gateId: 'doc-parttime-account-manager',
-        title: '非全客户经理任务体系',
-        desc: '非全客户经理从需求配置、任务生成、移动端承接到运营跟踪的业务宣讲与产品需求总览',
-        scope: '2 节',
+        title: '非全客户经理 · 产品需求说明',
+        meta: 'v1.0 · 2026-11-05',
+        desc: '门店按「周 × 时段 × 名额」提需求，周四定时或手动发布任务，移动端承接与打卡，Web 跟踪，薪酬按门店主体读取保底时薪（保底金额 = 打卡有效工时 × 时薪）与单价；含三层对象、六类来源与全局流程图',
+        scope: '7 章 + 8 个功能章节',
+        updated: '2026-11-06',
         path: '/docs/parttime-account-manager'
       }
     ]

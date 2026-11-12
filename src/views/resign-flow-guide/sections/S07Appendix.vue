@@ -134,7 +134,7 @@ const openIssues = [
 ]
 
 const tocItems = [
-  { id: 'rf-issues', label: '附录：待决事项' }
+  { id: 'rf-issues', label: '七、附录：待决事项' }
 ]
 
 const breadcrumbs = [

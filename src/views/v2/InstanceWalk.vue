@@ -8,11 +8,30 @@
         </div>
       </div>
 
+      <div class="ev-tabs">
+        <button
+          v-for="t in evTabs"
+          :key="t.key"
+          :class="['ev-tab', { on: evFilter === t.key }]"
+          @click="evFilter = t.key"
+        >
+          {{ t.label }}<em>{{ t.n }}</em>
+        </button>
+      </div>
+
       <div class="section-card">
-        <el-table :data="v2state.instances" size="small" row-key="id" @row-click="open">
-          <el-table-column label="单号" width="160">
+        <el-table :data="shown" size="small" row-key="id" @row-click="open">
+          <el-table-column label="单号" width="132">
             <template #default="{ row }">
               <span class="code">{{ row.code }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="事件" width="128">
+            <template #default="{ row }">
+              <div class="ev-cell">
+                <span :class="['ev-chip', eventTone(row)]">{{ eventName(row) }}</span>
+                <span class="ev-by">{{ entryOf(row) }}</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column label="员工" min-width="150">
@@ -23,11 +42,13 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="用工 / 期望离职" width="150">
+          <el-table-column label="这一单带进来的" min-width="200">
             <template #default="{ row }">
-              <div class="emp-cell">
-                <span class="en">{{ row.emp.employType }}</span>
-                <span class="ed">{{ row.emp.expectDate }}</span>
+              <div class="pay-cell">
+                <span v-if="!payloadSummary(row).length" class="ed">没有登记值</span>
+                <span v-for="p in payloadSummary(row)" :key="p.label" class="pv">
+                  <i>{{ p.label }}</i>{{ p.text }}
+                </span>
               </div>
             </template>
           </el-table-column>
@@ -70,6 +91,7 @@
       <div class="topbar">
         <el-button link size="small" :icon="Back" @click="close">事件数据</el-button>
         <h1>{{ inst.code }}</h1>
+        <span :class="['ev-chip', eventTone(inst)]">{{ eventName(inst) }}</span>
         <span :class="['st-chip', inst.state]">{{ instStateLabel(inst.state) }}</span>
         <span class="who">{{ inst.emp.name }} · {{ inst.emp.job }} · {{ inst.emp.store }}</span>
         <span class="spacer" />
@@ -230,6 +252,48 @@ const route = useRoute()
 const router = useRouter()
 
 const inst = computed(() => (route.query.id ? getInstance(route.query.id) : null))
+
+/* ---------------- 这是哪件事 ----------------
+ * 一张单最先要回答的不是「给谁办的」，是「办的是哪件事」——
+ * 四套事件共用一张表，不标出来就只能靠单号前缀猜。
+ */
+const EV_TONE = { resign: 'red', regular: 'purple', transfer: 'blue', raise: 'green' }
+const eventOf = (row) => (row ? getEvent(row.eventKey) : null)
+const eventName = (row) => eventOf(row)?.name || row?.eventKey || '未归类'
+const eventTone = (row) => EV_TONE[row?.eventKey] || 'gray'
+/** 这一单是按哪一版的触点开的：同详情页，版本钉住就不能按新模板解释旧单 */
+const triggerOf = (row) => {
+  const e = eventOf(row)
+  if (!e) return {}
+  const snap = (e.versions || []).find((v) => v.v === row.version)
+  return snap?.trigger || e.trigger || {}
+}
+/** 入口只取第一段：「员工自助端 · 我的 · 离职申请」在 128px 里装不下也不必要 */
+const entryOf = (row) => String(triggerOf(row).entry || '').split(' · ')[0] || '—'
+
+/** 这一单触发时真带进来的值（登记表里有、这一单给了的才占位置）。
+ *  单号与工号不在这里重复一遍：单号是第一列、工号跟着员工名走，
+ *  列表要回答的是「这件事带了什么条件进来」，不是把单据再抄一遍。 */
+const payloadSummary = (row) => payloadPlanOf(triggerOf(row))
+  .filter((f) => !f.auto && f.role !== 'empNo')
+  .map((f) => ({ label: f.label, text: payloadTextOf(f, row?.payload?.[f.key]) }))
+  .filter((p) => p.text !== '')
+
+const evFilter = ref('all')
+const evTabs = computed(() => {
+  const n = {}
+  v2state.instances.forEach((i) => { n[i.eventKey] = (n[i.eventKey] || 0) + 1 })
+  const tabs = [{ key: 'all', label: '全部', n: v2state.instances.length }]
+  Object.keys(n).forEach((k) => {
+    const ev = getEvent(k)
+    tabs.push({ key: k, label: ev?.name || k, n: n[k] })
+  })
+  return tabs
+})
+const shown = computed(() => (evFilter.value === 'all'
+  ? v2state.instances
+  : v2state.instances.filter((i) => i.eventKey === evFilter.value)))
+
 /** 这一单钉住的是哪一版、那一版什么时候生效的 */
 const verAt = (i) => {
   const ev = getEvent(i.eventKey)
@@ -248,8 +312,10 @@ const resolved = computed(() => (inst.value ? resolveForInstance(inst.value) : {
 const sorted = computed(() => topoSort(resolved.value.tree))
 const mustCount = computed(() => sorted.value.filter((s) => s.gate !== 'optional').length)
 
-/** 这一单触发时带进来的值：按登记顺序显示；这一单没带的不占位置 */
+/** 这一单触发时带进来的值：按登记顺序显示；这一单没带的不占位置。
+ *  单号（auto）与工号（role: empNo）不重复列 —— 顶栏已有，这里只留业务条件 */
 const payloadItems = computed(() => payloadPlanOf(evTrigger.value || {})
+  .filter((f) => !f.auto && f.role !== 'empNo')
   .map((f) => ({ ...f, value: inst.value?.payload?.[f.key] }))
   .filter((f) => f.value !== undefined && f.value !== null && String(f.value).trim() !== '')
   .map((f) => ({ key: f.key, label: f.label, raw: payloadTextOf(f, f.value) })))
@@ -348,6 +414,27 @@ function close () {
 .section-card { background: #fff; border: 1px solid #ececf0; border-radius: 12px; padding: 14px 16px; }
 .section-card :deep(.el-table__row) { cursor: pointer; }
 .code { font-size: 11.5px; font-family: ui-monospace, monospace; color: #534ab7; }
+
+/* 事件筛选：一眼看出这张表里都有哪几件事、各几张 */
+.ev-tabs { flex: none; display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.ev-tab { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px; border: 1px solid #ececf0; border-radius: 8px; background: #fff; color: #6a6a75; font-size: 12px; cursor: pointer; transition: .15s; }
+.ev-tab em { font-style: normal; font-size: 10.5px; color: #b0aebe; }
+.ev-tab:hover { border-color: #dcd8e8; color: #2b2b33; }
+.ev-tab.on { border-color: #d6d0ef; background: #f4f2fd; color: #4b3fa8; }
+.ev-tab.on em { color: #7a6fd0; }
+
+.ev-cell { display: flex; flex-direction: column; gap: 2px; }
+.ev-chip { align-self: flex-start; font-size: 11px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
+.ev-chip.red { color: #a40035; background: #fdeef4; }
+.ev-chip.purple { color: #4b3fa8; background: #eeedfe; }
+.ev-chip.blue { color: #2f6fa8; background: #e8f1fa; }
+.ev-chip.green { color: #0f6e56; background: #e1f5ee; }
+.ev-chip.gray { color: #6a6a75; background: #f2f1f5; }
+.ev-by { font-size: 10.5px; color: #b0aebe; }
+
+.pay-cell { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.pv { font-size: 11.5px; color: #4a4a55; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.pv i { font-style: normal; font-size: 10.5px; color: #a3a0a1; margin-right: 4px; }
 .emp-cell { display: flex; flex-direction: column; }
 .en { font-size: 12.5px; color: #2b2b33; }
 .en em { font-style: normal; font-size: 11px; color: #a3a0a1; }

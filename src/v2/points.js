@@ -19,7 +19,7 @@ export const eventPoints = [
     source: '员工自助端',
     entry: '员工自助端 · 我的 · 离职申请',
     payload: [
-      /* 只列员工在这一步真会产生的值。常乐豆、补偿、款项出口这些是审核环节才补的，
+      /* 只列员工在这一步真会产生的值。常乐豆余额出口、补偿这些是审核环节才补的，
          不放发起登记 —— 发起时既不该让员工看，也不该指望对岸这时就发过来 */
       /* 申请单号不由员工填：提交时系统按「RQ+日期+流水」生成（auto 标记，发起页不出输入框） */
       { key: 'applyNo', label: '申请单号', type: 'text', required: true, auto: true },
@@ -56,10 +56,12 @@ export const eventPoints = [
     source: '员工自助端',
     entry: '员工自助端 · 我的 · 调岗申请',
     payload: [
-      { key: 'applyNo', label: '申请单号', type: 'text', required: true },
+      { key: 'applyNo', label: '申请单号', type: 'text', required: true, auto: true },
       { key: 'empId', label: '员工工号', type: 'text', required: true, role: 'empNo' },
-      { key: 'toStore', label: '调入门店', type: 'enum', required: true, options: ['上海徐汇店', '上海静安店', '杭州西湖店', '杭州滨江店'] },
-      { key: 'effectDate', label: '生效日期', type: 'date', required: true, default: 'today+30d' }
+      /* 申请人只说「想什么时候调」，去哪、什么岗位、实际哪天生效都由后续子事件的人核定 ——
+         发起时让员工自己挑门店与日期，等于把审核人的判断提前替他做了 */
+      { key: 'toStore', label: '期望调入门店', type: 'enum', required: false, options: ['上海徐汇店', '上海静安店', '杭州西湖店', '杭州滨江店'], note: '员工意向，可空；调入门店由城市总核定' },
+      { key: 'expectDate', label: '期望生效日期', type: 'date', required: true, default: 'today+30d', note: '员工自己填的期望日期，实际生效日期由城市总核定' }
     ]
   },
   {
@@ -68,9 +70,23 @@ export const eventPoints = [
     source: 'HR 后台',
     entry: 'HR 后台 · 员工档案 · 发起转正',
     payload: [
+      { key: 'applyNo', label: '申请单号', type: 'text', required: true, auto: true },
       { key: 'empId', label: '员工工号', type: 'text', required: true, role: 'empNo' },
-      { key: 'expireDate', label: '试用到期日', type: 'date', required: true },
-      { key: 'verdict', label: '评估结论', type: 'enum', required: true, options: ['通过', '延长试用', '不通过'] }
+      /* 试用到期日是档案里的事实，不由发起人重录；评估结论属于直属上级那条评估，不在这里 */
+      { key: 'expireDate', label: '试用到期日', type: 'date', required: false, note: '档案带出' },
+      { key: 'expectDate', label: '期望转正日期', type: 'date', required: false, note: '意向，可空；转正日期由城市总核定' }
+    ]
+  },
+  {
+    key: 'salary.adjust.submitted',
+    label: '调薪建议提交',
+    source: 'HR 后台',
+    entry: 'HR 后台 · 薪酬 · 发起调薪',
+    payload: [
+      { key: 'applyNo', label: '申请单号', type: 'text', required: true, auto: true },
+      { key: 'empId', label: '员工工号', type: 'text', required: true, role: 'empNo' },
+      /* 发起只到「希望什么时候调」为止：现月薪由城市总在建议里写，核定月薪在人事那一关定 */
+      { key: 'expectMonth', label: '期望生效月份', type: 'text', required: true, note: 'YYYY-MM；实际生效月份由人事核定' }
     ]
   }
 ]

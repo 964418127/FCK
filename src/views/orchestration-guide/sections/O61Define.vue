@@ -2,7 +2,7 @@
   <DocShell
     :toc-items="tocItems"
     title="6.1 事件定义（配置）"
-    subtitle="一次定义：管谁、提示词怎么写、子事件清单长什么样、从哪触发、带什么进来 —— 定义期只描述「必须交出什么」，不生成任何一单"
+    subtitle="一次定义：管谁、提示词怎么写、从哪触发、带什么进来，最后是这套提示词对标准人生出来的子事件清单 —— 定义页只调提示词，清单只读，不在这里改任何一条"
     version="v0.1"
     date="2026-10-30"
     :breadcrumbs="breadcrumbs"
@@ -13,7 +13,7 @@
         <DocCopyButton section-id="orch-61" />
       </div>
 
-      <div class="func-entry"><strong>功能入口：</strong>Web → 事件管理（列表：新建、改版、停用）→「起草新事件」或行内「编辑」→ 事件定义页（四段：管谁 / 提示词 / 子事件 / 怎么触发）</div>
+      <div class="func-entry"><strong>功能入口：</strong>Web → 事件管理（列表：新建、改版、停用）→「起草新事件」或行内「编辑」→ 事件定义页（四段：管谁 / 提示词 / 怎么触发 / 子事件）</div>
 
       <div class="note">
         <strong>本章怎么读：</strong>6.1.1 是起草方式（怎么从一段话走到一套定义），6.1.2–6.1.8 是定义页的四段与校验。
@@ -23,8 +23,8 @@
 
       <DocScreens
         :images="[
-          { src: eventsShot, label: '事件管理：一行一个事件 —— 适用条件（按档案判定，人数是估算）、触点、要办的事（21 条 / 其中必过 18 条）、第几版、状态' },
-          { src: promptShot, label: '事件定义页：四段竖着读下来 —— 管谁（条件）→ 提示词（口径）→ 子事件（21 条，标首次/后加/改过）→ 怎么触发' },
+          { src: eventsShot, label: '事件管理：一行一个事件 —— 适用条件（按档案判定，人数是估算）、触点、要办的事（22 条 / 其中必过 20 条）、第几版、状态' },
+          { src: promptShot, label: '事件定义页：四段竖着读下来 —— 管谁（条件）→ 提示词（口径）→ 怎么触发（触点与带入字段）→ 子事件（22 条只读，每条下面是它那张表单的预览）' },
           { src: composeShot, label: '起草：一段话说清这件事，Agent 查事实、问缺口，确认单在对话里逐步成形；输入框上方常驻「写作样板」' }
         ]"
       />
@@ -42,7 +42,7 @@
           <tr><td><strong>读这段话</strong></td><td>复述它理解到的这件事（一句话），逐条列出它打算拆成哪些结论</td><td>看复述对不对，不对就补一句</td></tr>
           <tr><td><strong>问缺口</strong></td><td>按「必答 / 建议」两级提问，每个问题写清<strong>为什么问</strong>、可选答案是什么</td><td>选项点选或写一句；建议级可以「先不管」</td></tr>
           <tr><td><strong>出确认单</strong></td><td>给出三段：<strong>触点</strong>（从哪来、带什么进来）、<strong>人群</strong>（管谁、约多少人）、<strong>子事件</strong>（每条的结论、门禁、前置、负责人、字段）</td><td>逐段核对；有阻塞项时不能发布</td></tr>
-          <tr><td><strong>定稿</strong></td><td>把确认单落成一套定义（第 1 版）</td><td>进定义页继续细改，或直接在事件管理里看到它</td></tr>
+          <tr><td><strong>定稿</strong></td><td>把确认单落成一套定义（第 1 版）</td><td>进定义页核对生成结果；不对就改提示词再跑一次 —— 那里不提供「改某一条结论」</td></tr>
         </tbody>
       </table>
       <div class="note">
@@ -92,7 +92,7 @@
 
       <h3 id="orch-61-4">6.1.4 提示词的五条结构约束</h3>
       <p class="doc-p">
-        口径之外，还有五条<strong>不随事件变化</strong>的约束，直接写进发给模型的那段话里，逐条都能被校验（见 6.1.6）：
+        口径之外，还有五条<strong>不随事件变化</strong>的约束，直接写进发给模型的那段话里，逐条都能被校验（见 6.1.7）：
       </p>
       <table class="data-table">
         <thead>
@@ -111,46 +111,10 @@
         版本的作用只有一个：说清「这一单是按哪一版生成的」。在途单不受影响。
       </div>
 
-      <h3 id="orch-61-5">6.1.5 子事件清单：六列</h3>
+      <h3 id="orch-61-5">6.1.5 怎么触发：触点</h3>
       <p class="doc-p">
-        第三段是这件事<strong>必须交出的结论清单</strong>。一行一条，六列固定：
+        第三段回答「这件事从哪进来、带什么进来」。触点只有两类，写法由<strong>登记</strong>决定，不由定义页随意填。
       </p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 130px;">列</th><th style="width: 230px;">写什么</th><th>注意</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>结论</strong></td><td>一句可判定的达成状态</td><td>不带句号、不写动作；能回答「做到没有」</td></tr>
-          <tr><td><strong>什么时候要</strong></td><td>前置（需等哪几条已办结）</td><td>不写 = 触发后即可办；写了 = 全部办结后才能办</td></tr>
-          <tr><td><strong>是否必过</strong></td><td>必过 / 可选</td><td>默认必过；可选只记录、仍解锁下游</td></tr>
-          <tr><td><strong>谁给结论</strong></td><td>角色（人办理时）或「系统执行 / 系统判定」</td><td>写角色不写人名，触发时按组织解析到人</td></tr>
-          <tr><td><strong>要交什么</strong></td><td>事项 + 字段（含附件格式）</td><td>只收办完时要说清的东西，不是「多填点没坏处」</td></tr>
-          <tr><td><strong>路径</strong></td><td>人办理 / 系统判定 / 系统执行 / 外部回执</td><td>一条只留一种，不给「人工兜底」并列</td></tr>
-        </tbody>
-      </table>
-      <p class="doc-p">
-        <strong>首次生成留档：</strong>第一次由模型产出的那份清单会被留档，之后每一条都带标记 ——
-        <strong>首次</strong>（第一次就有）、<strong>后加</strong>（人后来补的）、<strong>改过</strong>（首次有、后来改了口径）。
-        这样能回答一个具体问题：「哪几条是提示词给的，哪几条是人补的」。人补的多了，说明提示词该改，而不是继续在清单上堆。
-      </p>
-
-      <h3 id="orch-61-6">6.1.6 发布前必过的校验</h3>
-      <p class="doc-p">定义保存前跑一遍校验，<strong>错误必须改完才能发布</strong>，提醒可以带着发（会显示但不拦）：</p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 90px;">级别</th><th style="width: 240px;">检查</th><th>不通过说明什么</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>错误</strong></td><td>结论写成了动作（「审核」「交接」「处理」）</td><td>判不出达成没有，下游永远不知道这条算不算完</td></tr>
-          <tr><td><strong>错误</strong></td><td>一个子事件挂了两个以上事项，或有人办路径却没写事项</td><td>前者判不清，后者办事的人不知道要交什么</td></tr>
-          <tr><td><strong>错误</strong></td><td>附件字段没写允许格式</td><td>交上来打不开，等于没交</td></tr>
-          <tr><td><strong>错误</strong></td><td>必过项写了外部回执，却没有回执字段</td><td>我方只能等一句「已完成」，等不到可判定的值（见 6.5.5）</td></tr>
-          <tr><td><strong>错误</strong></td><td>前置指向了不存在的条目（悬空）</td><td>这一条永远不会解锁</td></tr>
-          <tr><td><strong>提醒</strong></td><td>事项没有任何字段；附件是选填；审核结论没有「意见」字段</td><td>能跑，但会在办理时反复被问到</td></tr>
-        </tbody>
-      </table>
-
-      <h3 id="orch-61-7">6.1.7 怎么触发：触点</h3>
       <table class="data-table">
         <thead>
           <tr><th style="width: 150px;">触点类型</th><th style="width: 240px;">什么时候用</th><th>要写清什么</th></tr>
@@ -165,6 +129,60 @@
         因此每条字段都带 <span class="mono">key</span>、类型、是否必传、可选值 —— 只有中文名不行，两边就没有能对齐的键。
         其中<strong>标为「取数入参」的那个字段（工号）是引擎要用的</strong>：拿它去取员工档案，所有根事件都必须有且只有一个。
       </p>
+      <p class="doc-p">
+        带入的字段在页面上勾「用哪些、各自走到哪」（<span class="mono">intake</span> / <span class="mono">show</span> / <span class="mono">bind</span> 三层见 6.1.8）。
+        <strong>载荷只参与值，不参与结构</strong> —— 单据带来的「谁、哪天、什么原因」不会改变这一单该长出哪些子事件，那由事实决定（见 6.3）。
+      </p>
+
+      <h3 id="orch-61-6">6.1.6 子事件清单：生成结果，只读；每条带表单预览</h3>
+      <p class="doc-p">
+        第四段是这件事<strong>必须交出的结论清单</strong>。它不是人填出来的，而是<strong>上面那段提示词对「标准人」生成出来的一次结果</strong>：
+        触发时同一条提示词按这一单的事实再生成一遍，长得几乎一样（有客户的就多一条移交，没有补偿金的就不长补偿金那条）。
+        所以定义页的任务只有一个 —— <strong>看这套提示词生成了什么、对不对</strong>。清单整块<strong>只读</strong>：
+        结论、什么时候要、是否必过、谁给结论都不能在这里改；模型漏了或多了，改提示词再跑一次，而不是在结果上补。
+      </p>
+      <p class="doc-p">一行一条，四列，行下跟着这一条的表单预览：</p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 130px;">列</th><th style="width: 230px;">显示什么</th><th>注意</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>结论</strong></td><td>一句可判定的达成状态</td><td>不带句号、不写动作；能回答「做到没有」</td></tr>
+          <tr><td><strong>什么时候要</strong></td><td>这一条只在哪种情况下存在（始终 / 有客户 / 有补偿金…）</td><td>由事实决定；不适用的人这一条根本不长出来</td></tr>
+          <tr><td><strong>是否必过</strong></td><td>必过 / 可选</td><td>必过缺一条就不算办完；可选只记录、仍解锁下游</td></tr>
+          <tr><td><strong>谁给结论</strong></td><td>人给结论 / 系统判定 / 系统执行 / 外部回执</td><td>写角色不写人名，触发时按组织解析到人</td></tr>
+        </tbody>
+      </table>
+      <p class="doc-p">
+        <strong>行下的「子事件预览」就是这一条办好时，办的人看到的那张表：</strong>
+        左边写谁办（<span class="mono">人办理 · 人事经理</span>，触发时解析成具体人名），右边三列 ——
+        <strong>字段名</strong>（必填带红星）、<strong>控件</strong>（单行、多行、数值、日期、单选、多选、人员、附件；附件写明「只收 PDF」这类格式）、
+        <strong>说明或可选值</strong>（填写提示、预填来源、单选的候选项）。
+        系统判定 / 系统执行 / 外部回执不画表，各写一句它会做什么：查哪个检查项、多久查一次；执行哪个动作、作用对象是谁；等谁回话、要收回哪些字段、写回到哪。
+      </p>
+      <div class="note">
+        <strong>为什么不在这里给「加一条 / 删一条 / 改一句」：</strong>
+        一旦能改结果，这套提示词到底生成了什么就说不清了 —— 下一次改版没法判断是提示词的功劳还是人的补丁。
+        清单前面的「本次生成 · 22 条 · 时间 · 由谁产出」就是它的出处，只做对账，不做编辑。
+        <strong>某个具体的人身上确实要多一步，不在定义页</strong>：等这一单跑起来，在它自己那棵树上加（见 6.6），
+        这样多出来的那一步只属于这个人这一单，不会污染所有人。
+      </div>
+
+      <h3 id="orch-61-7">6.1.7 发布前必过的校验</h3>
+      <p class="doc-p">定义保存前跑一遍校验，<strong>错误必须改完才能发布</strong>，提醒可以带着发（会显示但不拦）：</p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 90px;">级别</th><th style="width: 240px;">检查</th><th>不通过说明什么</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>错误</strong></td><td>结论写成了动作（「审核」「交接」「处理」）</td><td>判不出达成没有，下游永远不知道这条算不算完</td></tr>
+          <tr><td><strong>错误</strong></td><td>一个子事件挂了两个以上事项，或有人办路径却没写事项</td><td>前者判不清，后者办事的人不知道要交什么</td></tr>
+          <tr><td><strong>错误</strong></td><td>附件字段没写允许格式</td><td>交上来打不开，等于没交</td></tr>
+          <tr><td><strong>错误</strong></td><td>必过项写了外部回执，却没有回执字段</td><td>我方只能等一句「已完成」，等不到可判定的值（见 6.5.5）</td></tr>
+          <tr><td><strong>错误</strong></td><td>前置指向了不存在的条目（悬空）</td><td>这一条永远不会解锁</td></tr>
+          <tr><td><strong>提醒</strong></td><td>事项没有任何字段；附件是选填；审核结论没有「意见」字段</td><td>能跑，但会在办理时反复被问到</td></tr>
+        </tbody>
+      </table>
 
       <h3 id="orch-61-8">6.1.8 载荷三层：登记 / 映射 / 值</h3>
       <p class="doc-p">同一批字段会在三个地方出现，混为一谈就会出两类事故：该拒的单没拒、该填的没填。</p>
@@ -196,13 +214,14 @@ import promptShot from '../../../docs/assets/pages/v2-prompt.png'
 import composeShot from '../../../docs/assets/pages/v2-compose.png'
 
 const tocItems = [
+  { id: 'orch-61', label: '6.1 事件定义' },
   { id: 'orch-61-1', label: '6.1.1 起草：一段话 → 确认单' },
   { id: 'orch-61-2', label: '6.1.2 管谁：适用范围' },
   { id: 'orch-61-3', label: '6.1.3 提示词：写什么' },
   { id: 'orch-61-4', label: '6.1.4 五条结构约束' },
-  { id: 'orch-61-5', label: '6.1.5 子事件清单：六列' },
-  { id: 'orch-61-6', label: '6.1.6 发布前必过的校验' },
-  { id: 'orch-61-7', label: '6.1.7 怎么触发：触点' },
+  { id: 'orch-61-5', label: '6.1.5 怎么触发：触点' },
+  { id: 'orch-61-6', label: '6.1.6 子事件清单：只读' },
+  { id: 'orch-61-7', label: '6.1.7 发布前必过的校验' },
   { id: 'orch-61-8', label: '6.1.8 载荷三层' }
 ]
 

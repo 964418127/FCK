@@ -42,12 +42,8 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
-const tocItems = [{ id: 'rf-chg', label: '变更日志' }]
-
-const breadcrumbs = [
-  { label: '文档中心', to: '/docs' },
-  { label: '离职流程', to: '/docs/resign-flow' },
-  { label: '二、变更日志' }
+const tocItems = [
+  { id: 'rf-chg', label: '二、变更日志' }
 ]
 </script>
 

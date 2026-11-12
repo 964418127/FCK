@@ -52,10 +52,19 @@ export const mobileMenuGroups = [
     ]
   },
   {
+    id: 'm-g-hr',
+    label: '人事',
+    items: [
+      { id: 'm-schedule-mine', label: '我的排班', icon: Calendar, to: '/v3/m' },
+      { id: 'm-schedule-notice', label: '排班通知', icon: Bell, to: '/v3/m/notice', badge: true }
+    ]
+  },
+  {
     id: 'm-g-account-manager',
     label: '客户经理',
     items: [
       { id: 'm-am-salary-dashboard', label: '客户经理薪酬看板', icon: DataLine, to: '/mobile-account-manager-salary-dashboard' },
+      { id: 'm-pt-am-salary', label: '非全客户经理薪酬', icon: DataLine, to: '/mobile-parttime-am-salary' },
       { id: 'm-am-attendance', label: '客户经理考勤', icon: Calendar, to: '/mobile-account-manager-attendance' },
       { id: 'm-parttime-tasks', label: '非全任务列表', icon: List, to: '/mobile-parttime-tasks' },
       { id: 'm-pt-am-attendance', label: '非全客户经理打卡', icon: Position, to: '/mobile-account-manager-attendance?mode=parttime' }

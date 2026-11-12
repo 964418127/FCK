@@ -41,7 +41,7 @@ export const TEMPLATE_RULES = [
     body: [
       '凡是「台账要对得上、钱要能核、设备要验、协议要留档」的环节，都要一个附件字段：类型 = 附件，必传 = 是，并写明允许格式（PDF / JPG / PNG）。',
       '凭证不能写进备注，也不能默认给「选填」—— 能选填就等于没有：办完时谁都能不传，事后核不了账。',
-      '确实只在某种情况下才存在的凭证（如补偿金为 0 时没有协议），把条件写进这条字段的规则里，不要笼统给一个选填的附件位。',
+      '确实只在某种情况下才存在的凭证（如补偿金为 0 时没有协商协议），把条件写进这条字段的规则里，用「无补偿确认」这类替代凭证补齐，不要笼统给一个选填的附件位。',
       '反过来，只在系统里改一个状态、没有东西要交的环节，不要硬造附件。'
     ].join('')
   },
@@ -83,6 +83,16 @@ export const TEMPLATE_RULES = [
     ].join('')
   },
   {
+    key: 'one-decision-one-place',
+    title: '同一个处置意见只能有一处表达',
+    body: [
+      '同一笔钱、同一个处置口径，全流程只允许有一条结论的一个字段表达它。',
+      '字段名必须点到是哪一笔钱：「常乐豆余额出口」可以，「款项出口」不行 —— 备用金、欠款、未结报销各有各的结论，一个泛称会让下游不知道该取哪一笔。',
+      '其余子事件只能引用（结果：<结论> · <字段>），不许自建第二个同名字段，也不许另立一条结论把同一件事再说一遍 —— 两处都能改，取数时就不知道听谁的。',
+      '只做写入 / 通知的系统执行项，只读这个结论、不产生意见：它是搬运工，不是第二个决策点。'
+    ].join('')
+  },
+  {
     key: 'skeleton-is-floor',
     title: '子事件是下限，不是上限',
     body: '必过的子事件一条都不能少；可以按岗位、按这一单的事实补细节与字段，但不能删、不能改口径。'
@@ -95,7 +105,12 @@ export const TEMPLATE_RULES = [
  */
 const ownerOfPath = (w) => ownerOfWay({ ...w, owner: w.owner || (w.role ? { kind: 'role', role: w.role } : null) })
 
-/** 一条路径的负责人说法（模板里给「谁给结论」，不展开到人名 —— 生成期还不知道是哪个门店） */
+/**
+ * 一条路径的负责人说法 —— 人话版本。
+ *
+ * 这里刻意不带 role key：这一段是给业务人员看的写作样板，也是他照着写的口径。
+ * 业务人员写「人事经理」，不写 `role: hr`；key 由系统在「结构对齐」里附上（见 alignTextOf）。
+ */
 function ownerText (w) {
   const o = ownerOfPath(w)
   if (o.kind === 'person') return `指定 ${o.name || '未填人'}`
@@ -113,28 +128,35 @@ function receiptText (w) {
   return legacy ? `回执：${legacy}（没有字段，下游引用不到）` : '回执字段未写'
 }
 
-/** 路径一行：人给结论 / 系统判定 / 系统执行 / 外部回执 */
+/**
+ * 路径一行：人给结论 / 系统判定 / 系统执行 / 外部回执。
+ *
+ * 同样只写人话。role / sysKey / actionKey / via 这些机器标识统一在「结构对齐」里给，
+ * 不混进写作样板 —— 样板是拿来学的，学的应该是「这件事怎么想」，不是内部命名。
+ */
 function wayLine (w) {
   if (w.type === 'human') return `人给结论 · ${ownerText(w)}`
   if (w.type === 'system') {
     const c = systemChecks.find((x) => x.key === w.sysKey) || {}
     const f = w.fetch || {}
-    return `系统判定 · ${c.name || w.sysKey} · 每 ${f.fetchFreq || c.defaultFetch?.freq || '1d'} 取一次 · 批次上限 ${f.maxRuns ?? c.defaultFetch?.maxRuns ?? 5}`
+    return `系统判定 · ${c.name || '系统检查项'} · 每 ${f.fetchFreq || c.defaultFetch?.freq || '1d'} 取一次 · 批次上限 ${f.maxRuns ?? c.defaultFetch?.maxRuns ?? 5}`
   }
   if (w.type === 'action') {
     const a = actions.find((x) => x.key === w.actionKey) || {}
-    return `系统执行 · ${a.name || w.actionKey}${w.targets ? ` · 对 ${w.targets} 逐个执行` : ' · 整单执行一次'}`
+    return `系统执行 · ${a.name || '系统动作'}${w.targets ? ` · 对 ${w.targets} 逐个执行` : ' · 整单执行一次'}${w.retry ? ` · 失败重试 ${w.retry.times} 次（每次间隔 ${w.retry.interval}），仍失败转${w.retry.onExhaust === 'human' ? '人工' : w.retry.onExhaust}` : ''}`
   }
   const a = w.via ? actions.find((x) => x.key === w.via) : null
-  return `外部回执 · ${w.party || '对方'}${a ? ` · 由「${a.name}」招来` : ' · 没说回执由哪个动作招来'}${w.timeout ? ` · ${w.timeout} 内回执` : ''} · ${receiptText(w)}${w.writeBack ? ` · 写回 ${w.writeBack}` : ' · 没写写回哪个字段'}`
+  return `外部回执 · ${w.party || '对方'}${a ? ` · 由「${a.name}」招来` : ' · 没说回执由哪个动作招来'}${w.timeout ? ` · ${w.timeout} 内回执` : ''} · ${receiptText(w)}${w.writeBack ? ` · 写回「${w.writeBack}」` : ' · 没写写回哪个字段'}`
 }
 
-/** 字段一行：名称（类型 · 必传/选填 · 格式 · 规则 · 默认来源） */
+/** 字段一行：名称（类型 · 必传/选填 · 可选值 · 格式 · 规则 · 默认来源）—— 不带 key */
 export function fieldText (f) {
   const bits = [fieldTypeLabel(f.type)]
   bits.push(f.required ? '必传' : '选填')
+  if (Array.isArray(f.options) && f.options.length) bits.push(`可选：${f.options.join(' / ')}`)
   if (f.type === 'file' && f.formats) bits.push(f.formats)
   if (f.rule) bits.push(f.rule)
+  if (f.prefill !== undefined && f.prefill !== '') bits.push(`默认 ${Array.isArray(f.prefill) ? f.prefill.join(' / ') : f.prefill}`)
   if (f.from) bits.push(`默认取 ${f.from}`)
   return `${f.label}（${bits.join(' · ')}）`
 }
@@ -146,7 +168,7 @@ export function proofFieldsOf (item) {
     .filter((f) => f.type === 'file')
 }
 
-/** 骨架 → 模板正文（不含口径与规则） */
+/** 骨架 → 人话清单（不含任何 key：这是给人看的，也是写作样板的一部分） */
 export function skeletonTextOf (ev) {
   const list = ev?.skeleton || []
   return list.map((s, i) => {
@@ -180,7 +202,10 @@ export function snapshotOfSkeleton (skeleton = []) {
 
 /**
  * 完整模板：口径（人写）+ 结构约束（写死）+ 粒度示例 + 必须交付的结论。
- * 这一段就是生成时喂给模型的全部业务侧内容 —— 界面上展示的、实际发送的是同一个函数产物。
+ *
+ * 这一段是**人写的那部分**，也是界面上「写作样板」展示的那一段 ——
+ * 所以它里面一个 key 都没有：业务人员写的是「人事已审核通过、要交哪些字段」，
+ * 不是 `[review]`、`role: hr`、`key: beanPayout`。机器标识在 renderForModel 的第二段。
  */
 export function renderTemplate (ev = {}) {
   const sk = ev.skeleton || []
@@ -200,10 +225,67 @@ export function renderTemplate (ev = {}) {
     '事项：客户资料移交 —— 员工本人把在跟客户逐个交接，店长登记接收人并核对移交清单',
     '字段：客户姓名（文本 · 必传）｜接收人（人员 · 必传）｜移交清单（附件 · 必传 · PDF / JPG / PNG）',
     '审核①：城市总已审核通过｜必过｜城市总｜需等：无｜字段：期望离职日期（日期 · 必传）｜实际离职日期（日期 · 必传）｜审核意见（多行文本）',
-    '审核②：人事已审核通过｜必过｜人事经理｜需等：城市总已审核通过｜字段：款项出口（单选 · 必传：一次性补偿金 / 并入薪金）｜审核意见（多行文本）',
-    '回执：离职合同已完成签署｜必过｜电子签平台 · 由「推送电子合同」招来 · 回执 员工签署状态（已签署 / 已拒签 / 待签署）· 写回 signState',
+    '审核②：人事已审核通过｜必过｜人事经理｜需等：城市总已审核通过｜字段：审核意见（多行文本）',
+    '读取：待执行补偿金已从补偿金系统取回｜必过｜系统判定（补偿金系统）｜需等：人事已审核通过｜取回：协商补偿金 / 协议编号 / 协议文件',
+    '补偿：离职补偿金与常乐豆余额处置已确认｜必过｜人事经理｜需等：人事已审核通过｜字段：协商补偿金（数字 · 必传）｜补偿协议（附件 · 必传 · PDF）｜常乐豆余额出口（单选 · 必传 · 可选：并入一次性补偿金 / 并入当期薪金）',
+    '执行：补偿金与常乐豆处置已写入薪酬系统｜必过｜系统执行｜需等：离职补偿金与常乐豆余额处置已确认',
+    '回执：离职合同已完成签署｜必过｜电子签平台 · 由「推送电子合同」招来 · 回执 员工签署状态（已签署 / 已拒签 / 待签署）',
+    '（一条结论一行：谁给结论、等不等前置、要交哪些字段。key 由系统按骨架分配，写的时候不用管）',
     '',
     `## 子事件（${sk.length} 条 · 必过 ${must} 条 · 少一条即不合格）`,
     sk.length ? skeletonTextOf(ev) : '（还没有子事件，先加上去）'
   ].join('\n')
+}
+
+/**
+ * 结构对齐：骨架的 key 摊平。
+ *
+ * 为什么必须单独一段，而不是塞进上面那份样板：
+ *   key 是系统按骨架分配的（子事件 key、role、sysKey、actionKey、字段 key），
+ *   业务人员既看不见也不需要写。把它混进写作样板，等于教人写 `[review]`、
+ *   `role: hr`、`key: beanPayout` —— 那是把内部命名当成业务语言。
+ *   所以：模板保持人话，key 由引擎在这里附上，生成时跟着提示词一起发。
+ */
+export function alignTextOf (ev = {}) {
+  const list = ev?.skeleton || []
+  return list.map((s, i) => {
+    const lines = [`${i + 1}. [${s.key}] ${s.goal}${s.gate === 'optional' ? '（可选）' : ''}`]
+    ;(s.paths || []).forEach((w) => {
+      const o = w.type === 'human' ? ownerOfPath(w) : null
+      if (w.type === 'human') {
+        lines.push(o.kind === 'person' ? `   人办 ｜ 负责人：指定「${o.name || '未填人'}」` : `   人办 ｜ owner.role = ${o.role || '（未写角色）'}`)
+      } else if (w.type === 'system') {
+        lines.push(`   系统判定 ｜ sysKey = ${w.sysKey || '（未写）'}`)
+      } else if (w.type === 'action') {
+        lines.push(`   系统执行 ｜ actionKey = ${w.actionKey || '（未写）'}`)
+      } else {
+        lines.push(`   外部回执 ｜ via = ${w.via || '（未写）'}${w.writeBack ? ` · writeBack = ${w.writeBack}` : ''}`)
+      }
+      ;(w.items || []).forEach((it) => {
+        const fs = it.fields || []
+        if (fs.length) {
+          lines.push(`   字段 ｜ ${fs.map((f) => {
+            const opts = Array.isArray(f.options) && f.options.length ? `（${f.options.join(' / ')}）` : ''
+            return `${f.key}=${f.label}${opts}${f.required ? ' *' : ''}`
+          }).join('；')}`)
+        }
+      })
+    })
+    const deps = (s.after || []).map((k) => `se.${k}`)
+    lines.push(`   前置 ｜ ${deps.length ? deps.join('、') : '无'}`)
+    return lines.join('\n')
+  }).join('\n')
+}
+
+/** 这一段的固定抬头（界面按它把「人写的」和「系统附的」分开显示） */
+export const ALIGN_HEAD = '## 结构对齐（系统按骨架附上，不是人写的；生成时 key 照抄这里）'
+
+/**
+ * 生成时真正发出去的那一份 = 人写的模板 + 系统附的对齐表。
+ *
+ * 界面「看生成原文」与 buildGenerateMessages 都调这一个函数 ——
+ * 所见即所发仍然成立，但两段各归各位：前一段人能写、后一段人不用写。
+ */
+export function renderForModel (ev = {}) {
+  return [renderTemplate(ev), '', ALIGN_HEAD, alignTextOf(ev)].join('\n')
 }

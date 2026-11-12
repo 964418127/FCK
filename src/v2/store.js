@@ -8,15 +8,15 @@ import { reactive, watch } from 'vue'
 import { clone, makeItem, makeField, makeWay, makeSub } from './model.js'
 import { seedEvents, seedInstances, systemChecks, actions } from './seed.js'
 import { cleanScope } from './shape.js'
-import { composeFor, degradedTree } from './blueprint.js'
+import { composeFor, degradedTree, checkGenerated } from './blueprint.js'
 import { runIntake } from './intake.js'
 import { checkPayload, empNoOfPayload, keepKnownPayload, prefillTree } from './payload.js'
 import { TERMINAL, openSubs, needsHuman, primaryType } from './instance.js'
 import { autoSettle, runCheck, runAction, runReceipt } from './sysRun.js'
 import { snapshotOfSkeleton } from './template.js'
 
-/** v9：事件多带一条「首次生成」快照（哪几条是提示词给的、哪条被人改过）→ 旧数据重播 */
-const KEY = 'fck:v2:review:v12'
+/** v15：事件目录多了转正 / 调岗 / 调薪三套模板（与离职同一份契约）→ 旧数据重播 */
+const KEY = 'fck:v2:review:v18'
 
 const fresh = () => ({
   events: clone(seedEvents),
@@ -114,7 +114,7 @@ export function savePrompt (key, { name, body, skeleton, scope, trigger, facts, 
   if (Array.isArray(facts)) ev.facts = clone(facts)
   if (scope) ev.scope = cleanScope(scope)
   if (trigger) ev.trigger = clone(trigger)
-  /* 第一次保存时记下「首次生成」的样子：之后再改，界面才能分出哪几条是人加的、哪条改了口径 */
+  /* 生成留档：记下这份清单是哪一次、由谁产出的。定义页只读，不再据此算「后加 / 改过」 */
   if (!ev.firstGen) {
     ev.firstGen = {
       at: ev.updatedAt || nowText(),
@@ -172,7 +172,7 @@ export function adoptPrompt ({ name, summary = '', trigger = null, coverage = nu
  * 这样可回归、可解释；模型生成是可选路径，不合格时降级到这里。
  */
 
-export function createInstance ({ eventKey, emp, payload = {} }) {
+export function createInstance ({ eventKey, emp, payload = {}, tree = null, by = '' }) {
   const ev = getEvent(eventKey)
   if (!ev) return null
 
@@ -189,7 +189,12 @@ export function createInstance ({ eventKey, emp, payload = {} }) {
 
   const data = keepKnownPayload(ev.trigger, payload)
   const fullEmp = { ...clone(intake.emp), payload: clone(data) }
-  const r = composeFor({ prompt: ev, emp: fullEmp })
+  /* 树可以由模型现长（gen.runGenerate）也可以由规则生成；两条路产物同形，
+   * 都过同一套自检 —— 模型给的树不因为「是模型给的」就免检 */
+  const modelTree = Array.isArray(tree) && tree.length ? tree : null
+  const r = modelTree
+    ? { tree: modelTree, dropped: [], check: checkGenerated({ tree: modelTree, prompt: ev, facts: fullEmp.facts || {} }) }
+    : composeFor({ prompt: ev, emp: fullEmp })
   /* ③ 载荷预填：事项字段写了 from: 'payload.xxx' 的，把这一单的值放进去让人确认 */
   prefillTree(r.tree, data)
   const subs = {}
@@ -205,14 +210,15 @@ export function createInstance ({ eventKey, emp, payload = {} }) {
     tree: r.tree,
     gen: {
       at: nowText(),
-      by: '规则生成',
+      by: by || (modelTree ? '模型生成' : '规则生成'),
       promptVersion: ev.currentVersion,
-      mode: 'rule',
+      mode: modelTree ? 'model' : 'rule',
       ok: r.check.ok,
       degraded: false,
       attempts: 1,
       kept: r.tree.length,
       dropped: r.dropped,
+      errors: (r.check.errors || []).map((e) => e.code),
       factsFrom: 'intake'
     },
     state: 'running',

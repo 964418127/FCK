@@ -135,6 +135,23 @@ export const staff = [
     perms: ['wecom'],
     debt: { loan: 0, advance: 0, reimburse: 0 },
     leave: { annual: 0, comp: 0, sick: 0 }
+  },
+  /* 两名试用期员工：转正这件事对谁存在，靠用工类型判得出来，不能只写在提示词里 */
+  {
+    id: 'T00695', name: '陈思远', job: '推拿师', city: '上海', store: '上海静安店',
+    employType: '试用', onboardAt: '2026-09-01', contractEntity: '上海推拿之家健康管理有限公司',
+    perms: ['pos', 'schedule', 'wecom'],
+    assets: ['工服 1 套', '工牌'],
+    debt: { loan: 0, advance: 0, reimburse: 0 },
+    leave: { annual: 0, comp: 0, sick: 0 }
+  },
+  {
+    id: 'T00696', name: '许敏', job: '前台', city: '杭州', store: '杭州滨江店',
+    employType: '试用', onboardAt: '2026-09-15', contractEntity: '杭州推拿之家健康管理有限公司',
+    perms: ['pos', 'schedule', 'wecom'],
+    assets: ['工牌'],
+    debt: { loan: 0, advance: 0, reimburse: 0 },
+    leave: { annual: 0, comp: 0, sick: 0 }
   }
 ]
 

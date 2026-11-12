@@ -131,7 +131,7 @@
           <tr><th style="width: 230px;">引用写法</th><th>含义</th></tr>
         </thead>
         <tbody>
-          <tr><td><span class="mono">结果：人事已审核通过 · 款项出口</span></td><td>取那条已办结记录里<strong>字段名为「款项出口」</strong>的值</td></tr>
+          <tr><td><span class="mono">结果：人事已审核通过 · 常乐豆余额出口</span></td><td>按字段 key <span class="mono">beanPayout</span> 去那条已办结记录里取值（名字点到是哪一笔钱，备用金、欠款不会被误取）</td></tr>
           <tr><td><span class="mono">结果：城市总已审核通过 · 实际离职日期</span></td><td>同一个字段可能被多条下游引用，取值只认<strong>已办结</strong>的那条</td></tr>
         </tbody>
       </table>
@@ -142,7 +142,7 @@
         <tbody>
           <tr><td><strong>那条还没办结</strong></td><td>前置保证它已经办结；若因中期调整删掉了它，引用视为<strong>缺失</strong>，按失败处理并说明</td></tr>
           <tr><td><strong>字段为空</strong></td><td>按空值执行，并在回执里写明「按空值执行」—— <strong>不装知道</strong>，不猜一个默认值</td></tr>
-          <tr><td><strong>值类型不符</strong></td><td>拒绝执行并报错；不做隐式转换（「并入薪金」不能变成金额）</td></tr>
+          <tr><td><strong>值类型不符</strong></td><td>拒绝执行并报错；不做隐式转换（「并入当期薪金」不能变成金额）</td></tr>
         </tbody>
       </table>
       <div class="note">
@@ -161,6 +161,7 @@ import DocScreens from '../../../docs/components/DocScreens.vue'
 import systemShot from '../../../docs/assets/pages/v2-m-system.png'
 
 const tocItems = [
+  { id: 'orch-65', label: '6.5 系统判定与执行' },
   { id: 'orch-65-1', label: '6.5.1 两类系统项' },
   { id: 'orch-65-2', label: '6.5.2 判定：两层频率' },
   { id: 'orch-65-3', label: '6.5.3 结果的界面口径' },

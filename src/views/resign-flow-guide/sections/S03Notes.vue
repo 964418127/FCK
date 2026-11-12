@@ -63,8 +63,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
-  { id: 'rf-terms', label: '名词解释' },
-  { id: 'rf-fields', label: '字段字典' }
+  { id: 'rf-terms', label: '三、文档说明 · 名词解释' },
+  { id: 'rf-fields', label: '三、文档说明 · 字段字典' }
 ]
 
 const breadcrumbs = [

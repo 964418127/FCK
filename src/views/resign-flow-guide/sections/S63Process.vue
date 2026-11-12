@@ -7,7 +7,7 @@
     date="2026-10-26"
     :breadcrumbs="breadcrumbs"
   >
-    <div class="section">
+    <div id="rf-63-overview" class="section">
       <div class="section-header">
         <h2>6.3 离职处理与审核</h2>
         <DocCopyButton section-id="rf-62" />
@@ -451,11 +451,12 @@ import mPayoutShot from '../../../docs/assets/pages/m-resign-detail-payout.png'
 import mCompShot from '../../../docs/assets/pages/m-resign-detail-comp.png'
 
 const tocItems = [
-  { id: 'rf-62-list', label: '6.3.1 处理列表（两个 Tab）' },
-  { id: 'rf-62-review', label: '6.3.2 离职需求审核（一次定稿）' },
+  { id: 'rf-63-overview', label: '6.3 离职处理与审核' },
+  { id: 'rf-62-list', label: '6.3.1 处理列表' },
+  { id: 'rf-62-review', label: '6.3.2 离职需求审核' },
   { id: 'rf-62-assets', label: '6.3.3 剩余资产' },
   { id: 'rf-62-payout', label: '6.3.4 款项出口' },
-  { id: 'rf-62-comp', label: '6.3.5 离职补偿金（录入）' },
+  { id: 'rf-62-comp', label: '6.3.5 离职补偿金' },
   { id: 'rf-62-release', label: '6.3.6 解除用工' },
   { id: 'rf-62-edge', label: '6.3.7 边界' }
 ]

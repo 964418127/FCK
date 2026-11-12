@@ -18,7 +18,7 @@
         <strong>但资产处置（常乐豆余额、补偿金）没人承接</strong>，这正是本版要补齐的一环（见 6.3）。
       </div>
 
-      <h3>4.1 现在是谁在「被动反应」</h3>
+      <h3 id="rf-bg-41">4.1 现在是谁在「被动反应」</h3>
       <table class="data-table">
         <thead>
           <tr>
@@ -69,7 +69,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
-  { id: 'rf-bg-now', label: '4.1 现在是谁在「被动反应」' },
+  { id: 'rf-bg-now', label: '四、需求背景' },
+  { id: 'rf-bg-41', label: '4.1 谁在被动反应' },
   { id: 'rf-bg-gap', label: '4.2 真正的缺口' }
 ]
 

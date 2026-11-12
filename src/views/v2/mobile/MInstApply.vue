@@ -1,19 +1,22 @@
 <!--
   移动端 · 发起一件事
   表单按 v1 离职需求发起页（mobile-resign-pd/ResignApply.vue）的**发起端**抄，不抄审核端：
-  第一步「申请」= 我的信息（档案带出）→ 离职意向（需填写）→ 收款账户（档案带出）
-    → 离职需求审核（审核链按配置带出）→ 提交后（只说下一步会发生什么）；
+  第一步「申请」= 我的信息（档案带出）→ 离职意向（需填写）→ 收款账户（档案带出，只有这件事真会走钱才出现）；
   第二步「确认」= 核对 + 本人签字 + 同意须知；提交后回到成功页。
-  两条边界：这单要办几项、常乐豆与补偿的数，都是**提交后**才有的 —— 发起页不预告、不展示；
-  常乐豆的款项出口、实际离职日期由审核人在「离职需求审核」里补，不在这里填。
+  三条边界：
+    ① 这单要办几项、常乐豆与补偿的数，都是**提交后**才有的 —— 发起页不预告、不展示；
+    ② **不预告审核人**：审核只是一条「××已审核通过」的结论，跟交接、面谈一样是某个人要办的一项，
+       由谁办要等触发那一刻按这个人的档案和事实解析出来。发起前先解析一遍再告诉员工，等于把审核
+       又摆成一条审批链，而且提交时生成的人可能与之不同（按角色解析还会解析到员工本人）。
+    ③ 常乐豆余额出口、实际离职日期由人事在补偿那条结论里补，不在这里填。
 -->
 <template>
   <div class="m-page">
     <div class="page-header">
       <el-icon class="back-icon" @click="back"><ArrowLeft /></el-icon>
       <h1>{{ title }}</h1>
-      <!-- 原型辅助：正式开发就是登录账号，不需要切换；这里只用于演示不同员工视角 -->
-      <span class="persona-hint" title="原型演示：切换员工视角（正式开发为登录账号，无需切换）" @click="cyclePersona">{{ me?.name }}</span>
+      <!-- 视角切换：正式开发就是登录账号，这里只为演示不同员工发起时看到什么 -->
+      <div class="persona-slot"><PersonaSwitch /></div>
     </div>
 
     <!-- 提交成功 -->
@@ -27,7 +30,7 @@
         <div class="sec-head"><span class="sec-title">处理进度</span></div>
         <div class="info-row"><span>当前状态</span><b class="waiting">等{{ firstOwner }}办第一项</b></div>
         <div class="info-row"><span>共几项</span><b>该办 {{ subCount }} 条，其中必须完成 {{ mustCount }} 条</b></div>
-        <div class="info-row" v-if="form.expectDate"><span>期望离职日期</span><b>{{ form.expectDate }}</b></div>
+        <div class="info-row" v-if="primaryDate"><span>{{ primaryDate.label }}</span><b>{{ primaryDate.raw }}</b></div>
       </div>
       <div class="card">
         <div class="sec-head"><span class="sec-title">接下来</span></div>
@@ -82,17 +85,17 @@
             <div class="step"><span class="step-no">4</span><span class="step-text">签署离职合同</span></div>
           </div>
 
-          <!-- A 离职意向（需填写）：字段与类型来自触点登记 -->
+          <!-- A 这一单要带的条件（需填写）：字段与类型来自触点登记 -->
           <div class="card">
             <div class="sec-head">
-              <span class="sec-title">离职意向</span>
+              <span class="sec-title">{{ applyTitle }}</span>
               <span class="tag-ours">需填写</span>
             </div>
             <div v-for="p in formFields" :key="p.field" class="field">
               <label>{{ p.label }}<i v-if="p.required">*</i><span v-if="p.type === 'multi'" class="label-tip">可多选</span><span v-else-if="!p.required" class="label-tip">选填</span></label>
               <el-date-picker
                 v-if="p.type === 'date'"
-                v-model="form[p.field]" type="date" value-format="YYYY-MM-DD" placeholder="请选择期望的最后工作日" style="width: 100%"
+                v-model="form[p.field]" type="date" value-format="YYYY-MM-DD" :placeholder="`请选择${p.label}`" style="width: 100%"
               />
               <div v-else-if="p.type === 'multi'" class="reason-grid">
                 <span
@@ -108,13 +111,14 @@
               <el-select v-else-if="p.type === 'enum'" v-model="form[p.field]" placeholder="请选择" style="width: 100%">
                 <el-option v-for="o in p.options || []" :key="o" :label="o" :value="o" />
               </el-select>
-              <el-input v-else v-model="form[p.field]" :placeholder="p.placeholder || `填 ${p.label}`" />
+              <el-input v-else v-model="form[p.field]" :placeholder="p.placeholder || `请填写${p.label}`" />
               <div v-if="p.note" class="field-hint">{{ p.note }}</div>
             </div>
           </div>
 
-          <!-- B 收款账户：档案带出，只读 -->
-          <div class="card">
+          <!-- B 收款账户：档案带出，只读。只有这一单真会走钱（离职结清 / 补偿）才出现 ——
+               转正、调薪不涉及个人收款，摆一张卡问员工「钱打哪儿」是多余的 -->
+          <div v-if="needsBank" class="card">
             <div class="sec-head">
               <span class="sec-title">收款账户</span>
               <span class="tag-readonly">档案带出</span>
@@ -122,27 +126,6 @@
             <div class="info-row"><span>银行卡户名</span><b>{{ bank.holder || '—' }}</b></div>
             <div class="info-row"><span>银行卡卡号</span><b class="card-no">{{ bank.cardNo || '—' }}</b></div>
             <div class="info-row"><span>开户行</span><b>{{ bank.bankName || '—' }}</b></div>
-            <div class="field-hint">最后工资与补偿金将打入此账户；若信息有误，请先到新员工关系更新。</div>
-          </div>
-
-          <!-- C 离职需求审核：审核链按配置带出（不是这单的生成结果） -->
-          <div v-if="reviewers.length" class="card">
-            <div class="sec-head">
-              <span class="sec-title">离职需求审核</span>
-              <span class="tag-readonly">按配置带出</span>
-            </div>
-            <div class="flow-line">
-              <div class="flow-node me">
-                <span class="fn-role">发起人</span>
-                <span class="fn-name">{{ me.name }}</span>
-              </div>
-              <span class="fn-arrow">→</span>
-              <div class="flow-node">
-                <span class="fn-role">审核人</span>
-                <span class="fn-name">{{ reviewers.join('、') }}</span>
-              </div>
-            </div>
-            <div class="field-hint">提交后先由审核人核对；不通过将作废并通知你。</div>
           </div>
 
           </template>
@@ -154,8 +137,7 @@
               <div v-for="p in formFields" :key="p.field" class="info-row">
                 <span>{{ p.label }}</span><b class="wrap">{{ shown(p) || '—' }}</b>
               </div>
-              <div class="info-row"><span>收款账户</span><b class="card-no">{{ bank.bankName }} {{ tailNo }}</b></div>
-              <div v-if="reviewers.length" class="info-row"><span>审核人</span><b class="wrap">{{ reviewers.join('、') }}</b></div>
+              <div v-if="needsBank" class="info-row"><span>收款账户</span><b class="card-no">{{ bank.bankName }} {{ tailNo }}</b></div>
             </div>
 
             <div class="card">
@@ -170,16 +152,10 @@
               <div class="field-hint">签名代表你确认以上信息真实、无误。</div>
               <div class="agree-row" @click="agreed = !agreed">
                 <span :class="['cbox', { on: agreed }]"><el-icon v-if="agreed"><Select /></el-icon></span>
-                <span class="agree-text">我已阅读并同意《离职办理须知》，确认以上信息无误</span>
+                <span class="agree-text">我已阅读并同意《{{ ev?.name }}办理须知》，确认以上信息无误</span>
               </div>
             </div>
           </template>
-
-          <!-- 提交后：只说大致流程，不写细节（细节由定义层定，会变） -->
-          <div class="card note-card">
-            <div class="sec-head"><span class="sec-title">提交后</span></div>
-            <div class="note-li">· 按这单的流程逐环办理，每一环谁在办、办到哪，在「事项办理」里随时能看</div>
-          </div>
 
           <div v-if="step === 1 && missing.length" class="need-hint">还差：{{ missing.join('、') }}</div>
         </template>
@@ -199,12 +175,12 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Select } from '@element-plus/icons-vue'
-import { v2state, createInstance, getEvent, setMe, resolveForEvent, resolveForInstance } from '../../../v2/store.js'
+import { v2state, createInstance, getEvent, resolveForEvent } from '../../../v2/store.js'
 import { staff, ledgerOf } from '../../../v2/base.js'
 import { runIntake } from '../../../v2/intake.js'
 import { payloadPlanOf, payloadDefaultsOf, checkPayload, payloadTextOf } from '../../../v2/payload.js'
 import { scopeHit, resolveOwner, ownerOfWay, ownerLabel, topoSort } from '../../../v2/model.js'
-import { identitiesOf } from '../../../v2/instance.js'
+import PersonaSwitch from '../../../components/v2/PersonaSwitch.vue'
 
 const router = useRouter()
 /** 当前登录员工：发起人的事实随单进实例，之后再查都按这一单的人 */
@@ -219,25 +195,15 @@ const activeEvents = computed(() => v2state.events.filter((e) => e.status === 'a
 const events = computed(() => activeEvents.value.filter((e) => scopeHit(e.scope || {}, me.value)))
 
 /**
- * 原型辅助：可切换的视角 = 全部员工 + 实例里出现过的处理人（如财务专员，演示「没有可发起事项」的状态）。
- * 顺序按演示意图排：能发起事件的人在前，轮换第一下就能看到完整表单；发不了的排在后面，用来看空态。
+ * 视角切换挪到 PersonaSwitch：同一个辅具三个页面都要用，
+ * 复制三份「一个个轮着点」的写法只会让三处慢慢长歪。
  */
-const personaPool = computed(() => {
-  const extra = identitiesOf(v2state.instances, (inst) => resolveForInstance(inst).tree)
-    .filter((p) => p.name && !staff.some((s) => s.name === p.name))
-  const all = [...staff, ...extra]
-  const canGo = (p) => activeEvents.value.some((e) => scopeHit(e.scope || {}, p))
-  return [...all.filter(canGo), ...all.filter((p) => !canGo(p))]
-})
-const cyclePersona = () => {
-  const pool = personaPool.value
-  if (!pool.length) return
-  const i = pool.findIndex((p) => p.name === me.value?.name)
-  setMe(pool[(i + 1) % pool.length] || null)
-}
 const picked = ref('')
 const ev = computed(() => (picked.value ? getEvent(picked.value) : null))
 const title = computed(() => (!picked.value ? '发起事项' : picked.value === 'resign' ? '离职需求' : `${ev.value?.name || ''}申请`))
+
+/** 卡片标题跟着这件事说，不跟着「离职」说 */
+const applyTitle = computed(() => (picked.value === 'resign' ? '离职意向' : '申请信息'))
 
 const step = ref(1)
 const agreed = ref(false)
@@ -249,7 +215,18 @@ const form = reactive({})
 
 /** 载荷字段：类型 / 必传 / 可选值全部来自触点登记；取数入参（工号）与只回看的台账格不进表单 */
 const plan = computed(() => payloadPlanOf(ev.value?.trigger || {}))
-const formFields = computed(() => plan.value.filter((f) => f.use !== 'intake' && !f.auto && (f.use === 'bind' || f.required) && !f.fromStaff))
+/**
+ * 发起页要填的字段 = 映射里勾了「预填子事件」的那几个。
+ * 不能按 `required` 收：`required` 说的是**对岸必须发这个字段**，不是「用户必须填」——
+ * 拿它当表单必填，会把「实例回看」的字段也摆成输入框（调薪页曾经因此让申请人填建议月薪）。
+ */
+const formFields = computed(() => plan.value.filter((f) => f.use === 'bind' && !f.auto && !f.fromStaff))
+
+/** 成功页只回看一个日期（哪一天是这件事的「哪天」由事件自己定）：取表单里第一个有值的日期字段 */
+const primaryDate = computed(() => {
+  const f = formFields.value.find((x) => x.type === 'date' && hasVal(x))
+  return f ? { label: f.label, raw: payloadTextOf(f, form[f.field]) } : null
+})
 
 /** 收款账户：档案带出，只读 */
 const bank = computed(() => ledgerOf(me.value).bank || {})
@@ -265,6 +242,11 @@ const preview = computed(() => {
   return resolveForEvent(e, intake.value.emp)
 })
 const tree = computed(() => preview.value.tree)
+/**
+ * 这一单会不会走钱：树里出现「补偿」类结论才算 ——
+ * 判断放在树上而不是写死事件 key，是因为「哪件事要收款账户」本身就是这件事的定义。
+ */
+const needsBank = computed(() => tree.value.some((s) => /补偿/.test(s.goal || '')))
 const sorted = computed(() => topoSort(tree.value))
 const subCount = computed(() => tree.value.length)
 const mustCount = computed(() => tree.value.filter((s) => s.gate === 'must').length)
@@ -279,27 +261,6 @@ const ownerTextOf = (s) => {
 }
 const firstGoal = computed(() => sorted.value[0]?.goal || '（未编排）')
 const firstOwner = computed(() => (sorted.value[0] ? ownerTextOf(sorted.value[0]) : '系统'))
-
-/**
- * 审核人 = 树里「审核通过」那几条结论的负责人，按先后去重。
- * 审核不是一种类型，所以这里按结论命名认（契约要求 goal 写成「已××通过」）；
- * 一条也没认出来就退回第一环的人办负责人，不至于空着。
- */
-const reviewers = computed(() => {
-  const names = sorted.value
-    .filter((x) => /审核通过|审批通过/.test(x.goal || ''))
-    .map((x) => {
-      const w = (x.ways || []).find((y) => y.type === 'human')
-      return w ? resolveOwner(ownerOfWay(w), { store: me.value.store, city: me.value.city }) : ''
-    })
-    .filter(Boolean)
-  const uniq = [...new Set(names)]
-  if (uniq.length) return uniq
-  const s = sorted.value.find((x) => (x.ways || []).some((w) => w.type === 'human'))
-  const w = s && (s.ways || []).find((x) => x.type === 'human')
-  const name = w ? resolveOwner(ownerOfWay(w), { store: me.value.store, city: me.value.city }) : ''
-  return name ? [name] : []
-})
 
 /* 确认页的值怎么显示：有就照它显示，没有就说清是「没有」而不是空着 */
 const hasVal = (f) => {
@@ -392,8 +353,7 @@ function back () {
 .back-icon { font-size: 22px; color: #333; }
 .page-header h1 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; margin: 0; }
 .hd-sp { width: 22px; }
-.persona-hint { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 10.5px; color: #cdc7c9; letter-spacing: .3px; padding: 2px 4px; user-select: none; }
-.persona-hint:active { color: #a40035; }
+.persona-slot { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
 
 .content { padding: 12px 12px 20px; }
 .card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
@@ -433,13 +393,6 @@ function back () {
 .reason-chip { font-size: 12.5px; color: #666; background: #f6f5f5; border: 1px solid transparent; border-radius: 15px; padding: 6px 14px; }
 .reason-chip.on { color: #a40035; background: #fdeef2; border-color: #e7bcc9; font-weight: 500; }
 
-.flow-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.flow-node { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f7f6f6; border-radius: 8px; padding: 6px 10px; }
-.flow-node.me { background: #fdeef2; }
-.fn-role { font-size: 10.5px; color: #a09a9b; }
-.fn-name { font-size: 12.5px; color: #333; font-weight: 500; }
-.fn-arrow { color: #ccc; font-size: 12px; }
-
 .sign-box { height: 96px; border: 1px dashed #d9d4d5; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #fafafa; }
 .sign-box.signed { border-style: solid; border-color: #e7bcc9; background: #fdf7f9; }
 .sign-placeholder { font-size: 12.5px; color: #b0aaac; }
@@ -449,9 +402,6 @@ function back () {
 .cbox { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; margin-top: 1px; }
 .cbox.on { background: #a40035; border-color: #a40035; }
 .agree-text { font-size: 12px; color: #666; line-height: 1.6; }
-
-.note-card { background: #fafafa; }
-.note-li { font-size: 12px; color: #888; line-height: 1.9; }
 
 .done-card { text-align: center; padding: 26px 14px; }
 .done-icon { width: 52px; height: 52px; border-radius: 50%; background: #e8f5ec; color: #1a9b52; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 12px; }

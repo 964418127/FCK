@@ -113,7 +113,7 @@
           <tr><td><strong>会签怎么写</strong></td><td>几条结论共用同一前置、都必过 —— 全都过了下游才动，这就是会签</td></tr>
           <tr><td><strong>或签（任一人）</strong></td><td><strong>本版不支持。</strong>没有「任一人办」的承担者语义，不假装支持：要么一个角色一个人，要么指定到人</td></tr>
           <tr><td><strong>驳回</strong></td><td>不通过即终止全部流程（见 6.4.4）；要重新走，重新发起</td></tr>
-          <tr><td><strong>审核人看什么</strong></td><td>申请单带过来的值（期望日期、原因等）<strong>预填可改</strong>；审核这一环才产生的值（实际日期、款项出口）在这里第一次填</td></tr>
+          <tr><td><strong>审核人看什么</strong></td><td>申请单带过来的值（期望日期、原因等）<strong>预填可改</strong>；审核这一环才产生的值（实际日期、常乐豆余额出口）在这里第一次填</td></tr>
         </tbody>
       </table>
       <div class="note">
@@ -145,11 +145,12 @@ import listShot from '../../../docs/assets/pages/v2-m-list.png'
 import detailShot from '../../../docs/assets/pages/v2-m-detail.png'
 
 const tocItems = [
-  { id: 'orch-64-1', label: '6.4.1 列表：按轮到谁分' },
+  { id: 'orch-64', label: '6.4 办理' },
+  { id: 'orch-64-1', label: '6.4.1 列表按轮到谁分' },
   { id: 'orch-64-2', label: '6.4.2 谁看到谁办' },
   { id: 'orch-64-3', label: '6.4.3 事项与字段' },
   { id: 'orch-64-4', label: '6.4.4 结论与门禁' },
-  { id: 'orch-64-5', label: '6.4.5 审核：一条结论' },
+  { id: 'orch-64-5', label: '6.4.5 审核是一条结论' },
   { id: 'orch-64-6', label: '6.4.6 提交后的联动' }
 ]
 

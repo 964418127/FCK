@@ -67,9 +67,9 @@ const logOpen = ref(false)
 const selectedTask = ref(null)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const statuses = ['待到店', '已到店', '已离店', '已取消', '已转发', '等待接单']
+const statuses = ['待到店', '已到店', '已离店', '已取消', '已转发']
 const inferSource = task => task.sourceTaskId ? '已生成任务被转移' : task.taskId ? '取消后重派' : task.slotId ? '排班生成' : '任务生成'
-const sourceLabelFor = task => task.sourceLabel || ({ '非全无法履约': '取消后重派', '全职请假': '请假接班生成', '手动发布': '临时手动发布' }[task.source] || inferSource(task))
+const sourceLabelFor = task => task.sourceLabel || ({ '非全无法履约': '取消后重派', '全职请假': '请假接班生成', '临时时段': '临时时段', '手动发布': '临时时段', '临时手动发布': '临时时段' }[task.source] || task.source || inferSource(task))
 const employeeName = id => employees.find(employee => employee.id === id)?.name || '未记录人员'
 const filteredTasks = computed(() => parttimeStore.assignments.filter(task =>
   (!dateRange.value || (task.date >= dateRange.value[0] && task.date <= dateRange.value[1])) &&
@@ -95,7 +95,6 @@ const logEntries = computed(() => {
   for (const item of related) {
     if (item.status === '已取消') entries.push({ title: '任务被取消', detail: `${employeeName(item.assigneeId)}取消任务${item.cancelReason ? `，原因：${item.cancelReason}` : ''}`, time: item.cancelledAt || item.date, kind: 'cancelled' })
     if (item.status === '已转发') entries.push({ title: '任务被转移', detail: `${employeeName(item.assigneeId)}转发至${item.forwardTo || '其他客户经理'}`, time: item.date, kind: 'transfer' })
-    if (item.status === '等待接单') entries.push({ title: '进入任务池', detail: item.forwardTo || '等待其他客户经理接单', time: item.date, kind: 'transfer' })
     if (item !== original && item.status !== '已取消') entries.push({ title: item.sourceTaskId ? '转移后接替' : item.taskId ? '重派接替' : '重新派发', detail: `当前承接人：${employeeName(item.assigneeId)}，来源：${sourceLabelFor(item)}`, time: item.assignedAt || item.date, kind: 'assigned' })
     if (item.arriveTime) entries.push({ title: '到店打卡', detail: `实际到店：${item.arriveTime}`, time: item.arriveTime, kind: 'attendance' })
     if (item.leaveTime) entries.push({ title: '离店打卡', detail: `实际离店：${item.leaveTime}`, time: item.leaveTime, kind: 'attendance' })

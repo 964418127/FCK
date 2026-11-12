@@ -20,7 +20,7 @@
         ]"
       />
 
-      <h3>6.4.1 签署状态机</h3>
+      <h3 id="rf-fsm-1">6.4.1 签署状态机</h3>
       <h4 class="h4sub">适用范围与签署方式</h4>
       <div class="note">
         <strong>适用范围：</strong>只覆盖主动离职 / 协商一致解除劳动合同；<strong>异常监控【解除用工】不走签署</strong>，
@@ -201,7 +201,8 @@ const compKeys = [
 ]
 
 const tocItems = [
-  { id: 'rf-fsm', label: '6.4.1 签署状态机' },
+  { id: 'rf-fsm', label: '6.4 签署与补偿金明细' },
+  { id: 'rf-fsm-1', label: '6.4.1 签署状态机' },
   { id: 'rf-amount', label: '6.4.2 时间顺序与三段金额' },
   { id: 'rf-detail', label: '6.4.3 明细要回答的五件事' }
 ]

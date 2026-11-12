@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 730" width="100%" role="img">
+  <title>非全客户经理 · 从领任务到收到薪酬全流程</title>
+  <desc>两条任务来源在待到店合流，打卡留事实，按周分门店主体结算，工资确认通知本人确认后生成发放工作单，按发放策略日期发放；未确认只提醒不发放。</desc>
+  <defs>
+    <marker id="pt-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="70" y="36" width="860" height="150" rx="12" fill="#EEEDFE" stroke="#534AB7"/>
+  <text x="92" y="66" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#3C3489">① 领任务 —— 两条来源，进同一个池子</text>
+  <text x="92" y="90" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#534AB7">周期任务自己选、补充型临时任务走派单；领取成功都是「待到店」，之后的打卡、计薪、结算、发放完全一致</text>
+  <rect x="92" y="104" width="400" height="66" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="292" y="128" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">周期性任务（自己选）</text>
+  <text x="292" y="150" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">周四 06:00 定时发布下一批（n+1）7 天（6.2）</text>
+  <text x="292" y="164" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">可选列表先到先得，选成功即「待到店」（6.5）</text>
+  <rect x="508" y="104" width="400" height="66" rx="10" fill="#FFFFFF" stroke="#7B72D9"/>
+  <text x="708" y="128" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#3C3489">补充型临时任务（走派单）</text>
+  <text x="708" y="150" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">请假接班 · 取消重派 · 运营发布（6.3）</text>
+  <text x="708" y="164" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#534AB7">系统派单直接承接：无待接受、不点接受</text>
+
+  <path d="M500 186 V210" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <text x="514" y="204" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">两种来源在「待到店」合流，之后不再分流</text>
+
+  <rect x="70" y="214" width="860" height="150" rx="12" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="92" y="244" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#0C447C">② 承接与履约 —— 打卡留事实（6.6）</text>
+  <text x="92" y="268" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#185FA5">开始前 1 小时进入到店窗口；到店成功才能离店；实际到离店时间只在 Web 留存，移动端不显示</text>
+  <rect x="92" y="282" width="180" height="66" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="182" y="306" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">待到店</text>
+  <text x="182" y="328" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">领取成功后的起点状态</text>
+  <text x="182" y="342" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">取消 / 转移走 6.3</text>
+  <path d="M272 315 H292" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <rect x="296" y="282" width="264" height="66" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="428" y="306" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">到店打卡 → 离店打卡</text>
+  <text x="428" y="328" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">按顺序推进，缺一不可</text>
+  <text x="428" y="342" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">打卡事实追加事件、不改写历史</text>
+  <path d="M560 315 H580" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <rect x="584" y="282" width="324" height="66" rx="10" fill="#FFFFFF" stroke="#378ADD"/>
+  <text x="746" y="306" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#0C447C">完成当日任务 · 日统计当天出数</text>
+  <text x="746" y="328" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">客次 / 新客 / 评价 / 卫生金额即记，薪酬看板可查</text>
+  <text x="746" y="342" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#185FA5">6.7.5 日统计页签</text>
+
+  <path d="M500 364 V388" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <text x="514" y="382" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">事实齐了才可计薪：任务 · 打卡 · 单价与保底标准交付薪酬（5.6）</text>
+
+  <rect x="70" y="392" width="860" height="106" rx="12" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="92" y="422" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#085041">③ 按周结算 —— 分门店主体（1 门店 = 1 结算主体）</text>
+  <text x="92" y="448" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#0F6E56">按自然周归集：保底补差 = max(0, 有效工时×保底时薪 − 收入合计)，应发 = 补差 + 提成项 − 个税（6.7.4/6.7.5）</text>
+  <text x="92" y="472" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#0F6E56">两店在职各自算各自的账，工时与提成不合并；扣缴只有个税，不缴社保、公积金</text>
+
+  <path d="M500 498 V522" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <text x="514" y="516" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#854F0B">结算完成 → 工资确认通知（分主体 · 分门店主体）</text>
+
+  <rect x="70" y="526" width="860" height="172" rx="12" fill="#FAEEDA" stroke="#854F0B"/>
+  <text x="92" y="556" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" fill="#633806">④ 工资确认与发放 —— 确认才出款</text>
+  <text x="92" y="580" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" fill="#854F0B">确认的是这一周这一店的工资单：本人确认后生成发放工作单，按发放策略日期出款，各周互不等待</text>
+  <rect x="92" y="596" width="268" height="82" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="226" y="620" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">本人确认 → 生成发放工作单</text>
+  <text x="226" y="642" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">确认是发放的前置：无确认不出款</text>
+  <text x="226" y="658" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">多店在职者各店各单，互不合并</text>
+  <path d="M360 637 H382" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <rect x="386" y="596" width="268" height="82" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="520" y="620" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">按发放策略日期发放</text>
+  <text x="520" y="642" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">计算日与发放日按结算周日期段定</text>
+  <text x="520" y="658" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">（四段日期见下表）</text>
+  <path d="M654 637 H676" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#pt-arrow)"/>
+  <rect x="680" y="596" width="228" height="82" rx="10" fill="#FFFFFF" stroke="#BA7517"/>
+  <text x="794" y="620" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13.5" font-weight="600" fill="#633806">到账情况每周一卡</text>
+  <text x="794" y="642" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">实发未到策略日为 0，到账后回填</text>
+  <text x="794" y="658" text-anchor="middle" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#854F0B">6.7.5 到账页签</text>
+
+  <path d="M930 612 H952 V445 H936" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#pt-arrow)"/>
+  <text x="912" y="722" text-anchor="end" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11.5" fill="#888780">虚线：未确认 → 继续提醒，不生成发放工作单，也不进入当日发放</text>
+</svg>

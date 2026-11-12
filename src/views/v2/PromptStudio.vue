@@ -2,7 +2,7 @@
   提示词工作台（原「事件编排」）
 
   界面按「定义 / 功能」分区：
-    左 = 定义区（全部定义）：这套提示词管谁 → 提示词 → 子事件 → 怎么触发
+    左 = 定义区（全部定义）：这套提示词管谁 → 提示词 → 怎么触发 → 子事件
     右 = 功能区（试跑，默认收起）：从覆盖人群里搜一个人，看这套提示词到他身上长出什么
 
   为什么预览是「搜一个人」而不是写死三个人：
@@ -44,19 +44,19 @@
           </div>
           <div class="scope-grid">
             <label>岗位</label>
-            <el-select v-model="draft.scope.jobs" multiple size="small" collapse-tags collapse-tags-tooltip>
+            <el-select v-model="draft.scope.jobs" multiple size="small" class="scope-sel">
               <el-option v-for="j in jobs" :key="j.key" :label="j.key" :value="j.key" />
             </el-select>
             <label>城市</label>
-            <el-select v-model="draft.scope.cities" multiple size="small" collapse-tags placeholder="不限">
+            <el-select v-model="draft.scope.cities" multiple size="small" class="scope-sel" placeholder="不限">
               <el-option v-for="c in cities" :key="c.key" :label="c.key" :value="c.key" />
             </el-select>
             <label>门店</label>
-            <el-select v-model="draft.scope.stores" multiple size="small" collapse-tags placeholder="不限">
+            <el-select v-model="draft.scope.stores" multiple size="small" class="scope-sel" placeholder="不限">
               <el-option v-for="s in stores" :key="s" :label="s" :value="s" />
             </el-select>
             <label>用工类型</label>
-            <el-select v-model="draft.scope.employTypes" multiple size="small" collapse-tags placeholder="不限">
+            <el-select v-model="draft.scope.employTypes" multiple size="small" class="scope-sel" placeholder="不限">
               <el-option v-for="t in employTypes" :key="t.key" :label="t.key" :value="t.key" />
             </el-select>
           </div>
@@ -70,9 +70,17 @@
             <i class="bn">2</i><b>提示词</b>
             <span class="c-sub">生成时喂给模型的这套口径 · 不是文案，是判据</span>
             <em class="hcnt">{{ draft.body.length }} 字</em>
+            <button class="h-toggle" @click="bodyOpen = !bodyOpen">{{ bodyOpen ? '收起' : '展开全文' }}</button>
           </div>
           <div class="body-wrap">
+            <!-- 默认只看开头几行：这段是判据、不是正文，一眼扫过就行；要改再点开 -->
+            <div v-if="!bodyOpen" class="body-clamp" title="点击展开全文并编辑" @click="bodyOpen = true">
+              <p class="bc-text">{{ draft.body || '还没写提示词 —— 点开这里开始写。' }}</p>
+              <span class="bc-fade"></span>
+              <span class="bc-more">展开全文 · {{ draft.body.length }} 字 ↓</span>
+            </div>
             <el-input
+              v-else
               v-model="draft.body"
               type="textarea"
               :autosize="{ minRows: 14 }"
@@ -85,83 +93,7 @@
 
         <section class="card">
           <div class="c-head">
-            <i class="bn">3</i><b>子事件</b>
-            <span class="c-sub">这一单要办的事 · 触发时按事实长成树，能长出来的都在这里</span>
-            <em class="hcnt">{{ draft.skeleton.length }} 条 · 必过 {{ mustCount }} · 可选 {{ draft.skeleton.length - mustCount }}</em>
-          </div>
-          <div class="gen-strip">
-            <span class="gs-k">首次生成</span>
-            <span class="gs-v">{{ gen0.items.length }} 条 · {{ gen0.at }} 由 {{ gen0.by }} 产出</span>
-            <span class="gs-d">
-              现 {{ draft.skeleton.length }} 条
-              <em v-if="gen0.added">后加 {{ gen0.added }}</em>
-              <em v-if="gen0.edited">改过 {{ gen0.edited }}</em>
-            </span>
-            <button class="gs-toggle" @click="showFirst = !showFirst">{{ showFirst ? '收起' : '看首次生成' }}</button>
-          </div>
-          <div v-if="showFirst" class="gen-list">
-            <div v-for="g in gen0.items" :key="g.key" class="gl-row">
-              <span class="gl-g">{{ g.goal }}</span>
-              <span :class="['gl-t', g.gate === 'optional' ? 'opt' : 'must']">{{ g.gate === 'optional' ? '可选' : '必过' }}</span>
-              <span class="gl-p">{{ g.path }}</span>
-              <span v-if="(g.proofs || []).length" class="gl-f">附件 {{ g.proofs.join('、') }}</span>
-            </div>
-            <div class="gl-note">这是起草那一次由提示词产出的清单，之后人改的、加的都不在这一份里。</div>
-          </div>
-          <div class="sk-head">
-            <span></span>
-            <span>要办成什么样（能判定）</span>
-            <span>什么时候要</span>
-            <span>是否必过</span>
-            <span>谁给结论</span>
-            <span></span>
-          </div>
-          <div class="sk-list">
-            <div v-for="(item, i) in draft.skeleton" :key="item.key" class="sk-row">
-              <div class="sk-main">
-                <span class="sk-no">{{ i + 1 }}</span>
-                <div class="sk-goal-cell">
-                  <el-input v-model="item.goal" size="small" class="sk-goal" :style="{ width: goalWidth(item.goal) }" placeholder="一句可判定的结论" />
-                  <span :class="['sk-flag', genState(item)]" :title="flagHint(item)">{{ flagText(item) }}</span>
-                </div>
-                <el-select v-model="item.needs" size="small" class="sk-needs">
-                  <el-option v-for="n in factOptions" :key="n.key" :label="n.label" :value="n.key" />
-                </el-select>
-                <el-select v-model="item.gate" size="small" class="sk-gate">
-                  <el-option label="必过" value="must" />
-                  <el-option label="可选" value="optional" />
-                </el-select>
-                <span class="sk-path">{{ pathSummary(item) }}</span>
-                <el-icon class="sk-del" @click="removeSkeleton(i)"><Delete /></el-icon>
-              </div>
-              <div
-                v-if="(item.after || []).length" class="sk-after"
-                :title="item.after.map(afterLabel).join('、')"
-              >需等：{{ item.after.map(afterLabel).join('、') }}</div>
-              <div v-if="mustProofsOf(item).length" class="sk-proof">
-                附件必传：{{ mustProofsOf(item).map(proofTextOf).join('、') }}
-              </div>
-              <div v-if="optProofsOf(item).length" class="sk-proof opt">
-                附件选填：{{ optProofsOf(item).map(proofTextOf).join('、') }}
-              </div>
-            </div>
-            <button class="sk-add" @click="addSkeleton"><el-icon><Plus /></el-icon>加一条子事件</button>
-          </div>
-          <div class="c-note sk-note">
-            这里只写必须办成什么；谁办、哪个先哪个后，是触发时按这一单的人和事实排的。
-            <button class="inline-link" @click="tryOpen = true">挑个人试跑一下 ↗</button>
-          </div>
-          <div class="sk-facts">
-            <span class="sf-k">可用事实</span>
-            <span class="sf-base">基础 8 项</span>
-            <span v-for="n in extraFacts" :key="n.key" class="sf-ex">{{ n.label }}</span>
-            <span v-if="!extraFacts.length" class="sf-none">本事件没有额外事实</span>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="c-head">
-            <i class="bn">4</i><b>这件事怎么触发</b>
+            <i class="bn">3</i><b>这件事怎么触发</b>
             <span class="c-sub">触点与带入字段</span>
           </div>
           <div class="trig">
@@ -193,6 +125,80 @@
             </div>
           </div>
         </section>
+
+        <section class="card">
+          <div class="c-head">
+            <i class="bn">4</i><b>子事件</b>
+            <span class="c-sub">这套提示词对标准人生出来的清单 · 只读，看的是生成效果</span>
+            <em class="hcnt">{{ draft.skeleton.length }} 条 · 必过 {{ mustCount }} · 可选 {{ draft.skeleton.length - mustCount }}</em>
+          </div>
+          <div class="gen-strip">
+            <span class="gs-k">本次生成</span>
+            <span class="gs-v">{{ draft.skeleton.length }} 条 · {{ gen0.at }} 由 {{ gen0.by }} 产出</span>
+            <span class="gs-d">要改生成结果就改上面的提示词再跑一次；某个人身上要多一步，在跑起来的那棵树上加</span>
+          </div>
+          <div class="sk-head">
+            <span></span>
+            <span>要办成什么样（能判定）</span>
+            <span>什么时候要</span>
+            <span>是否必过</span>
+            <span>谁给结论</span>
+          </div>
+          <div class="sk-list">
+            <div v-for="(item, i) in draft.skeleton" :key="item.key" class="sk-row">
+              <div class="sk-main">
+                <span class="sk-no">{{ i + 1 }}</span>
+                <span class="sk-goal-text">{{ item.goal }}</span>
+                <span class="sk-fact">{{ factLabel(item.needs) }}</span>
+                <span :class="['sk-gate-t', item.gate === 'optional' ? 'opt' : 'must']">{{ item.gate === 'optional' ? '可选' : '必过' }}</span>
+                <span class="sk-path">{{ pathSummary(item) }}</span>
+              </div>
+              <div
+                v-if="(item.after || []).length" class="sk-after"
+                :title="item.after.map(afterLabel).join('、')"
+              >需等：{{ item.after.map(afterLabel).join('、') }}</div>
+
+              <!-- 子事件预览：这一条办好时，办的人看到的就是下面这张表 -->
+              <div class="sk-pv">
+                <div class="sk-pv-h">
+                  <b>子事件预览</b>
+                  <span>办好这一条时，办的人看到的就是这张表</span>
+                </div>
+                <div v-for="(p, pi) in item.paths" :key="pi" class="sk-pv-way">
+                  <span :class="['sk-pv-wt', p.type]">{{ wayTitle(p) }}</span>
+                  <template v-if="p.type === 'human'">
+                    <div v-for="(it, ii) in p.items" :key="ii" class="sk-pv-tb">
+                      <div class="sk-pv-r vh">
+                        <span>{{ it.title || '未命名事项' }}</span>
+                        <span class="sk-pv-req">{{ it.require || '' }}</span>
+                      </div>
+                      <div v-for="(f, fi) in it.fields" :key="fi" class="sk-pv-r">
+                        <span class="sk-pv-f">{{ f.label || '未命名字段' }}<i v-if="f.required">*</i></span>
+                        <span class="sk-pv-t">{{ fieldTypeLabel(f.type) }}<em v-if="f.type === 'file' && f.formats"> · 只收 {{ f.formats }}</em></span>
+                        <span class="sk-pv-n">{{ f.rule || (f.options || []).join(' / ') || '—' }}</span>
+                      </div>
+                      <div v-if="!(it.fields || []).length" class="sk-pv-none">这张表还没有字段</div>
+                    </div>
+                  </template>
+                  <span v-else-if="p.type === 'system'" class="sk-pv-note">查「{{ checkNameOf(p.sysKey) }}」· {{ freqOf(p) }} · 只出结论不改数据</span>
+                  <span v-else-if="p.type === 'action'" class="sk-pv-note">执行「{{ actionNameOf(p.actionKey) }}」· 作用对象 {{ p.targets || '未写' }}</span>
+                  <span v-else class="sk-pv-note">等 {{ p.party || '对方' }} 回话 · 收 {{ (p.receipt || []).map((r) => r.label).filter(Boolean).join('、') || '未写回执字段' }} · 写回 {{ p.writeBack || '未指定' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="c-note sk-note">
+            每条下面那块「子事件预览」，就是这一条办好时办的人看到的那张表 —— 字段、必填、附件收什么格式都在里面。
+            这份清单是生成出来的：模型漏了或多了，回到上面的提示词改口径再跑；<b>不要在这里改结果</b>。
+          </div>
+          <div class="sk-facts">
+            <span class="sf-k">可用事实</span>
+            <span class="sf-base">基础 8 项</span>
+            <span v-for="n in extraFacts" :key="n.key" class="sf-ex">{{ n.label }}</span>
+            <span v-if="!extraFacts.length" class="sf-none">本事件没有额外事实</span>
+          </div>
+        </section>
+
       </div>
 
       <!-- 右：功能区。从覆盖人群里搜一个人来试跑，不是写死三个样本人。默认收起，想看得像才开 -->
@@ -272,7 +278,7 @@
         <header class="sp-head">
           <div class="sp-title">
             <b>生成原文</b>
-            <span>触发时整段发给模型 · 口径 + 结构约束 + 子事件</span>
+            <span>触发时整段发给模型 · 人写的模板 + 系统附的结构对齐</span>
           </div>
           <div class="sp-act">
             <em>{{ tplLines }} 行</em>
@@ -280,9 +286,15 @@
             <button class="sp-x" @click="tplOpen = false">关闭</button>
           </div>
         </header>
-        <div class="sp-body"><pre class="tpl">{{ tpl }}</pre></div>
+        <div class="sp-body">
+          <pre class="tpl">{{ humanTpl }}</pre>
+          <div v-if="alignTpl" class="sp-split">
+            <span>以下由系统按骨架附上 —— 业务人员不用写，也改不到</span>
+          </div>
+          <pre v-if="alignTpl" class="tpl tpl-align">{{ alignTpl }}</pre>
+        </div>
         <footer class="sp-foot">
-          这段不是另写的文档：口径改一句、清单加一条，它跟着变 —— 页面上的和发给模型的是同一个产物。
+          第一段是人写的（口径、写法、结论清单），第二段是引擎按骨架生成的 key 表：生成时一起发出去，业务人员只写第一段。
         </footer>
       </div>
     </div>
@@ -292,7 +304,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Delete, Plus, Search } from '@element-plus/icons-vue'
+import { ArrowLeft, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getEvent, savePrompt, checks } from '../../v2/store.js'
 import { previewPeople, eventPointLabel, eventPointOf, actionName } from '../../v2/seed.js'
@@ -301,11 +313,12 @@ import { composeFor } from '../../v2/blueprint.js'
 import { needsOf, pathSummary } from '../../v2/skeleton.js'
 import {
   jobs, cities, stores, employTypes, layersOf, topoSort, ownerOfWay, ownerLabel,
-  resolveOwner, fieldTypeLabel, headcountOf, scopeHit, receiptTextOf
+  resolveOwner, fieldTypeLabel, headcountOf, scopeHit, receiptTextOf, roles
 } from '../../v2/model.js'
 import { PAYLOAD_USE, payloadCandidatesOf, payloadPlanOf } from '../../v2/payload.js'
+import { systemChecks, actions } from '../../v2/catalog.js'
 import { validateSkeleton } from '../../v2/validate.js'
-import { renderTemplate, proofFieldsOf } from '../../v2/template.js'
+import { renderForModel, proofFieldsOf, ALIGN_HEAD } from '../../v2/template.js'
 import PreviewDetail from '../../components/v2/PreviewDetail.vue'
 
 const route = useRoute()
@@ -316,6 +329,8 @@ const ev = computed(() => getEvent(key.value))
 const blank = () => ({ name: '', body: '', skeleton: [], facts: [], scope: { jobs: [], cities: [], stores: [], employTypes: [] }, trigger: {} })
 const draft = ref(blank())
 const snap = ref(blank())
+/** 提示词默认只看开头：整段一千多字，铺开会把下面的触发与子事件全推走 */
+const bodyOpen = ref(false)
 
 const pick = (v) => ({
   name: v.name || '',
@@ -330,6 +345,7 @@ watch(ev, (v) => {
   if (!v) return
   draft.value = pick(v)
   snap.value = JSON.parse(JSON.stringify(draft.value))
+  bodyOpen.value = false
 }, { immediate: true })
 
 const normalize = (x) => JSON.stringify({
@@ -342,13 +358,24 @@ const estimate = computed(() => headcountOf(draft.value.scope || {}))
 /* ---------------- 生成原文：骨架 → 生成时整段喂给模型的那段 ----------------
  * 不做第二个编辑面：口径在上一张卡里改，模板跟着变；这里是只读 + 可复制。
  * 与 buildGenerateMessages 用的是同一个渲染函数 —— 所见即所发。
+ * 两段分开显示：上面是人写的模板，下面「结构对齐」是系统按骨架附的 key 表。
  */
 const copied = ref(false)
 const tplOpen = ref(false)
 /** 试跑是可选项：进页面先看定义，想看长什么样再开右栏 */
 const tryOpen = ref(false)
-const tpl = computed(() => renderTemplate({ ...draft.value }))
+const tpl = computed(() => renderForModel({ ...draft.value }))
 const tplLines = computed(() => tpl.value.split('\n').length)
+/** 对齐表从哪一行开始：界面按它在原文里画一条分界，人不至于以为 key 也要自己写 */
+const alignAt = computed(() => tpl.value.split('\n').findIndex((l) => l === ALIGN_HEAD))
+const humanTpl = computed(() => {
+  const lines = tpl.value.split('\n')
+  return alignAt.value < 0 ? tpl.value : lines.slice(0, alignAt.value).join('\n').trimEnd()
+})
+const alignTpl = computed(() => {
+  const lines = tpl.value.split('\n')
+  return alignAt.value < 0 ? '' : lines.slice(alignAt.value + 1).join('\n').trimEnd()
+})
 async function copyTpl () {
   try {
     await navigator.clipboard.writeText(tpl.value)
@@ -359,39 +386,15 @@ async function copyTpl () {
   }
 }
 
-/* ---------------- 首次生成：起草那一次由提示词产出的清单 ----------------
- * 没有快照（旧数据 / 新建）时按当前清单算，标记全是「首次」—— 不假装有差异。
+/* ---------------- 生成留档：这份清单是哪一次、由谁产出的 ----------------
+ * 定义页只调试提示词，人不在这里改结果 —— 所以不再算「后加 / 改过」的差异，
+ * 只报「这一版是某时由某某生成的、几条」。
  */
-const showFirst = ref(false)
 const gen0 = computed(() => {
   const g = ev.value?.firstGen
-  const items = g?.items?.length
-    ? g.items
-    : (ev.value?.skeleton || []).map((s) => ({ key: s.key, goal: s.goal, gate: s.gate, path: pathSummary(s), proofs: [] }))
-  const map = new Map(items.map((x) => [x.key, x]))
-  const added = draft.value.skeleton.filter((s) => !map.has(s.key)).length
-  const edited = draft.value.skeleton.filter((s) => map.has(s.key) && map.get(s.key).goal !== s.goal).length
-  return { at: g?.at || '起草时', by: g?.by || '提示词', items, added, edited }
+  return { at: g?.at || '起草时', by: g?.by || '起草 Agent' }
 })
-const FLAG_TEXT = { first: '首次', added: '后加', edited: '改过' }
-const FLAG_HINT = {
-  first: '首次由提示词生成，没改过',
-  added: '首次生成之后补的',
-  edited: '首次生成有这一条，口径被人改过'
-}
-function genState (item) {
-  const g = gen0.value.items.find((x) => x.key === item.key)
-  if (!g) return 'added'
-  return g.goal === item.goal ? 'first' : 'edited'
-}
-const flagText = (item) => FLAG_TEXT[genState(item)]
-const flagHint = (item) => FLAG_HINT[genState(item)]
-/** 输入框跟着文字走：标签才贴得住结论，不会孤零零飘到列中间 */
-const goalWidth = (t) => `${Math.min(560, Math.max(190, (t || '').length * 12.6 + 28))}px`
 const proofsOf = (item) => proofFieldsOf(item)
-/** 必传 / 选填分开列：混在一起写「附件必传」，等于把选填说成必传 */
-const mustProofsOf = (item) => proofsOf(item).filter((f) => f.required)
-const optProofsOf = (item) => proofsOf(item).filter((f) => !f.required)
 const proofTextOf = (f) => f.label + (f.formats ? `（${f.formats}）` : '')
 
 /** 本事件可用的事实：基础表 + 这套提示词自己声明的扩展 */
@@ -444,25 +447,26 @@ function restore () {
   if (!v) return
   draft.value = pick(v)
 }
-function addSkeleton () {
-  draft.value.skeleton.push({
-    key: `sk.${Date.now().toString(36)}`,
-    goal: '',
-    needs: 'always',
-    gate: 'must',
-    after: [],
-    afterAny: [],
-    paths: [{ type: 'human', role: 'hr', items: [{ id: `it.${Date.now().toString(36)}`, title: '待补事项', require: '做到什么算完成', fields: [] }] }],
-    note: ''
-  })
+/**
+ * 列表里这块「子事件预览」是逐条罗列的：
+ * 这一条由谁办（角色，不是人名 —— 列表不挑人）、这张表有哪几格、哪格必填、附件收什么。
+ * 定义页只做调试：这份清单是提示词生出来的，这里不给改结果的口子 ——
+ * 要改就改上面的提示词重跑；某个人身上要多一步，在跑起来的那棵树上加。
+ */
+const roleText = (k) => roles.find((r) => r.key === k)?.label || k || '未指定角色'
+function wayTitle (p) {
+  if (p.type === 'human') return `人办理 · ${roleText(p.role)}`
+  if (p.type === 'external') return `外部回执 · ${p.party || '未写对方'}`
+  if (p.type === 'action') return '系统执行'
+  return '系统判定'
 }
-function removeSkeleton (i) {
-  const k = draft.value.skeleton[i].key
-  draft.value.skeleton.splice(i, 1)
-  draft.value.skeleton.forEach((s) => {
-    s.after = (s.after || []).filter((x) => x !== k)
-    s.afterAny = (s.afterAny || []).filter((x) => x !== k)
-  })
+const checkNameOf = (k) => systemChecks.find((x) => x.key === k)?.name || '未选检查项'
+const actionNameOf = (k) => actions.find((x) => x.key === k)?.name || '未选动作'
+const FREQ_TXT = { '2h': '每 2 小时', '12h': '每 12 小时', '1d': '每天' }
+const freqOf = (p) => `${FREQ_TXT[p.fetch?.fetchFreq] || '每天'}查一次，最多 ${p.fetch?.maxRuns ?? '—'} 次`
+const factLabel = (k) => {
+  if (!k || k === 'always') return '始终'
+  return factOptions.value.find((x) => x.key === k)?.label || k
 }
 const afterLabel = (k) => (draft.value.skeleton.find((s) => s.key === k) || {}).goal || k
 const shortGoal = (k) => {
@@ -636,12 +640,24 @@ function freqText (f) {
 .hcnt { margin-left: auto; font-size: 10.5px; color: #8a8489; font-style: normal; }
 .c-note { padding: 9px 16px 12px; font-size: 11px; color: #a3a0a1; line-height: 1.7; }
 
-/* 1 / 适用条件 */
-.scope-grid { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 9px 12px; align-items: center; padding: 14px 16px 0; }
-.scope-grid label { font-size: 11.5px; color: #8a8489; }
+/* 1 / 适用条件 · 选中的值一律铺开（不折叠成「+N」）：条件是判断依据，得一眼看全 */
+.scope-grid { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 9px 12px; align-items: start; padding: 14px 16px 0; }
+.scope-grid label { font-size: 11.5px; color: #8a8489; line-height: 24px; }
+.scope-sel :deep(.el-select__wrapper) { min-height: 24px; padding: 1px 4px; }
+.scope-sel :deep(.el-select__selection) { flex-wrap: wrap; row-gap: 3px; }
+.scope-sel :deep(.el-select__selected-item) { max-width: 100%; }
 
-/* 2 / 提示词 */
+/* 2 / 提示词 · 默认只露开头几行，点开才整段铺开 */
 .body-wrap { padding: 12px 16px 4px; }
+.h-toggle { flex: none; margin-left: 10px; padding: 2px 9px; font-size: 10.5px; color: #7a3f52; background: #fdf6f8; border: 1px solid #f0e2e7; border-radius: 999px; cursor: pointer; }
+.h-toggle:hover { background: #fbeef2; border-color: #e8ccd6; }
+/* 收起态正好露 5 行（11px 上内边距 + 5 × 23.75px 行高），不出现半截字 */
+.body-clamp { position: relative; max-height: 130px; overflow: hidden; padding: 11px 13px; background: #fcfcfe; border: 1px solid #f0eef4; border-radius: 9px; cursor: pointer; transition: border-color .15s; }
+.body-clamp:hover { border-color: #e6d5dc; }
+.bc-text { margin: 0; font-size: 12.5px; line-height: 1.9; color: #3c3a47; white-space: pre-wrap; word-break: break-word; }
+.bc-fade { position: absolute; left: 1px; right: 1px; bottom: 1px; height: 52px; background: linear-gradient(180deg, rgba(252, 252, 254, 0) 0%, #fcfcfe 58%); pointer-events: none; }
+.bc-more { position: absolute; left: 1px; right: 1px; bottom: 1px; display: flex; align-items: center; justify-content: center; height: 24px; font-size: 10.5px; color: #a40035; letter-spacing: .2px; }
+.body-clamp:hover .bc-more { color: #7d0028; }
 .body-editor :deep(.el-textarea__inner) { font-family: inherit; font-size: 12.5px; line-height: 1.9; color: #3c3a47; background: #fcfcfe; border: 1px solid #f0eef4; border-radius: 9px; padding: 11px 13px; }
 
 /* 生成原文浮层：只读整段，可复制 · 不占定义区版面 */
@@ -660,47 +676,53 @@ function freqText (f) {
 .sp-body .tpl { max-height: none; }
 .sp-foot { flex: none; padding: 10px 18px; border-top: 1px solid #f2f0f5; background: #fbfafd; font-size: 10.5px; color: #a3a0a1; }
 .tpl { margin: 0; background: #fbfaff; border: 1px solid #f0eef4; border-radius: 9px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.85; color: #3c3a47; white-space: pre-wrap; word-break: break-word; }
+/* 系统附的那一段：压一档底色，跟「人写的」在视觉上分开 */
+.sp-split { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; font-size: 10.5px; color: #a3a0a1; }
+.sp-split::before, .sp-split::after { content: ''; flex: 1; height: 0; border-top: 1px dashed #e6e2ec; }
+.tpl-align { background: #f7f6fa; color: #56535f; }
 
-/* 3 / 子事件：一行一条，列对齐才扫得动 */
+/* 3 / 子事件：一行一条，列对齐才扫得动。清单只读 —— 它是提示词生成的结果 */
 .gen-strip { display: flex; align-items: center; gap: 8px; padding: 7px 16px; background: #fbfafd; border-bottom: 1px solid #f4f2f8; font-size: 10.5px; color: #8a8489; }
 .gs-k { color: #534ab7; background: #f1ecfd; border-radius: 5px; padding: 0 6px; line-height: 16px; }
 .gs-v { color: #6b6570; }
-.gs-d em { font-style: normal; margin-left: 6px; color: #b06a1c; }
-.gs-toggle { margin-left: auto; border: 0; background: transparent; color: #a40035; font-size: 10.5px; cursor: pointer; }
-.gen-list { padding: 6px 16px 10px; border-bottom: 1px solid #f7f6fa; background: #fdfcff; }
-/* 首次生成是一份对照清单：列对齐才看得出「哪条变了」，不用气泡堆在一行 */
-.gl-row { display: grid; grid-template-columns: minmax(0, 1fr) 32px 86px minmax(0, 136px); gap: 8px; align-items: baseline; padding: 3px 0; font-size: 11px; color: #4a4a55; }
-.gl-g { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gl-t { justify-self: start; font-size: 10px; border-radius: 5px; padding: 0 5px; line-height: 15px; }
-.gl-t.must { color: #9b2c2c; background: #fdecec; }
-.gl-t.opt { color: #8a8489; background: #f4f3f7; }
-.gl-p { color: #a3a0a1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gl-f { color: #1d7a55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gl-note { padding-top: 4px; font-size: 10.5px; color: #b0aebe; }
-.sk-goal-cell { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.sk-goal { flex: none; max-width: 100%; }
-.sk-flag { flex: none; font-size: 9.5px; line-height: 15px; border-radius: 4px; padding: 0 4px; cursor: default; }
-.sk-flag.first { color: #6b6570; background: #f2f1f5; }
-.sk-flag.added { color: #1d5fa8; background: #eaf2fd; }
-.sk-flag.edited { color: #b06a1c; background: #fdf1e3; }
-.sk-proof { margin: 2px 34px 0; font-size: 10.5px; color: #1d7a55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sk-proof.opt { color: #a3a0a1; }
-.sk-head { display: grid; grid-template-columns: 24px minmax(0, 1fr) 118px 72px 110px 18px; gap: 8px; padding: 8px 16px 7px; font-size: 10.5px; color: #b0aebe; border-bottom: 1px solid #f4f2f8; }
+.gs-d { margin-left: auto; color: #b0aebe; }
+
+/* 子事件预览：这一条办好时那张表，逐条罗列在行内 */
+.sk-pv { margin: 5px 0 2px 34px; padding: 7px 10px 8px; background: #fbfafd; border: 1px solid #f2eff5; border-radius: 8px; }
+.sk-pv-h { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; }
+.sk-pv-h b { font-size: 10px; font-weight: 600; color: #a40035; letter-spacing: .3px; }
+.sk-pv-h span { flex: 1; min-width: 0; font-size: 10px; color: #b0aebe; }
+.sk-pv-way { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; }
+.sk-pv-way + .sk-pv-way { border-top: 1px dashed #f0eef4; margin-top: 3px; padding-top: 5px; }
+.sk-pv-wt { flex: none; width: 104px; font-size: 10px; line-height: 16px; color: #6b6570; }
+.sk-pv-wt.human { color: #7a3f52; }
+.sk-pv-wt.system { color: #1d7a55; }
+.sk-pv-wt.action { color: #1d5fa8; }
+.sk-pv-wt.external { color: #8a6a2a; }
+.sk-pv-tb { flex: 1; min-width: 0; }
+.sk-pv-r { display: grid; grid-template-columns: 150px 96px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 1px 0; font-size: 10.5px; }
+.sk-pv-r.vh { grid-template-columns: 150px minmax(0, 1fr); color: #3c3a47; font-weight: 500; }
+.sk-pv-f { color: #3c3a47; }
+.sk-pv-f i { font-style: normal; margin-left: 2px; color: #c0392b; }
+.sk-pv-t { color: #8a8489; }
+.sk-pv-t em { font-style: normal; color: #1d7a55; }
+.sk-pv-n { color: #a3a0a1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-pv-none { font-size: 10px; color: #c08a3e; }
+.sk-pv-note { flex: 1; min-width: 0; font-size: 10.5px; color: #8a8489; }
+.sk-head { display: grid; grid-template-columns: 24px minmax(0, 1fr) 118px 62px 110px; gap: 8px; padding: 8px 16px 7px; font-size: 10.5px; color: #b0aebe; border-bottom: 1px solid #f4f2f8; }
 .sk-note { padding: 2px 16px 6px; }
 .sk-row { padding: 5px 16px 6px; border-bottom: 1px solid #f7f6fa; }
 .sk-row:hover { background: #fcfbfe; }
-.sk-main { display: grid; grid-template-columns: 24px minmax(0, 1fr) 118px 72px 110px 18px; gap: 8px; align-items: center; }
+.sk-main { display: grid; grid-template-columns: 24px minmax(0, 1fr) 118px 62px 110px; gap: 8px; align-items: baseline; }
 .sk-no { font-size: 10.5px; color: #b0aebe; text-align: left; }
-.sk-goal :deep(.el-input__wrapper) { box-shadow: none; padding: 0 2px; background: transparent; }
-.sk-goal :deep(.el-input__inner) { font-size: 12px; color: #3c3a47; font-weight: 500; }
-.sk-goal:hover :deep(.el-input__wrapper) { box-shadow: 0 0 0 1px #e6e2ec inset; border-radius: 6px; }
-.sk-needs :deep(.el-select__wrapper), .sk-gate :deep(.el-select__wrapper) { box-shadow: none; background: #f7f6fa; padding: 1px 8px; min-height: 22px; font-size: 11px; }
+/* 清单只读：这是提示词生出来的结果，不是给人改的输入框 */
+.sk-goal-text { font-size: 12px; line-height: 1.7; color: #3c3a47; font-weight: 500; }
+.sk-fact { font-size: 11px; color: #8a8489; }
+.sk-gate-t { font-size: 10.5px; line-height: 18px; justify-self: start; padding: 0 7px; border-radius: 999px; }
+.sk-gate-t.must { color: #a40035; background: #fbeef3; }
+.sk-gate-t.opt { color: #8a8489; background: #f4f2f6; }
 .sk-path { font-size: 10.5px; color: #a3a0a1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sk-del { font-size: 12px; color: #ddd9e2; cursor: pointer; }
-.sk-del:hover { color: #a40035; }
-.sk-after { margin: 2px 34px 0 34px; font-size: 10.5px; color: #b0aebe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sk-add { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 10px 16px 4px; padding: 7px; border: 1px dashed #dcd8e6; border-radius: 8px; background: transparent; font-size: 11.5px; color: #6b6570; cursor: pointer; }
-.sk-add:hover { border-color: #b9b2d4; color: #4b3fa8; }
+.sk-after { margin: 2px 0 0 32px; font-size: 10.5px; color: #b0aebe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sk-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px 16px 12px; border-top: 1px dashed #f0eef4; }
 .sf-k { font-size: 10.5px; color: #b0aebe; margin-right: 2px; }
 .sf-base { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: #f4f2f6; color: #8d8a99; }

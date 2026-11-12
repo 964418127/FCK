@@ -8,8 +8,8 @@
     <div class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>事项办理</h1>
-      <!-- 原型辅助：正式开发就是登录账号，不需要切换；这里只用于演示不同处理人的视角 -->
-      <span class="persona-hint" title="原型演示：切换处理人视角（正式开发为登录账号，无需切换）" @click="cyclePersona">{{ me?.name || '—' }}</span>
+      <!-- 视角切换：正式开发就是登录账号，这里只为演示不同处理人看到什么 -->
+      <div class="persona-slot"><PersonaSwitch :rank="pendingOf" /></div>
     </div>
 
     <div class="content">
@@ -49,11 +49,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Search } from '@element-plus/icons-vue'
 import { v2state, getEvent, resolveForInstance, setMe } from '../../../v2/store.js'
 import { progressOf, nowTextOf, todoOf, myTodoOf, identitiesOf, instStateLabel } from '../../../v2/instance.js'
+import PersonaSwitch from '../../../components/v2/PersonaSwitch.vue'
 
 const router = useRouter()
 const keyword = ref('')
@@ -61,35 +62,20 @@ const tab = ref('todo')
 
 const treeOf = (inst) => resolveForInstance(inst).tree
 const me = computed(() => v2state.me)
-/**
- * 可切换的处理人视角：按「手上还有几项待办」从多到少排，所以轮换第一下就落到有话可看的人；
- * 没待办的排在后面（他们在这一单里只读）。
- */
-const pool = computed(() => {
-  const base = identitiesOf(v2state.instances, treeOf)
-  const pendingOf = (p) => v2state.instances.reduce((n, inst) => n + myTodoOf(inst, treeOf(inst), p).length, 0)
-  return base
-    .map((p) => ({ p, n: pendingOf(p) }))
-    .sort((a, b) => b.n - a.n)
-    .map((x) => x.p)
-})
-
+/** 处理人要在所有单里看，所以「谁排前面」按全部单的待办数算 */
 const pendingOf = (p) => v2state.instances.reduce((n, inst) => n + myTodoOf(inst, treeOf(inst), p).length, 0)
+const people = computed(() => identitiesOf(v2state.instances, treeOf))
 
 /* 身份默认给「手上真有活」的那一个，否则打开就是一片空 */
 onMounted(() => {
   if (me.value) return
-  const cand = pool.value.find((p) => pendingOf(p))
-  setMe(cand || pool.value[0] || null)
+  const cand = people.value.find((p) => pendingOf(p))
+  setMe(cand || people.value[0] || null)
 })
-/** 原型辅助：点页角的名字依次换处理人视角（正式开发为登录账号） */
-const cyclePersona = () => {
-  if (!pool.value.length) return
-  const i = pool.value.findIndex((p) => p.name === me.value?.name)
-  const next = pool.value[(i + 1) % pool.value.length] || null
-  setMe(next)
-  tab.value = next && pendingOf(next) ? 'todo' : 'all'   // 手上没活时直接看全部，别让人对着空列表
-}
+/* 换了人就看他的活：手上没活时直接给「全部」，别让人对着空列表 */
+watch(() => me.value?.name, () => {
+  tab.value = me.value && pendingOf(me.value) ? 'todo' : 'all'
+})
 
 const rows = computed(() => v2state.instances.map((inst) => {
   const ev = getEvent(inst.eventKey)
@@ -145,8 +131,7 @@ const goBack = () => router.push('/mobile-menu')
 .hd-sp { width: 22px; }
 
 .content { padding: 12px 12px 28px; }
-.persona-hint { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 10.5px; color: #cdc7c9; letter-spacing: .3px; padding: 2px 4px; user-select: none; }
-.persona-hint:active { color: #a40035; }
+.persona-slot { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
 
 .search-row { margin-bottom: 12px; }
 

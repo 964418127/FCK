@@ -19,7 +19,7 @@
         触发时查这个人的事实，生成这一单<strong>该有的那些子事件</strong>；办完、判完、签完，把结论与事实交给下游。
       </div>
 
-      <h3>5.1 做什么 / 不做什么</h3>
+      <h3 id="orch-scope-51-1">5.1 做什么 / 不做什么</h3>
       <table class="data-table">
         <thead>
           <tr>
@@ -182,7 +182,7 @@
           <tr><td><strong>前置</strong></td><td>什么时候才能开始办</td><td>需等：人事已审核通过</td></tr>
           <tr><td><strong>谁给结论</strong></td><td>谁核对、谁填结果</td><td>店长（按员工所在门店解析到人）</td></tr>
           <tr><td><strong>要交什么</strong></td><td>交什么才能给这个结论</td><td>客户姓名、接收人（人员）、移交清单（附件 · 必传 · PDF / JPG / PNG）</td></tr>
-          <tr><td><strong>结果字段</strong></td><td>下游要用的值放在哪</td><td>审核环节的「款项出口」「实际离职日期」，被系统执行项按字段名引用（见 6.5.6）</td></tr>
+          <tr><td><strong>结果字段</strong></td><td>下游要用的值放在哪</td><td>审核环节的「常乐豆余额出口」「实际离职日期」，被系统执行项按字段 key 引用（见 6.5.6）</td></tr>
         </tbody>
       </table>
       <div class="note">
@@ -199,7 +199,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
-  { id: 'orch-scope-51', label: '5.1 做什么 / 不做什么' },
+  { id: 'orch-scope-51', label: '五、需求范围' },
+  { id: 'orch-scope-51-1', label: '5.1 做什么 / 不做什么' },
   { id: 'orch-scope-52', label: '5.2 定义期 / 实例期' },
   { id: 'orch-scope-53', label: '5.3 一单的完整链路' },
   { id: 'orch-scope-54', label: '5.4 一条子事件的六件事' }

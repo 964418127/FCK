@@ -51,6 +51,8 @@ export function runCheck (inst, sub, st = {}) {
   let batchNo = ''
   let metrics = ''
   let result = '通过'
+  /** 判定项取回的字段值：有就随结论一起落库，下游按「结果：<结论> · <字段>」取 */
+  let fetched = null
 
   if (round === 1) {
     const b = latestBatchOf(c.key)
@@ -59,6 +61,7 @@ export function runCheck (inst, sub, st = {}) {
     if (v) {
       metrics = v.metrics || ''
       result = v.result || '通过'
+      if (v.values && result === '通过') fetched = v.values
     } else {
       // 这一批没扫到他（不是不合格）：按台账直接核验
       metrics = `本批未扫到该工号，按台账直接核验：${(c.pass?.items || []).join('、')}`
@@ -83,7 +86,15 @@ export function runCheck (inst, sub, st = {}) {
     st.state = 'done'
     st.failBatches = st.failBatches || 0
     delete st.nextAt
-    return { ok: true, pass: true, result, batchNo }
+    /* 取回的字段值写成一条记录：下游（或这一单后面的人办项）按字段名取，
+       不必让模型 / 人事再录一遍已经查到的数 */
+    if (fetched) {
+      st.records = {
+        ...(st.records || {}),
+        [`sys.${c.key}`]: { verdict: '通过', values: { ...fetched }, files: 0, note: '系统取回' }
+      }
+    }
+    return { ok: true, pass: true, result, batchNo, values: fetched }
   }
 
   // 未通过：不是失败，是等下一批。批次用完仍未通过 → 这一环按未通过处理（必过则终止整单）

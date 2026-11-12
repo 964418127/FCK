@@ -94,6 +94,16 @@ export const sidebarMenu = [
     ]
   },
   {
+    index: 'hr-center',
+    label: '人事中心',
+    icon: OfficeBuilding,
+    children: [
+      { index: 'schedule-strategy', label: '排班策略 v1', icon: Calendar },
+      { index: 'slot-model', label: '排班策略 v2', icon: Clock },
+      { index: 'schedule-v3', label: '排班策略 v3', icon: Clock }
+    ]
+  },
+  {
     index: 'leave-management',
     label: '排排排假',
     icon: Calendar,

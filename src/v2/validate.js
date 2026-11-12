@@ -22,6 +22,12 @@ function ownerIssue (o) {
 }
 const W = (code, text, target) => ({ level: 'warning', code, text, target })
 
+/**
+ * 单/多选有没有可选取值：认字段上登记的 options，也认 rule 里写的「A / B」。
+ * 只认 rule 不行 —— 模型常把它写成「可选值：A / B；默认 B」，界面按分隔符拆会拆出半句话。
+ */
+const hasOptions = (f = {}) => (Array.isArray(f.options) && f.options.length > 0) || !!String(f.rule || '').trim()
+
 /** 找环，返回环上的 id 序列 */
 function findCycle (subs) {
   const map = subMapOf(subs)
@@ -97,8 +103,8 @@ export function validateTree (tree = [], { checks = [], actions = [], event } = 
           ;(it.fields || []).forEach((f) => {
             if (!f.label?.trim() || f.label.includes('（字段名')) out.push(E('FIELD_NO_LABEL', `事项「${it.title}」有字段没写名字`, `${ref}/${it.id}/${f.key}`))
             if (!FIELD_TYPES.some((t) => t.key === f.type)) out.push(W('FIELD_TYPE_UNKNOWN', `字段「${f.label}」的类型 ${f.type} 不在契约里`, `${ref}/${it.id}/${f.key}`))
-            if (f.type === 'select' && !f.rule?.trim()) out.push(W('SELECT_NO_OPTIONS', `字段「${f.label}」是单选但没写选项`, `${ref}/${it.id}/${f.key}`))
-            if (f.type === 'multiselect' && !f.rule?.trim()) out.push(W('MULTI_NO_OPTIONS', `字段「${f.label}」是多选但没写可选值`, `${ref}/${it.id}/${f.key}`))
+            if (f.type === 'select' && !hasOptions(f)) out.push(W('SELECT_NO_OPTIONS', `字段「${f.label}」是单选但没写可选取值（options）`, `${ref}/${it.id}/${f.key}`))
+            if (f.type === 'multiselect' && !hasOptions(f)) out.push(W('MULTI_NO_OPTIONS', `字段「${f.label}」是多选但没写可选取值（options）`, `${ref}/${it.id}/${f.key}`))
             if (f.type === 'file') {
               if (!String(f.formats || '').trim()) out.push(E('FILE_NO_FORMAT', `附件「${f.label}」没写允许格式：交上来打不开等于没交`, `${ref}/${it.id}/${f.key}`))
               if (!f.required) out.push(W('FILE_OPTIONAL', `附件「${f.label}」是选填：写清什么情况下必须有，否则等于没有`, `${ref}/${it.id}/${f.key}`))
@@ -140,6 +146,59 @@ export function validateTree (tree = [], { checks = [], actions = [], event } = 
 }
 
 /**
+ * 「处置意见只能有一处表达」
+ *
+ * 同一笔钱怎么处置（当前是常乐豆余额的出口），全流程只允许出现一处字段。
+ * 两处都有不是风格问题 —— 取数是按字段 key 去已办结记录里捞的，撞名就取到先办结的那条，
+ * 页面不会报错，账却错了。所以定义期是错，生成期也是错。
+ *
+ * 判据认 key 也认名字：key 是硬约束，名字兜住「换个 key 但还叫款项出口」的情况。
+ * 名字必须点到是哪一笔钱 —— 只写「款项出口」这种泛称，下游不知道指常乐豆还是备用金。
+ *
+ * 骨架写 paths，生成出来的树写 ways，两种形状都认。
+ */
+export const SINGLE_DECISION_FIELDS = [
+  { key: 'beanPayout', label: /常乐豆.{0,4}(出口|去向|通道)/ },
+  /* 调薪那张单同理：核定月薪是全流程唯一口径，总经理那一关只能引用，不能再录一遍 */
+  { key: 'approvedSalary', label: /核定月薪/ }
+]
+const LOOSE_DECISION_LABEL = /^款项出口$|^款项去向$/
+
+const waysOf = (s = {}) => s.paths || s.ways || []
+const fieldsOf = (s = {}) => waysOf(s).flatMap((w) => (w.items || []).flatMap((it) => it.fields || []))
+const isDecisionField = (f = {}) =>
+  SINGLE_DECISION_FIELDS.some((x) => x.key === f.key || x.label.test(String(f.label || '')))
+const isLooseName = (f = {}) => LOOSE_DECISION_LABEL.test(String(f.label || '').trim())
+
+export function decisionIssues (skeleton = []) {
+  const out = []
+  const hits = []
+  skeleton.forEach((s) => {
+    const ref = s.key || s.id || s.goal
+    fieldsOf(s).forEach((f) => {
+      if (isLooseName(f)) {
+        out.push(E('DECISION_VAGUE', `「${s.goal}」的字段叫「${f.label}」—— 太泛了，写清是哪一笔钱（如「常乐豆余额出口」），否则备用金、欠款也长一个同名字段就分不清了`, ref))
+      }
+      if (isDecisionField(f)) hits.push({ ref, goal: s.goal, label: f.label })
+    })
+    /* 谈到了常乐豆、又有人办路径，却没有那一格：它可能只是引用，也可能是第二个表达点 —— 让人确认一眼 */
+    if (/常乐豆/.test(s.goal || '') && waysOf(s).some((w) => w.type === 'human')) {
+      if (!fieldsOf(s).some(isDecisionField)) {
+        out.push(W('DECISION_ELSEWHERE', `「${s.goal}」也谈到了常乐豆，但常乐豆余额出口不在这里 —— 确认它只引用结论，别在这里又长一个口子`, ref))
+      }
+    }
+  })
+  if (hits.length > 1) {
+    out.push(E(
+      'DECISION_MANY',
+      `「常乐豆余额出口」出现了 ${hits.length} 处（${hits.map((h) => h.goal).join('、')}）—— 同一笔钱只能有一处表达，其余改成引用`,
+      hits[0].ref
+    ))
+  }
+  return out
+}
+
+/**
  * 骨架（定义期）校验：发布之前就要拦，不能等触发时才发现。
  *
  * 与生成自检（blueprint.checkGenerated）同一条判据，只是作用在骨架而不是这一单的树上：
@@ -155,6 +214,8 @@ export function validateSkeleton (event = {}) {
     return out
   }
   const keys = new Set(sk.map((s) => s.key))
+  /* 处置意见唯一性：先于逐条检查跑，一处也不许重复 */
+  out.push(...decisionIssues(sk))
   sk.forEach((s) => {
     const ref = s.key || s.goal
     if (!String(s.goal || '').trim()) out.push(E('SUB_NO_GOAL', '有一条没写要办成什么', ref))
@@ -183,6 +244,8 @@ export function validateSkeleton (event = {}) {
         items.forEach((it) => {
           ;(it.fields || []).forEach((f) => {
             if (!FIELD_TYPES.some((t) => t.key === f.type)) out.push(W('FIELD_TYPE_UNKNOWN', `字段「${f.label}」的类型 ${f.type} 不在契约里`, `${ref}/${f.key}`))
+            if (f.type === 'select' && !hasOptions(f)) out.push(W('SELECT_NO_OPTIONS', `字段「${f.label}」是单选但没写可选取值（options）`, `${ref}/${f.key}`))
+            if (f.type === 'multiselect' && !hasOptions(f)) out.push(W('MULTI_NO_OPTIONS', `字段「${f.label}」是多选但没写可选取值（options）`, `${ref}/${f.key}`))
             if (f.type === 'file' && !String(f.formats || '').trim()) out.push(E('FILE_NO_FORMAT', `附件「${f.label}」没写允许格式：交上来打不开等于没交`, `${ref}/${f.key}`))
           })
         })
