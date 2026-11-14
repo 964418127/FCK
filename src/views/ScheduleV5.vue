@@ -1345,11 +1345,11 @@ function devResolveApply() {
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
 .le-head { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
 .le-head span:last-child { text-align: right; }
-.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0; }
-.win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0 16px; }
+.win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; position: relative; }
 .win-line { display: flex; align-items: center; gap: 6px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
-.win-preview { font-size: 11px; color: #3B6D11; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.win-preview { position: absolute; top: calc(100% + 1px); left: 2px; font-size: 11px; color: #3B6D11; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 4px); }
 .who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
 .who-chip:hover { border-color: #a40035; }
 .who-chip-edit { font-size: 11px; color: #b0b3ba; }
