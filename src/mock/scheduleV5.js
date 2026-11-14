@@ -13,7 +13,9 @@ export const WEEK_DATES = [
 
 export const SPACES5 = [
   { id: 'S-201', name: '蓝田店', city: '杭州', tag: '旗舰店', bizStart: '10:00', bizEnd: '22:00', xy: [0, 0] },
-  { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] }
+  { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] },
+  { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [0, 0] },
+  { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [3.5, 2.2] }
 ]
 
 /* 岗位字典：通用排班系统不写死某几个岗位，弹窗里从这里出 */
@@ -25,7 +27,9 @@ export const PEOPLE5 = [
   { id: 'E-121', name: '阿禾', spaceId: 'S-201', kind: 'parttime', position: '推拿师', score: 78 },
   { id: 'E-126', name: '小满', spaceId: 'S-201', kind: 'parttime', position: '客户经理', score: 81 },
   { id: 'E-133', name: '陈晚', spaceId: 'S-202', kind: 'fulltime', position: '推拿师', score: 84 },
-  { id: 'E-141', name: '周野', spaceId: 'S-202', kind: 'parttime', position: '推拿师', score: 75 }
+  { id: 'E-141', name: '周野', spaceId: 'S-202', kind: 'parttime', position: '推拿师', score: 75 },
+  { id: 'E-150', name: '小唐', spaceId: 'S-203', kind: 'fulltime', position: '推拿师', score: 88 },
+  { id: 'E-151', name: '阿橙', spaceId: 'S-203', kind: 'parttime', position: '客户经理', score: 79 }
 ]
 
 /* 算法服务：只登记不实现。登记四门槛：输入可声明 / 算式可解释 / 可单独调用幂等 / 有版本号 */
@@ -61,6 +65,21 @@ export const SLOTS5 = [
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
       { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: 'publish' }
+    ]
+  },
+  {
+    id: 'SL-04', spaceId: 'S-203', name: '晚市班', start: '17:00', end: '21:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'service', serviceId: 'AS-03' }, clamp: [1, 4], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'all', pos: '推拿师' }, way: 'apply', win: 'publish' },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' }
+    ]
+  },
+  {
+    id: 'SL-05', spaceId: 'S-203', name: '周末午市', start: '11:00', end: '15:00', days: [6, 0],
+    quota: { source: 'manual', value: 3 }, clamp: [1, 4], snapN: 3,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }
     ]
   }
 ]

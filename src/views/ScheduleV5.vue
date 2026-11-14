@@ -169,8 +169,8 @@
 
             <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天） -->
             <div class="cyc-switch">
-              <button :class="{ on: cycView === 'list' }" @click="cycView = 'list'">按班次</button>
               <button :class="{ on: cycView === 'cycle' }" @click="cycView = 'cycle'">按周期</button>
+              <button :class="{ on: cycView === 'list' }" @click="cycView = 'list'">按班次</button>
             </div>
 
             <!-- 编辑区：新建和编辑共用一份表单，两种视图都开在这里 -->
@@ -323,6 +323,10 @@
                     <span v-if="!d.slots.length" class="cd-none">这天没有班次</span>
                   </div>
                 </div>
+              </div>
+              <div v-if="!spaceSlots.length && !editing" class="empty">
+                <p>这个空间还没有周期时段</p>
+                <el-button size="small" type="primary" @click="openNew">配第一个班次</el-button>
               </div>
             </template>
           </template>
@@ -702,7 +706,7 @@ function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10
 function slotCount(id) { return v5.slots.filter(s => s.spaceId === id).length + v5.temps.filter(t => t.spaceId === id).length }
 function peopleOf(id) { return v5.people.filter(p => p.spaceId === id).length }
 /* 按周期视图：下一轮覆盖区间，每天列出当天会跑的班次（周期班次按星期几 + 临时班次按日期） */
-const cycView = ref('list')
+const cycView = ref('cycle') /* 默认按周期：配置人员按天干活 */
 const cycleDays = computed(() => {
   const [a, b] = v5.round.nextSpan
   const out = []
@@ -711,7 +715,7 @@ const cycleDays = computed(() => {
   const end = new Date(`${b}T00:00:00`)
   while (d <= end) {
     const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-    out.push({ date, dow: d.getDay(), slots: slotsOn5(v5, date) })
+    out.push({ date, dow: d.getDay(), slots: slotsOn5(v5, date).filter(sl => sl.spaceId === selSpace.value) })
     d.setDate(d.getDate() + 1)
   }
   return out
