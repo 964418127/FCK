@@ -468,8 +468,7 @@
         <label>岗位</label>
         <el-radio-group v-model="whoEdit.pos" size="small">
           <el-radio-button value="all">不限</el-radio-button>
-          <el-radio-button value="推拿师">推拿师</el-radio-button>
-          <el-radio-button value="客户经理">客户经理</el-radio-button>
+          <el-radio-button v-for="j in JOBS5" :key="j" :value="j">{{ j }}</el-radio-button>
         </el-radio-group>
       </div>
       <div class="who-preview">这一档开放给：<strong>{{ whoLabel5(whoEdit) }}</strong></div>
@@ -542,7 +541,7 @@ import {
   appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5
 } from '../mock/scheduleV5Store.js'
 import {
-  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5
+  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()

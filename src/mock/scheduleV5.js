@@ -16,6 +16,9 @@ export const SPACES5 = [
   { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] }
 ]
 
+/* 岗位字典：通用排班系统不写死某几个岗位，弹窗里从这里出 */
+export const JOBS5 = ['推拿师', '客户经理', '店长', '前台', '保洁']
+
 export const PEOPLE5 = [
   { id: 'E-107', name: '蓝田', spaceId: 'S-201', kind: 'fulltime', position: '推拿师', score: 86 },
   { id: 'E-113', name: '沈书', spaceId: 'S-201', kind: 'fulltime', position: '客户经理', score: 90 },

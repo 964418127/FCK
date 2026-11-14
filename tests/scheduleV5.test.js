@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5 } from '../src/mock/scheduleV5.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -31,6 +31,16 @@ test('「谁」三条件匹配：范围（本店/附近 km）+ 合作性质 + �
   const near = { scope: 'radius', km: 3, kind: 'all', pos: 'all' }
   assert.equal(matchWho5(s, person('E-107'), sl01, near), true, '本店也在半径圈内')
   assert.equal(matchWho5(s, person('E-133'), sl01, near), false)
+})
+
+test('岗位字典：通用系统不写死岗位，弹窗选项从字典出', () => {
+  assert.ok(JOBS5.includes('推拿师') && JOBS5.includes('客户经理'))
+  assert.ok(JOBS5.length >= 4, '岗位字典至少覆盖门店常见岗位')
+})
+
+test('岗位字典：通用系统不写死岗位，弹窗选项从字典出', () => {
+  assert.ok(JOBS5.includes('推拿师') && JOBS5.includes('客户经理'))
+  assert.ok(JOBS5.length >= 4, '岗位字典至少覆盖门店常见岗位')
 })
 
 test('whoLabel5：条件组合成人话，全不限=全员', () => {
