@@ -1337,9 +1337,9 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 132px 108px 300px minmax(96px, 1fr) 40px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-head { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
 .le-head span:last-child { text-align: right; }
-.le-row { display: grid; grid-template-columns: 44px 132px 108px 300px minmax(96px, 1fr) 40px; align-items: center; gap: 6px; padding: 3px 0; }
+.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0; }
 .win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .win-line { display: flex; align-items: center; gap: 4px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
