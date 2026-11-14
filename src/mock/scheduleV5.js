@@ -562,7 +562,7 @@ export function addFact5(state, fact) {
     const target = state.placements.find(p => p.id === fact.placementId && p.status === 'active')
     if (target) {
       target.status = 'covered'
-      target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，班次释放` })
+      target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，这段时间被请假占用` })
       const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
       if (rep) {
         const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id })

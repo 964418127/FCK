@@ -429,7 +429,7 @@
                 </td>
                 <td>
                   <span v-if="r.status === 'active'" class="st-on">生效</span>
-                  <span v-else class="st-off">已覆盖</span>
+                  <span v-else class="st-off">时间被占用</span>
                 </td>
               </tr>
             </tbody>
@@ -449,7 +449,7 @@
           <div class="tl-box">
             <div class="tl-head">
               <strong>个人时间线</strong>
-              <span>当前轮（{{ short(v5.round.span[0]) }}–{{ short(v5.round.span[1]) }}）这个人身上的班次和事实：被覆盖的班、顶进来的班，按天对齐看。</span>
+              <span>当前轮（{{ short(v5.round.span[0]) }}–{{ short(v5.round.span[1]) }}）这个人身上的班次和事实按天对齐：哪段班的时间被事实占用、谁顶进来，看得见；班次记录本身不动。</span>
               <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event">
                 <el-option v-for="p in tlPeople" :key="p.id" :label="p.name" :value="p.id" />
               </el-select>
@@ -937,7 +937,7 @@ const applies = computed(() => applicationRows5(selSpace.value))
 /* 事实与版本 */
 const facts = computed(() => factRows5())
 
-/* 个人时间线：当前轮覆盖区间，按天对齐这个人身上的班次（含被覆盖）与事实（提交的 / 被补进来的） */
+/* 个人时间线：当前轮覆盖区间，按天对齐这个人身上的班次（时间被事实占用的）与事实（提交的 / 被补进来的） */
 const tlPidRaw = ref('')
 const tlPid = computed(() => tlPidRaw.value || curSpacePeople.value[0]?.id || '')
 const tlDates = computed(() => {
@@ -964,14 +964,17 @@ const tlRows = computed(() => {
   const inSpan = date => dates.some(d => d.date === date)
   const mk = () => { const o = {}; dates.forEach(d => { o[d.date] = [] }); return o }
   const rows = []
-  /* 班次行：这个人身上的占位；被覆盖的显示成虚线灰块，留痕可见 */
+  /* 班次行：这个人身上的占位；时间被事实占用的显示成虚线灰块——班次记录不动，只是这段时间被占用 */
   const shifts = mk()
   v5.placements.filter(p => p.personId === pid && inSpan(p.date)).forEach(p => {
     const s = slotById(v5, p.slotId)
     if (!s) return
-    shifts[p.date].push(p.status === 'covered'
-      ? { text: `${s.name} ${s.start}–${s.end}`, sub: '已被覆盖：' + (p.history?.[0]?.note?.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} /, '') || ''), cls: 'covered' }
-      : { text: `${s.name} ${s.start}–${s.end}`, sub: p.way, cls: 'shift' })
+    if (p.status === 'covered') {
+      const fac = v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id))
+      shifts[p.date].push({ text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' })
+    } else {
+      shifts[p.date].push({ text: `${s.name} ${s.start}–${s.end}`, sub: p.way, cls: 'shift' })
+    }
   })
   rows.push({ kind: 'shift', label: '班次', byDate: shifts })
   /* 事实行：这个人提交的事实（请假…）+ 因事实被补进来的班（顶班/补位） */
@@ -1016,7 +1019,7 @@ function traceLine(pid) {
   if (!p) return ''
   const nm = personById(v5, p.personId)?.name
   const s = slotById(v5, p.slotId)
-  return `${p.date.slice(5)} ${s?.name} · ${nm} · ${p.status === 'covered' ? '已覆盖' : p.way}`
+  return `${p.date.slice(5)} ${s?.name} · ${nm} · ${p.status === 'covered' ? '时间被占用' : p.way}`
 }
 
 /* 找人顶班：从缺口格子直接进来，时段和日期已经带好 */

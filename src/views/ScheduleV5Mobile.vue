@@ -51,7 +51,7 @@
           :today="v5.today"
           :legend="[
             { cls: 'red', label: '有班' },
-            { cls: 'amber', label: '含释放记录' }
+            { cls: 'amber', label: '有时间被占用' }
           ]"
           @select="mineSel = $event"
           @move="moveMine"
@@ -71,7 +71,7 @@
         <div v-for="r in dayRows" :key="r.id" :class="['res-card', { covered: r.status === 'covered' }]">
           <div class="rc-head">
             <div class="rc-tags">
-              <span :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '已释放' : wayLabel(r) }}</span>
+              <span :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '时间被占用' : wayLabel(r) }}</span>
               <span v-if="r.status === 'active' && pendingNoticeOf(r)" class="state-tag warn" @click="tab = 'notice'">待确认</span>
               <span v-else-if="swapPendingOf(r)" class="state-tag">换班等对方</span>
             </div>
@@ -262,10 +262,10 @@
           <div class="sheet-shift">{{ dayLabel(sheet.row.date) }} · {{ slotOf(sheet.row.slotId).name }} {{ slotOf(sheet.row.slotId).start }}–{{ slotOf(sheet.row.slotId).end }}</div>
           <div class="sheet-meta">{{ spaceName(slotOf(sheet.row.slotId).spaceId) }} · 你在 {{ shortAt(v5.now) }} 提交，影响的是这一班</div>
           <div class="checks">
-            <div><i>•</i>这条班次从你名下释放</div>
+            <div><i>•</i>提交一条请假事实，这段班的时间被占用</div>
             <div><i>•</i>系统按顺位找有空、没冲突的人顶上</div>
             <div><i>•</i>顶上班的人会推通知告诉你</div>
-            <div><i>•</i>释放记录留在你的时间线里，不会消失</div>
+            <div><i>•</i>请假记录留在你的时间线里，不会消失；请假撤了班就回来</div>
           </div>
           <p class="sheet-note">名额本身不能退，退的只是这一次的班次占用；之后有需要可以再抢。</p>
         </div>
@@ -450,7 +450,7 @@ function wayLabel(r) {
 function noteOf(r) {
   if (r.status === 'covered') {
     const h = r.history?.[r.history.length - 1]?.note
-    return h ? `已释放：${h}（原记录保留，不会消失）` : '这条已释放'
+    return h ? `这段时间被占用：${h}（班次记录没动，占用撤了班就回来）` : '这段时间被占用'
   }
   if (r.history?.length) return r.history[r.history.length - 1].note
   if (r.fromFact) return '有人请假，系统按顺位找到你顶上；这条不是你自己抢的'
