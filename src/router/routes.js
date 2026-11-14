@@ -1002,6 +1002,13 @@ export const routes = [
     component: () => import('../views/ScheduleV4Mobile.vue'),
     meta: { title: '排班 v4 移动端' }
   },
+  /* 排班策略 v5 · 移动端：我的排班 / 可获取 / 通知（必须顶层路由，嵌套会带桌面壳） */
+  {
+    path: '/v5/m',
+    name: 'schedule-v5-mobile',
+    component: () => import('../views/ScheduleV5Mobile.vue'),
+    meta: { title: '排班 v5 移动端' }
+  },
   {
     path: '/v3/m/notice',
     name: 'v3-mobile-notice',
