@@ -144,14 +144,23 @@ test('请假：班次释放 + 找有空没冲突的人顶，解版本 +1', () =>
   assert.ok(s.versions[s.versions.length - 1].facts.includes('F-X'))
 })
 
-test('请假：无人可顶时段留空，待人事处理', () => {
+test('请假：无人可顶时段留空，发通知给人事处理；人事顶上后待办自动销掉', () => {
   const s = mk()
   s.people.forEach(p => {
     if (p.id !== 'E-107') s.placements.push({ id: `PB-${p.id}`, slotId: 'SL-01', date: '2026-11-18', personId: p.id, way: '直派', status: 'active', history: [] })
   })
   const fact = { id: 'F-Y', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
   addFact5(s, fact)
-  assert.ok(fact.result.includes('没人能顶'))
+  assert.ok(fact.result.includes('通知人事'))
+  const hn = s.notices.find(n => n.kind === 'hr')
+  assert.ok(hn, '没人顶要发一条给人事的待处理通知')
+  assert.equal(hn.to, 'HR')
+  assert.equal(hn.slotId, 'SL-01')
+  assert.equal(hn.date, '2026-11-18')
+  assert.equal(hn.acked, false)
+  /* 人事写顶班事实后，这条待处理自动销掉 */
+  addFact5(s, { id: 'F-Y2', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' })
+  assert.equal(s.notices.find(n => n.kind === 'hr').acked, true)
 })
 
 test('顶班：人事安排，通知即可，不需同意', () => {

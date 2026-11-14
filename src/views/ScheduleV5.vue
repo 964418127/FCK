@@ -490,6 +490,16 @@
             </div>
           </div>
 
+          <!-- 待人事处理：求值没人顶时发给人事的待办，顶上后自动销掉 -->
+          <div v-if="hrTodos.length" class="hr-todo">
+            <strong>待人事处理（{{ hrTodos.length }}）</strong>
+            <div v-for="n in hrTodos" :key="n.id" class="hrt-row">
+              <span class="hrt-text">{{ n.text }}<em>{{ n.detail }}</em></span>
+              <el-button size="small" type="primary" @click="openGapFromNotice(n)">处理：找人顶班</el-button>
+              <el-button size="small" @click="ackNotice(n.id)">先不管</el-button>
+            </div>
+          </div>
+
           <table class="data-table">
             <thead>
               <tr><th style="width: 120px;">发生时间</th><th style="width: 90px;">类型</th><th style="width: 76px;">谁</th><th style="width: 190px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
@@ -691,7 +701,7 @@ import { usePager } from '../composables/usePager.js'
 import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
-  appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5
+  appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -1080,6 +1090,9 @@ function openAppoint(gap) {
   appointDlg.value = true
 }
 function openGap(slot, date) { openAppoint({ slotId: slot.id, date }) }
+/* 待人事处理：从通知直接进找人顶班，时段和日期已经带好 */
+const hrTodos = computed(() => v5.notices.filter(n => n.kind === 'hr' && !n.acked))
+function openGapFromNotice(n) { openAppoint({ slotId: n.slotId, date: n.date }) }
 function doAppoint() {
   if (!appoint.gapKey || !appoint.personId) { ElMessage.warning('选空位、选人'); return }
   const [slotId, date] = appoint.gapKey.split('|')
@@ -1340,6 +1353,12 @@ tr.covered td { color: #9a9fa9; }
 .fa-note { font-size: 11.5px; color: #b0b3ba; }
 /* 个人时间线 */
 .tl-box { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 10px 12px 8px; margin-bottom: 14px; }
+/* 待人事处理：求值没人顶时发给人事的待办 */
+.hr-todo { background: #faeeda; border: 1px solid #ecd9b0; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.hr-todo > strong { font-size: 12.5px; color: #854F0B; }
+.hrt-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #6a6a75; }
+.hrt-text { flex: 1; min-width: 0; color: #633806; }
+.hrt-text em { display: block; font-style: normal; color: #9a8a6a; font-size: 11.5px; margin-top: 2px; }
 .tl-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 .tl-head strong { font-size: 13px; color: #2c2c2a; }
 .tl-head > span { font-size: 12px; color: #8a8a95; margin-right: auto; }

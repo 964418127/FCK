@@ -603,7 +603,12 @@ export function addFact5(state, fact) {
           detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；你是清单里当时有空、没冲突的人`
         })
       } else {
-        fact.result = '暂时没人能顶，时段留空，待人事处理'
+        fact.result = '时段留空，已通知人事处理'
+        state.notices.unshift({
+          id: `N-${state.seq++}`, to: 'HR', kind: 'hr', acked: false, date: target.date, slotId: target.slotId,
+          text: `待处理：${target.date} ${slotById(state, target.slotId).name} 没人能顶`,
+          detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；顺位里没有有空、没冲突的人，时段留空，请人事找人顶班`
+        })
       }
     }
   } else if (fact.type === '顶班') {
@@ -615,6 +620,10 @@ export function addFact5(state, fact) {
       id: `N-${state.seq++}`, to: fact.personId, kind: 'appoint', acked: false, date: fact.date,
       text: `排班安排：${fact.date} ${slotById(state, fact.slotId).name} ${slotById(state, fact.slotId).start}-${slotById(state, fact.slotId).end}`,
       detail: '人事的经营性安排，不需你同意；如有实际困难联系门店人事'
+    })
+    /* 顶上之后，这个时段的「待人事处理」自动销掉 */
+    state.notices.forEach(n => {
+      if (n.kind === 'hr' && !n.acked && n.slotId === fact.slotId && n.date === fact.date) n.acked = true
     })
   } else if (fact.type === '换班') {
     const a = state.placements.find(p => p.id === fact.placementId)
