@@ -484,6 +484,7 @@
                 <div class="tl-track">
                   <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
                   <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
+                    <i v-for="(m, i) in b.marks || []" :key="'m' + i" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
                     <strong>{{ b.text }}</strong>
                     <span v-if="b.sub">{{ b.sub }}</span>
                   </div>
@@ -1024,7 +1025,15 @@ function tlBandsFor(day) {
     const s = slotById(v5, p.slotId)
     if (!s) return null
     const fac = p.status === 'covered' ? v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id)) : null
-    return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: p.status === 'covered' ? `时间被${fac?.type || '事实'}占用` : p.way, cls: p.status === 'covered' ? 'covered' : 'shift' }
+    if (p.status === 'covered') return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' }
+    /* 部分占用：这条班里被事实占据的段，蓝块上叠出来 */
+    const segs = v5.facts.filter(f => f.by === pid && f.date === day && f.slotId === p.slotId && f.type === '请假').map(f => {
+      const st = f.start || s.start
+      const en = f.end || s.end
+      return st < en ? { s: toMin(st), e: toMin(en), label: `${st}–${en}` } : null
+    }).filter(Boolean)
+    const sub = segs.length ? `${p.way} · 其中 ${segs.map(x => x.label).join('、')} 被占用` : p.way
+    return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub, marks: segs, cls: 'shift' }
   }).filter(Boolean)
   if (shifts.length) rows.push({ label: '班次', bands: shifts })
   const facts = v5.facts.filter(f => f.by === pid && f.date === day).map(f => {
@@ -1406,6 +1415,7 @@ tr.covered td { color: #9a9fa9; }
 .tl-band strong { display: block; font-size: 11px; white-space: nowrap; }
 .tl-band span { display: block; color: inherit; opacity: 0.75; font-size: 10.5px; white-space: nowrap; }
 .tl-band.shift { background: #eef3fb; color: #24587f; }
+.tl-occ { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(138, 77, 11, 0.30), rgba(138, 77, 11, 0.30) 4px, rgba(251, 233, 210, 0.65) 4px, rgba(251, 233, 210, 0.65) 8px); border-right: 1px solid rgba(138, 77, 11, 0.35); border-left: 1px solid rgba(138, 77, 11, 0.35); }
 .tl-band.covered { background: #f7f7f4; color: #8a8a95; border: 1px dashed #c9c9c2; }
 .tl-band.fact { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
 .tl-band.makeup { background: #eaf6f1; color: #0f6e56; }
