@@ -1183,8 +1183,9 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 150px 130px 190px 1fr; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
-.le-row { display: grid; grid-template-columns: 44px 150px 130px 190px 1fr; align-items: center; gap: 6px; padding: 3px 0; }
+.le-head { display: grid; grid-template-columns: 44px 150px 130px 190px minmax(96px, 1fr) 40px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-head span:last-child { text-align: right; }
+.le-row { display: grid; grid-template-columns: 44px 150px 130px 190px minmax(96px, 1fr) 40px; align-items: center; gap: 6px; padding: 3px 0; }
 .who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
 .who-chip:hover { border-color: #a40035; }
 .who-chip-edit { font-size: 11px; color: #b0b3ba; }
@@ -1193,7 +1194,7 @@ function devResolveApply() {
 .wr-unit { font-size: 12.5px; color: #6a6a75; }
 .who-preview { border: 1px dashed #e6dfe1; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; color: #6a6a75; }
 .who-preview strong { color: #a40035; font-weight: 600; }
-.le-row .del, .add-row { border: none; background: none; color: #a40035; font-size: 12px; cursor: pointer; justify-self: start; }
+.le-row .del, .add-row { border: none; background: none; color: #a40035; font-size: 12px; cursor: pointer; justify-self: end; padding: 0; }
 .add-row { margin-top: 4px; }
 .ea { display: flex; align-items: center; gap: 8px; }
 .ea-hint { font-size: 11.5px; color: #a35b00; margin-right: auto; }
