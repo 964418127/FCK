@@ -252,6 +252,11 @@
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
                   <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
+                  <div class="le-ways">
+                    <span><strong>直派轮转</strong>系统按顺位直接排人，到这一档窗口开放时执行，不用抢</span>
+                    <span><strong>抢</strong>窗口一开自己点，先到先得，位满即关；成不了当场说原因</span>
+                    <span><strong>申领审核</strong>提交申领，截止后按综合分排序截断</span>
+                  </div>
                   <div class="le-note">上限 = 这一档最多占掉多少个名额（不能超过名额 {{ quotaN || '?' }}）；留空 = 不封顶，能吃满全部名额。这一档吃剩的名额留给下一档。</div>
                 </div>
 
@@ -1306,6 +1311,8 @@ function devResolveApply() {
 .slot-card.being-edited { border-color: #e6c9d2; }
 .lr-cap { font-size: 11.5px; color: #9a9aa4; margin-left: 8px; }
 .le-note { font-size: 11.5px; color: #9a9aa4; margin-top: 4px; line-height: 1.6; }
+.le-ways { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11.5px; color: #8a8a95; margin-top: 10px; line-height: 1.5; }
+.le-ways strong { color: #a40035; font-weight: 500; margin-right: 5px; }
 .le-quota { font-style: normal; color: #a40035; font-weight: 500; margin-left: 4px; }
 .lr-empty { font-size: 12px; color: #9a9aa4; }
 .form-errs { display: flex; flex-direction: column; gap: 3px; background: #fff7f8; border: 1px solid #f3d7dd; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #a40035; line-height: 1.7; }
@@ -1345,7 +1352,7 @@ function devResolveApply() {
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
 .le-head { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
 .le-head span:last-child { text-align: right; }
-.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0 16px; }
+.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0 22px; }
 .win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; position: relative; }
 .win-line { display: flex; align-items: center; gap: 6px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
