@@ -231,7 +231,7 @@ export function recalcRound(state) {
 }
 
 const P = (id, slotId, date, personId, way, extra = {}) => ({
-  id, slotId, date, personId, way, status: 'active', history: [], ...extra
+  id, slotId, date, personId, way, status: 'active', at: '2026-11-12 06:00', history: [], ...extra
 })
 
 /* 获取段结果（解的基线，v1 于发布时生成） */
@@ -522,7 +522,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
 export function grab5(state, slotId, date, personId, now = NOW) {
   const chk = canTake5(state, slotId, date, personId, 'grab', now)
   if (!chk.ok) return chk
-  state.placements.push(P(`P-${state.seq++}`, slotId, date, personId, `抢 · 第${chk.row.k}档`))
+  state.placements.push(P(`P-${state.seq++}`, slotId, date, personId, `抢 · 第${chk.row.k}档`, { at: now }))
   return { ok: true }
 }
 
@@ -593,7 +593,7 @@ export function addFact5(state, fact) {
       target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，这段时间被请假占用` })
       const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
       if (rep) {
-        const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id })
+        const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id, at: fact.at })
         state.placements.push(np)
         touched.push(target, np)
         fact.result = `班次由 ${rep.person.name} 顶上（补位）`
@@ -612,7 +612,7 @@ export function addFact5(state, fact) {
       }
     }
   } else if (fact.type === '顶班') {
-    const np = P(`P-${state.seq++}`, fact.slotId, fact.date, fact.personId, '顶班', { fromFact: fact.id })
+    const np = P(`P-${state.seq++}`, fact.slotId, fact.date, fact.personId, '顶班', { fromFact: fact.id, at: fact.at })
     state.placements.push(np)
     touched.push(np)
     fact.result = `${personById(state, fact.personId).name} 已被安排顶班（经营性安排，通知即可）`

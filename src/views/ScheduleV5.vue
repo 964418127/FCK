@@ -464,7 +464,7 @@
           <div class="tl-box">
             <div class="tl-head">
               <strong>个人时间线</strong>
-              <span>当前轮（{{ short(v5.round.span[0]) }}–{{ short(v5.round.span[1]) }}）这个人身上的班次和事实按天对齐：哪段班的时间被事实占用、谁顶进来，看得见；班次记录本身不动。</span>
+              <span>横轴是这一轮的每一天：班次行是这段班，事实行按发生顺序排——先获取班次占住时间，之后发生请假等事实占据。班次记录本身不动。</span>
               <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event">
                 <el-option v-for="p in tlPeople" :key="p.id" :label="p.name" :value="p.id" />
               </el-select>
@@ -1016,19 +1016,24 @@ const tlRows = computed(() => {
     }
   })
   rows.push({ kind: 'shift', label: '班次', byDate: shifts })
-  /* 事实行：这个人提交的事实（请假…）+ 因事实被补进来的班（顶班/补位） */
-  const fts = mk()
+  /* 事实行：横轴每一天里，这个人这段班的时间怎么被占住的——第一件事是获取班次占住，之后发生请假等事实占据，按发生时间排 */
+  const evs = mk()
+  v5.placements.filter(p => p.personId === pid && inSpan(p.date)).forEach(p => {
+    const sw = p.history?.find(h => h.note.includes('换班'))
+    evs[p.date].push({
+      at: sw ? sw.note.slice(0, 16) : (p.at || ''),
+      text: sw ? '获取班次 · 换班' : `获取班次 · ${p.way}`,
+      sub: (sw ? sw.note.slice(0, 16) : (p.at || '')).slice(5, 16),
+      cls: 'acq'
+    })
+  })
   v5.facts.filter(f => f.by === pid && (!f.date || inSpan(f.date))).forEach(f => {
     const s = f.slotId ? slotById(v5, f.slotId) : null
     const day = f.date || dates[0]?.date
-    fts[day]?.push({ text: `${f.type} · ${f.at.slice(5, 16)}`, sub: s ? `盖住 ${f.date.slice(5)} ${s.name}` : (f.result || ''), cls: 'fact' })
+    evs[day]?.push({ at: f.at, text: `${f.type} · ${f.at.slice(5, 16)}`, sub: s ? `占据 ${f.date.slice(5)} ${s.name}` : (f.result || ''), cls: 'fact' })
   })
-  v5.placements.filter(p => p.personId === pid && p.fromFact).forEach(p => {
-    const s = slotById(v5, p.slotId)
-    if (!s || !inSpan(p.date)) return
-    fts[p.date].push({ text: `顶上 ${s.name}`, sub: `${s.start}–${s.end}（${p.fromFact} 补位）`, cls: 'makeup' })
-  })
-  rows.push({ kind: 'fact', label: '事实', byDate: fts })
+  dates.forEach(d => evs[d.date].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
+  rows.push({ kind: 'fact', label: '事实', byDate: evs })
   return rows
 })
 /* 相关的人：请假的人 ↔ 顶班的人，互相可跳 */
@@ -1371,6 +1376,7 @@ tr.covered td { color: #9a9fa9; }
 .tl-block strong { display: block; font-size: 11.5px; }
 .tl-block span { color: inherit; opacity: 0.75; }
 .tl-block.shift { background: #eef3fb; color: #24587f; }
+.tl-block.acq { background: #f0f4f2; color: #33506e; border: 1px solid #ccd9d4; }
 .tl-block.covered { background: #f7f7f4; color: #8a8a95; border: 1px dashed #c9c9c2; }
 .tl-block.fact { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
 .tl-block.makeup { background: #eaf6f1; color: #0f6e56; }

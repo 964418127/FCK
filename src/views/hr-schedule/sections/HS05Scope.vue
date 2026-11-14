@@ -405,7 +405,7 @@
         <text class="tf-t tf-shift-t" x="522" y="75">早班 10–18</text>
         <text class="tf-row tf-fact-row" x="112" y="117">事实 · 休假</text>
         <rect class="tf-fact" x="122" y="100" width="168" height="34" rx="5" />
-        <text class="tf-t tf-fact-t" x="206" y="117">休假，盖住 11-16 全天</text>
+        <text class="tf-t tf-fact-t" x="206" y="117">休假，占据 11-16 全天</text>
         <text class="tf-row tf-mk-row" x="112" y="159">D · 补位</text>
         <rect class="tf-makeup" x="122" y="142" width="111" height="34" rx="5" />
         <text class="tf-t tf-mk-t" x="178" y="159">补进早班</text>
