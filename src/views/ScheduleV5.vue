@@ -243,7 +243,7 @@
                         </el-select>
                         <el-input-number v-if="winKind(r) === 'date'" v-model="r.win.d" :min="-7" :max="0" size="small" controls-position="right" style="width: 62px" />
                         <span v-if="winKind(r) === 'date'" class="win-u">天前</span>
-                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
+                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px; margin-left: auto" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
                       </div>
                       <div class="win-preview">{{ winPreview(r) }}</div>
                     </div>
@@ -1347,7 +1347,7 @@ function devResolveApply() {
 .le-head span:last-child { text-align: right; }
 .le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0; }
 .win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.win-line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.win-line { display: flex; align-items: center; gap: 6px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
 .win-preview { font-size: 11px; color: #3B6D11; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
