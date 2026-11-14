@@ -209,6 +209,13 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
   if (form.quota?.source === 'manual' && !(form.quota.value > 0)) errs.push('名额要大于 0')
   if (form.quota?.source === 'service' && !form.quota.serviceId) errs.push('选了挂算法服务，但没指定是哪个')
 
+  /* 档位上限挂在名额上：超过名额的上限存了也吃不满 */
+  const quotaN = form.quota?.source === 'manual' ? (form.quota.value || 0)
+    : exceptId ? (state.slots.find(s => s.id === exceptId)?.snapN || 0) : 0
+  form.list.forEach((r, i) => {
+    if (quotaN && r.cap && r.cap > quotaN) errs.push(`第 ${i + 1} 档上限 ${r.cap} 超过了名额 ${quotaN}，最多也就占满 ${quotaN} 个名额`)
+  })
+
   /* 窗口顺序：后面的档不该比前面的档先开（都按这一轮第一天落成具体开放时刻比较） */
   const first = slotFirstDate5({ days: form.days?.length ? form.days : [0, 1, 2, 3, 4, 5, 6] })
   const wins = form.list.map(r => openAt5(r, state.round, first))

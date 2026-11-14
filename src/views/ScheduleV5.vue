@@ -213,7 +213,7 @@
                 </div>
                 <div class="list-editor">
                   <div class="le-head">
-                    <span>档位</span><span>谁</span><span>方式</span><span>开放窗口</span><span>上限</span><span />
+                    <span>档位</span><span>谁</span><span>方式</span><span>开放窗口</span><span>上限<em class="le-quota">名额 {{ quotaN || '?' }}</em></span><span />
                   </div>
                   <div v-for="(r, i) in form.list" :key="i" class="le-row">
                     <span class="lr-k">{{ i + 1 }}</span>
@@ -247,12 +247,12 @@
                       </div>
                       <div class="win-preview">{{ winPreview(r) }}</div>
                     </div>
-                    <el-input-number v-model="r.cap" :min="1" :max="6" size="small" controls-position="right"
+                    <el-input-number v-model="r.cap" :min="1" :max="quotaN || 99" size="small" controls-position="right"
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
                   <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
-                  <div class="le-note">上限留空=这一档能吃满全部名额；填了就封顶，剩下的名额留给下一档。</div>
+                  <div class="le-note">上限 = 这一档最多占掉多少个名额（不能超过名额 {{ quotaN || '?' }}）；留空 = 不封顶，能吃满全部名额。这一档吃剩的名额留给下一档。</div>
                 </div>
 
                 <div v-if="formErrs.length" class="form-errs">
@@ -290,7 +290,7 @@
                   <span class="lr-who">{{ whoLabel5(r.who) }}</span>
                   <span class="lr-way" :class="'way-' + r.way">{{ wayLabel(r.way) }}</span>
                   <span class="lr-win">{{ windowLabel5(r, s) }}</span>
-                  <span class="lr-cap">{{ r.cap ? `最多 ${r.cap} 人` : '不封顶' }}</span>
+                  <span class="lr-cap">{{ r.cap ? `上限 ${r.cap} 个名额` : '不封顶' }}</span>
                 </div>
               </div>
 
@@ -933,6 +933,10 @@ function snapOf(id) {
   const s = slotById(v5, id)
   return s ? s.snapN : 0
 }
+/* 名额数：上限跟着它封顶。手动=表单值；挂服务=本轮快照；新班次挂服务=下一轮才出数 */
+const quotaN = computed(() => form.quota.source === 'manual'
+  ? (form.quota.value || 0)
+  : (editing.value !== 'new' ? snapOf(editing.value) : 0))
 function doCopy(s) {
   const r = copySlot(s.id)
   if (r.ok) ElMessage.success(`已复制「${s.name}」：改名、改时间后保存，就是新班次`)
@@ -1302,6 +1306,7 @@ function devResolveApply() {
 .slot-card.being-edited { border-color: #e6c9d2; }
 .lr-cap { font-size: 11.5px; color: #9a9aa4; margin-left: 8px; }
 .le-note { font-size: 11.5px; color: #9a9aa4; margin-top: 4px; line-height: 1.6; }
+.le-quota { font-style: normal; color: #a40035; font-weight: 500; margin-left: 4px; }
 .lr-empty { font-size: 12px; color: #9a9aa4; }
 .form-errs { display: flex; flex-direction: column; gap: 3px; background: #fff7f8; border: 1px solid #f3d7dd; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #a40035; line-height: 1.7; }
 .form-errs strong { font-size: 12px; }

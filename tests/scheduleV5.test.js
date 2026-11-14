@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
 import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5 } from '../src/mock/scheduleV5.js'
+import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -90,6 +91,16 @@ test('发布后推 0 天：开窗不早于发布时刻', () => {
   assert.ok(windowLabel5({ win: { base: 'puboff', d: 0, t: '05:00' } }).includes('不早于发布'))
   /* 推 1 天正常落成次日时刻 */
   assert.equal(openAt5({ win: { base: 'puboff', d: 1, t: '09:00' } }, s.round), '2026-11-13 09:00')
+})
+
+test('档位自检：上限不能超过名额', () => {
+  const s = mk()
+  const form = { name: '凌晨班', start: '03:00', end: '05:00', days: [1], quota: { source: 'manual', value: 3 },
+    list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' }, cap: 5 }] }
+  const errs = checkSlotForm(s.spaces[0].id, form)
+  assert.ok(errs.some(e => e.includes('上限 5 超过了名额 3')), '超名额的上限要报错')
+  form.list[0].cap = null
+  assert.ok(!checkSlotForm(s.spaces[0].id, form).some(e => e.includes('名额')), '不封顶不报错')
 })
 
 test('抢：占位成功；位满当场说原因', () => {
