@@ -158,23 +158,11 @@
                   </div>
                   <div v-for="(r, i) in form.list" :key="i" class="le-row">
                     <span class="lr-k">{{ i + 1 }}</span>
-                    <div class="who-cond">
-                      <el-select v-model="r.who.scope" size="small" style="width: 92px">
-                        <el-option label="本店" value="store" />
-                        <el-option label="周边公里" value="radius" />
-                      </el-select>
-                      <el-input-number v-if="r.who.scope === 'radius'" v-model="r.who.km" :min="1" :max="20" size="small" controls-position="right" style="width: 74px" />
-                      <el-select v-model="r.who.kind" size="small" style="width: 78px">
-                        <el-option label="不限性质" value="all" />
-                        <el-option label="全职" value="fulltime" />
-                        <el-option label="非全" value="parttime" />
-                      </el-select>
-                      <el-select v-model="r.who.pos" size="small" style="width: 86px">
-                        <el-option label="不限岗位" value="all" />
-                        <el-option label="推拿师" value="推拿师" />
-                        <el-option label="客户经理" value="客户经理" />
-                      </el-select>
-                    </div>
+                    <!-- 界面只显示组合结果；点开弹窗去设三个条件 -->
+                    <button class="who-chip" type="button" @click="openWho(i)" title="点开设置这一档开放给谁">
+                      {{ whoLabel5(r.who) }}
+                      <span class="who-chip-edit">改</span>
+                    </button>
                     <el-select v-model="r.way" size="small" style="width: 120px">
                       <el-option label="直派轮转" value="direct" />
                       <el-option label="抢" value="grab" />
@@ -455,6 +443,42 @@
       </template>
     </el-dialog>
 
+    <!-- 这一档开放给谁：三个条件单独设置，界面只显示组合结果 -->
+    <el-dialog v-model="whoDlg" title="这一档开放给谁" width="440px">
+      <div class="wr">
+        <label>范围</label>
+        <el-radio-group v-model="whoEdit.scope" size="small">
+          <el-radio-button value="store">本店</el-radio-button>
+          <el-radio-button value="radius">附近</el-radio-button>
+        </el-radio-group>
+        <template v-if="whoEdit.scope === 'radius'">
+          <el-input-number v-model="whoEdit.km" :min="1" :max="20" size="small" controls-position="right" style="width: 90px" />
+          <span class="wr-unit">公里</span>
+        </template>
+      </div>
+      <div class="wr">
+        <label>合作性质</label>
+        <el-radio-group v-model="whoEdit.kind" size="small">
+          <el-radio-button value="all">不限</el-radio-button>
+          <el-radio-button value="fulltime">全职</el-radio-button>
+          <el-radio-button value="parttime">非全</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="wr">
+        <label>岗位</label>
+        <el-radio-group v-model="whoEdit.pos" size="small">
+          <el-radio-button value="all">不限</el-radio-button>
+          <el-radio-button value="推拿师">推拿师</el-radio-button>
+          <el-radio-button value="客户经理">客户经理</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="who-preview">这一档开放给：<strong>{{ whoLabel5(whoEdit) }}</strong></div>
+      <template #footer>
+        <el-button size="small" @click="whoDlg = false">取消</el-button>
+        <el-button size="small" type="primary" @click="saveWho">确定</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 找人顶班 -->
     <el-dialog v-model="appointDlg" title="找人顶班" width="560px">
       <div class="svc-note">经营性安排：名额限定到这一个人，别人进不来；不需对方同意，通知即可。</div>
@@ -730,6 +754,20 @@ function doAppoint() {
   ElMessage.success(r.text)
 }
 
+/* 「这一档开放给谁」弹窗：三个条件在这里设，清单行只显示组合结果 */
+const whoDlg = ref(false)
+const whoEditIdx = ref(-1)
+const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', pos: 'all' })
+function openWho(i) {
+  whoEditIdx.value = i
+  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', pos: 'all', ...(form.list[i]?.who || {}) })
+  whoDlg.value = true
+}
+function saveWho() {
+  if (whoEditIdx.value >= 0) form.list[whoEditIdx.value].who = { ...whoEdit }
+  whoDlg.value = false
+}
+
 /* 算法服务登记：四门槛必填，登记完时段的名额来源里就能选到 */
 const svcDlg = ref(false)
 const svcErrs = ref([])
@@ -880,9 +918,16 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 292px 118px 168px 1fr; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
-.le-row { display: grid; grid-template-columns: 44px 292px 118px 168px 1fr; align-items: center; gap: 6px; padding: 3px 0; }
-.who-cond { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.le-head { display: grid; grid-template-columns: 44px 150px 130px 190px 1fr; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-row { display: grid; grid-template-columns: 44px 150px 130px 190px 1fr; align-items: center; gap: 6px; padding: 3px 0; }
+.who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
+.who-chip:hover { border-color: #a40035; }
+.who-chip-edit { font-size: 11px; color: #b0b3ba; }
+.wr { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.wr > label { font-size: 12.5px; color: #6a6a75; width: 64px; }
+.wr-unit { font-size: 12.5px; color: #6a6a75; }
+.who-preview { border: 1px dashed #e6dfe1; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; color: #6a6a75; }
+.who-preview strong { color: #a40035; font-weight: 600; }
 .le-row .del, .add-row { border: none; background: none; color: #a40035; font-size: 12px; cursor: pointer; justify-self: start; }
 .add-row { margin-top: 4px; }
 .ea { display: flex; align-items: center; gap: 8px; }

@@ -314,7 +314,7 @@
       </div>
       <ul class="pt-list">
         <li><strong>就三种拿法：</strong>直派（系统直接排）/ 抢（点了就成，成不了当场说原因）/ 申领审核（截止按综合分排，落选周五再抢）。</li>
-        <li><strong>档位里的「谁」是三个条件组合：</strong>范围（默认本店；往外放写「周边 N 公里」，不用「同城」这种粗旷说法）+ 合作性质（全职 / 非全 / 不限）+ 岗位（不限 / 具体岗位）。像圈人的搜索条件一样组合，圈出来的才是这一档的候选人群；圈进来还要过资格和冲突检查才真能拿。</li>
+        <li><strong>档位里的「谁」是三个条件组合：</strong>范围（默认本店；往外放写「附近 N 公里」，不用「同城」这种粗旷说法）+ 合作性质（全职 / 非全 / 不限）+ 岗位（不限 / 具体岗位）。像圈人的搜索条件一样组合，圈出来的才是这一档的候选人群；圈进来还要过资格和冲突检查才真能拿。</li>
         <li><strong>轮 = 在清单上开的一段窗口。</strong>每轮配：切到第几档、开放、截止。窗口逐行配，位占满即关；截止之后位再空，也只能安排人顶，人拿不了。</li>
         <li><strong>冲突和工时跟着三个动作查：</strong>接单的时候、审核排的时候、找人顶的时候。工时按各岗位规则——全职超限记加班，非全超限排不了。</li>
       </ul>
@@ -337,7 +337,7 @@
         <rect x="300" y="92" width="290" height="18" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
         <text x="445" y="105" text-anchor="middle" font-size="11" fill="#27500A">周五 06:00 开</text>
 
-        <text x="40" y="144" font-size="12" font-weight="500" fill="#2C2C2A">③ 周边 5km · 推拿师 · 抢</text>
+        <text x="40" y="144" font-size="12" font-weight="500" fill="#2C2C2A">③ 附近 5km · 推拿师 · 抢</text>
         <rect x="430" y="132" width="160" height="18" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
         <text x="510" y="145" text-anchor="middle" font-size="11" fill="#27500A">开班前一天开</text>
 

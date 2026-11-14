@@ -34,7 +34,7 @@ export const SERVICES5 = [
 
 /* 定义段：周期时段（归空间，不归岗位）。清单行 = 谁（范围+合作性质+岗位三个条件） · 方式 · 窗口 · 上限
    「谁」是圈人的搜索条件：{ scope: 'store'|'radius', km, kind: 'all'|'fulltime'|'parttime', pos: 'all'|'推拿师'|'客户经理' }
-   范围默认本店；往外放用「周边 N 公里」（半径圈，含本店），不用「同城」这种粗旷说法 */
+   范围默认本店；往外放用「附近 N 公里」（半径圈，含本店），不用「同城」这种粗旷说法 */
 export const SLOTS5 = [
   {
     id: 'SL-01', spaceId: 'S-201', name: '早班', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
@@ -166,7 +166,7 @@ export const VERSIONS5 = [
 export const NOTICES5 = [
   { id: 'N-01', to: 'E-133', kind: 'makeup', acked: false, date: '2026-11-17', at: '2026-11-13 09:12',
     text: '补位通知：11-17 早班 10:00-14:00（蓝田店）需要你顶上',
-    detail: '蓝田 11-13 09:12 提交请假；你是周边 5km 推拿师档里当时有空、没冲突的人' }
+    detail: '蓝田 11-13 09:12 提交请假；你是附近 5km 推拿师档里当时有空、没冲突的人' }
 ]
 
 /* ===== 纯逻辑 ===== */
@@ -200,14 +200,14 @@ export function slotsOn5(state, date) {
 }
 
 /*
-  清单行的「谁」：范围（本店/周边 N 公里）+ 合作性质（不限/全职/非全）+ 岗位（不限/具体岗位）
+  清单行的「谁」：范围（本店/附近 N 公里）+ 合作性质（不限/全职/非全）+ 岗位（不限/具体岗位）
   三个条件组合圈人，不写在时段上——「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提。
   范围半径按门店坐标算（含本店）。
 */
 export function whoLabel5(who) {
   if (!who) return ''
   if (typeof who === 'string') return who // 兼容旧字符串口径
-  const scope = who.scope === 'radius' ? `周边 ${who.km}km` : '本店'
+  const scope = who.scope === 'radius' ? `附近 ${who.km}km` : '本店'
   const kind = who.kind === 'fulltime' ? '全职' : who.kind === 'parttime' ? '非全' : ''
   const pos = who.pos && who.pos !== 'all' ? who.pos : ''
   if (!kind && !pos) return scope === '本店' ? '本店全员' : `${scope}全员`

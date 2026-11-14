@@ -425,7 +425,7 @@ function whoText(who) {
   if (!label) return ''
   if (label === '本店全员') return '面向本店所有人'
   if (label.startsWith('本店')) return `面向本店${label.slice(2).replace(' · ', '')}`
-  if (label.startsWith('周边')) {
+  if (label.startsWith('附近')) {
     const [scope, rest] = label.split(' · ')
     return rest ? `面向${scope} ${rest}` : `面向${scope}所有人`
   }

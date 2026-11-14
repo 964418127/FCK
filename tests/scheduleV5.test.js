@@ -12,7 +12,7 @@ test('定义段：周期时段铺星期，临时班次只落指定日期', () =>
   assert.equal(s.temps.filter(t => t.date === '2026-11-21').length, 1)
 })
 
-test('「谁」三条件匹配：范围（本店/周边 km）+ 合作性质 + 岗位', () => {
+test('「谁」三条件匹配：范围（本店/附近 km）+ 合作性质 + 岗位', () => {
   const s = mk()
   const sl01 = s.slots.find(x => x.id === 'SL-01')
   const person = id => s.people.find(p => p.id === id)
@@ -23,7 +23,7 @@ test('「谁」三条件匹配：范围（本店/周边 km）+ 合作性质 + �
   // 第 2 档：本店 · 非全
   assert.equal(matchWho5(s, person('E-126'), sl01, sl01.list[1].who), true)
   assert.equal(matchWho5(s, person('E-133'), sl01, sl01.list[1].who), false)
-  // 第 3 档：周边 5km · 推拿师（滨江店距蓝田店约 4.6km，命中）
+  // 第 3 档：附近 5km · 推拿师（滨江店距蓝田店约 4.6km，命中）
   assert.equal(matchWho5(s, person('E-133'), sl01, sl01.list[2].who), true)
   assert.equal(matchWho5(s, person('E-141'), sl01, sl01.list[2].who), true)
   assert.equal(matchWho5(s, person('E-113'), sl01, sl01.list[2].who), false, '客户经理不在岗位条件内')
@@ -36,7 +36,7 @@ test('「谁」三条件匹配：范围（本店/周边 km）+ 合作性质 + �
 test('whoLabel5：条件组合成人话，全不限=全员', () => {
   assert.equal(whoLabel5({ scope: 'store', kind: 'all', pos: 'all' }), '本店全员')
   assert.equal(whoLabel5({ scope: 'store', kind: 'fulltime', pos: 'all' }), '本店 · 全职')
-  assert.equal(whoLabel5({ scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }), '周边 5km · 推拿师')
+  assert.equal(whoLabel5({ scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }), '附近 5km · 推拿师')
 })
 
 test('窗口：发布即开、周五 06:00 已开、开班前一天 20:00 未开', () => {
