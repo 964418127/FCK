@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5 } from '../src/mock/scheduleV5.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -247,4 +247,39 @@ test('时段不带岗位：岗位写在清单人群里，两个岗位可共用�
   sl01.list.push({ k: 9, who: { scope: 'store', kind: 'all', pos: '客户经理' }, way: 'grab', win: 'publish' })
   assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-113'), sl01, '本店客户经理'), true)
   assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-107'), sl01, '本店客户经理'), false)
+})
+
+/* 天级复制/覆盖：先配好一天，复制/覆盖到其他天 */
+test('天级复制：源天班次覆盖到目标天（加缺的、移多余的），按星期几生效', () => {
+  const slots = [
+    { name: '早班', start: '10:00', end: '14:00', days: [1, 2] },
+    { name: '晚班', start: '14:00', end: '22:00', days: [1] },
+    { name: '周末全天', start: '10:00', end: '22:00', days: [6, 0] }
+  ]
+  /* 把周一(1)复制到周二(2)：周二补上晚班；早班两周都有不动 */
+  const plan = dayCopyPlan5(slots, 1, [2])
+  assert.deepEqual(plan.adds, [{ name: '晚班 14:00–22:00', dow: 2 }])
+  assert.deepEqual(plan.removes, [])
+  applyDayCopy5(slots, 1, [2])
+  assert.deepEqual(slots[0].days, [1, 2])
+  assert.deepEqual(slots[1].days, [1, 2])
+  assert.deepEqual(slots[2].days, [6, 0], '周末班不动')
+
+  /* 反向覆盖：周二只有早班（晚班回退为仅周一），把周二复制到周一——周一的晚班会被移出 */
+  slots[1].days = [1]
+  const plan2 = dayCopyPlan5(slots, 2, [1])
+  assert.equal(plan2.adds.length, 0)
+  assert.deepEqual(plan2.removes, [{ name: '晚班 14:00–22:00', dow: 1 }])
+  applyDayCopy5(slots, 2, [1])
+  assert.deepEqual(slots[0].days, [1, 2])
+  assert.deepEqual(slots[1].days, [], '周一的晚班被覆盖移出')
+
+  /* 同名不同起止不算同一个班次 */
+  const slots2 = [
+    { name: '早班', start: '08:00', end: '12:00', days: [1] },
+    { name: '早班', start: '10:00', end: '14:00', days: [2] }
+  ]
+  const plan3 = dayCopyPlan5(slots2, 1, [2])
+  assert.deepEqual(plan3.adds, [{ name: '早班 08:00–12:00', dow: 2 }])
+  assert.deepEqual(plan3.removes, [{ name: '早班 10:00–14:00', dow: 2 }])
 })

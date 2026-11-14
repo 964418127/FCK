@@ -299,6 +299,38 @@ export function slotsOn5(state, date) {
 }
 
 /*
+  天级复制/覆盖：把一天配好的班次照搬（覆盖）到其他天。
+  同名同起止才算同一个班次；源天有、目标天没有 → 目标天加上；源天没有、目标天有 → 从目标天移出。
+  模板按星期几定义，所以复制按星期几生效——影响每周的同一天，不只是那一格日期。
+*/
+function sameSlotDef(a, b) { return a.name === b.name && a.start === b.start && a.end === b.end }
+export function dayCopyPlan5(slots, srcDow, targetDows) {
+  const srcDefs = slots.filter(s => s.days.includes(srcDow))
+  const adds = [], removes = []
+  for (const t of targetDows) {
+    for (const s of slots) {
+      const inSrc = srcDefs.some(x => sameSlotDef(x, s))
+      const inTgt = s.days.includes(t)
+      const label = `${s.name} ${s.start}–${s.end}`
+      if (inSrc && !inTgt) adds.push({ name: label, dow: t })
+      if (!inSrc && inTgt) removes.push({ name: label, dow: t })
+    }
+  }
+  return { adds, removes }
+}
+export function applyDayCopy5(slots, srcDow, targetDows) {
+  const srcDefs = slots.filter(s => s.days.includes(srcDow))
+  for (const t of targetDows) {
+    for (const s of slots) {
+      const inSrc = srcDefs.some(x => sameSlotDef(x, s))
+      const has = s.days.includes(t)
+      if (inSrc && !has) s.days = [...s.days, t].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+      if (!inSrc && has) s.days = s.days.filter(d => d !== t)
+    }
+  }
+}
+
+/*
   清单行的「谁」：范围（本店/附近 N 公里）+ 合作性质（不限/全职/非全）+ 岗位（不限/具体岗位）
   三个条件组合圈人，不写在时段上——「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提。
   范围半径按门店坐标算（含本店）。

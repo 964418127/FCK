@@ -167,7 +167,13 @@
 
             <div class="hint-line">周期时段是模板：保存后从下一轮起生效，当前轮按已生成快照跑，不重算。</div>
 
-            <!-- 编辑区：新建和编辑共用一份表单，永远开在列表上方 -->
+            <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天） -->
+            <div class="cyc-switch">
+              <button :class="{ on: cycView === 'list' }" @click="cycView = 'list'">按班次</button>
+              <button :class="{ on: cycView === 'cycle' }" @click="cycView = 'cycle'">按周期</button>
+            </div>
+
+            <!-- 编辑区：新建和编辑共用一份表单，两种视图都开在这里 -->
             <article v-if="editing" class="slot-card edit-card">
               <header>
                 <div class="sn">
@@ -247,6 +253,7 @@
               </div>
             </article>
 
+            <template v-if="cycView === 'list'">
             <article v-for="s in spaceSlots" :key="s.id" class="slot-card" :class="{ 'being-edited': editing === s.id }">
               <header>
                 <div class="sn">
@@ -293,6 +300,31 @@
               <p>这个空间还没有周期时段</p>
               <el-button size="small" type="primary" @click="openNew">配第一个班次</el-button>
             </div>
+            </template>
+
+            <!-- 按周期：先配好一天，复制/覆盖到其他天；点班次照常进编辑 -->
+            <template v-else>
+              <div class="cyc-strip">
+                <strong>下一轮铺 {{ short(v5.round.nextSpan[0]) }}–{{ short(v5.round.nextSpan[1]) }}</strong>
+                <span>先配好一天，再把这一天复制 / 覆盖到其他天。班次按星期几定义，复制会落在每周的同一天。</span>
+              </div>
+              <div class="cyc-days">
+                <div v-for="d in cycleDays" :key="d.date" class="cyc-day" :class="{ none: !d.slots.length }">
+                  <div class="cd-head">
+                    <strong>{{ short(d.date) }}<em>周{{ DAY_NAMES[d.dow] }}</em></strong>
+                    <button class="cd-copy" @click="openDayCopy(d.dow)">复制到…</button>
+                  </div>
+                  <div class="cd-slots">
+                    <button v-for="s in d.slots" :key="s.id" class="cd-slot" @click="openEdit(s)">
+                      <strong>{{ s.name }}</strong>
+                      <span>{{ s.start }}–{{ s.end }}</span>
+                      <em>{{ quotaLabel(s) }}</em>
+                    </button>
+                    <span v-if="!d.slots.length" class="cd-none">这天没有班次</span>
+                  </div>
+                </div>
+              </div>
+            </template>
           </template>
 
           <template v-else>
@@ -473,6 +505,26 @@
       </table>
     </section>
 
+    <!-- 把这一天复制到其他天：覆盖式，先看加减预览再确认 -->
+    <el-dialog v-model="copyDlg" title="把这一天复制到…" width="580px">
+      <div class="cp-src">源天：每周周{{ DAY_NAMES[copySrcDow] }} · 覆盖式——目标天会变得和源天一样</div>
+      <div class="cp-targets">
+        <el-checkbox-group v-model="copyTargets">
+          <el-checkbox v-for="d in copyDowOptions" :key="d.dow" :value="d.dow" class="cp-t">每周周{{ DAY_NAMES[d.dow] }}</el-checkbox>
+        </el-checkbox-group>
+      </div>
+      <div v-if="copyTargets.length" class="cp-plan">
+        <div class="cp-line add" v-if="copyPlan.adds.length">将加上：{{ copyPlan.adds.map(a => `${a.name} → 周${DAY_NAMES[a.dow]}`).join('、') }}</div>
+        <div class="cp-line" v-else>没有要新增的班次</div>
+        <div class="cp-line rm" v-if="copyPlan.removes.length">将移出：{{ copyPlan.removes.map(a => `${a.name} → 周${DAY_NAMES[a.dow]}`).join('、') }}</div>
+        <div class="cp-line" v-else>没有会被移出的班次</div>
+      </div>
+      <template #footer>
+        <el-button size="small" @click="copyDlg = false">取消</el-button>
+        <el-button size="small" type="primary" @click="doDayCopy">覆盖应用</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 算法服务登记 -->
     <el-dialog v-model="svcDlg" title="算法服务登记" width="660px">
       <div class="svc-note">算法只登记不实现：登记的是「读什么数、怎么算、版本号」。供数统一到时段级，A 时段挂算法一、B 时段挂算法二是合法配置。</div>
@@ -611,10 +663,11 @@ import { usePager } from '../composables/usePager.js'
 import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
-  appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5
+  appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5
 } from '../mock/scheduleV5Store.js'
 import {
-  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf
+  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
+  dayCopyPlan5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -648,6 +701,40 @@ function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` 
 function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}` }
 function slotCount(id) { return v5.slots.filter(s => s.spaceId === id).length + v5.temps.filter(t => t.spaceId === id).length }
 function peopleOf(id) { return v5.people.filter(p => p.spaceId === id).length }
+/* 按周期视图：下一轮覆盖区间，每天列出当天会跑的班次（周期班次按星期几 + 临时班次按日期） */
+const cycView = ref('list')
+const cycleDays = computed(() => {
+  const [a, b] = v5.round.nextSpan
+  const out = []
+  const pad = n => String(n).padStart(2, '0')
+  const d = new Date(`${a}T00:00:00`)
+  const end = new Date(`${b}T00:00:00`)
+  while (d <= end) {
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    out.push({ date, dow: d.getDay(), slots: slotsOn5(v5, date) })
+    d.setDate(d.getDate() + 1)
+  }
+  return out
+})
+
+/* 天级复制/覆盖 */
+const copyDlg = ref(false)
+const copySrcDow = ref(1)
+const copyTargets = ref([])
+const copyDowOptions = computed(() => {
+  const seen = new Map()
+  for (const d of cycleDays.value) if (!seen.has(d.dow)) seen.set(d.dow, d.dow)
+  return [...seen].filter(([dow]) => dow !== copySrcDow.value).map(([dow]) => ({ dow }))
+})
+const copyPlan = computed(() => dayCopyPlan5(v5.slots, copySrcDow.value, copyTargets.value))
+function openDayCopy(dow) { copySrcDow.value = dow; copyTargets.value = []; copyDlg.value = true }
+function doDayCopy() {
+  if (!copyTargets.value.length) { ElMessage.warning('勾选要复制到哪几天'); return }
+  const plan = copyDay5(copySrcDow.value, copyTargets.value)
+  copyDlg.value = false
+  ElMessage.success(`已覆盖：加上 ${plan.adds.length} 处 · 移出 ${plan.removes.length} 处；从下一轮起生效`)
+}
+
 /* 服务被引用数：全空间口径（服务是公共的） */
 function serviceUsage(id) {
   return [...v5.slots, ...v5.temps].filter(s => s.quota?.source === 'service' && s.quota?.serviceId === id).length
@@ -977,6 +1064,35 @@ function devResolveApply() {
 .main-tabs button { border: 1px solid #eee6e8; background: #fff; padding: 6px 16px; border-radius: 18px; font-size: 13px; color: #6a6a75; cursor: pointer; }
 .main-tabs button.on { background: #a40035; border-color: #a40035; color: #fff; font-weight: 500; }
 .svc-pane { border: 1px solid #f0eaec; border-radius: 12px; background: #fff; padding: 16px 18px; }
+/* 视图切换与按周期视图 */
+.cyc-switch { display: inline-flex; border: 1px solid #eee6e8; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+.cyc-switch button { border: none; background: #fff; padding: 5px 14px; font-size: 12.5px; color: #6a6a75; cursor: pointer; }
+.cyc-switch button + button { border-left: 1px solid #eee6e8; }
+.cyc-switch button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
+.cyc-strip { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 10px; }
+.cyc-strip strong { font-size: 13px; color: #2c2c2a; }
+.cyc-strip span { font-size: 12px; color: #9a9fa9; }
+.cyc-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; }
+.cyc-day { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 8px 10px; min-height: 96px; }
+.cyc-day.none { background: #fcfcfa; }
+.cd-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #f0eaec; padding-bottom: 5px; margin-bottom: 6px; }
+.cd-head strong { font-size: 12.5px; color: #2c2c2a; }
+.cd-head em { font-style: normal; font-size: 11px; color: #9a9fa9; margin-left: 5px; }
+.cd-copy { border: none; background: none; font-size: 11px; color: #a40035; cursor: pointer; padding: 0; }
+.cd-copy:hover { text-decoration: underline; }
+.cd-slots { display: flex; flex-direction: column; gap: 5px; }
+.cd-slot { border: 1px solid #eee6e8; background: #fcfbfc; border-radius: 7px; padding: 5px 8px; text-align: left; cursor: pointer; }
+.cd-slot:hover { border-color: #a40035; }
+.cd-slot strong { display: block; font-size: 12px; color: #2c2c2a; }
+.cd-slot span { font-size: 11px; color: #6a6a75; margin-right: 6px; }
+.cd-slot em { font-style: normal; font-size: 10.5px; color: #3B6D11; }
+.cd-none { font-size: 11.5px; color: #b0b3ba; }
+.cp-src { font-size: 12.5px; color: #2c2c2a; margin-bottom: 10px; }
+.cp-targets { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 10px; border: 1px solid #f0eaec; border-radius: 8px; margin-bottom: 10px; }
+.cp-plan { border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 10px; background: #fcfbfc; }
+.cp-line { font-size: 12px; color: #6a6a75; line-height: 1.8; }
+.cp-line.add { color: #27500A; }
+.cp-line.rm { color: #a40035; }
 .svc-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
 .svc-head p { flex: 1; margin: 0; font-size: 12.5px; color: #8a8a95; line-height: 1.7; }
 .tabs button { border: none; background: none; padding: 5px 10px; border-radius: 6px; font-size: 13px; color: #6a6a75; cursor: pointer; }

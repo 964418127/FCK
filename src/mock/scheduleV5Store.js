@@ -7,7 +7,7 @@ import { reactive, ref, computed } from 'vue'
 import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
-  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW
+  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -141,6 +141,14 @@ export function addSlot(spaceId, form) {
 }
 
 /* 复制时段：配置班次最常用的动作——照抄一份再改时间和人 */
+/* 天级复制/覆盖：把一天的班次配置照搬到其他天（按星期几生效） */
+export function copyDay5(srcDow, targetDows) {
+  const plan = dayCopyPlan5(state.slots, srcDow, targetDows)
+  applyDayCopy5(state.slots, srcDow, targetDows)
+  state.configDirty = true
+  return plan
+}
+
 export function copySlot(slotId) {
   const src = slotById(state, slotId)
   if (!src) return { ok: false, reason: '时段不存在' }
