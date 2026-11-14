@@ -16,7 +16,6 @@
           <button @click="revert">撤销</button>
         </span>
         <span v-else class="clean">配置与当前轮一致</span>
-        <el-button size="small" @click="$router.push('/v5/m')">移动端预览</el-button>
         <el-button v-if="isDev" size="small" @click="devResolveApply">申领截止（演示）</el-button>
       </div>
     </header>
@@ -35,9 +34,15 @@
       </div>
     </div>
 
-    <div class="v5-body">
+    <!-- 一级导航：排班跟着空间走；系统服务是公共资产，不挂在空间下 -->
+    <div class="main-tabs">
+      <button :class="{ on: mainTab === 'schedule' }" @click="mainTab = 'schedule'">排班</button>
+      <button :class="{ on: mainTab === 'svc' }" @click="mainTab = 'svc'">系统服务</button>
+    </div>
+
+    <div class="v5-body" v-show="mainTab === 'schedule'">
       <aside class="space-rail">
-        <el-input v-model="kw" placeholder="搜门店名称" clearable size="small" />
+        <el-input v-model="kw" placeholder="搜名称 / 城市 / 标签" clearable size="small" />
         <div class="chips">
           <button v-for="c in cities" :key="c" :class="{ on: city === c }" @click="city = city === c ? '' : c">{{ c }}</button>
         </div>
@@ -50,7 +55,7 @@
             <div class="ri-meta">
               <span class="mini-tag">{{ s.tag }}</span>
               <span>{{ s.city }}</span>
-              <em>{{ slotCount(s.id) }} 个时段</em>
+              <em>{{ peopleOf(s.id) }}人 · {{ slotCount(s.id) }}时段</em>
             </div>
           </button>
         </div>
@@ -69,7 +74,6 @@
           <div class="sub-tabs">
             <button :class="{ on: sub === 'cyc' }" @click="sub = 'cyc'">周期时段</button>
             <button :class="{ on: sub === 'tmp' }" @click="sub = 'tmp'">临时班次</button>
-            <el-button link size="small" class="svc-link" @click="svcDlg = true">算法服务登记 · {{ v5.services.length }} 项 →</el-button>
             <span class="sub-spacer" />
             <el-button v-if="sub === 'cyc'" size="small" type="primary" @click="openNew">+ 新增班次</el-button>
           </div>
@@ -449,6 +453,26 @@
       </main>
     </div>
 
+    <!-- ② 系统服务：算法服务登记在这里，不跟某个空间走 -->
+    <section v-show="mainTab === 'svc'" class="svc-pane">
+      <div class="svc-head">
+        <p>算法服务是公共的：登记的是「读什么数、怎么算、版本号」。登记完，各空间的时段在名额来源里就能挂它；一项服务可以被多个时段、多个空间同时引用。</p>
+        <el-button size="small" type="primary" @click="svcDlg = true">登记一项</el-button>
+      </div>
+      <table class="data-table">
+        <thead><tr><th style="width: 140px;">服务</th><th style="width: 170px;">读什么数</th><th>怎么算</th><th style="width: 80px;">版本</th><th style="width: 150px;">被引用</th></tr></thead>
+        <tbody>
+          <tr v-for="v in v5.services" :key="v.id">
+            <td><strong>{{ v.name }}</strong></td>
+            <td>{{ v.input }}</td>
+            <td>{{ v.calc }}</td>
+            <td class="mono">{{ v.version }}</td>
+            <td>{{ serviceUsage(v.id) ? `挂在 ${serviceUsage(v.id)} 个时段上` : '还没被引用' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <!-- 算法服务登记 -->
     <el-dialog v-model="svcDlg" title="算法服务登记" width="660px">
       <div class="svc-note">算法只登记不实现：登记的是「读什么数、怎么算、版本号」。供数统一到时段级，A 时段挂算法一、B 时段挂算法二是合法配置。</div>
@@ -600,13 +624,18 @@ const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 /* 「谁」是三个条件组合（范围/合作性质/岗位），不是平铺清单 */
 const tab = ref('def')
 const sub = ref('cyc')
+/* 一级导航：排班 / 系统服务（算法服务是公共资产） */
+const mainTab = ref('schedule')
 const kw = ref('')
 const city = ref('')
 const selSpace = ref(v5.spaces[0].id)
 
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
-const filteredSpaces = computed(() => v5.spaces.filter(s =>
-  (!city.value || s.city === city.value) && (!kw.value || s.name.includes(kw.value))))
+const filteredSpaces = computed(() => v5.spaces.filter(s => {
+  const k = kw.value.trim()
+  const hit = !k || s.name.includes(k) || s.city.includes(k) || (s.tag && s.tag.includes(k))
+  return (!city.value || s.city === city.value) && hit
+}))
 const curSpace = computed(() => v5.spaces.find(s => s.id === selSpace.value))
 const spaceSlots = computed(() => v5.slots.filter(s => s.spaceId === selSpace.value))
 const spaceTemps = computed(() => v5.temps.filter(t => t.spaceId === selSpace.value))
@@ -618,6 +647,11 @@ function pickSpace(id) { selSpace.value = id; editing.value = null }
 function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` }
 function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}` }
 function slotCount(id) { return v5.slots.filter(s => s.spaceId === id).length + v5.temps.filter(t => t.spaceId === id).length }
+function peopleOf(id) { return v5.people.filter(p => p.spaceId === id).length }
+/* 服务被引用数：全空间口径（服务是公共的） */
+function serviceUsage(id) {
+  return [...v5.slots, ...v5.temps].filter(s => s.quota?.source === 'service' && s.quota?.serviceId === id).length
+}
 function gapsOf(id) {
   return [...v5.slots.filter(s => s.spaceId === id), ...v5.temps.filter(t => t.spaceId === id)]
     .some(s => {
@@ -938,6 +972,13 @@ function devResolveApply() {
 .ri-meta em { font-style: normal; margin-left: auto; }
 .v5-main { background: #fff; border: 1px solid #eee6e8; border-radius: 10px; padding: 12px 14px 18px; min-width: 0; }
 .tabs { display: flex; gap: 4px; align-items: center; border-bottom: 1px solid #f0eaec; padding-bottom: 8px; }
+/* 一级导航：排班 / 系统服务 */
+.main-tabs { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; }
+.main-tabs button { border: 1px solid #eee6e8; background: #fff; padding: 6px 16px; border-radius: 18px; font-size: 13px; color: #6a6a75; cursor: pointer; }
+.main-tabs button.on { background: #a40035; border-color: #a40035; color: #fff; font-weight: 500; }
+.svc-pane { border: 1px solid #f0eaec; border-radius: 12px; background: #fff; padding: 16px 18px; }
+.svc-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+.svc-head p { flex: 1; margin: 0; font-size: 12.5px; color: #8a8a95; line-height: 1.7; }
 .tabs button { border: none; background: none; padding: 5px 10px; border-radius: 6px; font-size: 13px; color: #6a6a75; cursor: pointer; }
 .tabs button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
 .cur-space { margin-left: auto; font-size: 12px; color: #9a9fa9; }

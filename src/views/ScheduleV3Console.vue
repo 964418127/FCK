@@ -5,7 +5,6 @@
         <h1>排班策略 v3 <span class="ver">设计基线</span></h1>
         <p>容器承接时段，时段只描述时间形态；谁能领、怎么领、余额怎么办，全部挂在独立的「获取规则」上；结算完直接写排班结果。</p>
       </div>
-      <el-button plain size="small" class="m-entry" @click="router.push({ name: 'v3-mobile' })">移动端预览</el-button>
     </header>
 
     <!-- 配置改动 → 生成批次：改动不回溯，等下一轮或手动生成 -->

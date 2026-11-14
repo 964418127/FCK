@@ -38,7 +38,7 @@
           <tr><td><strong>6.2 模板与班次</strong></td><td>排班策略 → 时段模板；时段详情 → 本店班次库</td><td>模板只读引用，班次可改名调时间</td></tr>
           <tr><td><strong>6.3 获取规则</strong></td><td>排班策略 → 获取规则</td><td>改模式与余额去向，结果页即时重算</td></tr>
           <tr><td><strong>6.4 排班结果</strong></td><td>排班策略 → 排班结果</td><td>唯一记录口，带「怎么排上的」</td></tr>
-          <tr><td><strong>6.5 移动端选班</strong></td><td>配置台页头「移动端预览」；移动端菜单 → 选班</td><td>一套壳按资格过滤，右上角可切视角</td></tr>
+          <tr><td><strong>6.5 移动端选班</strong></td><td>移动端菜单 → 人事组「我的排班」</td><td>一套壳按资格过滤，右上角可切视角</td></tr>
         </tbody>
       </table>
       <div class="note">

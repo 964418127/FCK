@@ -13,8 +13,7 @@
           <el-button v-if="pending.total" size="small" @click="revertChanges4()">撤销改动</el-button>
           <el-button size="small" type="primary" @click="doGenerate">立即生成</el-button>
         </div>
-        <el-button size="small" @click="$router.push('/v4/m')">移动端预览</el-button>
-        <el-button size="small" @click="$router.push('/schedule-v4/events')">事件编排 →</el-button>
+          <el-button size="small" @click="$router.push('/schedule-v4/events')">事件编排 →</el-button>
       </div>
     </header>
 

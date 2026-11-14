@@ -13,7 +13,7 @@
         <DocCopyButton section-id="hs-65" />
       </div>
       <div class="func-entry">
-        <strong>功能入口：</strong>配置台页头「移动端预览」；移动端菜单 → 选班；右上角可低调切换查看视角（演示用）
+        <strong>功能入口：</strong>移动端菜单 → 人事组「我的排班」；右上角可低调切换查看视角（演示用）
       </div>
 
       <h3 id="hs-65-1">6.5.1 三个页签，一套壳</h3>
