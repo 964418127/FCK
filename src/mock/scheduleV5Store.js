@@ -6,7 +6,7 @@
 import { reactive, ref, computed } from 'vue'
 import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
-  slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5,
+  slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW
 } from './scheduleV5.js'
 
@@ -218,7 +218,7 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
     .filter(s => s.spaceId === spaceId && s.id !== exceptId)
     .filter(s => overlap5(form.start, form.end, s.start, s.end))
     .filter(s => s.days.some(d => form.days.includes(d)))
-    .filter(s => s.list.some(a => form.list.some(b => a.who === b.who)))
+    .filter(s => s.list.some(a => form.list.some(b => whoLabel5(a.who) === whoLabel5(b.who))))
   if (clash.length) errs.push(`和「${clash.map(s => s.name).join('、')}」时间撞了，人群也写重了——同一个人两个入口都能拿`)
 
   return errs
@@ -230,7 +230,7 @@ export function revertConfig() {
 }
 export function addTemp(temp) {
   state.temps.push({
-    id: `TL-${state.seq++}`, snapN: temp.quota.value, list: [{ k: 1, who: '本店全员', way: 'grab', win: 'publish' }], ...temp
+    id: `TL-${state.seq++}`, snapN: temp.quota.value, list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }], ...temp
   })
 }
 export function removeTemp(id) {

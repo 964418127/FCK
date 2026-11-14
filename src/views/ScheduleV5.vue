@@ -158,9 +158,23 @@
                   </div>
                   <div v-for="(r, i) in form.list" :key="i" class="le-row">
                     <span class="lr-k">{{ i + 1 }}</span>
-                    <el-select v-model="r.who" size="small" style="width: 130px">
-                      <el-option v-for="w in WHO_LIST" :key="w" :label="w" :value="w" />
-                    </el-select>
+                    <div class="who-cond">
+                      <el-select v-model="r.who.scope" size="small" style="width: 92px">
+                        <el-option label="本店" value="store" />
+                        <el-option label="周边公里" value="radius" />
+                      </el-select>
+                      <el-input-number v-if="r.who.scope === 'radius'" v-model="r.who.km" :min="1" :max="20" size="small" controls-position="right" style="width: 74px" />
+                      <el-select v-model="r.who.kind" size="small" style="width: 78px">
+                        <el-option label="不限性质" value="all" />
+                        <el-option label="全职" value="fulltime" />
+                        <el-option label="非全" value="parttime" />
+                      </el-select>
+                      <el-select v-model="r.who.pos" size="small" style="width: 86px">
+                        <el-option label="不限岗位" value="all" />
+                        <el-option label="推拿师" value="推拿师" />
+                        <el-option label="客户经理" value="客户经理" />
+                      </el-select>
+                    </div>
                     <el-select v-model="r.way" size="small" style="width: 120px">
                       <el-option label="直派轮转" value="direct" />
                       <el-option label="抢" value="grab" />
@@ -175,7 +189,7 @@
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
-                  <button class="add-row" @click="form.list.push({ who: '本店全员', way: 'grab', win: 'publish' })">+ 加一档</button>
+                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' })">+ 加一档</button>
                   <div class="le-note">上限留空=这一档能吃满全部名额；填了就封顶，剩下的名额留给下一档。</div>
                 </div>
 
@@ -210,7 +224,7 @@
               <div class="list-rows">
                 <div v-for="r in s.list" :key="r.k" class="lr">
                   <span class="lr-k">{{ r.k }}</span>
-                  <span class="lr-who">{{ r.who }}</span>
+                  <span class="lr-who">{{ whoLabel5(r.who) }}</span>
                   <span class="lr-way" :class="'way-' + r.way">{{ wayLabel(r.way) }}</span>
                   <span class="lr-win">{{ windowLabel5(r) }}</span>
                   <span class="lr-cap">{{ r.cap ? `最多 ${r.cap} 人` : '不封顶' }}</span>
@@ -504,14 +518,14 @@ import {
   appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5
 } from '../mock/scheduleV5Store.js'
 import {
-  slotById, personById, activeCount5, windowLabel5, matchWho5, personBusy5, slotsOn5
+  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
 const isDev = computed(() => route.query.dev === '1')
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 /* 人群：雇佣类型和岗位都写在人群里——时段本身不带岗位 */
-const WHO_LIST = ['本店全员', '本店全职', '本店非全', '本店推拿师', '本店客户经理', '同城推拿师', '同城客户经理']
+/* 「谁」是三个条件组合（范围/合作性质/岗位），不是平铺清单 */
 const tab = ref('def')
 const sub = ref('cyc')
 const kw = ref('')
@@ -698,7 +712,7 @@ const appointCands = computed(() => {
     && !v5.placements.some(x => x.slotId === slotId && x.date === date && x.personId === p.id && x.status === 'active'))
     .map(p => {
       const row = slot.list.find(r => matchWho5(v5, p, slot, r.who))
-      return { ...p, rowLabel: row?.who || '' }
+      return { ...p, rowLabel: whoLabel5(row?.who) }
     })
 })
 function openAppoint(gap) {
@@ -866,8 +880,9 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 140px 130px 190px 1fr; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
-.le-row { display: grid; grid-template-columns: 44px 140px 130px 190px 1fr; align-items: center; gap: 6px; padding: 3px 0; }
+.le-head { display: grid; grid-template-columns: 44px 292px 118px 168px 1fr; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-row { display: grid; grid-template-columns: 44px 292px 118px 168px 1fr; align-items: center; gap: 6px; padding: 3px 0; }
+.who-cond { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .le-row .del, .add-row { border: none; background: none; color: #a40035; font-size: 12px; cursor: pointer; justify-self: start; }
 .add-row { margin-top: 4px; }
 .ea { display: flex; align-items: center; gap: 8px; }

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, windowOpen5, WEEK_DATES, recalcRound, slotById } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById } from '../src/mock/scheduleV5.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -12,14 +12,31 @@ test('定义段：周期时段铺星期，临时班次只落指定日期', () =>
   assert.equal(s.temps.filter(t => t.date === '2026-11-21').length, 1)
 })
 
-test('清单行人群匹配：本店 / 同城同岗位（岗位写在人群里）', () => {
+test('「谁」三条件匹配：范围（本店/周边 km）+ 合作性质 + 岗位', () => {
   const s = mk()
   const sl01 = s.slots.find(x => x.id === 'SL-01')
-  assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-107'), sl01, '本店全职'), true)
-  assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-121'), sl01, '本店非全'), true)
-  assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-126'), sl01, '本店非全'), true)
-  assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-133'), sl01, '本店全职'), false)
-  assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-133'), sl01, '同城推拿师'), true)
+  const person = id => s.people.find(p => p.id === id)
+  // 第 1 档：本店 · 全职
+  assert.equal(matchWho5(s, person('E-107'), sl01, sl01.list[0].who), true)
+  assert.equal(matchWho5(s, person('E-121'), sl01, sl01.list[0].who), false, '非全进不了全职档')
+  assert.equal(matchWho5(s, person('E-133'), sl01, sl01.list[0].who), false, '滨江店不在本店范围')
+  // 第 2 档：本店 · 非全
+  assert.equal(matchWho5(s, person('E-126'), sl01, sl01.list[1].who), true)
+  assert.equal(matchWho5(s, person('E-133'), sl01, sl01.list[1].who), false)
+  // 第 3 档：周边 5km · 推拿师（滨江店距蓝田店约 4.6km，命中）
+  assert.equal(matchWho5(s, person('E-133'), sl01, sl01.list[2].who), true)
+  assert.equal(matchWho5(s, person('E-141'), sl01, sl01.list[2].who), true)
+  assert.equal(matchWho5(s, person('E-113'), sl01, sl01.list[2].who), false, '客户经理不在岗位条件内')
+  // 范围收窄到 3km：滨江店就出圈了
+  const near = { scope: 'radius', km: 3, kind: 'all', pos: 'all' }
+  assert.equal(matchWho5(s, person('E-107'), sl01, near), true, '本店也在半径圈内')
+  assert.equal(matchWho5(s, person('E-133'), sl01, near), false)
+})
+
+test('whoLabel5：条件组合成人话，全不限=全员', () => {
+  assert.equal(whoLabel5({ scope: 'store', kind: 'all', pos: 'all' }), '本店全员')
+  assert.equal(whoLabel5({ scope: 'store', kind: 'fulltime', pos: 'all' }), '本店 · 全职')
+  assert.equal(whoLabel5({ scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }), '周边 5km · 推拿师')
 })
 
 test('窗口：发布即开、周五 06:00 已开、开班前一天 20:00 未开', () => {
@@ -42,8 +59,8 @@ test('抢：占位成功；位满当场说原因', () => {
 test('抢：与已有班次重叠不行（首尾相接可以）', () => {
   const s = mk()
   s.temps.push(
-    { id: 'TL-03', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '下午短班', start: '14:00', end: '18:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: '本店非全', way: 'grab', win: 'publish' }] },
-    { id: 'TL-04', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '重叠试探班', start: '13:00', end: '15:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: '本店非全', way: 'grab', win: 'publish' }] }
+    { id: 'TL-03', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '下午短班', start: '14:00', end: '18:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] },
+    { id: 'TL-04', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '重叠试探班', start: '13:00', end: '15:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] }
   )
   // E-126 11-17 有早班 10:00-14:00（P-07），抢 14:00-18:00 首尾相接可以（当日合计 8 小时内）
   assert.equal(grab5(s, 'TL-03', '2026-11-17', 'E-126').ok, true)
@@ -58,7 +75,7 @@ test('抢：未开窗当场说开窗时刻', () => {
   s.slots.push({
     id: 'SL-X', spaceId: 'S-201', pos: '推拿师', name: '试探班', start: '09:00', end: '10:00', days: [1, 2, 3, 4, 5, 6, 0],
     quota: { source: 'manual', value: 1 }, snapN: 1,
-    list: [{ k: 1, who: '本店全员', way: 'grab', win: 'day1' }]
+    list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'day1' }]
   })
   const r = grab5(s, 'SL-X', '2026-11-16', 'E-107')
   assert.equal(r.ok, false)
@@ -169,7 +186,7 @@ test('时段不带岗位：岗位写在清单人群里，两个岗位可共用�
   const sl01 = slotById(s, 'SL-01')
   assert.equal(sl01.pos, undefined)
   /* 同一个时段，两档分别面向推拿师和客户经理 */
-  sl01.list.push({ k: 9, who: '本店客户经理', way: 'grab', win: 'publish' })
+  sl01.list.push({ k: 9, who: { scope: 'store', kind: 'all', pos: '客户经理' }, way: 'grab', win: 'publish' })
   assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-113'), sl01, '本店客户经理'), true)
   assert.equal(matchWho5(s, s.people.find(p => p.id === 'E-107'), sl01, '本店客户经理'), false)
 })

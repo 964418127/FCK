@@ -12,8 +12,8 @@ export const WEEK_DATES = [
 ]
 
 export const SPACES5 = [
-  { id: 'S-201', name: '蓝田店', city: '杭州', tag: '旗舰店', bizStart: '10:00', bizEnd: '22:00' },
-  { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00' }
+  { id: 'S-201', name: '蓝田店', city: '杭州', tag: '旗舰店', bizStart: '10:00', bizEnd: '22:00', xy: [0, 0] },
+  { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] }
 ]
 
 export const PEOPLE5 = [
@@ -32,30 +32,32 @@ export const SERVICES5 = [
   { id: 'AS-03', name: '按业务量', input: '业务系统预约量', calc: '每 6 单 1 人，最少 1', version: 'v2.1' }
 ]
 
-/* 定义段：周期时段（归空间，不归岗位）。清单行 = 谁 · 方式 · 窗口 · 上限 */
+/* 定义段：周期时段（归空间，不归岗位）。清单行 = 谁（范围+合作性质+岗位三个条件） · 方式 · 窗口 · 上限
+   「谁」是圈人的搜索条件：{ scope: 'store'|'radius', km, kind: 'all'|'fulltime'|'parttime', pos: 'all'|'推拿师'|'客户经理' }
+   范围默认本店；往外放用「周边 N 公里」（半径圈，含本店），不用「同城」这种粗旷说法 */
 export const SLOTS5 = [
   {
     id: 'SL-01', spaceId: 'S-201', name: '早班', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-01' }, clamp: [1, 6], snapN: 3,
     list: [
-      { k: 1, who: '本店全职', way: 'direct', win: 'publish' },
-      { k: 2, who: '本店非全', way: 'grab', win: 'fri0600' },
-      { k: 3, who: '同城推拿师', way: 'grab', win: 'day1' }
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: 'publish' },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' },
+      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: 'day1' }
     ]
   },
   {
     id: 'SL-02', spaceId: 'S-201', name: '晚班', start: '14:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: '本店全职', way: 'direct', win: 'publish' },
-      { k: 2, who: '本店非全', way: 'grab', win: 'fri0600' }
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: 'publish' },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' }
     ]
   },
   {
     id: 'SL-03', spaceId: 'S-201', name: '周末全天', start: '10:00', end: '22:00', days: [6, 0],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: '本店全员', way: 'apply', win: 'publish' }
+      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: 'publish' }
     ]
   }
 ]
@@ -65,7 +67,7 @@ export const TEMPS5 = [
   {
     id: 'TL-01', spaceId: 'S-201', date: '2026-11-21', name: '周六晚加场', start: '18:00', end: '22:00',
     quota: { source: 'manual', value: 2 }, snapN: 2,
-    list: [{ k: 1, who: '本店全员', way: 'grab', win: 'publish' }]
+    list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }]
   }
 ]
 
@@ -164,7 +166,7 @@ export const VERSIONS5 = [
 export const NOTICES5 = [
   { id: 'N-01', to: 'E-133', kind: 'makeup', acked: false, date: '2026-11-17', at: '2026-11-13 09:12',
     text: '补位通知：11-17 早班 10:00-14:00（蓝田店）需要你顶上',
-    detail: '蓝田 11-13 09:12 提交请假；你是同城推拿师档里当时有空、没冲突的人' }
+    detail: '蓝田 11-13 09:12 提交请假；你是周边 5km 推拿师档里当时有空、没冲突的人' }
 ]
 
 /* ===== 纯逻辑 ===== */
@@ -198,23 +200,33 @@ export function slotsOn5(state, date) {
 }
 
 /*
-  清单行的人群：雇佣类型和岗位都写在人群里，不写在时段上。
-  这是「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提——时段只有空间，没有岗位。
+  清单行的「谁」：范围（本店/周边 N 公里）+ 合作性质（不限/全职/非全）+ 岗位（不限/具体岗位）
+  三个条件组合圈人，不写在时段上——「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提。
+  范围半径按门店坐标算（含本店）。
 */
-const KIND_WHO = { 本店全职: 'fulltime', 本店非全: 'parttime' }
-export function matchWho5(state, person, slot, whoClass) {
+export function whoLabel5(who) {
+  if (!who) return ''
+  if (typeof who === 'string') return who // 兼容旧字符串口径
+  const scope = who.scope === 'radius' ? `周边 ${who.km}km` : '本店'
+  const kind = who.kind === 'fulltime' ? '全职' : who.kind === 'parttime' ? '非全' : ''
+  const pos = who.pos && who.pos !== 'all' ? who.pos : ''
+  if (!kind && !pos) return scope === '本店' ? '本店全员' : `${scope}全员`
+  return `${scope} · ${kind}${pos}`.replace(/\s+$/, '')
+}
+export function matchWho5(state, person, slot, who) {
   if (!person || !slot) return false
+  if (typeof who === 'string') who = { scope: who.startsWith('同城') ? 'radius' : 'store', km: 999, kind: 'all', pos: who.includes('推拿师') ? '推拿师' : who.includes('客户经理') ? '客户经理' : who.includes('全职') ? 'fulltime' : who.includes('非全') ? 'parttime' : 'all' }
   const space = spaceById(state, slot.spaceId)
-  const home = person.spaceId === slot.spaceId
-  const sameCity = !!space && spaceById(state, person.spaceId)?.city === space.city
-  if (whoClass === '本店全员') return home
-  if (KIND_WHO[whoClass]) return home && person.kind === KIND_WHO[whoClass]
-  if (whoClass.startsWith('本店')) return home && person.position === whoClass.slice(2)
-  if (whoClass.startsWith('同城')) {
-    const pos = whoClass.slice(2)
-    return sameCity && !home && (pos === '同岗位' || person.position === pos)
+  const personSpace = spaceById(state, person.spaceId)
+  if (who.scope === 'store') {
+    if (person.spaceId !== slot.spaceId) return false
+  } else {
+    const dist = Math.hypot(space.xy[0] - personSpace.xy[0], space.xy[1] - personSpace.xy[1])
+    if (dist > (who.km || 0)) return false
   }
-  return false
+  if (who.kind !== 'all' && person.kind !== who.kind) return false
+  if (who.pos && who.pos !== 'all' && person.position !== who.pos) return false
+  return true
 }
 
 /* 窗口开放时刻：全部按当前轮推算，不再写死某一天 */

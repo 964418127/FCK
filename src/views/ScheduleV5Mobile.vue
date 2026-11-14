@@ -313,7 +313,7 @@ import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
 } from '../mock/scheduleV5Store.js'
-import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, WEEK_DATES } from '../mock/scheduleV5.js'
+import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES } from '../mock/scheduleV5.js'
 
 const router = useRouter()
 const tab = ref('mine')
@@ -421,11 +421,15 @@ function durText(r) {
   return hoursText(slotOf(r.slotId))
 }
 function whoText(who) {
-  const fixed = { 本店全员: '面向本店所有人', 本店全职: '面向本店全职', 本店非全: '面向本店非全' }
-  if (fixed[who]) return fixed[who]
-  if (who?.startsWith('本店')) return `面向本店${who.slice(2)}`
-  if (who?.startsWith('同城')) return `面向同城${who.slice(2)}`
-  return who
+  const label = typeof who === 'string' ? who : whoLabel5(who)
+  if (!label) return ''
+  if (label === '本店全员') return '面向本店所有人'
+  if (label.startsWith('本店')) return `面向本店${label.slice(2).replace(' · ', '')}`
+  if (label.startsWith('周边')) {
+    const [scope, rest] = label.split(' · ')
+    return rest ? `面向${scope} ${rest}` : `面向${scope}所有人`
+  }
+  return label
 }
 function barWidth(o) {
   const n = o.slot.snapN || 1
