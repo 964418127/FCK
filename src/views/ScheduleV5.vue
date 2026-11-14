@@ -243,7 +243,7 @@
                         </el-select>
                         <el-input-number v-if="winKind(r) === 'date'" v-model="r.win.d" :min="-7" :max="0" size="small" controls-position="right" style="width: 62px" />
                         <span v-if="winKind(r) === 'date'" class="win-u">天前</span>
-                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px; margin-left: auto" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
+                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
                       </div>
                       <div class="win-preview">{{ winPreview(r) }}</div>
                     </div>
