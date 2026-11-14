@@ -163,6 +163,17 @@ test('请假：无人可顶时段留空，发通知给人事处理；人事顶�
   assert.equal(s.notices.find(n => n.kind === 'hr').acked, true)
 })
 
+test('请假只占一部分时间：班次不动、不找补，结果说明只占一段', () => {
+  const s = mk()
+  const target = s.placements.find(p => p.id === 'P-10')
+  const fact = { id: 'F-P', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-19', placementId: 'P-10', start: '10:00', end: '11:00', result: '' }
+  addFact5(s, fact)
+  assert.equal(target.status, 'active', '只请 1 小时，班次还在这人身上，不整班释放')
+  assert.ok(fact.result.includes('10:00–11:00'))
+  assert.ok(fact.result.includes('待业务拍板'))
+  assert.ok(!s.notices.some(n => n.kind === 'hr'), '部分请假不触发找人顶班')
+})
+
 test('顶班：人事安排，通知即可，不需同意', () => {
   const s = mk()
   const fact = { id: 'F-Z', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' }

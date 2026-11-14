@@ -273,12 +273,15 @@ export const APPLICATIONS5 = [
 /* 变化段：事实清单 */
 export const FACTS5 = [
   { id: 'F-01', type: '请假', at: '2026-11-13 09:12', by: 'E-107', slotId: 'SL-01', date: '2026-11-17',
-    result: '班次由陈晚顶上（补位）', placements: ['P-05', 'P-06'] }
+    result: '班次由陈晚顶上（补位）', placements: ['P-05', 'P-06'] },
+  { id: 'F-02', type: '请假', at: '2026-11-14 09:30', by: 'E-107', slotId: 'SL-01', date: '2026-11-19', start: '10:00', end: '11:00',
+    result: '只占 10:00–11:00，剩余时间不动；少的时间要不要补人待业务拍板', placements: [] }
 ]
 
 export const VERSIONS5 = [
   { v: 1, at: '2026-11-12 06:00', note: '第 R-1112 轮发布，生成基线解', facts: [] },
-  { v: 2, at: '2026-11-13 09:12', note: '事实 F-01（请假）重算：11-17 早班由陈晚顶上', facts: ['F-01'] }
+  { v: 2, at: '2026-11-13 09:12', note: '事实 F-01（请假）重算：11-17 早班由陈晚顶上', facts: ['F-01'] },
+  { v: 3, at: '2026-11-14 09:30', note: '事实 F-02（请假 1 小时）重算：只占一段，剩余时间不动', facts: ['F-02'] }
 ]
 
 export const NOTICES5 = [
@@ -588,7 +591,12 @@ export function addFact5(state, fact) {
   const touched = []
   if (fact.type === '请假') {
     const target = state.placements.find(p => p.id === fact.placementId && p.status === 'active')
-    if (target) {
+    const slot = slotById(state, fact.slotId)
+    /* 只请一部分时间（如 1 小时）：班次还在这个人身上，只把那段画进事实；少的时间要不要补人待业务拍板 */
+    const partial = target && slot && fact.start && fact.end && (fact.start > slot.start || fact.end < slot.end)
+    if (target && partial) {
+      fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的时间要不要补人待业务拍板`
+    } else if (target) {
       target.status = 'covered'
       target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，这段时间被请假占用` })
       const rep = pickReplacement5(state, target.slotId, target.date, fact.by)

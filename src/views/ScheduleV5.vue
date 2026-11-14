@@ -460,30 +460,37 @@
             <span class="fa-note">离职不在这里登记：由离职流程模块写入事实，排班只承接结果</span>
           </div>
 
-          <!-- 个人时间线：班次条 + 事实条按天对齐，覆盖/补位一眼看清；下面保留事实清单 -->
+          <!-- 个人时间线：横轴是这个人当天的时间，纵向是班次条/事实条/补位条——请假可能只占一小时 -->
           <div class="tl-box">
             <div class="tl-head">
               <strong>个人时间线</strong>
-              <span>横轴是这一轮的每一天：班次行是这段班，事实行按发生顺序排——先获取班次占住时间，之后发生请假等事实占据。班次记录本身不动。</span>
-              <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event">
+              <span>横轴是这个人当天的时间，往下看这段时间怎么被占住又被占据：班次条、事实条（请假可能只占一小时）、补位条；班次记录本身不动。</span>
+              <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event; tlDayRaw = ''">
                 <el-option v-for="p in tlPeople" :key="p.id" :label="p.name" :value="p.id" />
               </el-select>
+              <el-select :model-value="tlDay" size="small" style="width: 128px" @change="tlDayRaw = $event">
+                <el-option v-for="d in tlDayOpts" :key="d" :label="`${d.slice(5)} 周${DAY_NAMES[new Date(d + 'T00:00:00').getDay()]}`" :value="d" />
+              </el-select>
             </div>
-            <div v-if="tlPid" class="tl-grid" :style="{ gridTemplateColumns: `76px repeat(${tlDates.length}, minmax(0, 1fr))` }">
-              <div class="tl-date tl-corner" />
-              <div v-for="d in tlDates" :key="d.date" class="tl-date" :class="{ today: d.date === v5.today }">
-                {{ d.date.slice(5) }} 周{{ DAY_NAMES[d.dow] }}
+            <template v-if="tlDay">
+              <div class="tl-row tl-axis-row">
+                <div class="tl-rowlabel" />
+                <div class="tl-track">
+                  <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
+                </div>
               </div>
-              <template v-for="row in tlRows" :key="row.kind">
-                <div class="tl-label" :class="'tl-' + row.kind">{{ row.label }}</div>
-                <div v-for="d in tlDates" :key="row.kind + d.date" class="tl-cell">
-                  <div v-for="b in row.byDate[d.date]" :key="b.text" class="tl-block" :class="b.cls">
+              <div v-for="row in tlBands" :key="row.label" class="tl-row">
+                <div class="tl-rowlabel">{{ row.label }}</div>
+                <div class="tl-track">
+                  <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
+                  <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
                     <strong>{{ b.text }}</strong>
                     <span v-if="b.sub">{{ b.sub }}</span>
                   </div>
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
+            <div v-else class="tl-empty">这个人这一轮还没有班，也没有事实</div>
             <div v-if="tlRelated.length" class="tl-rel">
               相关的人：
               <button v-for="r in tlRelated" :key="r.id" @click="tlPidRaw = r.id">{{ r.name }}</button>
@@ -976,7 +983,7 @@ const applies = computed(() => applicationRows5(selSpace.value))
 /* 事实与版本 */
 const facts = computed(() => factRows5())
 
-/* 个人时间线：当前轮覆盖区间，按天对齐这个人身上的班次（时间被事实占用的）与事实（提交的 / 被补进来的） */
+/* 个人时间线：横轴是这个人当天的时间，纵向班次条/事实条/补位条；支持只占一部分时间的请假 */
 const tlPidRaw = ref('')
 const tlPid = computed(() => tlPidRaw.value || curSpacePeople.value[0]?.id || '')
 const tlDates = computed(() => {
@@ -996,46 +1003,63 @@ const tlPeople = computed(() => {
   const extra = tlRelated.value.filter(p => !ids.has(p.id))
   return [...curSpacePeople.value, ...extra]
 })
-const tlRows = computed(() => {
+/* 选哪一天：这个人有班或有事实的日子 */
+const tlDayRaw = ref('')
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+const tlDayOpts = computed(() => {
   const pid = tlPid.value
   if (!pid) return []
-  const dates = tlDates.value
-  const inSpan = date => dates.some(d => d.date === date)
-  const mk = () => { const o = {}; dates.forEach(d => { o[d.date] = [] }); return o }
+  const ds = new Set()
+  v5.placements.filter(p => p.personId === pid).forEach(p => ds.add(p.date))
+  v5.facts.filter(f => f.by === pid && f.date).forEach(f => ds.add(f.date))
+  return [...ds].filter(d => tlDates.value.some(x => x.date === d)).sort()
+})
+const tlDay = computed(() => tlDayRaw.value || tlDayOpts.value[0] || '')
+/* 三条带：班次条 / 事实条（可能只占一小时，没写时段=占整班）/ 补位条（另一个人的新区间） */
+function tlBandsFor(day) {
+  const pid = tlPid.value
+  if (!pid || !day) return []
   const rows = []
-  /* 班次行：这个人身上的占位；时间被事实占用的显示成虚线灰块——班次记录不动，只是这段时间被占用 */
-  const shifts = mk()
-  v5.placements.filter(p => p.personId === pid && inSpan(p.date)).forEach(p => {
+  const shifts = v5.placements.filter(p => p.personId === pid && p.date === day).map(p => {
     const s = slotById(v5, p.slotId)
-    if (!s) return
-    if (p.status === 'covered') {
-      const fac = v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id))
-      shifts[p.date].push({ text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' })
-    } else {
-      shifts[p.date].push({ text: `${s.name} ${s.start}–${s.end}`, sub: p.way, cls: 'shift' })
-    }
-  })
-  rows.push({ kind: 'shift', label: '班次', byDate: shifts })
-  /* 事实行：横轴每一天里，这个人这段班的时间怎么被占住的——第一件事是获取班次占住，之后发生请假等事实占据，按发生时间排 */
-  const evs = mk()
-  v5.placements.filter(p => p.personId === pid && inSpan(p.date)).forEach(p => {
-    const sw = p.history?.find(h => h.note.includes('换班'))
-    evs[p.date].push({
-      at: sw ? sw.note.slice(0, 16) : (p.at || ''),
-      text: sw ? '获取班次 · 换班' : `获取班次 · ${p.way}`,
-      sub: (sw ? sw.note.slice(0, 16) : (p.at || '')).slice(5, 16),
-      cls: 'acq'
+    if (!s) return null
+    const fac = p.status === 'covered' ? v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id)) : null
+    return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: p.status === 'covered' ? `时间被${fac?.type || '事实'}占用` : p.way, cls: p.status === 'covered' ? 'covered' : 'shift' }
+  }).filter(Boolean)
+  if (shifts.length) rows.push({ label: '班次', bands: shifts })
+  const facts = v5.facts.filter(f => f.by === pid && f.date === day).map(f => {
+    const s = f.slotId ? slotById(v5, f.slotId) : null
+    const st = f.start || s?.start
+    const en = f.end || s?.end
+    return st && en ? { s: toMin(st), e: toMin(en), text: `${f.type} · ${f.at.slice(5, 16)}`, sub: `占据 ${st}–${en}`, cls: 'fact' } : null
+  }).filter(Boolean)
+  if (facts.length) rows.push({ label: '事实', bands: facts })
+  const makes = []
+  v5.facts.filter(f => f.by === pid && f.date === day).forEach(f => {
+    v5.placements.filter(p => p.fromFact === f.id).forEach(p => {
+      const s = slotById(v5, p.slotId)
+      if (!s) return
+      makes.push({ s: toMin(s.start), e: toMin(s.end), text: `${personById(v5, p.personId)?.name || ''} 顶上`, sub: `${s.start}–${s.end}`, cls: 'makeup' })
     })
   })
-  v5.facts.filter(f => f.by === pid && (!f.date || inSpan(f.date))).forEach(f => {
-    const s = f.slotId ? slotById(v5, f.slotId) : null
-    const day = f.date || dates[0]?.date
-    evs[day]?.push({ at: f.at, text: `${f.type} · ${f.at.slice(5, 16)}`, sub: s ? `占据 ${f.date.slice(5)} ${s.name}` : (f.result || ''), cls: 'fact' })
-  })
-  dates.forEach(d => evs[d.date].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
-  rows.push({ kind: 'fact', label: '事实', byDate: evs })
+  if (makes.length) rows.push({ label: '补位', bands: makes })
   return rows
+}
+const tlBands = computed(() => tlBandsFor(tlDay.value))
+/* 时间轴：包住当天所有区间，前后各留 1 小时 */
+const tlAxis = computed(() => {
+  let t0 = 24 * 60
+  let t1 = 0
+  tlBands.value.forEach(r => r.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) }))
+  if (t1 <= t0) return { t0: 480, t1: 1320, ticks: [], labels: [] }
+  t0 = Math.max(0, Math.floor((t0 - 60) / 60) * 60)
+  t1 = Math.min(24 * 60, Math.ceil((t1 + 60) / 60) * 60)
+  const ticks = []
+  for (let m = t0; m <= t1; m += 60) ticks.push(m)
+  return { t0, t1, ticks, labels: ticks.filter(m => m % 120 === 0) }
 })
+function tlPct(m) { const a = tlAxis.value; return (((m - a.t0) / (a.t1 - a.t0)) * 100).toFixed(2) + '%' }
+function tlW(b) { const a = tlAxis.value; return (((b.e - b.s) / (a.t1 - a.t0)) * 100).toFixed(2) + '%' }
 /* 相关的人：请假的人 ↔ 顶班的人，互相可跳 */
 const tlRelated = computed(() => {
   const pid = tlPid.value
@@ -1367,19 +1391,20 @@ tr.covered td { color: #9a9fa9; }
 .tl-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 .tl-head strong { font-size: 13px; color: #2c2c2a; }
 .tl-head > span { font-size: 12px; color: #8a8a95; margin-right: auto; }
-.tl-grid { display: grid; gap: 4px; }
-.tl-date { font-size: 11px; color: #8a8a95; text-align: center; padding: 2px 0; border-bottom: 1px solid #f5f1f2; }
-.tl-date.today { color: #a40035; font-weight: 500; border-bottom-color: #a40035; }
-.tl-label { font-size: 12px; color: #6a6a75; display: flex; align-items: center; }
-.tl-cell { min-height: 40px; display: flex; flex-direction: column; gap: 3px; }
-.tl-block { border-radius: 6px; padding: 3px 6px; font-size: 11px; line-height: 1.35; }
-.tl-block strong { display: block; font-size: 11.5px; }
-.tl-block span { color: inherit; opacity: 0.75; }
-.tl-block.shift { background: #eef3fb; color: #24587f; }
-.tl-block.acq { background: #f0f4f2; color: #33506e; border: 1px solid #ccd9d4; }
-.tl-block.covered { background: #f7f7f4; color: #8a8a95; border: 1px dashed #c9c9c2; }
-.tl-block.fact { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
-.tl-block.makeup { background: #eaf6f1; color: #0f6e56; }
+.tl-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; align-items: stretch; margin-bottom: 5px; }
+.tl-rowlabel { font-size: 11.5px; color: #8a8a95; display: flex; align-items: center; justify-content: flex-end; }
+.tl-track { position: relative; height: 36px; background: #fbfbf9; border-radius: 6px; }
+.tl-axis-row .tl-track { height: 16px; background: none; }
+.tl-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: #ececea; }
+.tl-ticklabel { position: absolute; top: 0; font-size: 10px; color: #b0b0b8; transform: translateX(-50%); font-weight: 400; }
+.tl-band { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; padding: 2px 7px; font-size: 11px; line-height: 1.3; overflow: hidden; }
+.tl-band strong { display: block; font-size: 11px; white-space: nowrap; }
+.tl-band span { display: block; color: inherit; opacity: 0.75; font-size: 10.5px; white-space: nowrap; }
+.tl-band.shift { background: #eef3fb; color: #24587f; }
+.tl-band.covered { background: #f7f7f4; color: #8a8a95; border: 1px dashed #c9c9c2; }
+.tl-band.fact { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
+.tl-band.makeup { background: #eaf6f1; color: #0f6e56; }
+.tl-empty { font-size: 12px; color: #9a9fa9; padding: 10px 2px; }
 .tl-rel { margin-top: 6px; font-size: 12px; color: #8a8a95; }
 .tl-rel button { border: 1px solid #eee6e8; background: #fcfbfc; border-radius: 12px; padding: 1px 10px; font-size: 11.5px; color: #a40035; cursor: pointer; margin-left: 4px; }
 .tl-rel button:hover { border-color: #a40035; }
