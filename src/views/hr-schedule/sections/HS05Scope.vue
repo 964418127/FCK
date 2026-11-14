@@ -171,16 +171,16 @@
         <text x="60" y="542" font-size="13" font-weight="500" fill="#712B13">阶段三 · 变化 — 事实 → 结果重算</text>
 
         <rect x="60" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
-        <text x="123" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">来不了</text>
+        <text x="123" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">请假</text>
         <text x="123" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">临时缺席</text>
         <rect x="194" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
-        <text x="257" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">指定顶班</text>
+        <text x="257" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">顶班</text>
         <text x="257" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">经营性 · 不需同意</text>
         <rect x="328" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
-        <text x="391" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">对换</text>
+        <text x="391" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">换班</text>
         <text x="391" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">对价 · 需对方同意</text>
         <rect x="462" y="556" width="150" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
-        <text x="537" y="574" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">资格没了</text>
+        <text x="537" y="574" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">离职</text>
         <text x="537" y="590" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">离职 · 长期假 · 调岗</text>
         <text x="537" y="604" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">不找人 · 人直接出结果</text>
 
@@ -351,7 +351,7 @@
 
     <div id="hs-scope-change" class="section">
       <div class="section-header">
-        <h2>5.5 变化段要点：来不了之后</h2>
+        <h2>5.5 变化段要点：请假之后</h2>
       </div>
       <table class="data-table">
         <thead>
@@ -362,10 +362,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td><strong>来不了</strong>（请假等）</td><td>员工</td><td>找有空、没冲突的人顶</td></tr>
-          <tr><td><strong>指定顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
-          <tr><td><strong>对换</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
-          <tr><td><strong>资格没了</strong>（离职 / 长期假 / 调岗）</td><td>人事</td><td>不找人，这个人直接从结果里消失；复职 = 新的资格事实</td></tr>
+          <tr><td><strong>请假</strong></td><td>员工</td><td>找有空、没冲突的人顶</td></tr>
+          <tr><td><strong>顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
+          <tr><td><strong>换班</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
+          <tr><td><strong>离职</strong>（含长期假 / 调岗这一类资格退出）</td><td>人事</td><td>不找人，这个人直接从结果里消失；复职 = 新的资格事实</td></tr>
         </tbody>
       </table>
       <div class="note">

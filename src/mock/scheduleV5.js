@@ -1,7 +1,7 @@
 /*
   排班策略 v5 · 数据与纯逻辑层
   设计依据：文档中心 → 人事中心 / 排班策略 → 五、需求范围（v3.7 三阶段：定义 / 获取 / 变化）
-  四类事实：来不了 / 指定顶班 / 对换 / 资格没了；名额是容量不是库存（N 不变，无回池）；
+  四类事实：请假 / 顶班 / 换班 / 离职；名额是容量不是库存（N 不变，无回池）；
   求值 = 在已冻结的解上写事实 + 截短事实，每次重算留痕（解版本）。
 */
 
@@ -121,7 +121,7 @@ export const PLACEMENTS5 = [
   P('P-04', 'SL-01', '2026-11-17', 'E-113', '直派 · 第1档'),
   P('P-05', 'SL-01', '2026-11-17', 'E-107', '直派 · 第1档', {
     status: 'covered', coveredAt: '2026-11-13 09:12',
-    history: [{ note: '2026-11-13 09:12 蓝田提交来不了，11-17 早班由陈晚顶上' }]
+    history: [{ note: '2026-11-13 09:12 蓝田提交请假，11-17 早班由陈晚顶上' }]
   }),
   P('P-06', 'SL-01', '2026-11-17', 'E-133', '顶班 · 补位', { fromFact: 'F-01' }),
   P('P-07', 'SL-01', '2026-11-17', 'E-126', '抢 · 第2档'),
@@ -152,19 +152,19 @@ export const APPLICATIONS5 = [
 
 /* 变化段：事实清单 */
 export const FACTS5 = [
-  { id: 'F-01', type: '来不了', at: '2026-11-13 09:12', by: 'E-107', slotId: 'SL-01', date: '2026-11-17',
+  { id: 'F-01', type: '请假', at: '2026-11-13 09:12', by: 'E-107', slotId: 'SL-01', date: '2026-11-17',
     result: '班次由陈晚顶上（补位）', placements: ['P-05', 'P-06'] }
 ]
 
 export const VERSIONS5 = [
   { v: 1, at: '2026-11-12 06:00', note: '第 R-1112 轮发布，生成基线解', facts: [] },
-  { v: 2, at: '2026-11-13 09:12', note: '事实 F-01（来不了）重算：11-17 早班由陈晚顶上', facts: ['F-01'] }
+  { v: 2, at: '2026-11-13 09:12', note: '事实 F-01（请假）重算：11-17 早班由陈晚顶上', facts: ['F-01'] }
 ]
 
 export const NOTICES5 = [
   { id: 'N-01', to: 'E-133', kind: 'makeup', acked: false, date: '2026-11-17', at: '2026-11-13 09:12',
     text: '补位通知：11-17 早班 10:00-14:00（蓝田店）需要你顶上',
-    detail: '蓝田 11-13 09:12 提交来不了；你是同城推拿师档里当时有空、没冲突的人' }
+    detail: '蓝田 11-13 09:12 提交请假；你是同城推拿师档里当时有空、没冲突的人' }
 ]
 
 /* ===== 纯逻辑 ===== */
@@ -396,11 +396,11 @@ function bumpVersion5(state, note, factId) {
 export function addFact5(state, fact) {
   state.facts.push(fact)
   const touched = []
-  if (fact.type === '来不了') {
+  if (fact.type === '请假') {
     const target = state.placements.find(p => p.id === fact.placementId && p.status === 'active')
     if (target) {
       target.status = 'covered'
-      target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交来不了，班次释放` })
+      target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，班次释放` })
       const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
       if (rep) {
         const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id })
@@ -410,14 +410,14 @@ export function addFact5(state, fact) {
         state.notices.unshift({
           id: `N-${state.seq++}`, to: rep.person.id, kind: 'makeup', acked: false, date: target.date,
           text: `补位通知：${target.date} ${slotById(state, target.slotId).name} ${slotById(state, target.slotId).start}-${slotById(state, target.slotId).end} 需要你顶上`,
-          detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交来不了；你是清单里当时有空、没冲突的人`
+          detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；你是清单里当时有空、没冲突的人`
         })
       } else {
         fact.result = '暂时没人能顶，时段留空，待人事处理'
       }
     }
-  } else if (fact.type === '指定顶班') {
-    const np = P(`P-${state.seq++}`, fact.slotId, fact.date, fact.personId, '指定顶班', { fromFact: fact.id })
+  } else if (fact.type === '顶班') {
+    const np = P(`P-${state.seq++}`, fact.slotId, fact.date, fact.personId, '顶班', { fromFact: fact.id })
     state.placements.push(np)
     touched.push(np)
     fact.result = `${personById(state, fact.personId).name} 已被安排顶班（经营性安排，通知即可）`
@@ -426,7 +426,7 @@ export function addFact5(state, fact) {
       text: `排班安排：${fact.date} ${slotById(state, fact.slotId).name} ${slotById(state, fact.slotId).start}-${slotById(state, fact.slotId).end}`,
       detail: '人事的经营性安排，不需你同意；如有实际困难联系门店人事'
     })
-  } else if (fact.type === '对换') {
+  } else if (fact.type === '换班') {
     const a = state.placements.find(p => p.id === fact.placementId)
     const b = state.placements.find(p => p.id === fact.partnerPlacementId)
     if (a && b) {
@@ -434,12 +434,12 @@ export function addFact5(state, fact) {
       const pb = b.personId
       a.personId = pb
       b.personId = pa
-      a.history.push({ note: `${fact.at} 与 ${personById(state, pb).name} 对换班次` })
-      b.history.push({ note: `${fact.at} 与 ${personById(state, pa).name} 对换班次` })
+      a.history.push({ note: `${fact.at} 与 ${personById(state, pb).name} 换班` })
+      b.history.push({ note: `${fact.at} 与 ${personById(state, pa).name} 换班` })
       fact.result = '两条班次已对调，同时生效'
       touched.push(a, b)
     }
-  } else if (fact.type === '资格没了') {
+  } else if (fact.type === '离职') {
     state.placements.forEach(p => {
       if (p.personId === fact.by && p.date >= fact.date && p.status === 'active') {
         p.status = 'covered'

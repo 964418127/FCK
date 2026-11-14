@@ -350,8 +350,8 @@
         <section v-else class="pane">
           <div class="fact-acts">
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
-            <el-button size="small" @click="openAppoint()">指定顶班</el-button>
-            <el-button size="small" @click="exitDlg = true">登记资格没了</el-button>
+            <el-button size="small" @click="openAppoint()">找人顶班</el-button>
+            <el-button size="small" @click="exitDlg = true">登记离职</el-button>
           </div>
 
           <table class="data-table">
@@ -441,8 +441,8 @@
       </template>
     </el-dialog>
 
-    <!-- 指定顶班 -->
-    <el-dialog v-model="appointDlg" title="指定顶班" width="560px">
+    <!-- 找人顶班 -->
+    <el-dialog v-model="appointDlg" title="找人顶班" width="560px">
       <div class="svc-note">经营性安排：名额限定到这一个人，别人进不来；不需对方同意，通知即可。</div>
       <div v-if="gapInfo" class="gap-banner">
         <strong>{{ gapInfo.date.slice(5) }} {{ gapInfo.name }} {{ gapInfo.start }}–{{ gapInfo.end }}</strong>
@@ -467,8 +467,8 @@
       </template>
     </el-dialog>
 
-    <!-- 登记资格没了 -->
-    <el-dialog v-model="exitDlg" title="登记资格没了" width="480px">
+    <!-- 登记离职 -->
+    <el-dialog v-model="exitDlg" title="登记离职" width="480px">
       <div class="svc-note">离职 / 长期假 / 调岗：不找人顶，这个人直接从 {{ WEEK_DATES[0] }} 起的结果里消失。复职 = 新的资格事实。</div>
       <div class="dlg-row">
         <label>谁</label>
@@ -678,7 +678,7 @@ function traceLine(pid) {
   return `${p.date.slice(5)} ${s?.name} · ${nm} · ${p.status === 'covered' ? '已覆盖' : p.way}`
 }
 
-/* 指定顶班：从缺口格子直接进来，时段和日期已经带好 */
+/* 找人顶班：从缺口格子直接进来，时段和日期已经带好 */
 const appointDlg = ref(false)
 const appoint = reactive({ gapKey: '', personId: '' })
 const gaps = computed(() => gaps5(selSpace.value))
@@ -735,7 +735,7 @@ function doAddService() {
   ElMessage.success('已登记：时段的名额来源里就能选到它了')
 }
 
-/* 资格没了 */
+/* 离职 */
 const exitDlg = ref(false)
 const exitForm = reactive({ personId: '', subtype: '离职' })
 function doExit() {

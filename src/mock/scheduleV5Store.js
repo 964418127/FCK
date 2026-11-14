@@ -1,6 +1,6 @@
 /*
   排班策略 v5 · 响应式 store（Web 配置台与移动端共用）
-  动作全部收敛到事实与获取两个语义：抢 / 申领是获取；来不了 / 指定顶班 / 对换 / 资格没了是事实。
+  动作全部收敛到事实与获取两个语义：抢 / 申领是获取；请假 / 顶班 / 换班 / 离职是事实。
   求值 = 写事实 + 截短事实，每次重算推一个解版本。
 */
 import { reactive, ref, computed } from 'vue'
@@ -33,7 +33,7 @@ export function submitLeave(placementId) {
   const p = state.placements.find(x => x.id === placementId)
   if (!p) return { ok: false, reason: '班次不存在' }
   const fact = {
-    id: seq(), type: '来不了', at: state.now, by: meId.value,
+    id: seq(), type: '请假', at: state.now, by: meId.value,
     slotId: p.slotId, date: p.date, placementId, result: ''
   }
   addFact5(state, fact)
@@ -53,10 +53,10 @@ export function proposeSwap(placementId, partnerPlacementId) {
   const s = slotById(state, mine.slotId)
   state.notices.unshift({
     id: seq(), to: theirs.personId, kind: 'swap', acked: false, date: mine.date,
-    text: `对换请求：用你的 ${theirs.date} ${slotById(state, theirs.slotId).name} 换 ${mine.date} ${s.name}`,
+    text: `换班请求：用你的 ${theirs.date} ${slotById(state, theirs.slotId).name} 换 ${mine.date} ${s.name}`,
     detail: '双方同意才生效；等待期超时两边都不动'
   })
-  return { ok: true, text: '对换请求已发出，等对方同意' }
+  return { ok: true, text: '换班请求已发出，等对方同意' }
 }
 
 export function answerSwap(reqId, accept) {
@@ -65,20 +65,20 @@ export function answerSwap(reqId, accept) {
   req.status = accept ? 'done' : 'declined'
   if (accept) {
     const fact = {
-      id: seq(), type: '对换', at: state.now, by: req.from,
+      id: seq(), type: '换班', at: state.now, by: req.from,
       slotId: slotById(state, state.placements.find(p => p.id === req.placementId).slotId).id,
       date: '', placementId: req.placementId, partnerPlacementId: req.partnerPlacementId, result: ''
     }
     addFact5(state, fact)
     state.notices.unshift({
       id: seq(), to: req.from, kind: 'swapDone', acked: false, date: state.now.slice(0, 10),
-      text: '对换已生效：两条班次完成对调，历史各自留痕', detail: fact.result
+      text: '换班已生效：两条班次完成对调，历史各自留痕', detail: fact.result
     })
     return { ok: true, text: '已同意，班次对调完成' }
   }
   state.notices.unshift({
     id: seq(), to: req.from, kind: 'swapDone', acked: false, date: state.now.slice(0, 10),
-    text: '对换请求被拒绝', detail: '两条班次保持原样'
+    text: '换班请求被拒绝', detail: '两条班次保持原样'
   })
   return { ok: true, text: '已拒绝' }
 }
@@ -93,7 +93,7 @@ export function appointV5(slotId, date, personId) {
   if (activeCount5(state, slotId, date) >= snapN5(state, slotId, date)) return { ok: false, reason: '这个时段没有空位' }
   if (personBusy5(state, personId, date, slotById(state, slotId).start, slotById(state, slotId).end)) return { ok: false, reason: '此人和已有班次时间撞了' }
   const fact = {
-    id: seq(), type: '指定顶班', at: state.now, by: 'HR',
+    id: seq(), type: '顶班', at: state.now, by: 'HR',
     slotId, date, personId, result: ''
   }
   addFact5(state, fact)
@@ -102,7 +102,7 @@ export function appointV5(slotId, date, personId) {
 
 export function registerExit(personId, subtype) {
   const fact = {
-    id: seq(), type: '资格没了', at: state.now, by: personId, subtype,
+    id: seq(), type: '离职', at: state.now, by: personId, subtype,
     date: WEEK_DATES[0], result: ''
   }
   addFact5(state, fact)
@@ -178,7 +178,7 @@ export function setDayQuota(slotId, date, n) {
   if (!slot) return { ok: false, reason: '时段不存在' }
   const used = activeCount5(state, slotId, date)
   if (!(n >= 1)) return { ok: false, reason: '名额至少要 1 个' }
-  if (n < used) return { ok: false, reason: `这天已经有 ${used} 个人在上面，不能减到 ${n}；要减人，先让对应的人走事实（来不了 / 资格没了）` }
+  if (n < used) return { ok: false, reason: `这天已经有 ${used} 个人在上面，不能减到 ${n}；要减人，先让对应的人走事实（请假 / 离职）` }
   state.dayQuota = state.dayQuota || {}
   state.dayQuota[`${slotId}|${date}`] = n
   return { ok: true, text: n > used ? `这天加到 ${n} 个名额，现在就能拿` : `这天减到 ${n} 个名额` }

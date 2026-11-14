@@ -77,14 +77,14 @@ test('申领：提交只登记；截止按综合分排序截断，非全工时�
   assert.ok(ways.some(w => w.includes('综合分86')))
 })
 
-test('来不了：班次释放 + 找有空没冲突的人顶，解版本 +1', () => {
+test('请假：班次释放 + 找有空没冲突的人顶，解版本 +1', () => {
   const s = mk()
   const target = s.placements.find(p => p.id === 'P-09')
   const before = s.versions[s.versions.length - 1].v
-  const fact = { id: 'F-X', type: '来不了', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  const fact = { id: 'F-X', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
   addFact5(s, fact)
   assert.equal(target.status, 'covered')
-  assert.ok(target.history[0].note.includes('来不了'))
+  assert.ok(target.history[0].note.includes('请假'))
   const np = s.placements.find(p => p.fromFact === 'F-X')
   assert.ok(np)
   assert.equal(np.way, '顶班 · 补位')
@@ -93,43 +93,43 @@ test('来不了：班次释放 + 找有空没冲突的人顶，解版本 +1', ()
   assert.ok(s.versions[s.versions.length - 1].facts.includes('F-X'))
 })
 
-test('来不了：无人可顶时段留空，待人事处理', () => {
+test('请假：无人可顶时段留空，待人事处理', () => {
   const s = mk()
   s.people.forEach(p => {
     if (p.id !== 'E-107') s.placements.push({ id: `PB-${p.id}`, slotId: 'SL-01', date: '2026-11-18', personId: p.id, way: '直派', status: 'active', history: [] })
   })
-  const fact = { id: 'F-Y', type: '来不了', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  const fact = { id: 'F-Y', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
   addFact5(s, fact)
   assert.ok(fact.result.includes('没人能顶'))
 })
 
-test('指定顶班：经营性安排，通知即可，不需同意', () => {
+test('顶班：人事安排，通知即可，不需同意', () => {
   const s = mk()
-  const fact = { id: 'F-Z', type: '指定顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' }
+  const fact = { id: 'F-Z', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' }
   addFact5(s, fact)
   const np = s.placements.find(p => p.fromFact === 'F-Z')
   assert.equal(np.personId, 'E-133')
-  assert.equal(np.way, '指定顶班')
+  assert.equal(np.way, '顶班')
   const notice = s.notices.find(n => n.to === 'E-133')
   assert.ok(notice)
   assert.equal(notice.kind, 'appoint')
 })
 
-test('对换：两条班次对调，双方历史各自留痕', () => {
+test('换班：两条班次对调，双方历史各自留痕', () => {
   const s = mk()
   const a = s.placements.find(p => p.id === 'P-01')
   const b = s.placements.find(p => p.id === 'P-14')
-  const fact = { id: 'F-S', type: '对换', at: '2026-11-14 12:00', by: 'E-107', slotId: 'SL-02', date: '2026-11-16', placementId: 'P-14', partnerPlacementId: 'P-01', result: '' }
+  const fact = { id: 'F-S', type: '换班', at: '2026-11-14 12:00', by: 'E-107', slotId: 'SL-02', date: '2026-11-16', placementId: 'P-14', partnerPlacementId: 'P-01', result: '' }
   addFact5(s, fact)
   assert.equal(a.personId, 'E-107')
   assert.equal(b.personId, 'E-113')
-  assert.ok(a.history[0].note.includes('对换'))
+  assert.ok(a.history[0].note.includes('换班'))
   assert.ok(fact.result.includes('对调'))
 })
 
-test('资格没了：人直接出结果，不找人顶', () => {
+test('离职：人直接出结果，不找人顶', () => {
   const s = mk()
-  const fact = { id: 'F-Q', type: '资格没了', at: '2026-11-14 12:00', by: 'E-107', subtype: '离职', date: '2026-11-16', result: '' }
+  const fact = { id: 'F-Q', type: '离职', at: '2026-11-14 12:00', by: 'E-107', subtype: '离职', date: '2026-11-16', result: '' }
   addFact5(s, fact)
   const mine = s.placements.filter(p => p.personId === 'E-107' && p.date >= '2026-11-16')
   assert.ok(mine.every(p => p.status === 'covered'))

@@ -1,6 +1,6 @@
 <!--
   移动端 · 排班（v5）
-  员工侧三段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 来不了 / 对换）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）· 通知（补位确认 / 排班安排 / 对换请求）。
+  员工侧三段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 请假 / 换班）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）· 通知（补位确认 / 排班安排 / 换班请求）。
   原则：不摆数据摆事情——每个数字后面跟一句人话；不暴露分配机制术语；拿不了的原因是先说后做，不是点了才报错。
   视觉沿用移动端规范：全屏页、白 sticky 页头、#f5f5f5 底、白卡 12px、品牌红 #a40035、确认用自写底部弹层。
 -->
@@ -73,7 +73,7 @@
             <div class="rc-tags">
               <span :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '已释放' : wayLabel(r) }}</span>
               <span v-if="r.status === 'active' && pendingNoticeOf(r)" class="state-tag warn" @click="tab = 'notice'">待确认</span>
-              <span v-else-if="swapPendingOf(r)" class="state-tag">对换等对方</span>
+              <span v-else-if="swapPendingOf(r)" class="state-tag">换班等对方</span>
             </div>
             <span :class="['rc-hours', { strike: r.status === 'covered' }]">{{ durText(r) }}</span>
           </div>
@@ -91,7 +91,7 @@
 
           <div v-if="r.status === 'active' && canAct(r)" class="rc-acts">
             <button class="act-line" @click="openLeave(r)">这天我来不了</button>
-            <button class="act-line" @click="openSwap(r)">找人对换</button>
+            <button class="act-line" @click="openSwap(r)">找人换班</button>
           </div>
         </div>
       </section>
@@ -162,7 +162,7 @@
       <section v-else>
         <div v-if="!notices.length" class="empty-box">
           <p class="empty-main">没有通知</p>
-          <p class="empty-sub">补位、排班安排、对换请求都会推到这里</p>
+          <p class="empty-sub">补位、排班安排、换班请求都会推到这里</p>
         </div>
 
         <template v-if="todoNotices.length">
@@ -181,7 +181,7 @@
             <div class="nc-act">
               <template v-if="n.kind === 'swap'">
                 <button class="act-btn ghost" @click="answer(n, false)">拒绝</button>
-                <button class="act-btn primary" @click="answer(n, true)">同意对换</button>
+                <button class="act-btn primary" @click="answer(n, true)">同意换班</button>
               </template>
               <template v-else-if="n.kind === 'makeup'">
                 <button class="act-btn ghost" @click="declineMakeup(n)">去不了</button>
@@ -254,7 +254,7 @@
       </div>
     </div>
 
-    <!-- 来不了：确认 -->
+    <!-- 请假：确认 -->
     <div v-if="sheet?.type === 'leave'" class="sheet-mask" @click.self="sheet = null">
       <div class="sheet">
         <div class="sheet-title">这天我来不了</div>
@@ -276,15 +276,15 @@
       </div>
     </div>
 
-    <!-- 对换：选对方的班 -->
+    <!-- 换班：选对方的班 -->
     <div v-if="sheet?.type === 'swap'" class="sheet-mask" @click.self="sheet = null">
       <div class="sheet">
-        <div class="sheet-title">找人对换</div>
+        <div class="sheet-title">找人换班</div>
         <div class="sheet-body">
           <div class="sheet-shift">你给出：{{ dayLabel(sheet.row.date) }} {{ slotOf(sheet.row.slotId).name }} {{ slotOf(sheet.row.slotId).start }}–{{ slotOf(sheet.row.slotId).end }}</div>
-          <p class="sheet-note">对换是双向的：你给出这一条，对方给出一条。对方同意才真正对调，拒绝或超时两边都不动。</p>
+          <p class="sheet-note">换班是双向的：你给出这一条，对方给出一条。对方同意才真正对调，拒绝或超时两边都不动。</p>
           <div v-if="!swapCands.length" class="empty-box small">
-            <p class="empty-main">没有能对换的班</p>
+            <p class="empty-main">没有能换的班</p>
             <p class="empty-sub">时间会撞的、对方那天没班的都不列出来</p>
           </div>
           <template v-for="g in swapGroups" :key="g.personId">
@@ -449,7 +449,7 @@ function noteOf(r) {
     return h ? `已释放：${h}（原记录保留，不会消失）` : '这条已释放'
   }
   if (r.history?.length) return r.history[r.history.length - 1].note
-  if (r.fromFact) return '有人来不了，系统按顺位找到你顶上；这条不是你自己抢的'
+  if (r.fromFact) return '有人请假，系统按顺位找到你顶上；这条不是你自己抢的'
   const w = r.way || ''
   if (w.startsWith('直派')) return '系统按规则直接排给你的，不用抢'
   if (w.startsWith('抢')) return '你在可获取里自己抢的'
@@ -509,7 +509,7 @@ const swapGroups = computed(() => {
 })
 
 function kindLabel(k) {
-  return { makeup: '补位通知', appoint: '排班安排', swap: '对换请求', swapDone: '对换结果' }[k] || '通知'
+  return { makeup: '补位通知', appoint: '排班安排', swap: '换班请求', swapDone: '换班结果' }[k] || '通知'
 }
 function goBack() { router.push('/mobile-menu') }
 
