@@ -365,6 +365,259 @@ export const systemChecks = [
         ]
       }
     ]
+  },
+
+  /* ---------------- 排班类检查项（2026-11-13 追加：给「班次请假补位」那套事件用） ----------------
+   * 三条都是只读：看这个时段现在能不能补、这个人能不能接、还剩几个名额。
+   * 条件主权仍在检查方（排班系统），流程侧只按 key 取结论、按字段取值。
+   */
+  {
+    key: 'shiftQualify',
+    name: '补位资格检查',
+    source: '门店排班系统',
+    desc: '看的人能不能进这个时段的补位池：是否在册、当天是否请假、岗位与名额档位是否匹配',
+    pass: { logic: 'and', items: ['在签约门店在册', '当天无请假单', '岗位与名额档位匹配'] },
+    soft: { logic: 'or', items: ['当天有班次但与本时段首尾相接', '跨店但通勤间隔 ≥ 30 分钟'] },
+    fetch: {
+      fields: [
+        { key: 'qualifyState', label: '资格结论（可接 / 不可接 + 原因）' },
+        { key: 'blockedBy', label: '不可接的原因' },
+        { key: 'tierLabel', label: '命中哪个名额档位' }
+      ],
+      cadenceHint: '名额发布后查一次；请假状态变了重新查'
+    },
+    defaultFetch: { freq: '1h', maxRuns: 3 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 07:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-01',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 07:00',
+        configuredBy: 'Lacus7',
+        scanned: 5,
+        passN: 3,
+        softN: 1,
+        failN: 1,
+        errN: 0,
+        note: '按签约门店 + 当天请假单判；首尾相接不算冲突',
+        pass: { logic: 'and', items: ['在签约门店在册', '当天无请假单', '岗位与名额档位匹配'] },
+        soft: { logic: 'or', items: ['当天有班次但与本时段首尾相接', '跨店但通勤间隔 ≥ 30 分钟'] },
+        verdicts: [
+          { empNo: 'T00680', name: '王五', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '在册、当天无请假、属非全客户经理第一档', values: { qualifyState: '可接', blockedBy: '', tierLabel: '第一档 · 非全客户经理' } },
+          { empNo: 'T00682', name: '刘洋', job: '推拿师', store: '上海徐汇店', result: '软性命中', metrics: '当天早班到 18:00，与补班段 18:00 起首尾相接', values: { qualifyState: '可接（首尾相接）', blockedBy: '', tierLabel: '第二档 · 全职推拿师' } },
+          { empNo: 'T00685', name: '周凯', job: '推拿师', store: '上海静安店', result: '未通过', metrics: '当天已请假（事假 1 天），不进补位池', values: { qualifyState: '不可接', blockedBy: '当天请假', tierLabel: '' } }
+        ]
+      }
+    ]
+  },
+  {
+    key: 'shiftConflict',
+    name: '时段冲突检查',
+    source: '门店排班系统',
+    desc: '接手人在同一天是否已有重叠班次；跨店还要看两段之间的通勤间隔',
+    pass: { logic: 'and', items: ['同日时段不重叠', '跨店通勤间隔 ≥ 30 分钟'] },
+    soft: { logic: 'and', items: ['同日有班次但首尾相接', '间隔 15–30 分钟且同商圈'] },
+    fetch: {
+      fields: [
+        { key: 'conflictFree', label: '是否无冲突' },
+        { key: 'conflictWith', label: '冲突的那条班次（时段 + 起止）' }
+      ],
+      cadenceHint: '接手人确认后查一次'
+    },
+    defaultFetch: { freq: '1h', maxRuns: 3 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 07:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-02',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 07:00',
+        configuredBy: 'Lacus7',
+        scanned: 4,
+        passN: 3,
+        softN: 1,
+        failN: 0,
+        errN: 0,
+        note: '首尾相接可接；跨店间隔 30 分钟为硬底线',
+        pass: { logic: 'and', items: ['同日时段不重叠', '跨店通勤间隔 ≥ 30 分钟'] },
+        soft: { logic: 'and', items: ['同日有班次但首尾相接', '间隔 15–30 分钟且同商圈'] },
+        verdicts: [
+          { empNo: 'T00680', name: '王五', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '当天无其他班次，可整段接手', values: { conflictFree: '是', conflictWith: '' } },
+          { empNo: 'T00682', name: '刘洋', job: '推拿师', store: '上海徐汇店', result: '软性命中', metrics: '早班 10:00–18:00 与本段首尾相接，不重叠', values: { conflictFree: '是（首尾相接）', conflictWith: '早班 10:00–18:00' } }
+        ]
+      }
+    ]
+  },
+  {
+    key: 'shiftQuotaLeft',
+    name: '补位名额余量读取',
+    source: '门店排班系统',
+    desc: '读这个时段现在还空几个名额、已排几个人；只读，不改名额',
+    pass: { logic: 'and', items: ['补位名额 ≥ 1'] },
+    soft: null,
+    fetch: {
+      fields: [
+        { key: 'quotaTotal', label: '名额总数' },
+        { key: 'quotaFilled', label: '已占位数' },
+        { key: 'quotaLeft', label: '剩余可分配数' }
+      ],
+      cadenceHint: '补位分配前后各查一次'
+    },
+    defaultFetch: { freq: '1h', maxRuns: 3 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 07:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-03',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 07:00',
+        configuredBy: 'Lacus7',
+        scanned: 3,
+        passN: 3,
+        softN: 0,
+        failN: 0,
+        errN: 0,
+        note: '原班次释放后余量回到 2；补班段按 4 小时上限切成两段各 1 个',
+        pass: { logic: 'and', items: ['补位名额 ≥ 1'] },
+        soft: null,
+        verdicts: [
+          { empNo: 'T00676', name: '张三', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '晚班 14:00–22:00 释放后余量 1；补班段 14–18 / 18–22 各 1 个', values: { quotaTotal: 2, quotaFilled: 1, quotaLeft: 1 } },
+          { empNo: 'T00680', name: '王五', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '本时段余量 1', values: { quotaTotal: 1, quotaFilled: 0, quotaLeft: 1 } }
+        ]
+      }
+    ]
+  },
+  {
+    /* 取消 / 转移 / 换班三件事的第一步都是它：这一单要做的操作，时段规则允不允许、来不来得及。
+       规则是生成时快照到实例的（改规则不回溯），所以判定读的是这一单自己的快照，不读现行配置。 */
+    key: 'aftercareRuleCheck',
+    name: '后续处理规则校验',
+    source: '门店排班系统',
+    desc: '取消、转移、换班都先问这条：这一单要做的操作在时段的后续处理规则里允不允许、有没有过操作截止时间',
+    pass: { logic: 'and', items: ['快照规则允许该操作', '未过操作截止时间'] },
+    soft: null,
+    fetch: {
+      fields: [
+        { key: 'opAllowed', label: '操作是否允许（取消 / 转移 / 换班）' },
+        { key: 'deadline', label: '操作截止时刻' },
+        { key: 'releaseMode', label: '取消后名额去向（回池 / 作废）' }
+      ],
+      cadenceHint: '发起那一刻查一次，结论落到单子上不再变'
+    },
+    defaultFetch: { freq: '1h', maxRuns: 1 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 07:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-04',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 07:00',
+        configuredBy: 'Lacus7',
+        scanned: 3,
+        passN: 2,
+        softN: 0,
+        failN: 1,
+        errN: 0,
+        note: '读的是实例快照：规则后来改了不影响已经发出来的单子',
+        pass: { logic: 'and', items: ['快照规则允许该操作', '未过操作截止时间'] },
+        soft: null,
+        verdicts: [
+          { empNo: 'T00685', name: '周凯', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '晚班快照：可取消、截止班次前 6 小时，现在 07:00 离 18:00 开班还早', values: { opAllowed: '允许（取消）', deadline: '班次前 6 小时', releaseMode: '回池' } },
+          { empNo: 'T00682', name: '刘洋', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '早班快照：可转移、限同岗位，接收方同为推拿师', values: { opAllowed: '允许（转移）', deadline: '未过', releaseMode: '' } },
+          { empNo: 'T00676', name: '张三', job: '推拿师', store: '上海徐汇店', result: '未通过', metrics: '通班快照：取消、转移、换班全部不允许（通班兜底不可流转）', values: { opAllowed: '不允许', deadline: '', releaseMode: '' } }
+        ]
+      }
+    ]
+  },
+  {
+    /* 转移 / 换班的对方确认不是人在流程里点按钮那一步 —— 确认发生在移动端，落成一条回执事实；
+       流程侧按小时问一句「确认了没、等待期过了没」，跟「离职日期到没到」同一个套路：
+       确认了往下走，还在等待期内等下一批（不是失败），超时未确认判「失效」终止这一单。 */
+    key: 'waitPeriodExpired',
+    name: '等待期是否超时',
+    source: '门店排班系统',
+    desc: '转移、换班发出后按小时查：对方在移动端确认了没有；确认了就往下走，超时未确认这一单失效、占位不动',
+    pass: { logic: 'and', items: ['等待期内对方已确认', '未超等待期时限'] },
+    soft: null,
+    fetch: {
+      fields: [
+        { key: 'peerConfirmed', label: '对方是否已确认' },
+        { key: 'confirmedAt', label: '确认时刻' },
+        { key: 'waitLeft', label: '距等待期截止还有多久' }
+      ],
+      cadenceHint: '按小时查一次，最长查 48 小时；确认或超时任一发生即停'
+    },
+    defaultFetch: { freq: '1h', maxRuns: 48 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 07:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-05',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 07:00',
+        configuredBy: 'Lacus7',
+        scanned: 2,
+        passN: 1,
+        softN: 0,
+        failN: 1,
+        errN: 0,
+        note: '未到不算失败，等下一批；超时那一批直接判「失效」，由编排终止单子',
+        pass: { logic: 'and', items: ['等待期内对方已确认', '未超等待期时限'] },
+        soft: null,
+        verdicts: [
+          { empNo: 'T00680', name: '王五', job: '推拿师', store: '上海徐汇店', result: '通过', metrics: '16:52 在移动端确认接受，距截止还有 2 小时', values: { peerConfirmed: '是', confirmedAt: '2026-11-13 16:52', waitLeft: '2 小时' } },
+          { empNo: 'T00685', name: '周凯', job: '推拿师', store: '上海静安店', result: '未通过', metrics: '等待期已过 20:00，对方一直未确认 —— 本单失效，占位不动', values: { peerConfirmed: '否', confirmedAt: '', waitLeft: '已超时' } }
+        ]
+      }
+    ]
+  },
+
+  /* ---------------- 离职生效（2026-11-13 追加） ----------------
+   * 不是新机制，就是一条普通的系统判断项：问人事系统「这个人的离职日期到了没」。
+   * 检查方按天跑批，结论随批次回来；没到就等下一批（不是失败），到了就往下走。
+   * 之所以需要它：离职单从提交到签署早就办完了，但人还没走 ——
+   * 真正要动排班的是生效那天，而那天不是任何一个「人办完」的时刻。
+   */
+  {
+    key: 'effectiveDateReached',
+    name: '离职日期是否到达',
+    source: '人事系统',
+    desc: '这一单核定下来的实际离职日期到了没有；到了才该动排班，没到就等下一批',
+    pass: { logic: 'and', items: ['今天 ≥ 实际离职日期'] },
+    soft: null,
+    fetch: {
+      fields: [
+        { key: 'effectiveDate', label: '实际离职日期' },
+        { key: 'today', label: '判定当日' },
+        { key: 'daysLeft', label: '距生效还有几天' }
+      ],
+      cadenceHint: '按天跑一批，到了就停'
+    },
+    defaultFetch: { freq: '1d', maxRuns: 40 },
+    mirror: { version: 'v1', configuredBy: 'Lacus7', condAt: '2026-11-13 17:00' },
+    batches: [
+      {
+        batchNo: 'B-20261113-09',
+        ranAt: '2026-11-13 07:00',
+        version: 'v1',
+        condAt: '2026-11-13 17:00',
+        configuredBy: 'Lacus7',
+        scanned: 3,
+        passN: 2,
+        softN: 0,
+        failN: 1,
+        errN: 0,
+        note: '按实际离职日期与当日比较；没到不算失败，等下一批再看',
+        pass: { logic: 'and', items: ['今天 ≥ 实际离职日期'] },
+        soft: null,
+        verdicts: [
+          { empNo: 'TL1834', name: '郑一鸣', job: '客户经理', store: '上海徐汇店', result: '通过', metrics: '实际离职日期 2026-11-05，已过 8 天', values: { effectiveDate: '2026-11-05', today: '2026-11-13', daysLeft: 0 } },
+          { empNo: 'TL2015', name: '赵文博', job: '前台', store: '上海静安店', result: '通过', metrics: '实际离职日期 2026-09-30，已过 44 天', values: { effectiveDate: '2026-09-30', today: '2026-11-13', daysLeft: 0 } },
+          { empNo: 'TL1660', name: '杨春燕', job: '城市总', store: '上海', result: '未通过', metrics: '实际离职日期 2026-11-20，还差 7 天', values: { effectiveDate: '2026-11-20', today: '2026-11-13', daysLeft: 7 } }
+        ]
+      }
+    ]
   }
 ]
 
@@ -454,19 +707,19 @@ export const actions = [
   },
   {
     key: 'act.cancelSchedule',
-    name: '取消未开始排班',
+    name: '清除生效日后的排班结果',
     source: '门店排班系统',
     mode: 'execute',
     target: '班次',
-    targetFrom: '离职生效日之后该员工的全部班次',
+    targetFrom: '离职生效日之后仍存在的那几条排班结果行',
     args: [
       { key: 'empNo', label: '员工工号', from: 'facts' },
-      { key: 'effectiveAt', label: '离职生效日期', from: 'payload' }
+      { key: 'effectiveDate', label: '实际离职日期', from: '结果：离职日期已到' }
     ],
-    receipt: [{ key: 'shiftNo', label: '班次号' }, { key: 'result', label: '撤班结果' }],
+    receipt: [{ key: 'shiftNo', label: '班次号' }, { key: 'result', label: '清除结果' }],
     idempotent: '工号 + 班次号',
-    fallback: '失败转店长人工撤班，不阻塞离职',
-    note: '只撤未开始的班次；已发生的考勤归假勤系统核算，本流程不代算'
+    fallback: '失败转店长人工清除，不阻塞离职',
+    note: '清的是结果表里那几行，不动时段名额 —— 名额是容量，人走了是换人接，不是把名额注销；已发生的考勤归假勤核算'
   },
   {
     key: 'act.notifyOwner',
@@ -634,6 +887,174 @@ export const actions = [
     idempotent: '工号 + 变更类型 + 生效日',
     fallback: '推送失败重试 3 次，仍失败转人事线下处理',
     note: '送达不等于签完：签署状态要另一条外部回执认，别拿送达当签署'
+  },
+
+  /* ---------------- 排班类动作（2026-11-13 追加） ----------------
+   * 与前面那些同构：改一条数据、发一份东西、拿回执；只是对象从「人的档案」换成「时段的占位」。
+   * 分工口径沿用排班 v4 的定案：时段=容量形态，名额=分配单位，占位=人 × 名额的绑定；
+   * 写结果表只有一处入口，别在别处顺手改占位。
+   */
+  {
+    key: 'act.releaseShift',
+    name: '释放时段名额',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '时段',
+    targetFrom: '请假覆盖的那个时段实例（可按请假单定位）',
+    args: [
+      { key: 'empNo', label: '请假人工号', from: 'facts' },
+      { key: 'shiftNo', label: '时段编号', from: 'payload' },
+      { key: 'releaseMode', label: '名额去向（回池 / 作废）', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'releasedCount', label: '释放的名额数' },
+      { key: 'releaseResult', label: '释放结果（回池 / 作废 / 失败）' }
+    ],
+    idempotent: '时段编号 + 请假人工号：重复触发不重复释放',
+    fallback: '释放失败重试 2 次，仍失败转店长人工处理，不阻塞后续补位',
+    note: '只把这个人占的那一格放出来，不动时段本身；是否回池由时段规则定，不由这一步擅自决定'
+  },
+  {
+    key: 'act.makeupShifts',
+    name: '生成补班时段',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '时段',
+    targetFrom: '被覆盖的时间区间（请假时段的起止）',
+    args: [
+      { key: 'coveredStart', label: '被覆盖起', from: 'payload' },
+      { key: 'coveredEnd', label: '被覆盖止', from: 'payload' },
+      { key: 'maxHoursPerShift', label: '单人单段上限（小时）', from: 'input' }
+    ],
+    receipt: [
+      { key: 'makeupSlotIds', label: '生成的补班时段编号' },
+      { key: 'slotCount', label: '生成段数' },
+      { key: 'makeupResult', label: '生成结果' }
+    ],
+    idempotent: '被覆盖区间 + 上限：同一区间重复生成不叠加，只补缺的那几段',
+    fallback: '生成失败重试 2 次，仍失败转人事手工加班次',
+    note: '按上限切段，不按人切：切出来的是容量形态，占位留给分配那一步'
+  },
+  {
+    key: 'act.calcQuota',
+    name: '算补位名额',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '时段',
+    targetFrom: '刚生成的补班时段',
+    args: [
+      { key: 'slotIds', label: '补班时段编号', from: '结果：补班时段已生成 · 生成的补班时段编号' },
+      { key: 'algoKey', label: '名额算法（覆盖法 / 签约比 / 固定值）', from: 'input' }
+    ],
+    receipt: [
+      { key: 'quotaValue', label: '算出的名额数' },
+      { key: 'quotaExpr', label: '算式（怎么算出来的）' },
+      { key: 'calcResult', label: '计算结果' }
+    ],
+    idempotent: '时段编号 + 算法：同一参数重复算得同一个数',
+    fallback: '算法取不到数就落到「人工固定 1 个」，并留一条说明，不空着时段',
+    note: '只算不发布：算出来的是系统建议值，中间留人工改动窗；算式必须一起带回，否则谁都说不清这个数怎么来的'
+  },
+  {
+    key: 'act.publishQuota',
+    name: '发布补位名额',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '时段',
+    targetFrom: '补班时段的建议名额',
+    args: [
+      { key: 'slotIds', label: '补班时段编号', from: '结果：补班时段已生成 · 生成的补班时段编号' },
+      { key: 'publishAt', label: '发布时刻', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'publishedCount', label: '发布名额数' },
+      { key: 'visibleTo', label: '可见人群（第一档先可见 / 全档可见）' },
+      { key: 'publishResult', label: '发布结果' }
+    ],
+    idempotent: '时段编号 + 发布时刻：重复发布覆盖同一批，不叠加名额',
+    fallback: '发布失败重试 3 次，仍失败转人事手动发布；未发布的时段不进任何人的可领列表',
+    note: '发布才算「可见」：在此之前名额存在但没人能领；档位开放时间从这里起算'
+  },
+  {
+    key: 'act.allocateShift',
+    name: '按优先序列分配补位',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '人',
+    targetFrom: '本时段补位池里符合档位的人（按档位从高到低）',
+    args: [
+      { key: 'slotIds', label: '补班时段编号', from: '结果：补班时段已发布 · 补班时段编号' },
+      { key: 'tierOrder', label: '优先序列（档位 → 人群）', from: 'input' },
+      { key: 'conflictFree', label: '无时段冲突', from: '结果：时段冲突检查已通过 · 是否无冲突' }
+    ],
+    receipt: [
+      { key: 'fillPerson', label: '补上的那个人' },
+      { key: 'fillWay', label: '承接方式（系统补位 / 兜底 / 无人接）' },
+      { key: 'fillResult', label: '分配结果' }
+    ],
+    idempotent: '时段编号 + 人：同一段不会重复塞同一个人',
+    fallback: '档位全空就留空并标记「无人接」，转人事手动指定，不硬塞档位外的人',
+    note: '按档位顺序吃名额，不是挑最闲的人；档位外的人不因为空着就放进来'
+  },
+  {
+    key: 'act.writeScheduleResult',
+    name: '写排班结果',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '单据',
+    targetFrom: '这一单的补位结果（时段 × 人）',
+    args: [
+      { key: 'slotIds', label: '补班时段编号', from: '结果：补班时段已发布 · 补班时段编号' },
+      { key: 'fillPerson', label: '补上的人', from: '结果：补位分配已确定 · 补上的那个人' }
+    ],
+    receipt: [
+      { key: 'scheduleRowNos', label: '排班记录编号' },
+      { key: 'writeResult', label: '写入结果' }
+    ],
+    idempotent: '时段编号 + 人：重复写入是覆盖同一条，不新增重复占位',
+    fallback: '写入失败重试 3 次，仍失败转人事手工补录并标记「结果未落库」',
+    note: '全流程唯一写占位的口；这一条不落，前面释放和分配都只是中间态，人的时间线上看不到'
+  },
+  {
+    key: 'act.transferOccupy',
+    name: '占位换主（转移承接）',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '占位',
+    targetFrom: '发起人转出的那个时段占位',
+    args: [
+      { key: 'instanceId', label: '时段实例编号', from: 'payload' },
+      { key: 'fromEmpNo', label: '原持有人（发起人）', from: 'facts' },
+      { key: 'toEmpNo', label: '接手人', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'transferResult', label: '换主结果' },
+      { key: 'historyRef', label: '原占位留痕编号' }
+    ],
+    idempotent: '时段实例编号 + 接手人：重复执行是同一次换主，不产生第二个占位',
+    fallback: '执行失败重试 2 次，仍失败转人事人工换主；原占位保持不动',
+    note: '换的是「人 × 名额」的绑定，名额本身不释放也不回池：filled / left 都不变，原占位进历史留痕'
+  },
+  {
+    key: 'act.swapOccupy',
+    name: '对调占位（换班）',
+    source: '门店排班系统',
+    mode: 'execute',
+    target: '占位',
+    targetFrom: '发起人与对方各自的时段占位（两个编号在发起时绑定）',
+    args: [
+      { key: 'instanceId', label: '发起人的班次编号', from: 'payload' },
+      { key: 'toInstanceId', label: '对方的班次编号', from: 'payload' },
+      { key: 'fromEmpNo', label: '发起人工号', from: 'facts' },
+      { key: 'toEmpNo', label: '对方工号', from: 'payload' }
+    ],
+    receipt: [
+      { key: 'swapResult', label: '对调结果' },
+      { key: 'historyRefs', label: '两条原占位留痕编号' }
+    ],
+    idempotent: '两个班次编号：同一对班次重复对调不叠加',
+    fallback: '任一边执行失败则两边一起回滚（对调要么成要么不成，不做半套），转人事人工处理',
+    note: '双向对价：两边占位一起换，名额池 filled / left 都不动；两条原占位各进各的历史，标「换给谁」'
   }
 ]
 export const actionByKey = (k) => actions.find((a) => a.key === k) || null

@@ -180,6 +180,30 @@ export function nowTextOf (inst, tree, me = null) {
   return { tone: 'muted', text: '等待前置' }
 }
 
+/**
+ * 画布起点那一句话：这一单是怎么来的。
+ * 不是所有事件都从「当事人提出申请」开始 —— 班次请假补位是假勤审批通过后系统发出的，
+ * 起点写错，整条链读起来就像员工自己申请把班次空出来。
+ */
+export function originLabelOf (inst = {}) {
+  const p = inst.payload || {}
+  if (inst.eventKey === 'shift-fill') {
+    const when = p.leaveDate ? `${p.leaveDate} ` : ''
+    const span = p.shiftStart && p.shiftEnd ? `${p.shiftStart}–${p.shiftEnd} ` : ''
+    return `请假审批通过 · ${when}${span}班次被覆盖`
+  }
+  if (inst.eventKey === 'shift-cancel') {
+    return `非全主动取消 · ${p.shiftDate || ''} ${p.instanceId || ''}`.trim()
+  }
+  if (inst.eventKey === 'shift-transfer') {
+    return `转移发起 · ${p.instanceId || ''} → 转给 ${(p.toPersonId || '').replace('T00', '')} 号`
+  }
+  if (inst.eventKey === 'shift-swap') {
+    return `换班发起 · ${p.instanceId || ''} ↔ ${p.toInstanceId || ''}`
+  }
+  return `${inst.emp?.name || ''} 提出申请`
+}
+
 export const instStateLabel = (k) => ({
   generating: '生成中',
   running: '流转中',

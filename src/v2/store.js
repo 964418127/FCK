@@ -15,8 +15,8 @@ import { TERMINAL, openSubs, needsHuman, primaryType } from './instance.js'
 import { autoSettle, runCheck, runAction, runReceipt } from './sysRun.js'
 import { snapshotOfSkeleton } from './template.js'
 
-/** v15：事件目录多了转正 / 调岗 / 调薪三套模板（与离职同一份契约）→ 旧数据重播 */
-const KEY = 'fck:v2:review:v18'
+/** v20：事件数据里补了「班次请假补位」的两笔真实实例（进行中 / 已办结）→ 旧数据重播 */
+const KEY = 'fck:v2:review:v22'
 
 const fresh = () => ({
   events: clone(seedEvents),

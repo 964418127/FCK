@@ -100,7 +100,9 @@ export const sidebarMenu = [
     children: [
       { index: 'schedule-strategy', label: '排班策略 v1', icon: Calendar },
       { index: 'slot-model', label: '排班策略 v2', icon: Clock },
-      { index: 'schedule-v3', label: '排班策略 v3', icon: Clock }
+      { index: 'schedule-v3', label: '排班策略 v3', icon: Clock },
+      { index: 'schedule-v4', label: '排班策略 v4', icon: Clock },
+      { index: 'schedule-v5', label: '排班策略 v5', icon: Clock }
     ]
   },
   {

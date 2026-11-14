@@ -56,7 +56,8 @@ export const mobileMenuGroups = [
     label: '人事',
     items: [
       { id: 'm-schedule-mine', label: '我的排班', icon: Calendar, to: '/v3/m' },
-      { id: 'm-schedule-notice', label: '排班通知', icon: Bell, to: '/v3/m/notice', badge: true }
+      { id: 'm-schedule-notice', label: '排班通知', icon: Bell, to: '/v3/m/notice', badge: true },
+      { id: 'm-schedule-v4', label: '我的排班 v4', icon: Calendar, to: '/v4/m' }
     ]
   },
   {

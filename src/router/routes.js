@@ -755,6 +755,30 @@ export const routes = [
         }
       },
       {
+        path: 'schedule-v4',
+        name: 'schedule-v4',
+        component: () => import('../views/ScheduleV4Console.vue'),
+        meta: {
+          title: '排班策略 v4'
+        }
+      },
+      {
+        path: 'schedule-v4/events',
+        name: 'schedule-v4-events',
+        component: () => import('../views/ScheduleV4Events.vue'),
+        meta: {
+          title: '事件编排 v4'
+        }
+      },
+      {
+        path: 'schedule-v5',
+        name: 'schedule-v5',
+        component: () => import('../views/ScheduleV5.vue'),
+        meta: {
+          title: '排班策略 v5'
+        }
+      },
+      {
         path: 'store-salary-strategy',
         name: 'store-salary-strategy',
         component: () => import('../views/StoreSalaryStrategy.vue'),
@@ -971,6 +995,12 @@ export const routes = [
     name: 'v3-mobile',
     component: () => import('../views/ScheduleV3Mobile.vue'),
     meta: { title: '移动端排班' }
+  },
+  {
+    path: '/v4/m',
+    name: 'schedule-v4-mobile',
+    component: () => import('../views/ScheduleV4Mobile.vue'),
+    meta: { title: '排班 v4 移动端' }
   },
   {
     path: '/v3/m/notice',

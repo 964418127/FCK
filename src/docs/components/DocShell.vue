@@ -27,13 +27,21 @@
       </div>
     </div>
 
-    <div class="content-section">
+    <div class="content-section" @click="onDocSvgClick">
       <slot />
+    </div>
+
+    <div v-if="lightbox" class="doc-lightbox" @click="closeLightbox">
+      <div class="doc-lightbox-panel" @click.stop>
+        <div class="doc-lightbox-body" v-html="lightbox.html"></div>
+      </div>
+      <div class="doc-lightbox-hint">点击空白处或按 Esc 关闭</div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Document } from '@element-plus/icons-vue'
 import FloatingToc from '../../components/FloatingToc.vue'
 import { useDocCopy } from '../composables/useDocCopy.js'
@@ -48,6 +56,47 @@ defineProps({
 })
 
 const { copyToClipboard, exportToPdf } = useDocCopy()
+
+/* ===== 查看大图：点击正文里的文档图，克隆原尺寸弹出 ===== */
+const lightbox = ref(null)
+
+function onDocSvgClick(e) {
+  const svg = e.target.closest('svg')
+  if (!svg) return
+  const rect = svg.getBoundingClientRect()
+  if (rect.width < 300 || rect.height < 120) return
+  const vb = svg.getAttribute('viewBox')
+  let w = rect.width
+  let h = rect.height
+  if (vb) {
+    const p = vb.split(/[\s,]+/).map(Number)
+    if (p.length === 4 && p[2] > 0 && p[3] > 0) { w = p[2]; h = p[3] }
+  }
+  const maxW = Math.min(window.innerWidth * 0.92, 1180)
+  const maxH = window.innerHeight * 0.86
+  const scale = Math.min(maxW / w, maxH / h, 2.4)
+  const clone = svg.cloneNode(true)
+  clone.removeAttribute('class')
+  clone.setAttribute('width', Math.round(w * scale))
+  clone.setAttribute('height', Math.round(h * scale))
+  clone.style.display = 'block'
+  lightbox.value = { html: clone.outerHTML }
+  document.body.style.overflow = 'hidden'
+}
+
+function closeLightbox() {
+  lightbox.value = null
+  document.body.style.overflow = ''
+}
+
+function onKeydown(e) {
+  if (e.key === 'Escape' && lightbox.value) closeLightbox()
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  document.body.style.overflow = ''
+})
 </script>
 
 <style>
@@ -180,6 +229,58 @@ const { copyToClipboard, exportToPdf } = useDocCopy()
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
   padding: 24px 28px;
+}
+
+/* ===== 文档图基线：图按 680 设计宽度 1:1 渲染，不再跟随正文列拉满 =====
+   之前 .doc-svg 一律 width:100%，高瘦图被放大 1.3-1.5 倍、占满一屏；
+   锁到 680 后图内 11-12px 文字即真实字号，短宽图不受影响 */
+.v2-phase1-guide .content-section svg.doc-svg,
+.v2-phase1-guide .content-section svg.v5-tl {
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.v2-phase1-guide .content-section svg.doc-svg {
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+/* 正文里的大图可点击放大 */
+.v2-phase1-guide .content-section svg.doc-svg,
+.v2-phase1-guide .content-section svg.v5-tl,
+.v2-phase1-guide .content-section svg.arch-svg {
+  cursor: zoom-in;
+}
+
+/* ===== 查看大图（灯箱）：白底面板，等比放大到整屏可读，Esc / 点空白关闭 ===== */
+.doc-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(22, 22, 26, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.doc-lightbox-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 94vw;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+.doc-lightbox-body svg { max-width: 100%; height: auto; }
+.doc-lightbox-hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  pointer-events: none;
 }
 
 .v2-phase1-guide .section { margin-bottom: 40px; }

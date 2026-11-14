@@ -74,53 +74,106 @@ export const shiftFlags3 = sh => {
   return f
 }
 
+/* ---- 班次性质：可选 / 必选，挂在时段上（不在获取规则里） ---- */
+export const V3_NATURES = [
+  { value: 'required', label: '必选', hint: '不申也得排：没人申时按兜底补人，结果表一定有人' },
+  { value: 'optional', label: '可选', hint: '申了才有：没人申就留空，不强制补人' }
+]
+export const natureOf3 = v => V3_NATURES.find(n => n.value === v) || V3_NATURES[0]
+
+/* ---- 名额来源：由「名额服务」供数，不在时段上写死 ----
+ * 时间轴：服务给系统计算值 → 改动期（人事/店长可调，最少 5 分钟）→ 名额生效 → 铺实例
+ * 生效值随生成快照固化；改动期里调过就记 adjusted，没调就用系统值
+ */
+export const QUOTA_WINDOW_MIN = 5
+export const V3_QUOTA_SERVICES = [
+  { value: 'headcount', label: '人头法', formula: '在册人数 × 出勤系数' },
+  { value: 'volume', label: '工时法', formula: '当日需求工时 ÷ 单班净工时' },
+  { value: 'signRatio', label: '签约比法', formula: '签约非全人数 ÷ 2，向上取整' },
+  { value: 'fixed', label: '固定值', formula: '不随数据变化' }
+]
+export const quotaServiceOf3 = v => V3_QUOTA_SERVICES.find(s => s.value === v) || V3_QUOTA_SERVICES[3]
+export const quotaOf3 = slot => slot?.quota || { service: 'fixed', params: { value: slot?.capacity || 1 }, windowMin: QUOTA_WINDOW_MIN }
+/** 名额服务算值：纯函数，同一份输入永远同一个数 */
+export const quotaCalc3 = slot => {
+  const q = quotaOf3(slot)
+  const p = q.params || {}
+  let value = p.value ?? slot?.capacity ?? 1
+  let formula = '固定值，不随数据变化'
+  if (q.service === 'headcount') {
+    value = Math.max(1, Math.round((p.headcount || 0) * (p.factor ?? 1)))
+    formula = `在册 ${p.headcount} 人 × 出勤系数 ${p.factor ?? 1}`
+  } else if (q.service === 'volume') {
+    value = Math.max(1, Math.round((p.volumeHours || 0) / (p.shiftHours || 1)))
+    formula = `当日需求 ${p.volumeHours}h ÷ 单班净 ${p.shiftHours}h`
+  } else if (q.service === 'signRatio') {
+    value = Math.max(1, Math.ceil((p.signed || 0) / (p.divisor || 2)))
+    formula = `签约 ${p.signed} 人 ÷ ${p.divisor || 2}，向上取整`
+  }
+  const svc = quotaServiceOf3(q.service)
+  const adjusted = q.adjusted ?? null
+  return {
+    service: q.service, serviceLabel: svc.label, formula,
+    computed: value, windowMin: Math.max(QUOTA_WINDOW_MIN, q.windowMin ?? QUOTA_WINDOW_MIN),
+    adjusted, effective: adjusted ?? value
+  }
+}
+
 /* ---- ② 时段：只描述时间形态 ---- */
 export const V3_SLOTS = [
   {
-    id: 'SL-V301', containerId: 'C-01', shiftId: 'CS-101', name: '早班时段',
+    id: 'SL-V301', containerId: 'C-01', shiftId: 'CS-101', name: '早班时段', nature: 'required',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 6, source: 'template', templateId: 'ST-V1',
+    quota: { service: 'headcount', params: { headcount: 8, factor: 0.75 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true },
-    note: '每周四 06:00 铺下一周，一天 6 个名额'
+    note: '每周四 06:00 铺下一周，名额服务按人头算 6 个'
   },
   {
-    id: 'SL-V302', containerId: 'C-01', shiftId: 'CS-102', name: '晚班时段',
+    id: 'SL-V302', containerId: 'C-01', shiftId: 'CS-102', name: '晚班时段', nature: 'optional',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 3, source: 'template', templateId: 'ST-V2',
+    quota: { service: 'volume', params: { volumeHours: 24, shiftHours: 8 }, windowMin: 15, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true },
     note: '晚班单独发布；也是早班的兜底目标'
   },
   {
-    id: 'SL-V303', containerId: 'C-01', shiftId: 'CS-103', name: '通班时段',
+    id: 'SL-V303', containerId: 'C-01', shiftId: 'CS-103', name: '通班时段', nature: 'required',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 2, source: 'custom', templateId: null,
+    quota: { service: 'fixed', params: { value: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true },
     note: '兜底承接时段：不单独发布规则，只接早班漏下来的'
   },
   {
-    id: 'SL-V304', containerId: 'C-02', shiftId: 'CS-203', name: '非全晚峰时段',
+    id: 'SL-V304', containerId: 'C-02', shiftId: 'CS-203', name: '非全晚峰时段', nature: 'optional',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 4, source: 'template', templateId: 'ST-V4',
+    quota: { service: 'signRatio', params: { signed: 8, divisor: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'monthly', day: 25, time: '09:00', horizon: 'month', idempotent: true },
     note: '每月 25 日铺下月整月，错峰自领'
   },
   {
-    id: 'SL-V305', containerId: 'C-02', shiftId: 'CS-201', name: '黄金早班时段',
+    id: 'SL-V305', containerId: 'C-02', shiftId: 'CS-201', name: '黄金早班时段', nature: 'required',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 1, source: 'template', templateId: 'ST-V1',
+    quota: { service: 'fixed', params: { value: 1 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true },
     note: '1 人店，系统按上周记录轮转'
   },
   {
-    id: 'SL-V306', containerId: 'C-02', shiftId: 'CS-202', name: '通班时段',
+    id: 'SL-V306', containerId: 'C-02', shiftId: 'CS-202', name: '通班时段', nature: 'required',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 2, source: 'custom', templateId: null,
+    quota: { service: 'fixed', params: { value: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'monthly', day: 25, time: '09:00', horizon: 'month', idempotent: true },
     note: '兜底承接时段：随月度晚峰一起铺，不单独发布规则'
   },
   {
-    id: 'SL-V308', containerId: 'C-03', shiftId: 'CS-301', name: '行政班时段',
+    id: 'SL-V308', containerId: 'C-03', shiftId: 'CS-301', name: '行政班时段', nature: 'required',
     days: [1, 2, 3, 4, 5], capacity: 2, source: 'template', templateId: 'ST-V5',
+    quota: { service: 'fixed', params: { value: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'monthly', day: 25, time: '09:00', horizon: 'month', idempotent: true },
     note: '按月铺整月，系统直派'
   },
   {
-    id: 'SL-V309', containerId: 'C-04', shiftId: 'CS-401', name: '保洁早段',
+    id: 'SL-V309', containerId: 'C-04', shiftId: 'CS-401', name: '保洁早段', nature: 'required',
     days: [1, 2, 3, 4, 5, 6, 0], capacity: 4, source: 'template', templateId: 'ST-V6',
+    quota: { service: 'headcount', params: { headcount: 4, factor: 1 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 1, time: '08:00', horizon: 'n1', idempotent: true },
     note: '周一铺下周，系统直派到人'
   }
@@ -128,37 +181,54 @@ export const V3_SLOTS = [
 export const findSlot3 = id => V3_SLOTS.find(s => s.id === id) || null
 export const slotsOf3 = containerId => V3_SLOTS.filter(s => s.containerId === containerId)
 
-/* ---- 时段模板：纯时间形态，不含任何「谁能领」 ---- */
+/* ---- 时段模板：纯时间形态，不含任何「谁能领」 ----
+ * owner: 'global' 平台全局库（只读，门店只能引入）
+ *        '<容器 id>' 门店引入了全局模板（或自己新建）→ 门店自有，可改可删
+ * derivedFrom: 从哪条全局模板引入来的
+ */
 export const V3_SLOT_TPL = [
   {
-    id: 'ST-V1', name: '每天 · 早班 · 6 个名额', scope: '通用',
-    shiftTemplateId: 'SH-01', days: [1, 2, 3, 4, 5, 6, 0], capacity: 6,
+    id: 'ST-V1', name: '每天 · 早班 · 6 个名额', scope: '通用', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-01', days: [1, 2, 3, 4, 5, 6, 0], capacity: 6, nature: 'required',
+    quota: { service: 'headcount', params: { headcount: 8, factor: 0.75 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true }
   },
   {
-    id: 'ST-V2', name: '每天 · 晚班 · 3 个名额', scope: '通用',
-    shiftTemplateId: 'SH-02', days: [1, 2, 3, 4, 5, 6, 0], capacity: 3,
+    id: 'ST-V2', name: '每天 · 晚班 · 3 个名额', scope: '通用', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-02', days: [1, 2, 3, 4, 5, 6, 0], capacity: 3, nature: 'optional',
+    quota: { service: 'volume', params: { volumeHours: 24, shiftHours: 8 }, windowMin: 15, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true }
   },
   {
-    id: 'ST-V3', name: '每天 · 非全晚峰 · 3 个名额', scope: '通用',
-    shiftTemplateId: 'SH-05', days: [1, 2, 3, 4, 5, 6, 0], capacity: 3,
+    id: 'ST-V3', name: '每天 · 非全晚峰 · 3 个名额', scope: '通用', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-05', days: [1, 2, 3, 4, 5, 6, 0], capacity: 3, nature: 'optional',
+    quota: { service: 'fixed', params: { value: 3 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true }
   },
   {
-    id: 'ST-V4', name: '每月 · 非全晚峰 · 4 个名额', scope: '通用',
-    shiftTemplateId: 'SH-05', days: [1, 2, 3, 4, 5, 6, 0], capacity: 4,
+    id: 'ST-V4', name: '每月 · 非全晚峰 · 4 个名额', scope: '通用', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-05', days: [1, 2, 3, 4, 5, 6, 0], capacity: 4, nature: 'optional',
+    quota: { service: 'signRatio', params: { signed: 8, divisor: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'monthly', day: 25, time: '09:00', horizon: 'month', idempotent: true }
   },
   {
-    id: 'ST-V5', name: '每月 · 行政班 · 2 个名额', scope: '办公地点',
-    shiftTemplateId: 'SH-04', days: [1, 2, 3, 4, 5], capacity: 2,
+    id: 'ST-V5', name: '每月 · 行政班 · 2 个名额', scope: '办公地点', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-04', days: [1, 2, 3, 4, 5], capacity: 2, nature: 'required',
+    quota: { service: 'fixed', params: { value: 2 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'monthly', day: 25, time: '09:00', horizon: 'month', idempotent: true }
   },
   {
-    id: 'ST-V6', name: '每天 · 保洁早段 · 4 个名额', scope: '城市',
-    shiftTemplateId: 'SH-06', days: [1, 2, 3, 4, 5, 6, 0], capacity: 4,
+    id: 'ST-V6', name: '每天 · 保洁早段 · 4 个名额', scope: '城市', owner: 'global', derivedFrom: null,
+    shiftTemplateId: 'SH-06', days: [1, 2, 3, 4, 5, 6, 0], capacity: 4, nature: 'required',
+    quota: { service: 'headcount', params: { headcount: 4, factor: 1 }, windowMin: 10, adjusted: null },
     generation: { cadence: 'weekly', weekday: 1, time: '08:00', horizon: 'n1', idempotent: true }
+  },
+  /* 门店引入后改了名额的自有模板（示例：兴隆湖把早班名额提到 8） */
+  {
+    id: 'ST-C011', name: '兴隆湖 · 早班 · 8 个名额', scope: '门店', owner: 'C-01', derivedFrom: 'ST-V1',
+    shiftTemplateId: 'SH-01', days: [1, 2, 3, 4, 5, 6, 0], capacity: 8, nature: 'required',
+    quota: { service: 'fixed', params: { value: 8 }, windowMin: 10, adjusted: null },
+    generation: { cadence: 'weekly', weekday: 4, time: '06:00', horizon: 'n1', idempotent: true }
   }
 ]
 export const findSlotTpl3 = id => V3_SLOT_TPL.find(t => t.id === id) || null
@@ -247,6 +317,50 @@ export const RULE_OF_SLOT = {
 }
 export const ruleOfSlot3 = slotId => findRule3(RULE_OF_SLOT[slotId])
 export const slotsOnRule3 = ruleId => V3_SLOTS.filter(s => RULE_OF_SLOT[s.id] === ruleId)
+
+/* ---- 规则编辑：人群枚举 / 空稿 / 校验 / 按配法命名 ---- */
+export const V3_CROWDS = [
+  '全日制推拿师', '非全推拿师', '全日制客户经理', '非全客户经理', '储备客户经理', '全栈工程师', '保洁'
+]
+export const blankRule3 = (mode = 'grab') => ({
+  id: '', name: '', mode, balance: 'none', fallbackSlotIds: [], balanceNote: '',
+  rounds: [{
+    id: 'r1', name: '第一轮', crowds: [],
+    open: mode === 'direct' ? { kind: 'generated' } : { kind: 'd', before: 4, time: '06:00' },
+    close: mode === 'review' ? { kind: 'd', before: 1, time: '22:00' } : null,
+    settle: mode === 'review' ? 'onClose' : 'instant',
+    audit: mode === 'review'
+      ? { metrics: [{ name: '产值', weight: 40 }, { name: '回头率', weight: 30 }, { name: '预约率', weight: 30 }], tiebreak: '回头率', period: '上一周期已发布排班' }
+      : null
+  }]
+})
+/** 校验：返回人话错误清单，空数组＝可保存 */
+export const validateRule3 = draft => {
+  const errs = []
+  if (!String(draft?.name || '').trim()) errs.push('规则名称不能为空（建议按配法命名，如「两轮审核+兜底晚班再通班」）')
+  if (!draft?.rounds?.length) errs.push('至少要有一轮')
+  for (const [i, rd] of (draft?.rounds || []).entries()) {
+    if (!rd.crowds?.length) errs.push(`第 ${i + 1} 轮没选人群`)
+    if (!rd.open || !rd.open.kind) errs.push(`第 ${i + 1} 轮没设开放时点`)
+    if (draft.mode === 'review' && !rd.close) errs.push(`第 ${i + 1} 轮是审核模式，必须设申领截止`)
+    if (draft.mode === 'review' && !rd.audit) errs.push(`第 ${i + 1} 轮缺审核口径`)
+  }
+  if (draft?.balance === 'sequence' && !draft.fallbackSlotIds?.length) errs.push('余额选了兜底序列，但没排兜底时段')
+  return errs
+}
+/** 按配法命名：把「几轮审核 + 余额去向」拼成名字，不带岗位名 */
+export const ruleNamePattern3 = (draft, shiftNameOf = id => id) => {
+  const parts = []
+  const cn = { 1: '一', 2: '两', 3: '三', 4: '四', 5: '五' }
+  if (draft.mode === 'review') parts.push(`${cn[draft.rounds?.length] || draft.rounds?.length || 1}轮审核`)
+  else if (draft.mode === 'grab') parts.push('公布即抢')
+  else parts.push('系统直派')
+  if (draft.balance === 'sequence' && draft.fallbackSlotIds?.length) {
+    parts.push('兜底' + draft.fallbackSlotIds.map(id => String(shiftNameOf(id)).replace(/时段$/, '')).join('再'))
+  } else if (draft.balance === 'reRound') parts.push('余额再开一轮')
+  else parts.push('余额不管')
+  return parts.join('+')
+}
 
 /* ---- 人员（v3 新花名册，与 v1/v2 不共用） ---- */
 export const V3_PEOPLE = [

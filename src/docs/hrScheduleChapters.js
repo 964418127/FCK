@@ -59,7 +59,7 @@ export const hrScheduleChapters = [
     order: '五',
     title: '需求范围',
     nav: '需求范围',
-    subtitle: '现行四岗位排班现状 + 三个结构性空洞 + 架构对比（一条策略 vs 四层）+ 重构框架 + 端到端与时序',
+    subtitle: '现行四岗位现状 + 三个结构性空洞 + 架构对比 + v3 重构框架 + v5 求值框架（5.10–5.17）',
     routeName: 'doc-hr-schedule-scope',
     path: '/docs/hr-schedule/scope',
     file: 'sections/HS05Scope.vue'

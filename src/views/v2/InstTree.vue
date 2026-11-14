@@ -38,7 +38,7 @@
           <div class="flow-box">
             <FlowBoard
               :nodes="flowNodes"
-              :start-label="`${inst.emp.name} 提出申请`"
+              :start-label="originLabelOf(inst)"
               :selected="selId"
               :card-width="216"
               :gap-x="50"
@@ -258,7 +258,7 @@ import {
   OWNER_NAME_OPTIONS, receiptTextOf, receiptFieldsOf
 } from '../../v2/model.js'
 import { actionName } from '../../v2/seed.js'
-import { instStateLabel } from '../../v2/instance.js'
+import { instStateLabel, originLabelOf } from '../../v2/instance.js'
 import { genSummary } from '../../v2/blueprint.js'
 import FlowBoard from '../../components/v2/FlowBoard.vue'
 

@@ -16,6 +16,8 @@ import { runIntake } from './intake.js'
 import { keepKnownPayload, prefillTree, payloadDefaultsOf } from './payload.js'
 import { factsOfPerson, staffById } from './base.js'
 import { sceneEvents } from './scenes.js'
+import { shiftEvent } from './shiftScene.js'
+import { shiftCancelEvent, shiftTransferEvent, shiftSwapEvent } from './shiftOpsScene.js'
 
 import { systemChecks, actions, checkByKey, latestBatchOf, actionByKey, actionName } from './catalog.js'
 
@@ -166,7 +168,7 @@ const mkDetail = (rows = []) =>
  * 四套事件共用这一条路径：事件不同只换提示词，取数、预填、生成、挂状态都不分叉 ——
  * 分叉了就说明「换一件事写一套提示词」这句话不成立。
  */
-const PROMPTS = [resignPrompt, ...sceneEvents]
+const PROMPTS = [resignPrompt, ...sceneEvents, shiftEvent, shiftCancelEvent, shiftTransferEvent, shiftSwapEvent]
 const promptOf = (key) => PROMPTS.find((p) => p.key === key) || resignPrompt
 
 function makeInstance (base) {
@@ -282,7 +284,7 @@ const rawInstances = [
     },
     state: 'done',
     startedAt: '2026-09-20 10:05',
-    finishedAt: '2026-09-22 18:40',
+    finishedAt: '2026-10-01 00:12',
     subs: {
       'se.review.city': { state: 'done', verdict: '通过', by: '冯海霞', at: '2026-09-20 10:22', records: { 'it.review.city': { verdict: '通过', values: { expectDate: '2026-09-30', reason: '家庭原因', actualDate: '2026-09-30', reviewNote: '已与员工谈定日期' }, files: 0, note: '' } } },
       'se.review': { state: 'done', verdict: '通过', by: '邓黎英', at: '2026-09-20 10:40', records: { 'it.review': { verdict: '通过', values: { reviewNote: '无未结事项' }, files: 0, note: '' } } },
@@ -310,7 +312,40 @@ const rawInstances = [
       'se.contract.push': { state: 'done', verdict: '通过', by: '电子签平台', at: '2026-09-22 18:05', note: '外部单号 ES-20260922-0031，已送达', records: {} },
       'se.sign': { state: 'done', verdict: '通过', by: '电子签平台', at: '2026-09-22 18:20', note: '外部单号 ES-20260922-0031', records: {} },
       'se.broadcast': { state: 'done', verdict: '通过', by: '消息中心', at: '2026-09-22 18:30', note: '薪酬 / 社保 / 假勤已投递', records: {} },
-      'se.archive': { state: 'done', verdict: '通过', by: '档案系统', at: '2026-09-22 18:40', note: '归档编号 AR-0912', records: {} }
+      'se.archive': { state: 'done', verdict: '通过', by: '档案系统', at: '2026-09-22 18:40', note: '归档编号 AR-0912', records: {} },
+
+      /* 排班收尾发生在生效日（9-30）之后，不在办理期间：归档 9-22 先落了，排班 10-01 才收 */
+      'se.effective.check': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-10-01 00:05',
+        result: '实际离职日期 2026-09-30，已过 1 天：日期到了，往下收排班',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-10-01 00:05', batchNo: 'B-20261001-01', metrics: '实际离职日期 2026-09-30，已过 1 天', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.schedule.clear': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-10-01 00:06',
+        result: '已执行 清除生效日后的排班结果：10-01 早班 / 10-02 早班 两条占位已从结果表清除；名额没动，仍是该时段的 1 个位置',
+        used: [{ key: 'effectiveDate', label: '实际离职日期', value: '2026-09-30' }],
+        exec: [
+          { target: '上海徐汇店 早班 10-01', result: '成功' },
+          { target: '上海徐汇店 早班 10-02', result: '成功' }
+        ],
+        records: {}
+      },
+      'se.schedule.fill': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-10-01 00:10',
+        result: '已执行 按优先序列接替：他占的早班名额由第一档刘洋接上；名额没释放也没回池，只是换了一个人',
+        exec: [{ target: '上海徐汇店 早班名额', result: '成功' }],
+        records: {}
+      },
+      'se.schedule.result': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-10-01 00:12',
+        result: '已执行 写排班结果：2 条清除 + 1 条接替已写入结果表；原占位进历史，未删除',
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      }
     }
   },
   {
@@ -402,7 +437,363 @@ const rawInstances = [
       'se.proposal.city': { state: 'done', verdict: '通过', by: '冯海霞', at: '2026-11-04 11:00', records: { 'it.raise.proposal': { verdict: '通过', values: { currentSalary: 9000, proposedSalary: 9800, reason: '近半年出勤与客评稳定在前二，带教 1 名新人' }, files: 0, note: '' } } },
       'se.review.hr': { state: 'running', records: {} }
     }
-  }
+  },
+
+  /* ---------------- 班次请假补位：同一套提示词长出的一段容量链 ----------------
+   * 与上面四件事的区别只有两点：当事人是「被请假覆盖的班次」的持有人，
+   * 这件要交付的不是一个人的档案，而是「这段容量又被补上了」。
+   * 两笔错开：一笔正走到最后一环（写结果），一笔已经办结。
+   */
+  {
+    id: 'bp01',
+    code: 'BP-2026-1118-001',
+    eventKey: 'shift-fill',
+    version: 1,
+    emp: {
+      name: '张三', empNo: 'T00676', job: '推拿师', city: '上海', store: '上海徐汇店', employType: '全职',
+      facts: {
+        clients: 2, tasks: 3, team: 0, assets: ['工服 2 套', '工牌'], cash: 0, debt: 0,
+        accounts: ['门店收银', '排班', '企业微信'], complaint: 0, severance: false
+      }
+    },
+    payload: {
+      applyNo: 'QJ-2026-1113-014',
+      leaveDate: '2026-11-18',
+      shiftNo: 'SH-XH-1118-N',
+      shiftStart: '14:00',
+      shiftEnd: '22:00'
+    },
+    state: 'running',
+    startedAt: '2026-11-13 15:40',
+    subs: {
+      'se.shift.release': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:40',
+        result: '已执行 释放时段名额：晚班 14:00–22:00 的 1 个占位已放回名额池',
+        used: [
+          { key: 'empNo', label: '请假人工号', value: 'T00676' },
+          { key: 'shiftNo', label: '时段编号', value: 'SH-XH-1118-N' },
+          { key: 'releaseMode', label: '名额去向（回池 / 作废）', value: '回池' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      },
+      'se.makeup.slots': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:41',
+        result: '已执行 生成补班时段：被覆盖的 8 小时按单人单段上限 4 小时切成 2 段（14:00–18:00 / 18:00–22:00），各 1 个名额',
+        used: [
+          { key: 'coveredStart', label: '被覆盖起', value: '14:00' },
+          { key: 'coveredEnd', label: '被覆盖止', value: '22:00' },
+          { key: 'maxHoursPerShift', label: '单人单段上限（小时）', value: '4' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      },
+      'se.quota.left': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:42',
+        result: '两个补班段各余量 1 个，合计 2 个可分配；原晚班时段已无人占位',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 15:42', batchNo: 'B-20261113-03', metrics: '14:00–18:00 余 1；18:00–22:00 余 1', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.quota.calc': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:43',
+        result: '已执行 算补位名额：2 段各 1 个；算式 (22:00−14:00) = 8 小时 ÷ 单段上限 4 小时 = 2 段，每段 1 个',
+        used: [
+          { key: 'slotIds', label: '补班时段编号', value: 'MS-1118-1400 / MS-1118-1800' },
+          { key: 'algoKey', label: '名额算法（覆盖法 / 签约比 / 固定值）', value: '按剩余覆盖切分' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      },
+      'se.quota.publish': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:45',
+        result: '已执行 发布补位名额：2 个名额已发布，档位开放时间从 15:45 起算；发布前名额存在但没人能领',
+        used: [{ key: 'slotIds', label: '补班时段编号', value: 'MS-1118-1400 / MS-1118-1800' }],
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      },
+      'se.fill.qualify': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:47',
+        result: '5 人扫过：3 人可接、1 人首尾相接可接（刘洋，早班到 18:00）、1 人当天请假不进池（周凯）',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 15:47', batchNo: 'B-20261113-01', metrics: '扫 5 人：3 通过 / 1 软性 / 1 不通过', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.fill.conflict': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:48',
+        result: '王五当日无其他班次，可整段接手；刘洋 18:00 起的补班段与其早班首尾相接，不重叠',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 15:48', batchNo: 'B-20261113-02', metrics: '2 人判定：1 通过 / 1 首尾相接', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.fill.assign': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 15:50',
+        result: '已执行 按优先序列分配补位：第一档王五接 14:00–18:00；第二段第一档已无人，落到第二档刘洋接 18:00–22:00；档位外没有硬塞人',
+        used: [
+          { key: 'slotIds', label: '补班时段编号', value: 'MS-1118-1400 / MS-1118-1800' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }],
+        records: {}
+      },
+      'se.write.result': { state: 'pending', records: {} }
+    }
+  },
+  {
+    id: 'bp02',
+    code: 'BP-2026-1112-002',
+    eventKey: 'shift-fill',
+    version: 1,
+    emp: {
+      name: '王五', empNo: 'T00680', job: '推拿师', city: '上海', store: '上海徐汇店', employType: '全职',
+      facts: {
+        clients: 3, tasks: 4, team: 0, assets: ['工服 2 套', '工牌'], cash: 0, debt: 0,
+        accounts: ['门店收银', '排班'], complaint: 0, severance: false
+      }
+    },
+    payload: {
+      applyNo: 'QJ-2026-1109-003',
+      leaveDate: '2026-11-12',
+      shiftNo: 'SH-XH-1112-D',
+      shiftStart: '10:00',
+      shiftEnd: '18:00'
+    },
+    state: 'done',
+    startedAt: '2026-11-12 08:10',
+    finishedAt: '2026-11-12 08:26',
+    subs: {
+      'se.shift.release': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:10',
+        result: '已执行 释放时段名额：早班 10:00–18:00 的 1 个占位已放回名额池',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.makeup.slots': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:12',
+        result: '已执行 生成补班时段：切成 2 段（10:00–14:00 / 14:00–18:00），各 1 个名额',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.quota.left': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:13',
+        result: '两个补班段各余量 1 个', polls: 1, failBatches: 0, records: {}
+      },
+      'se.quota.calc': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:14',
+        result: '已执行 算补位名额：2 段各 1 个；算式 8 小时 ÷ 4 小时上限 = 2 段，每段 1 个',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.quota.publish': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:16',
+        result: '已执行 发布补位名额：2 个名额已发布，档位开放时间从 08:16 起算',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.fill.qualify': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:18',
+        result: '4 人可接、1 人当天请假不进池', polls: 1, failBatches: 0, records: {}
+      },
+      'se.fill.conflict': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:20',
+        result: '接手人当日无重叠班次（刘洋晚班 14:00 起与本段 14:00 起首尾相接，不重叠）',
+        polls: 1, failBatches: 0, records: {}
+      },
+      'se.fill.assign': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:22',
+        result: '已执行 按优先序列分配补位：张三接 10:00–14:00；刘洋接 14:00–18:00（与晚班首尾相接）；两段都落到第一档，没动第二档',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.write.result': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-12 08:26',
+        result: '已执行 写排班结果：2 条补位占位已写入结果表（唯一写占位的口），原班次痕迹保留在历史里',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      }
+    }
+  },
+
+  /* ---------------- 排班 v4 剩余三条：取消 / 转移 / 换班 ----------------
+   * 三笔各落一个状态：取消已办结（回池无人接）、转移停在等确认、换班已办结（双边对调）。
+   * 第一步都是规则校验 —— 读的是时段快照，不是现行配置。
+   */
+  {
+    id: 'cc01',
+    code: 'QX-2026-1113-001',
+    eventKey: 'shift-cancel',
+    version: 1,
+    emp: {
+      name: '周凯', empNo: 'T00685', job: '推拿师', city: '上海', store: '上海徐汇店', employType: '兼职',
+      facts: {
+        clients: 1, tasks: 2, team: 0, assets: ['工服 1 套', '工牌'], cash: 0, debt: 0,
+        accounts: ['排班'], complaint: 0, severance: false
+      }
+    },
+    payload: {
+      applyNo: 'QX-2026-1113-001',
+      instanceId: 'SH-XH-1116-E',
+      shiftDate: '2026-11-16',
+      reason: '家里有事'
+    },
+    state: 'done',
+    startedAt: '2026-11-13 09:12',
+    finishedAt: '2026-11-13 09:16',
+    subs: {
+      'se.rule.check': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 09:12',
+        result: '早班 10:00–14:00 的快照：可取消、截止班次前 6 小时；现在离开班还有 2 天多，放行',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 09:12', batchNo: 'B-20261113-04', metrics: '快照允许（取消）· 截止班次前 6h · 名额去向回池', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.shift.release': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 09:13',
+        result: '已执行 释放时段名额：早班 10:00–14:00 的 1 个占位已放回名额池（去向=回池，快照定的，发起人没得选）',
+        used: [
+          { key: 'instanceId', label: '时段实例编号', value: 'SH-XH-1116-E' },
+          { key: 'releaseMode', label: '名额去向（回池 / 作废）', value: '回池' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.fill.assign': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 09:15',
+        result: '已执行 按优先序列分配补位：第一档 2 人在册但当日不可接、第二档无人；档位全空 —— 留空标「无人接」，转人事处理，没有硬塞档位外的人',
+        used: [{ key: 'instanceId', label: '时段实例编号', value: 'SH-XH-1116-E' }],
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.write.result': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 09:16',
+        result: '已执行 写排班结果：周凯时间线上该班次已移除（历史留痕「本人取消」），时段标「无人接 · 待人事」',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      }
+    }
+  },
+  {
+    id: 'tr01',
+    code: 'ZY-2026-1113-002',
+    eventKey: 'shift-transfer',
+    version: 1,
+    emp: {
+      name: '刘洋', empNo: 'T00682', job: '推拿师', city: '上海', store: '上海徐汇店', employType: '兼职',
+      facts: {
+        clients: 2, tasks: 2, team: 0, assets: ['工服 1 套', '工牌'], cash: 0, debt: 0,
+        accounts: ['排班'], complaint: 0, severance: false
+      }
+    },
+    payload: {
+      applyNo: 'ZY-2026-1113-002',
+      instanceId: 'SH-XH-1118-N2',
+      toPersonId: 'T00680'
+    },
+    state: 'running',
+    startedAt: '2026-11-13 16:30',
+    subs: {
+      'se.rule.check': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 16:30',
+        result: '晚班 18:00–22:00 的快照：可转移、等待期 4 小时、限同岗位；接收方王五同为推拿师，岗位对得上',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 16:30', batchNo: 'B-20261113-04', metrics: '快照允许（转移）· 限同岗位 · 等待期 4h', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.target.qualify': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 16:31',
+        result: '王五资格核过：在册、11-18 无请假、推拿师与时段档位匹配',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 16:31', batchNo: 'B-20261113-01', metrics: '在册 · 无请假 · 岗位匹配', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.target.conflict': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 16:32',
+        result: '王五 11-18 当天无其他班次，可整段接手，无重叠',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 16:32', batchNo: 'B-20261113-02', metrics: '同日不重叠 · 无跨店', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.wait.accept': {
+        state: 'checking', polls: 2, failBatches: 1, nextAt: '2026-11-13 18:30',
+        result: '王五还没在移动端点接受；等待期 4 小时（到 20:30），还在期内 —— 等下一批，不算失败',
+        detail: mkDetail([
+          { at: '2026-11-13 17:30', batchNo: 'B-20261113-05', metrics: '对方未确认 · 距截止还有 3 小时', result: '未通过' }
+        ]),
+        records: {}
+      }
+    }
+  },
+  {
+    id: 'sw01',
+    code: 'HB-2026-1113-003',
+    eventKey: 'shift-swap',
+    version: 1,
+    emp: {
+      name: '张三', empNo: 'T00676', job: '推拿师', city: '上海', store: '上海徐汇店', employType: '全职',
+      facts: {
+        clients: 2, tasks: 3, team: 0, assets: ['工服 2 套', '工牌'], cash: 0, debt: 0,
+        accounts: ['门店收银', '排班', '企业微信'], complaint: 0, severance: false
+      }
+    },
+    payload: {
+      applyNo: 'HB-2026-1113-003',
+      instanceId: 'SH-XH-1116-D',
+      toPersonId: 'T00680',
+      toInstanceId: 'SH-XH-1117-N'
+    },
+    state: 'done',
+    startedAt: '2026-11-13 10:05',
+    finishedAt: '2026-11-13 10:24',
+    subs: {
+      'se.rule.check': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 10:05',
+        result: '两边快照都核过：张三早班（可换班、同岗位对等）、王五晚班（可换班、等待期 4 小时）；都是推拿师，对等成立',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 10:05', batchNo: 'B-20261113-04', metrics: '双边快照均允许（换班）· 同岗位对等', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.both.conflict': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 10:08',
+        result: '双边各查一次：张三 11-17 换入晚班 14:00–22:00 无重叠（自己换出的早班已排除）；王五 11-16 换入早班 10:00–18:00 无重叠',
+        polls: 1, failBatches: 0,
+        detail: mkDetail([
+          { at: '2026-11-13 10:08', batchNo: 'B-20261113-02', metrics: '2 边判定：均无重叠（排除各自换出的那条）', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.wait.accept': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 10:19',
+        result: '王五 10:19 在移动端点同意，距等待期截止还有 3 小时 46 分',
+        polls: 2, failBatches: 1,
+        detail: mkDetail([
+          { at: '2026-11-13 11:05', batchNo: 'B-20261113-05', metrics: '对方未确认 · 距截止还有 3 小时', result: '未通过' },
+          { at: '2026-11-13 10:19', batchNo: 'B-20261113-06', metrics: '对方已确认 · 剩 3h46m', result: '通过' }
+        ]),
+        records: {}
+      },
+      'se.occupy.swap': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 10:21',
+        result: '已执行 对调占位：两边一起换成功。名额池 filled / left 没动（名额是容量，对调只换绑定）；两条原占位各进各的历史，标「换给谁」',
+        used: [
+          { key: 'instanceId', label: '发起人的班次编号', value: 'SH-XH-1116-D' },
+          { key: 'toInstanceId', label: '对方的班次编号', value: 'SH-XH-1117-N' }
+        ],
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      },
+      'se.write.result': {
+        state: 'done', verdict: '通过', by: '系统', at: '2026-11-13 10:24',
+        result: '已执行 写排班结果：11-16 早班改王五、11-17 晚班改张三，加班标记按新时段重算；两条原占位留痕在历史里',
+        exec: [{ target: '门店排班系统', result: '成功' }], records: {}
+      }
+    }
+  },
+
 ]
 
 export const seedInstances = rawInstances.map(makeInstance)

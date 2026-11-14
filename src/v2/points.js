@@ -88,8 +88,73 @@ export const eventPoints = [
       /* 发起只到「希望什么时候调」为止：现月薪由城市总在建议里写，核定月薪在人事那一关定 */
       { key: 'expectMonth', label: '期望生效月份', type: 'text', required: true, note: 'YYYY-MM；实际生效月份由人事核定' }
     ]
+  },
+  {
+    /* 排班侧发出来的事实：请假审批通过那一刻，把「谁、哪一天、哪一段」告诉事件系统。
+       排班不主动去猜请假单，也不管假是怎么批下来的 —— 那是假勤的事。 */
+    key: 'shift.leave.approved',
+    label: '班次请假审批通过',
+    source: '假勤模块',
+    entry: '假勤 · 请假审批 · 审批通过后发出',
+    payload: [
+      { key: 'applyNo', label: '请假单号', type: 'text', required: true, auto: true },
+      { key: 'empId', label: '请假人工号', type: 'text', required: true, role: 'empNo' },
+      { key: 'leaveDate', label: '请假日期', type: 'date', required: true },
+      { key: 'shiftNo', label: '被覆盖的班次编号', type: 'text', required: true, note: '排班系统给；一个班次一条' },
+      { key: 'shiftStart', label: '班次开始', type: 'text', required: false, note: 'HH:mm' },
+      { key: 'shiftEnd', label: '班次结束', type: 'text', required: false, note: 'HH:mm' }
+    ]
+  },
+  {
+    /* 排班侧事实：非全在移动端点了「取消」。名额去向（回池/作废）不由发起人选，
+       由时段快照里的后续处理规则定 —— 所以载荷里没有 mode 字段。 */
+    key: 'shift.cancel.requested',
+    label: '非全主动取消班次',
+    source: '员工自助端',
+    entry: '移动端 · 我的排班 · 班次卡 · 取消',
+    payload: [
+      { key: 'applyNo', label: '取消单号', type: 'text', required: true, auto: true },
+      { key: 'empId', label: '取消人工号', type: 'text', required: true, role: 'empNo' },
+      { key: 'instanceId', label: '被取消的时段实例编号', type: 'text', required: true, note: '排班系统给；一段班次一条' },
+      { key: 'shiftDate', label: '班次日期', type: 'date', required: false },
+      { key: 'reason', label: '取消原因', type: 'text', required: false, note: '只用于留痕，规则判断不看它' }
+    ]
+  },
+  {
+    /* 排班侧事实：非全点了「转给同事」。能不能转看规则，接不接看对方，
+       两者都不在发起人的控制里 —— 载荷只带「谁、哪段、想转给谁」。 */
+    key: 'shift.transfer.requested',
+    label: '非全转移班次发起',
+    source: '员工自助端',
+    entry: '移动端 · 我的排班 · 班次卡 · 转给同事',
+    payload: [
+      { key: 'applyNo', label: '转移单号', type: 'text', required: true, auto: true },
+      { key: 'empId', label: '发起人工号', type: 'text', required: true, role: 'empNo' },
+      { key: 'instanceId', label: '要转出的时段实例编号', type: 'text', required: true },
+      { key: 'toPersonId', label: '想转给谁（工号）', type: 'text', required: true, note: '发起人指定；资格与冲突由后续判断核，不在发起时拍板' }
+    ]
+  },
+  {
+    /* 排班侧事实：换班发起。一张单带两边：我的班次 + 对方的班次，
+       对价关系在这里定死 —— 不是「我把班给你」，是「咱俩对调」。 */
+    key: 'shift.swap.proposed',
+    label: '换班发起（两人对调）',
+    source: '员工自助端',
+    entry: '移动端 · 我的排班 · 班次卡 · 找人换班',
+    payload: [
+      { key: 'applyNo', label: '换班单号', type: 'text', required: true, auto: true },
+      { key: 'empId', label: '发起人工号', type: 'text', required: true, role: 'empNo' },
+      { key: 'instanceId', label: '发起人的班次编号', type: 'text', required: true },
+      { key: 'toPersonId', label: '换班对象（工号）', type: 'text', required: true },
+      { key: 'toInstanceId', label: '对方的班次编号', type: 'text', required: true, note: '对调关系由这两个编号绑定，缺一边就不是换班' }
+    ]
   }
 ]
+
+/* 这里曾经登记过一个「离职生效」事件点（2026-11-13 当天加、当天下掉）。
+ * 为什么不登记：它不是对岸推过来的事 —— 没有哪个系统在生效那一刻"喊一声"，
+ * 是我方按天问一句「这个人的离职日期到了没」。所以它落在系统检查项（effectiveDateReached）里，
+ * 由离职单自己按执行周期查，不占事件点。 */
 
 export const eventPointOf = (k) => eventPoints.find((e) => e.key === k) || null
 export const eventPointLabel = (k) => eventPointOf(k)?.label || k

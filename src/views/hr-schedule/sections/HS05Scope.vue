@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="五、需求范围"
-    subtitle="先看现在怎么排（四岗位）与三个结构性空洞，再并排比一比：一条策略装四件事 vs 四层各管一件事"
-    version="v3.0 基线"
-    date="2026-11-12"
+    subtitle="现状四张考卷 + 通用设计三阶段：定义 / 获取 / 变化"
+    version="v3.7 追加三阶段总图"
+    date="2026-11-14"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-scope" class="section">
@@ -12,143 +12,198 @@
         <h2>五、需求范围</h2>
         <DocCopyButton section-id="hs-scope" />
       </div>
-
       <div class="note lead-note">
-        <strong>一句话定位：</strong>把「一个容器上有哪些时段」和「谁在什么时候、按什么、拿几个这些时段的名额」
-        拆成两个对象，让一套时段覆盖四个岗位；结果照旧写进既有排班结果表。
+        <strong>一句话定位：</strong>现行的四个岗位就是四张考卷；通用设计把「名额从哪来、谁能拿」
+        和「拿完之后来不了怎么办」拆成三个阶段——定义、获取、变化，用一套机制把四张考卷全答完。
       </div>
-
-      <h3 id="hs-scope-51">5.1 做什么 / 不做什么</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 90px;">归属</th><th style="width: 230px;">内容</th><th>说明</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>我们做</strong></td><td>上班容器与时段</td><td>时段只说时间形态：班次、适用星期、名额、生成节奏（见 6.1）</td></tr>
-          <tr><td><strong>我们做</strong></td><td>时段模板与门店班次库</td><td>通用模板 + 门店改名调时间 + 引用即继承 / 快照实例化两套语义（见 6.2）</td></tr>
-          <tr><td><strong>我们做</strong></td><td>获取规则</td><td>三种模式、轮的三个时刻、余额三条去向；一条规则可挂多条时段（见 6.3）</td></tr>
-          <tr><td><strong>我们做</strong></td><td>排班结果</td><td>审核通过、兜底安排都写既有结果表，带「怎么排上的」（见 6.4）</td></tr>
-          <tr><td><strong>我们做</strong></td><td>移动端选班</td><td>可选班次 / 我的排班 / 通知，一套壳按资格过滤（见 6.5）</td></tr>
-          <tr><td><strong>我们不做</strong></td><td>考勤打卡</td><td>只留挂载点（挂在容器上），本期不实现</td></tr>
-          <tr><td><strong>我们不做</strong></td><td>排班结果表的结构改造</td><td>结果直接写入，重构范围只到「谁来占」为止</td></tr>
-          <tr><td><strong>我们不做</strong></td><td>加班认定与薪酬计算</td><td>兜到通班多出的工时怎么算钱，属下游</td></tr>
-          <tr><td><strong>我们不做</strong></td><td>人员签约与劳动关系</td><td>谁是本店非全、谁有资格，由人员侧决定，这里只读</td></tr>
-        </tbody>
-      </table>
     </div>
 
     <div id="hs-scope-now" class="section">
       <div class="section-header">
-        <h2>5.2 现行排班现状：四个岗位，四套配法</h2>
+        <h2>5.1 现状：四张考卷</h2>
       </div>
-      <p class="doc-p">
-        四个岗位在今天不是四个版本，而是<strong>同一套槽位的四组取值</strong>。差异集中在三件事：
-        名额怎么算、顺位怎么排、余额往哪去。
-      </p>
       <table class="data-table">
         <thead>
           <tr>
             <th style="width: 110px;">岗位</th>
-            <th style="width: 130px;">生成</th>
-            <th style="width: 200px;">班次与名额</th>
-            <th>谁定归属（顺位）</th>
-            <th style="width: 130px;">没人接</th>
+            <th style="width: 130px;">发布</th>
+            <th style="width: 160px;">名额怎么算</th>
+            <th>谁能拿 · 怎么拿</th>
+            <th style="width: 150px;">兜底</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>全职<br>客户经理</strong></td>
+            <td><strong>全职客户经理</strong></td>
             <td>周四 06:00 铺下周</td>
-            <td>早 / 晚 / 中 / 全天班；名额按本店人数组合（1 人只开全天，2 人早晚，3 人早中晚）</td>
-            <td>
-              ① 本店全职·按上周倒班轮转指派 ② 储备·缺口才补 ③ 本店非全·先到先得 ④ 同城同岗·排班日 1 天前
-            </td>
+            <td>按人数组合出早中晚全天</td>
+            <td>① 轮转直派 ② 储备补位 ③ 非全抢 ④ 同城抢</td>
             <td>生成通班</td>
           </tr>
           <tr>
-            <td><strong>全职<br>推拿师</strong></td>
+            <td><strong>全职推拿师</strong></td>
             <td>周四 06:00 铺下周</td>
-            <td>早 / 晚班；名额按门店天均分钟数（420 分钟 1 个、600 分钟 2 个，钳 1–3）</td>
-            <td>
-              ① 本店全职·<strong>申领 + 综合分排序截断</strong>（产值 40 / 回头 30 / 预约 30）② 同城同岗·排班日 1 天前
-            </td>
-            <td>落选周五再抢 → 生成通班</td>
+            <td>按天均业务量，1–3</td>
+            <td>本店申领，截止按综合分排；落选周五再抢</td>
+            <td>生成通班</td>
           </tr>
           <tr>
-            <td><strong>非全<br>客户经理</strong></td>
-            <td>周四 06:00（可手动）</td>
-            <td>周期 / 临时时段；名额按时段固定，钳 0–6</td>
-            <td>
-              三档<strong>累计开放</strong>：① 本店非全·发布即可见 ② 本店非全推拿师·排班日 3 天前 ③ 本店全职推拿师·排班日 1 天前
-            </td>
-            <td>转临时时段（最早签约自动派）或留待派发</td>
+            <td><strong>非全客户经理</strong></td>
+            <td>周四 06:00，可手动补</td>
+            <td>时段固定，0–6</td>
+            <td>三档分先后接单：非全客经 → 非全推拿 → 全职推拿</td>
+            <td>转临时时段</td>
           </tr>
           <tr>
-            <td><strong>非全<br>推拿师</strong></td>
-            <td>手动</td>
-            <td>必选早 10–14 / 必选晚 18–22 / 常规 14–18；名额 = 签约非全 ÷2 向上取整，钳 0–4</td>
-            <td>只一档：本店非全推拿师，发布即可见，先到先得</td>
-            <td><strong>待定</strong></td>
+            <td><strong>非全推拿师</strong></td>
+            <td>手动发布</td>
+            <td>签约人数 ÷ 2</td>
+            <td>仅本店非全，先到先得，早晚必选</td>
+            <td>待定（<router-link to="/docs/hr-schedule/appendix">附录</router-link>）</td>
           </tr>
         </tbody>
       </table>
-
-      <h4 class="h4sub">四条共性：看着不一样，其实骨架相同</h4>
-      <ul class="doc-ul">
-        <li><strong>发出去的是名额，不是排班</strong>——四岗都先按生成节奏铺出名额，再靠顺位把名额消耗掉。</li>
-        <li><strong>名额都不是拍脑袋</strong>——人数组合、门店业务量阈值、签约人数比例、时段固定数，四种算法各用一次。</li>
-        <li><strong>顺位是同一个模板</strong>——本店本岗 → 储备 → 本店他岗 → 同城同岗，且<strong>越靠后开放越晚</strong>。</li>
-        <li><strong>兜底只有两种动作</strong>——全职两岗「生成通班」，非全两岗「转临时时段 / 留待派发」。</li>
-      </ul>
       <div class="note">
-        <strong>唯一的特殊档：</strong>四岗里只有<strong>全职推拿师</strong>走审核（申领 + 综合分截断）；
-        <strong>全职客户经理</strong>是唯一不申领的（系统轮转直派）。这两个「唯一」正好是 v3 要保住的两端。
+        <strong>边界：</strong>做到「谁来占」为止——打卡只留挂载点；结果写进既有排班结果表；
+        加班算钱是薪酬的事；谁是本店非全、谁有资格，只读人员侧，不在这里定。
       </div>
     </div>
 
-    <div id="hs-scope-gap" class="section">
+    <div id="hs-scope-stages" class="section">
       <div class="section-header">
-        <h2>5.3 现行做法的三个结构性空洞</h2>
+        <h2>5.2 通用设计：三个阶段</h2>
       </div>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 170px;">空洞</th><th style="width: 260px;">现在长什么样</th><th>为什么必须补</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>没有「申领截止」</strong></td>
-            <td>全职推拿师的审核只有「发布即可见」，没有说什么时候收人、什么时候定人</td>
-            <td>没有截止，审核就退化成「边申边定」，等于先到先得</td>
-          </tr>
-          <tr>
-            <td><strong>余额靠定时硬凑</strong></td>
-            <td>第二轮写成「周五可再抢」，与第一轮何时结算完无关</td>
-            <td>结算是事件，不是星期几；定时驱动会出现「还没结算就开第二轮」</td>
-          </tr>
-          <tr>
-            <td><strong>兜底不能跨时段</strong></td>
-            <td>兜底只有一个动作名「生成通班」，无法表达「先晚班、再通班」</td>
-            <td>兜底必须吃<strong>本容器已有时段</strong>的剩余名额，且逐档过时间不交叉</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="note warn-note">
-        <strong>还有一个口子没堵：</strong>非全推拿师的「没人接」至今是<strong>待定</strong>，
-        必选时段分不完怎么办没有结论——这条挂在<router-link to="/docs/hr-schedule/appendix">七、附录</router-link>，本版不擅自补。
-      </div>
-    </div>
+      <svg viewBox="0 0 680 180" class="doc-svg" role="img" aria-label="通用设计三阶段：定义、获取、变化">
+        <title>通用设计三阶段</title>
+        <defs>
+          <marker id="stArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect x="40" y="44" width="190" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="135" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#0C447C">① 定义</text>
+        <text x="135" y="92" text-anchor="middle" font-size="12" fill="#185FA5">时段 · 名额 · 清单</text>
+        <line x1="234" y1="76" x2="248" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
+        <rect x="252" y="44" width="190" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+        <text x="347" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#27500A">② 获取</text>
+        <text x="347" y="92" text-anchor="middle" font-size="12" fill="#3B6D11">窗口内三种拿法</text>
+        <line x1="446" y1="76" x2="460" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
+        <rect x="464" y="44" width="176" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="552" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#633806">③ 变化</text>
+        <text x="552" y="92" text-anchor="middle" font-size="12" fill="#854F0B">事实 → 结果重算</text>
+        <text x="340" y="150" text-anchor="middle" font-size="12" fill="#6a6a75">名额是容量不是库存——这一条贯穿三段，是三段能拼成一张卷子的前提</text>
+      </svg>
 
-    <div id="hs-scope-arch" class="section">
-      <div class="section-header">
-        <h2>5.4 架构对比：一条策略装四件事 → 四层各管一件事</h2>
-      </div>
+      <h4 class="h4sub">三阶段总图：每一段内部的关键结论</h4>
+      <svg viewBox="0 0 680 724" class="doc-svg" role="img" aria-label="排班通用化重构业务结构总图：定义、获取、变化三阶段的结构与要点">
+        <title>三阶段业务结构总图</title>
+        <defs>
+          <marker id="ovArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <rect x="40" y="66" width="600" height="232" rx="16" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+        <text x="60" y="90" font-size="13" font-weight="500" fill="#0C447C">阶段一 · 定义 — 时段 · 名额 · 清单（无人参与）</text>
+
+        <text x="115" y="106" text-anchor="middle" font-size="11" fill="#0F6E56">名额来源</text>
+        <rect x="60" y="112" width="110" height="30" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="115" y="127" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">人工给定</text>
+        <path d="M115 142 L115 152" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+        <rect x="60" y="152" width="110" height="48" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="115" y="170" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">算法服务</text>
+        <text x="115" y="186" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">可枚举 · 只登记</text>
+        <path d="M115 200 L115 210" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+        <rect x="60" y="210" width="110" height="30" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="115" y="225" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">钳制 · 快照</text>
+        <path d="M170 225 L196 225" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+
+        <rect x="200" y="112" width="420" height="134" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="220" y="132" font-size="13" font-weight="500" fill="#0C447C">时段（归空间 · 不归岗位）</text>
+        <rect x="220" y="144" width="110" height="30" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="275" y="159" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0C447C">日期 + 起止</text>
+        <rect x="338" y="144" width="126" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="401" y="162" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#0C447C">名额 N</text>
+        <text x="401" y="177" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#185FA5">容量 · 不是库存</text>
+        <rect x="472" y="144" width="128" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="536" y="162" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#0C447C">有序清单</text>
+        <text x="536" y="177" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#185FA5">谁·方式·窗口·上限</text>
+        <text x="220" y="196" font-size="11" fill="#185FA5">不可互替的岗位 =</text>
+        <text x="220" y="212" font-size="11" fill="#185FA5">开两个时间重合的时段</text>
+        <text x="536" y="196" text-anchor="middle" font-size="11" fill="#185FA5">各行开放时刻不同</text>
+        <text x="536" y="212" text-anchor="middle" font-size="11" fill="#185FA5">A 先挑 · B 隔会儿加入</text>
+        <text x="220" y="234" font-size="11" fill="#185FA5">名额是容量：N 从头到尾不变，不回池、不减一</text>
+
+        <path d="M340 298 L340 314" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+
+        <rect x="40" y="314" width="600" height="190" rx="16" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+        <text x="60" y="336" font-size="13" font-weight="500" fill="#085041">阶段二 · 获取 — 轮</text>
+
+        <rect x="60" y="350" width="240" height="48" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="180" y="368" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">轮</text>
+        <text x="180" y="384" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">清单切到第 k 档的一段窗口</text>
+        <rect x="60" y="410" width="240" height="62" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="180" y="428" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">轮的四个参数（各自取值）</text>
+        <text x="180" y="444" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">周期粒度 · 发布时点 · 覆盖跨度</text>
+        <text x="180" y="458" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">获取窗口逐行逐轮配置</text>
+
+        <rect x="320" y="350" width="90" height="32" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="365" y="366" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#3C3489">直派轮转</text>
+        <rect x="418" y="350" width="92" height="32" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="464" y="366" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#3C3489">申领审核</text>
+        <rect x="518" y="350" width="92" height="32" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="564" y="366" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#3C3489">抢</text>
+        <text x="365" y="394" text-anchor="middle" font-size="11" fill="#534AB7">指定的人轮着来</text>
+        <text x="464" y="394" text-anchor="middle" font-size="11" fill="#534AB7">截止后按综合分</text>
+        <text x="464" y="408" text-anchor="middle" font-size="11" fill="#534AB7">排序截断</text>
+        <text x="564" y="394" text-anchor="middle" font-size="11" fill="#534AB7">先到先得</text>
+
+        <rect x="320" y="424" width="290" height="56" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="465" y="442" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#633806">关闸</text>
+        <text x="465" y="457" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">时刻 = 获取方式的函数 · 挂规则上</text>
+        <text x="465" y="471" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">轮不携带人群属性</text>
+
+        <text x="340" y="496" text-anchor="middle" font-size="12" font-weight="500" fill="#085041">锚点：获取段结束 = 名额给了就是给了</text>
+
+        <path d="M340 504 L340 520" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+
+        <rect x="40" y="520" width="600" height="186" rx="16" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+        <text x="60" y="542" font-size="13" font-weight="500" fill="#712B13">阶段三 · 变化 — 事实 → 结果重算</text>
+
+        <rect x="60" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="123" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">来不了</text>
+        <text x="123" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">临时缺席</text>
+        <rect x="194" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="257" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">指定顶班</text>
+        <text x="257" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">经营性 · 不需同意</text>
+        <rect x="328" y="556" width="126" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="391" y="576" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">对换</text>
+        <text x="391" y="592" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">对价 · 需对方同意</text>
+        <rect x="462" y="556" width="150" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="537" y="574" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#712B13">资格没了</text>
+        <text x="537" y="590" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">离职 · 长期假 · 调岗</text>
+        <text x="537" y="604" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">不找人 · 人直接出结果</text>
+
+        <path d="M123 612 L123 624 L537 624 L537 612" fill="none" stroke="#888780" stroke-width="1"/>
+        <path d="M340 624 L340 636" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+
+        <rect x="290" y="636" width="100" height="34" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+        <text x="340" y="653" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#27500A">结果重算</text>
+        <path d="M390 653 L406 653" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ovArr)"/>
+        <rect x="406" y="630" width="180" height="50" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+        <text x="496" y="648" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#27500A">留一条记录</text>
+        <text x="496" y="664" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">只覆盖 · 不回滚 · 留痕</text>
+
+        <text x="340" y="694" text-anchor="middle" font-size="11" fill="#888780">关闸前缺席属获取段 · 关闸后才归变化段</text>
+      </svg>
+      <p class="arch-cap">总图先给全貌：三段各自的关键结论在 5.3–5.5 分头展开，四张考卷怎么落进三段见 5.6。</p>
+
+      <h4 class="h4sub">现状 vs 通用设计：左边各配各的，右边共用一套</h4>
       <p class="doc-p">
-        上面是现在：<strong>一个岗位 = 一条策略</strong>，四个岗位的生成、名额、顺位、兜底各配各的、互不共享。
-        下面是 v3：同样这四件事摊成四层，四个岗位共用同一套层，只换挂载关系。
+        左边是现在：<strong>一个岗位 = 一条策略</strong>，生成节奏、班次名额、顺位人群、余额兜底全焊在同一条里，
+        四个岗位就抄四遍。右边是通用设计：同样这四件事摊成四层，四个岗位共用同一套层，只换挂载关系。
       </p>
-
       <div class="arch-diff">
-        <!-- 现行：四行矩阵，格子填真实取值 -->
         <div class="arch-col">
           <div class="arch-head before">现在 · 一个岗位一条策略，取值互不相同</div>
           <svg viewBox="0 0 560 300" class="arch-svg" role="img"
@@ -157,16 +212,15 @@
             <text x="206" y="52" class="ac-t-note">班次与名额</text>
             <text x="324" y="52" class="ac-t-note">顺位与人群</text>
             <text x="442" y="52" class="ac-t-note">余额兜底</text>
-            <g v-for="(r, i) in nowRows" :key="r.who[1]">
-              <rect x="4" :y="60 + i * 52" width="552" height="50" rx="9" class="ac-box-old" />
-              <text x="80" :y="81 + i * 52" text-anchor="end" class="ac-t-strong">{{ r.who[0] }}</text>
-              <text x="80" :y="96 + i * 52" text-anchor="end" class="ac-t-strong">{{ r.who[1] }}</text>
+            <g v-for="(r, ri) in nowRows" :key="r.who[1]">
+              <text x="80" :y="81 + ri * 52" text-anchor="end" class="ac-t-strong">{{ r.who[0] }}</text>
+              <text x="80" :y="96 + ri * 52" text-anchor="end" class="ac-t-strong">{{ r.who[1] }}</text>
               <g v-for="(c, j) in r.cells" :key="j">
-                <rect :x="88 + j * 118" :y="66 + i * 52" width="112" height="38" rx="6"
+                <rect :x="88 + j * 118" :y="66 + ri * 52" width="112" height="38" rx="6"
                       :class="c[2] ? 'ac-cell-warn' : 'ac-cell'" />
-                <text :x="144 + j * 118" :y="80 + i * 52" text-anchor="middle"
+                <text :x="144 + j * 118" :y="80 + ri * 52" text-anchor="middle"
                       :class="c[2] ? 'ac-t-warn' : 'ac-t'">{{ c[0] }}</text>
-                <text v-if="c[1]" :x="144 + j * 118" :y="95 + i * 52" text-anchor="middle" class="ac-t">{{ c[1] }}</text>
+                <text v-if="c[1]" :x="144 + j * 118" :y="95 + ri * 52" text-anchor="middle" class="ac-t">{{ c[1] }}</text>
               </g>
             </g>
             <text x="324" y="288" text-anchor="middle" class="ac-t-note">同一件事四个岗位各配各的：改顺位要改四处，换门店要复制四条</text>
@@ -174,288 +228,246 @@
           <p class="arch-cap">每行是一个岗位的真实取值——差异看得见，但都被焊死在各自的策略里。</p>
         </div>
 
-        <!-- v3：全宽四层横切 -->
         <div class="arch-col">
-          <div class="arch-head after">v3 · 四层，四岗共用</div>
+          <div class="arch-head after">通用设计 · 四层，四岗共用</div>
           <svg viewBox="0 0 560 292" class="arch-svg" role="img"
-               aria-label="v3 架构：容器、时段、获取规则、排班结果四层横切，四个岗位共用同一套层">
-            <g v-for="(l, i) in newLayers" :key="l.t">
-              <rect x="6" :y="4 + i * 54" width="548" height="44" rx="9" class="ac-box-new" />
-              <circle cx="26" :cy="26 + i * 54" r="9" class="ac-num" />
-              <text x="26" :y="29.5 + i * 54" text-anchor="middle" class="ac-t-num">{{ i + 1 }}</text>
-              <text x="44" :y="22 + i * 54" class="ac-t-strong">{{ l.t }}</text>
-              <text x="44" :y="39 + i * 54" class="ac-t">{{ l.d }}</text>
-              <path :d="`M280 ${50 + i * 54} l4 5 l-8 0 z`" class="ac-arrow" v-if="i < 3" />
+               aria-label="通用设计架构：容器、时段、获取规则、排班结果四层横切，四个岗位共用同一套层">
+            <g v-for="(l, li) in newLayers" :key="l.t">
+              <rect x="6" :y="4 + li * 54" width="548" height="44" rx="9" class="ac-box-new" />
+              <circle cx="26" :cy="26 + li * 54" r="9" class="ac-num" />
+              <text x="26" :y="29.5 + li * 54" text-anchor="middle" class="ac-t-num">{{ li + 1 }}</text>
+              <text x="44" :y="22 + li * 54" class="ac-t-strong">{{ l.t }}</text>
+              <text x="44" :y="39 + li * 54" class="ac-t">{{ l.d }}</text>
+              <path :d="`M280 ${50 + li * 54} l4 5 l-8 0 z`" class="ac-arrow" v-if="li < 3" />
             </g>
             <text x="280" y="244" text-anchor="middle" class="ac-t-note">↓ 四个岗位落在同一套层上，只换挂载关系</text>
-            <g v-for="(p, i) in newPeople" :key="p">
-              <rect :x="11 + i * 136" y="252" width="130" height="24" rx="12" class="ac-chip" />
-              <text :x="76 + i * 136" y="268" text-anchor="middle" class="ac-t">{{ p }}</text>
+            <g v-for="(p, pi) in newPeople" :key="p">
+              <rect :x="11 + pi * 136" y="252" width="130" height="24" rx="12" class="ac-chip" />
+              <text :x="76 + pi * 136" y="268" text-anchor="middle" class="ac-t">{{ p }}</text>
             </g>
           </svg>
           <p class="arch-cap">四层各管一件事，四个岗位共用；换岗位只换挂载关系，不动层本身。</p>
         </div>
       </div>
-
-      <h4 class="h4sub">同一件事，从哪儿搬到了哪儿</h4>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 150px;">这件事</th><th style="width: 270px;">现在混在哪</th><th>v3 归到哪一层</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>多久铺一次、铺多远</td><td>策略里的发布规则，四岗各写一遍</td><td><strong>时段</strong>·生成节奏（周四 06:00 / 每月 25 日）</td></tr>
-          <tr><td>什么时间、有几个位置</td><td>策略里的班次与名额，算法四岗各一套</td><td><strong>时段</strong>·只描述时间形态，名额数是容量上限</td></tr>
-          <tr><td>谁先领、按什么定、拿几个</td><td>策略里的优先级串，审核与自抢混写</td><td><strong>获取规则</strong>·模式 + 轮 + 余额，可挂多条时段</td></tr>
-          <tr><td>没人接怎么办</td><td>策略里的兜底动作名，不能跨时段</td><td><strong>获取规则</strong>·兜底序列，逐档吃目标时段余量</td></tr>
-          <tr><td>谁最终占了这一天</td><td>系统另写一张结果</td><td><strong>排班结果表</strong>·唯一记录口，带「怎么排上的」</td></tr>
-        </tbody>
-      </table>
-      <div class="note lead-note">
-        <strong>对比的落点：</strong>左边四列之所以要抄四遍，不是业务复杂，是<strong>一条策略同时回答四个问题</strong>；
-        拆层之后「同一件事只有一个地方可改」，四岗位的差异退化成<strong>挂哪条规则</strong>，而不是各写一套。
-      </div>
     </div>
 
-    <div id="hs-scope-frame" class="section">
+    <div id="hs-scope-define" class="section">
       <div class="section-header">
-        <h2>5.5 重构框架：四层对象</h2>
+        <h2>5.3 定义段要点：名额从哪来，时段归谁</h2>
       </div>
-      <p class="doc-p">
-        把原来一条策略里的东西拆成四层，每层只回答一个问题，且<strong>变更频率不同</strong>——
-        越往下越稳定，越往上越常改。
-      </p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 110px;">层</th><th style="width: 240px;">回答什么问题</th><th style="width: 220px;">关键内容</th><th>不做什么</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>① 容器</strong></td>
-            <td>这批时段属于谁</td>
-            <td>门店 / 办公地点 / 城市 / 人；打卡考勤挂在这里</td>
-            <td>不定时间、不定名额</td>
-          </tr>
-          <tr>
-            <td><strong>② 时段</strong></td>
-            <td>什么时间、有几个位置、多久铺一次</td>
-            <td>班次、适用星期、名额、生成节奏与视野、来源标记</td>
-            <td><strong>不说「谁能领」</strong>，也不说谁先谁后</td>
-          </tr>
-          <tr>
-            <td><strong>③ 获取规则</strong></td>
-            <td>谁、什么时候、按什么、拿几个、剩了怎么办</td>
-            <td>模式、轮（人群 + 开放 + 截止 + 结算）、余额去向、兜底序列</td>
-            <td>不改名额上限，不新建时段</td>
-          </tr>
-          <tr>
-            <td><strong>④ 排班结果</strong></td>
-            <td>谁最终占了这一天这个位置</td>
-            <td>既有结果表；带来源（审核 / 自领 / 轮转 / 直派 / 兜底）</td>
-            <td>不设审核单、不设审批流</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h4 class="h4sub">解耦之后得到的三件事</h4>
-      <div class="duo">
-        <div class="duo-card">
-          <h4>同一条时段，两种领法</h4>
-          <p>A 店走申领审核、B 店走先到先得，<strong>时段不用复制两份</strong>，只挂不同规则。</p>
-          <p>门店改班次时间只动时段层，规则不受影响。</p>
-        </div>
-        <div class="duo-card">
-          <h4>一套规则，挂多条时段</h4>
-          <p>「两轮审核 + 兜底到晚班再通班」只要配一次，可以挂到早班、中班、晚班。</p>
-          <p>规则可存模板复用，换门店只换挂载关系。</p>
-        </div>
-        <div class="duo-card">
-          <h4>门店差异不复制策略</h4>
-          <p>班次名称与时间属门店（本店班次库），人群与顺位属总部（获取规则）。</p>
-          <p>两边各改各的，不会互相拽着动。</p>
-        </div>
-      </div>
+      <ul class="pt-list">
+        <li><strong>名额是容量不是库存。</strong>N 说的是这段同时能上几个人：人来占、人走空，N 从头到尾不动，没有回池。</li>
+        <li><strong>时段归空间，不归岗位。</strong>时段只声明日期、起止、几个位；谁能来由有序清单说（谁 · 怎么拿 · 何时开）。
+          能互替的进同一清单按顺位挑；不能互替的开两个时段——这就是时段允许重叠的用途。</li>
+        <li><strong>临时时段 = 特殊情况下的新增名额</strong>，改的是那一天的容量，不进周期安排；
+          兜底永远指向某个已有班次，通班只是个班次名。</li>
+      </ul>
+      <svg viewBox="0 0 680 302" class="doc-svg" role="img" aria-label="名额来源：人工给定是一个值，算法服务是可枚举清单">
+        <title>名额来源：一个人工值，一张可枚举的服务清单</title>
+        <defs>
+          <marker id="nsArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#b4b2a9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect x="40" y="32" width="180" height="84" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="56" y="54" font-size="13" font-weight="500" fill="#633806">人工给定</text>
+        <text x="56" y="76" font-size="12" fill="#854F0B">店长 / 人事直接填数</text>
+        <text x="56" y="94" font-size="12" fill="#854F0B">清单第一项 · 无输入</text>
+        <rect x="248" y="32" width="392" height="84" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="264" y="54" font-size="13" font-weight="500" fill="#0C447C">算法服务清单 · 当前登记 3 项</text>
+        <rect x="260" y="62" width="88" height="42" rx="6" fill="#F3F8FD" stroke="#85B7EB" stroke-width="0.5"/>
+        <text x="304" y="80" text-anchor="middle" font-size="12" fill="#0C447C">按在岗人数</text>
+        <text x="304" y="96" text-anchor="middle" font-size="11" fill="#185FA5">读人事状态</text>
+        <rect x="354" y="62" width="88" height="42" rx="6" fill="#F3F8FD" stroke="#85B7EB" stroke-width="0.5"/>
+        <text x="398" y="80" text-anchor="middle" font-size="12" fill="#0C447C">按签约人数</text>
+        <text x="398" y="96" text-anchor="middle" font-size="11" fill="#185FA5">读合作类型</text>
+        <rect x="448" y="62" width="88" height="42" rx="6" fill="#F3F8FD" stroke="#85B7EB" stroke-width="0.5"/>
+        <text x="492" y="80" text-anchor="middle" font-size="12" fill="#0C447C">按业务量</text>
+        <text x="492" y="96" text-anchor="middle" font-size="11" fill="#185FA5">读业务系统</text>
+        <rect x="542" y="62" width="86" height="42" rx="6" fill="none" stroke="#B4B2A9" stroke-width="0.8" stroke-dasharray="4 3"/>
+        <text x="585" y="86" text-anchor="middle" font-size="12" fill="#888780">＋ 新增</text>
+        <text x="585" y="100" text-anchor="middle" font-size="11" fill="#9a9fa9">登记即可</text>
+        <line x1="130" y1="116" x2="130" y2="140" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
+        <line x1="444" y1="116" x2="444" y2="140" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
+        <rect x="40" y="144" width="600" height="46" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+        <text x="340" y="164" text-anchor="middle" font-size="13" font-weight="500" fill="#27500A">名额 = 人工填的数，或某个服务算出的建议值 · 二选一</text>
+        <text x="340" y="181" text-anchor="middle" font-size="12" fill="#3B6D11">算法只登记不实现；供数统一到时段级，A 时段挂算法一、B 时段挂算法二是合法配置</text>
+        <line x1="340" y1="190" x2="340" y2="210" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
+        <rect x="40" y="214" width="176" height="44" rx="8" fill="#f4f4f0" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="128" y="233" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">钳制上下限</text>
+        <text x="128" y="249" text-anchor="middle" font-size="11" fill="#888780">算法也不许越界</text>
+        <line x1="216" y1="236" x2="232" y2="236" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
+        <rect x="236" y="214" width="176" height="44" rx="8" fill="#f4f4f0" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="324" y="233" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">快照</text>
+        <text x="324" y="249" text-anchor="middle" font-size="11" fill="#888780">开轮那一刻取一次</text>
+        <line x1="412" y1="236" x2="428" y2="236" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
+        <rect x="432" y="214" width="208" height="44" rx="8" fill="#f4f4f0" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="536" y="233" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">本轮名额 N</text>
+        <text x="536" y="249" text-anchor="middle" font-size="11" fill="#888780">整轮不再变</text>
+        <text x="40" y="284" font-size="12" fill="#6a6a75">新增一个算法 = 登记一项服务，不改结构；每个服务要说清读什么数、怎么算，带版本号</text>
+      </svg>
     </div>
 
-    <div id="hs-scope-mode" class="section">
+    <div id="hs-scope-acquire" class="section">
       <div class="section-header">
-        <h2>5.6 三种获取模式：只有三类，且只回答「谁定归属」</h2>
+        <h2>5.4 获取段要点：窗口内怎么拿</h2>
+      </div>
+      <ul class="pt-list">
+        <li><strong>就三种拿法：</strong>直派（系统直接排）/ 抢（点了就成，成不了当场说原因）/ 申领审核（截止按综合分排，落选周五再抢）。</li>
+        <li><strong>轮 = 在清单上开的一段窗口。</strong>每轮配：切到第几档、开放、截止。窗口逐行配，位占满即关；截止之后位再空，也只能安排人顶，人拿不了。</li>
+        <li><strong>冲突和工时跟着三个动作查：</strong>接单的时候、审核排的时候、找人顶的时候。工时按各岗位规则——全职超限记加班，非全超限排不了。</li>
+      </ul>
+      <svg viewBox="0 0 680 322" class="doc-svg" role="img" aria-label="一条有序清单，三档错峰开放，三个动作查冲突工时">
+        <title>获取段：一条清单 × 错峰窗口</title>
+        <defs>
+          <marker id="acArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <text x="210" y="30" font-size="11" fill="#888780">周四 06:00 发布</text>
+        <line x1="600" y1="40" x2="600" y2="150" stroke="#B4B2A9" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="600" y="166" text-anchor="middle" font-size="11" fill="#888780">开班</text>
+
+        <text x="40" y="64" font-size="12" font-weight="500" fill="#2C2C2A">① 本店全职 · 直派</text>
+        <rect x="210" y="52" width="380" height="18" rx="4" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+        <text x="400" y="65" text-anchor="middle" font-size="11" fill="#0C447C">发布即定，不用抢</text>
+
+        <text x="40" y="104" font-size="12" font-weight="500" fill="#2C2C2A">② 本店非全 · 抢</text>
+        <rect x="300" y="92" width="290" height="18" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+        <text x="445" y="105" text-anchor="middle" font-size="11" fill="#27500A">周五 06:00 开</text>
+
+        <text x="40" y="144" font-size="12" font-weight="500" fill="#2C2C2A">③ 同城同岗位 · 抢</text>
+        <rect x="430" y="132" width="160" height="18" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+        <text x="510" y="145" text-anchor="middle" font-size="11" fill="#27500A">开班前一天开</text>
+
+        <text x="40" y="196" font-size="12" fill="#6a6a75">三档错峰累计开放：先开的挑剩的，后开的接着挑；k 不动再加一轮，就是「落选周五再抢」</text>
+
+        <rect x="40" y="212" width="600" height="56" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="340" y="236" text-anchor="middle" font-size="13" font-weight="500" fill="#633806">冲突和工时跟着三个动作查</text>
+        <text x="340" y="256" text-anchor="middle" font-size="12" fill="#854F0B">接单的时候查 · 审核排的时候查 · 找人顶的时候查</text>
+        <text x="40" y="296" font-size="12" fill="#6a6a75">查什么：时段撞不撞、跨店间隔够不够；工时按各岗位规则——全职超限记加班，非全超限根本排不了</text>
+      </svg>
+    </div>
+
+    <div id="hs-scope-change" class="section">
+      <div class="section-header">
+        <h2>5.5 变化段要点：来不了之后</h2>
       </div>
       <table class="data-table">
         <thead>
-          <tr><th style="width: 130px;">模式</th><th style="width: 120px;">有几轮</th><th style="width: 260px;">谁定归属</th><th>本版对应岗位</th></tr>
+          <tr>
+            <th style="width: 150px;">事实</th>
+            <th style="width: 120px;">谁发起</th>
+            <th>结果</th>
+          </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><strong>系统直派</strong></td>
-            <td>没有轮</td>
-            <td>系统按轮转 / 缺口 / 点名直接安排，被安排即拥有</td>
-            <td>全职客户经理（轮转）、储备补位、临时时段指定到人</td>
-          </tr>
-          <tr>
-            <td><strong>公布即抢</strong></td>
-            <td>1 轮 · 即时</td>
-            <td>符合条件（含时间不交叉、单日上限）立刻获得</td>
-            <td>非全客户经理三档、非全推拿师全部、全职推拿师的同城余量</td>
-          </tr>
-          <tr>
-            <td><strong>申领审核</strong></td>
-            <td>1..N 轮 · 截止结算</td>
-            <td>截止后在<strong>已申领的人</strong>里按综合分排序，截断到名额数</td>
-            <td>全职推拿师本店档</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h4 class="h4sub">轮的三个时刻：这是「审核」能成立的前提</h4>
-      <p class="doc-p">
-        一个轮 = 一段申领期 + 一次结算。三个时刻都配在轮上，人群资格也配在轮上——
-        于是「岗位 A 8 点见、B 11 点见」不需要额外机制，只是<strong>两轮的开放时刻不同</strong>。
-      </p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 110px;">时刻</th><th style="width: 300px;">配什么</th><th>以「周六早班」为例</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>开放</strong></td><td>锚点 + 时刻（支持跨日写法，25:00 = 次日 01:00）</td><td>排班日 4 天前 06:00，即周二 06:00</td></tr>
-          <tr><td><strong>截止</strong></td><td>同一套锚点 + 时刻</td><td>排班日 1 天前 22:00，即周五 22:00</td></tr>
-          <tr><td><strong>结算</strong></td><td>截止即结算 / 延迟若干小时统一出</td><td>周五 22:00 截止后在申领人里排序取 6</td></tr>
+          <tr><td><strong>来不了</strong>（请假等）</td><td>员工</td><td>找有空、没冲突的人顶</td></tr>
+          <tr><td><strong>指定顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
+          <tr><td><strong>对换</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
+          <tr><td><strong>资格没了</strong>（离职 / 长期假 / 调岗）</td><td>人事</td><td>不找人，这个人直接从结果里消失；复职 = 新的资格事实</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>三条硬口径：</strong>① 截止不等于结算，定归属在结算那一步；
-        ② 截止后不再收申领，也不改已提交的申领；
-        ③ 公布即抢没有截止，所以也没有「待审」这个态。
+        <strong>两条关键说明：</strong>① 结果跟着重算，每次变化留一条记录（能回答「那天当时排的是谁」），班次本身不做状态变更；
+        ② 顶别人已经到手的班，要他点头；受益方向（顶班的、被补的）通知即可。
       </div>
-    </div>
 
-    <div id="hs-scope-balance" class="section">
-      <div class="section-header">
-        <h2>5.7 余额的三条去向与兜底序列</h2>
-      </div>
-      <p class="doc-p">
-        结算完没被占掉的名额，只有三条路可走。<strong>再开一轮</strong>回答「让人自己再来」，
-        <strong>兜底序列</strong>回答「没人来怎么办」，<strong>不管</strong>回答「允许留空」。
+      <h4 class="h4sub">一个人的时间线：班次条、事实条、补位条各自是独立区间</h4>
+      <svg class="v5-tl" viewBox="0 0 680 386" role="img" aria-label="A 的时间线：撤销休假没有改动任何一条班次">
+        <defs>
+          <pattern id="tfHatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" class="tf-h-bg" />
+            <line x1="0" y1="0" x2="0" y2="6" class="tf-h-ln" />
+          </pattern>
+        </defs>
+        <text class="tf-title" x="40" y="22">① 覆盖中 · 11-15 之前的解</text>
+        <text class="tf-day" x="206" y="42">11-16 周一</text>
+        <text class="tf-day" x="378" y="42">11-17 周二</text>
+        <text class="tf-day" x="550" y="42">11-18 周三</text>
+        <line class="tf-grid" x1="120" y1="50" x2="120" y2="350" />
+        <line class="tf-grid" x1="292" y1="50" x2="292" y2="350" />
+        <line class="tf-grid" x1="464" y1="50" x2="464" y2="350" />
+        <line class="tf-grid" x1="636" y1="50" x2="636" y2="350" />
+        <text class="tf-row" x="112" y="75">A · 班次</text>
+        <rect class="tf-shift" x="122" y="58" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="178" y="75">早班 10–18</text>
+        <rect class="tf-shift" x="351" y="58" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="406" y="75">晚班 14–22</text>
+        <rect class="tf-shift" x="466" y="58" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="522" y="75">早班 10–18</text>
+        <text class="tf-row tf-fact-row" x="112" y="117">事实 · 休假</text>
+        <rect class="tf-fact" x="122" y="100" width="168" height="34" rx="5" />
+        <text class="tf-t tf-fact-t" x="206" y="117">休假，盖住 11-16 全天</text>
+        <text class="tf-row tf-mk-row" x="112" y="159">D · 补位</text>
+        <rect class="tf-makeup" x="122" y="142" width="111" height="34" rx="5" />
+        <text class="tf-t tf-mk-t" x="178" y="159">补进早班</text>
+        <line class="tf-split" x1="40" y1="196" x2="640" y2="196" />
+        <text class="tf-title" x="40" y="216">② 撤销后 · 11-15 09:12 A 撤回休假</text>
+        <text class="tf-row" x="112" y="249">A · 班次</text>
+        <rect class="tf-shift" x="122" y="232" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="178" y="249">早班 10–18</text>
+        <rect class="tf-shift" x="351" y="232" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="406" y="249">晚班 14–22</text>
+        <rect class="tf-shift" x="466" y="232" width="111" height="34" rx="5" />
+        <text class="tf-t tf-shift-t" x="522" y="249">早班 10–18</text>
+        <text class="tf-row" x="112" y="291">事实 · 已撤销</text>
+        <rect class="tf-dead" x="122" y="274" width="168" height="34" rx="5" />
+        <text class="tf-t tf-dead-t" x="206" y="291">区间截短，记录不删</text>
+        <text class="tf-row" x="112" y="333">D · 已让位</text>
+        <rect class="tf-dead" x="122" y="316" width="111" height="34" rx="5" />
+        <text class="tf-t tf-dead-t" x="178" y="333">已让位</text>
+        <text class="tf-cap" x="40" y="366">两段的 A 泳道完全一致 —— 撤销休假没有改动任何一条班次</text>
+      </svg>
+      <p class="arch-cap">
+        班次条与事实条画在同一根轴上但互不改动：事实只声明区间，补位是另一个人的新区间；撤销 = 截短事实区间，结果自己变回来。
       </p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 130px;">去向</th><th style="width: 240px;">怎么走</th><th style="width: 200px;">候选池是谁</th><th>由谁触发</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>再开一轮</strong></td>
-            <td>新开一段申领期，同样有开放、截止与结算</td>
-            <td>该人群里<strong>还没有任何结果</strong>的人（含从没申领的）</td>
-            <td>上一轮结算完成即触发，不看星期几</td>
-          </tr>
-          <tr>
-            <td><strong>兜底序列</strong></td>
-            <td>按容器内班次顺序，逐档吃<strong>该时段当天剩余名额</strong></td>
-            <td>全部轮次结算后、该人群里仍零结果的人</td>
-            <td>最后一轮结算完成后执行一次</td>
-          </tr>
-          <tr>
-            <td><strong>不管</strong></td>
-            <td>名额留空，结果页记落空</td>
-            <td>—</td>
-            <td>配置即生效，不产生动作</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h4 class="h4sub">兜底序列怎么执行：以「先晚班、再通班」为例</h4>
-      <div class="chain">
-        <div class="chain-node on">
-          <div class="cn-t">早班 6 名额</div>
-          <div class="cn-d">8 人申领，审核取前 6，2 人落空</div>
-        </div>
-        <div class="chain-arrow">→</div>
-        <div class="chain-node">
-          <div class="cn-t">晚班余 1</div>
-          <div class="cn-d">先吃满它，第 1 个落空的人排到晚班</div>
-        </div>
-        <div class="chain-arrow">→</div>
-        <div class="chain-node">
-          <div class="cn-t">通班余 2</div>
-          <div class="cn-d">晚班满员才进这一档，第 2 个人排到通班</div>
-        </div>
-        <div class="chain-arrow">→</div>
-        <div class="chain-node">
-          <div class="cn-t">还满则留待派发</div>
-          <div class="cn-d">不突破名额，交给运营处理</div>
-        </div>
-      </div>
-      <div class="note warn-note">
-        <strong>逐档要过时间不交叉：</strong>晚班 14–22 的人兜到通班 10–22 会重叠，这一档直接跳过，进下一档。
-        兜底只吃已有名额，<strong>不新建时段</strong>——否则会绕过生成节奏与容量。
-      </div>
     </div>
 
-    <div id="hs-scope-e2e" class="section">
+    <div id="hs-scope-cover" class="section">
       <div class="section-header">
-        <h2>5.8 端到端：一条早班是怎么排完的</h2>
+        <h2>5.6 拿现状对卷</h2>
       </div>
       <table class="data-table">
         <thead>
-          <tr><th style="width: 150px;">时点</th><th style="width: 320px;">发生什么</th><th>记在哪</th></tr>
+          <tr>
+            <th style="width: 120px;">现行</th>
+            <th>定义段怎么落</th>
+            <th>获取段怎么落</th>
+            <th>变化段怎么落</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>上周四 06:00</strong></td>
-            <td>按生成节奏铺出下周 7 天 × 每天 6 个早班名额</td>
-            <td>名额实例</td>
+            <td><strong>全职客户经理</strong></td>
+            <td>人数组合算名额，通班是一个班次</td>
+            <td>单轮直派 + 两档抢</td>
+            <td>缺口按档补位，补不到走通班</td>
           </tr>
           <tr>
-            <td><strong>周二 06:00</strong></td>
-            <td>第一轮开放，本店全职推拿师可申领；此时不判归属</td>
-            <td>申领单·待审</td>
+            <td><strong>全职推拿师</strong></td>
+            <td>业务量算名额</td>
+            <td>单轮申领审核，落选再加一轮（k 不动）</td>
+            <td>落选 → 周五再抢</td>
           </tr>
           <tr>
-            <td><strong>周五 22:00</strong></td>
-            <td>申领截止；在已申领的人里按综合分取前 6，2 人被挤出</td>
-            <td>排班结果 6 条 + 申领单状态</td>
+            <td><strong>非全客户经理</strong></td>
+            <td>时段固定名额</td>
+            <td>三轮逐档开放接单</td>
+            <td>没人接 → 转临时时段</td>
           </tr>
           <tr>
-            <td><strong>结算完成即</strong></td>
-            <td>开第二轮：该人群里还没有结果的人自己再申（含从没申过的）</td>
-            <td>新的申领单</td>
+            <td><strong>非全推拿师</strong></td>
+            <td>签约 ÷ 2</td>
+            <td>单轮抢，必选早晚</td>
+            <td>必选段补不到人怎么处理，待定</td>
           </tr>
-          <tr>
-            <td><strong>第二轮结算后</strong></td>
-            <td>仍零结果的人进兜底序列：先吃晚班余量，晚班满再进通班</td>
-            <td>排班结果（来源=兜底）</td>
-          </tr>
-          <tr>
-            <td><strong>兜底后</strong></td>
-            <td>还排不上的名额记落空，留待派发</td>
-            <td>结果页落空行</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="note lead-note">
-        <strong>唯一记录口：</strong>审核通过一条、兜底安排一条，都写<strong>既有排班结果表</strong>。
-        不设审核单、不设审批流——「审核」不是节点，是一条结论。
-      </div>
-    </div>
-
-    <div id="hs-scope-role" class="section">
-      <div class="section-header">
-        <h2>5.9 四类角色与本期边界</h2>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 150px;">角色</th><th style="width: 260px;">职责</th><th>不做什么</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>总部运营</strong></td><td>维护时段模板、获取规则与兜底序列</td><td>不改门店班次名称与时间</td></tr>
-          <tr><td><strong>门店管理</strong></td><td>建本店时段、改本店班次名称与时间、挂哪条规则</td><td>不改总部规则里的人群与顺位</td></tr>
-          <tr><td><strong>员工</strong></td><td>申领、看我的排班、收通知</td><td>看不到他人申领、看不到内部调度原因</td></tr>
-          <tr><td><strong>系统</strong></td><td>按节奏铺名额、到点开关轮、截止结算、兜底</td><td>不猜业务意图，配不出来的就不做</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>本期边界：</strong>结果写进既有表就结束，后续的打卡、工时、加班与算钱都不在这一层。
-        这条边界不是省事，是<strong>把「谁占了这个时段」和「占了之后值多少钱」分开</strong>，
-        否则任何计薪口径调整都会倒逼排班改结构。
+        <strong>结论：</strong>四套全部落进三段，没有结构性缺口。
+        待业务拍板的只剩三件，都挂<router-link to="/docs/hr-schedule/appendix">附录</router-link>：
+        抢的窗口最短多久；非全推拿必选段补不到人怎么处理；顶别人已到手的班要提前多久说。
       </div>
     </div>
   </DocShell>
@@ -465,7 +477,23 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
-/* 5.4 对比图：上为现行四行真实取值（一格两行小字），下为 v3 四层横切 */
+const tocItems = [
+  { id: 'hs-scope', label: '五、需求范围' },
+  { id: 'hs-scope-now', label: '5.1 现状：四张考卷' },
+  { id: 'hs-scope-stages', label: '5.2 通用设计三阶段' },
+  { id: 'hs-scope-define', label: '5.3 定义段要点' },
+  { id: 'hs-scope-acquire', label: '5.4 获取段要点' },
+  { id: 'hs-scope-change', label: '5.5 变化段要点' },
+  { id: 'hs-scope-cover', label: '5.6 拿现状对卷' }
+]
+
+const breadcrumbs = [
+  { label: '文档中心', to: '/docs' },
+  { label: '人事中心', to: '/docs/hr-schedule' },
+  { label: '五、需求范围' }
+]
+
+/* 5.2 对比图：上为现行四行真实取值（一格两行小字），下为通用设计四层横切 */
 const nowRows = [
   {
     who: ['全职', '客户经理'],
@@ -507,29 +535,59 @@ const nowRows = [
 const newLayers = [
   { t: '容器', d: '门店 / 办公地点 / 城市 / 人 —— 时段属于谁，打卡考勤挂在这' },
   { t: '时段', d: '班次 · 星期 · 名额 · 生成节奏，只说时间形态，不说谁能领' },
-  { t: '获取规则', d: '模式（直派 / 即抢 / 审核）· 轮（开放→截止→结算）· 余额去向' },
+  { t: '获取规则', d: '谁、什么时候、按什么、拿几个、剩了怎么办' },
   { t: '排班结果', d: '唯一记录口，带「怎么排上的」' }
 ]
 const newPeople = ['全职推拿师', '非全推拿师', '全职客户经理', '非全客户经理']
-
-const tocItems = [
-  { id: 'hs-scope', label: '五、需求范围' },
-  { id: 'hs-scope-51', label: '5.1 做什么 / 不做什么' },
-  { id: 'hs-scope-now', label: '5.2 现行四岗位现状' },
-  { id: 'hs-scope-gap', label: '5.3 三个结构性空洞' },
-  { id: 'hs-scope-arch', label: '5.4 架构对比：现在 vs v3' },
-  { id: 'hs-scope-frame', label: '5.5 重构框架四层' },
-  { id: 'hs-scope-mode', label: '5.6 三种模式与轮' },
-  { id: 'hs-scope-balance', label: '5.7 余额与兜底序列' },
-  { id: 'hs-scope-e2e', label: '5.8 端到端时序' },
-  { id: 'hs-scope-role', label: '5.9 角色与边界' }
-]
-
-const breadcrumbs = [
-  { label: '文档中心', to: '/docs' },
-  { label: '人事中心', to: '/docs/hr-schedule' },
-  { label: '五、需求范围' }
-]
 </script>
 
 <style scoped src="./doc-base.css"></style>
+
+<style scoped>
+.pt-list { margin: 10px 0 14px; padding-left: 20px; }
+.pt-list li { font-size: 13px; line-height: 1.7; color: #2c2c2a; margin-bottom: 8px; }
+.pt-list li strong { font-weight: 600; }
+.doc-svg { width: 100%; height: auto; display: block; margin: 4px 0 8px; }
+
+/* 5.2 对比图（左右两栏） */
+.arch-diff { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0 6px; }
+.arch-col { border: 1px solid #e3e6ea; border-radius: 10px; padding: 12px; background: #fbfbfa; }
+.arch-head { font-size: 13px; font-weight: 600; margin-bottom: 8px; padding: 7px 10px; border-radius: 6px; }
+.arch-head.before { background: #fbeceb; color: #791f1f; }
+.arch-head.after { background: #eaf3de; color: #27500a; }
+.arch-svg { width: 100%; height: auto; display: block; }
+.arch-cap { font-size: 12px; color: #6a6a75; margin: 8px 0 0; line-height: 1.6; }
+.ac-t { font-size: 11px; fill: #444441; }
+.ac-t-strong { font-size: 12px; font-weight: 600; fill: #2c2c2a; }
+.ac-t-note { font-size: 11px; fill: #888780; }
+.ac-t-warn { font-size: 11px; fill: #a32d2d; }
+.ac-cell { fill: #f4f4f0; stroke: #c8cbcf; stroke-width: 0.5; }
+.ac-cell-warn { fill: #fcebeb; stroke: #e24b4a; stroke-width: 0.5; }
+.ac-box-new { fill: #eaf3de; stroke: #97c459; stroke-width: 0.5; }
+.ac-num { fill: #3b6d11; }
+.ac-t-num { font-size: 11px; font-weight: 600; fill: #ffffff; }
+.ac-arrow { fill: #b4b2a9; }
+.ac-chip { fill: #eef3fb; stroke: #9dbede; stroke-width: 0.5; }
+
+/* 5.5 时间线：班次条 / 事实条 / 补位条画在同一根轴上 */
+.v5-tl { width: 100%; height: auto; display: block; margin: 12px 0 0; }
+.tf-title { font-size: 13px; font-weight: 600; fill: #2c2c2a; }
+.tf-day { font-size: 12px; fill: #6a6a75; }
+.tf-grid { stroke: #e8e4e1; stroke-width: 0.5; }
+.tf-row { font-size: 12px; fill: #185fa5; text-anchor: end; }
+.tf-fact-row { fill: #854f0b; }
+.tf-mk-row { fill: #0f6e56; }
+.tf-t { font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+.tf-shift { fill: #f2f6fb; stroke: #9dbede; }
+.tf-shift-t { fill: #0c447c; }
+.tf-fact { fill: url(#tfHatch); stroke: #c58a2e; }
+.tf-h-bg { fill: #fdf3e6; }
+.tf-h-ln { stroke: #ef9f27; stroke-width: 1.5; }
+.tf-fact-t { fill: #633806; }
+.tf-makeup { fill: #eaf7f0; stroke: #9fd0bd; }
+.tf-mk-t { fill: #04342c; }
+.tf-dead { fill: #f1efe8; stroke: #888780; stroke-dasharray: 4 3; }
+.tf-dead-t { fill: #5f5e5a; }
+.tf-split { stroke: #d9d5d0; stroke-width: 0.5; stroke-dasharray: 4 3; }
+.tf-cap { font-size: 12px; fill: #6a6a75; }
+</style>

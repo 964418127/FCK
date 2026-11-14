@@ -6,12 +6,17 @@
         <h1>{{ slot?.name || '时段' }}</h1>
         <el-tag size="small" effect="plain">{{ containerName3(slot?.containerId) }}</el-tag>
         <el-tag v-if="slot?.source === 'custom'" size="small" type="warning" effect="plain">门店自建</el-tag>
+        <el-tag size="small" :type="slot?.nature === 'optional' ? 'info' : 'success'" effect="plain">{{ natureLabel(slot?.nature) }}班次</el-tag>
         <el-tag size="small" type="info" effect="plain">{{ slot?.id }}</el-tag>
       </div>
       <div class="right">
         <el-button @click="back">返回列表</el-button>
       </div>
     </header>
+
+    <div class="snapbar">
+      改这里改的是配置：已生成的批次（第 {{ v3.gen.seq }} 批 · {{ v3.gen.at }}）不动，下一轮生成或配置台「立即生成」后才生效。
+    </div>
 
     <el-card shadow="never" class="block">
       <template #header><span class="card-title">① 时间形态 —— 只描述「几点到几点、哪几天、几个名额、什么时候铺」</span></template>
@@ -39,9 +44,15 @@
           <el-form-item label="时段名称">
             <el-input v-model="slot.name" style="width: 180px" />
           </el-form-item>
-          <el-form-item label="名额">
-            <el-input-number v-model="slot.capacity" :min="1" :max="30" controls-position="right" style="width: 110px" />
-            <span class="hint-inline">物理容量，谁都超不了</span>
+          <el-form-item label="班次性质">
+            <el-radio-group v-model="slot.nature" size="small">
+              <el-radio-button v-for="n in natures" :key="n.value" :value="n.value">{{ n.label }}</el-radio-button>
+            </el-radio-group>
+            <div class="hint">{{ natureOf3(slot?.nature).hint }}</div>
+          </el-form-item>
+          <el-form-item label="名额来源">
+            <QuotaField v-model="slot.quota" />
+            <div class="hint">名额不写死在时段上：生成前由名额服务给系统计算值，改动期里人事 / 店长可调，改动期结束才生效。</div>
           </el-form-item>
         </div>
 
@@ -127,7 +138,7 @@
     </el-card>
 
     <el-card shadow="never" class="block">
-      <template #header><span class="card-title">③ 这几天的状态 —— 同一套配置，按当前时刻推到哪一步</span></template>
+      <template #header><span class="card-title">③ 这几天的状态 —— 按第 {{ v3.gen.seq }} 批快照推到哪一步</span></template>
       <el-table :data="instRows" border size="small">
         <el-table-column label="日期" width="120">
           <template #default="{ row }">{{ row.date }} {{ row.week }}</template>
@@ -138,7 +149,7 @@
           </template>
         </el-table-column>
         <el-table-column label="已排 / 名额" width="110">
-          <template #default="{ row }">{{ row.filled }} / {{ slot.capacity }}</template>
+          <template #default="{ row }">{{ row.filled }} / {{ row.cap }}</template>
         </el-table-column>
         <el-table-column label="怎么分的" min-width="320">
           <template #default="{ row }">
@@ -155,9 +166,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import QuotaField from '../components/v3/QuotaField.vue'
 import {
   containerName3, findShift3, findSlot3, findRule3, modeOf3, balanceOf3,
-  netHours3, timeNote, weekdayLabel3
+  netHours3, timeNote, weekdayLabel3, V3_NATURES, natureOf3
 } from '../mock/scheduleV3.js'
 import { v3, batch3 } from '../mock/scheduleV3Store.js'
 
@@ -169,6 +181,8 @@ const shiftsHere = computed(() => v3.shifts.filter(s => s.containerId === slot.v
 const rules = computed(() => v3.rules)
 const rule = computed(() => (slot.value ? findRule3(v3.ruleOf[slot.value.id]) : null))
 const modeLabel = r => modeOf3(r.mode).label
+const natures = V3_NATURES
+const natureLabel = v => natureOf3(v).label
 const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 const flags = computed(() => {
   const sh = findShift3(shift.value?.id)
@@ -192,7 +206,7 @@ const instRows = computed(() => {
   return list.map(i => {
     const rs = batch3.value.results.filter(r => r.slotId === i.slot.id && r.date === i.date)
     return {
-      date: i.date, week: weekdayLabel3(i.date), state: i.state,
+      date: i.date, week: weekdayLabel3(i.date), state: i.state, cap: i.slot.capacity,
       filled: rs.length, names: rs.map(r => `${r.personName}（${r.way}）`)
     }
   })
@@ -207,6 +221,7 @@ const back = () => router.push({ name: 'schedule-v3' })
 .left h1 { margin: 0; font-size: 20px; }
 .right { display: flex; gap: 8px; }
 .block { margin-bottom: 16px; }
+.snapbar { font-size: 12px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; line-height: 1.6; }
 .card-title { font-size: 14px; font-weight: 500; }
 .card-head { display: flex; justify-content: space-between; align-items: center; }
 .compact :deep(.el-form-item) { margin-bottom: 12px; }

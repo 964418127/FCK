@@ -134,7 +134,7 @@
         <div class="c-canvas">
           <FlowBoard
             :nodes="flowNodes"
-            :start-label="inst.emp.name + ' 提出申请'"
+            :start-label="originLabelOf(inst)"
             :selected="selId"
             :card-width="216"
             :gap-x="50"
@@ -243,7 +243,7 @@ import {
   topoSort, stateLabel, resolveOwner, ownerOfWay, ownerLabel, flatDeps, valueText
 } from '../../v2/model.js'
 import { actionName } from '../../v2/seed.js'
-import { instStateLabel } from '../../v2/instance.js'
+import { instStateLabel, originLabelOf } from '../../v2/instance.js'
 import { genSummary } from '../../v2/blueprint.js'
 import { payloadPlanOf, payloadTextOf } from '../../v2/payload.js'
 import FlowBoard from '../../components/v2/FlowBoard.vue'
@@ -257,7 +257,7 @@ const inst = computed(() => (route.query.id ? getInstance(route.query.id) : null
  * 一张单最先要回答的不是「给谁办的」，是「办的是哪件事」——
  * 四套事件共用一张表，不标出来就只能靠单号前缀猜。
  */
-const EV_TONE = { resign: 'red', regular: 'purple', transfer: 'blue', raise: 'green' }
+const EV_TONE = { resign: 'red', regular: 'purple', transfer: 'blue', raise: 'green', 'shift-fill': 'orange', 'shift-cancel': 'orange', 'shift-transfer': 'orange', 'shift-swap': 'orange' }
 const eventOf = (row) => (row ? getEvent(row.eventKey) : null)
 const eventName = (row) => eventOf(row)?.name || row?.eventKey || '未归类'
 const eventTone = (row) => EV_TONE[row?.eventKey] || 'gray'
@@ -429,6 +429,8 @@ function close () {
 .ev-chip.purple { color: #4b3fa8; background: #eeedfe; }
 .ev-chip.blue { color: #2f6fa8; background: #e8f1fa; }
 .ev-chip.green { color: #0f6e56; background: #e1f5ee; }
+.ev-chip.orange { color: #a86a1e; background: #fdf3e6; }
+.ev-chip.slate { color: #45526b; background: #eef1f6; }
 .ev-chip.gray { color: #6a6a75; background: #f2f1f5; }
 .ev-by { font-size: 10.5px; color: #b0aebe; }
 

@@ -397,6 +397,54 @@ export const resignSkeleton = [
     gate: 'optional',
     after: ['sign'],
     paths: [action('act.archive', '员工本人', { times: 2, interval: '1d', onExhaust: 'stop' })]
+  },
+
+  /* ---- 排班收尾（2026-11-13 并入：原先漏了，不是另立一件事） ----
+   * 离职单从提交到签署都办完了，人还没走；真正要动排班的是「离职日期到了」那一刻。
+   * 所以这一环的前置不是某个人办完，而是一条系统判断：日期到了没。按天跑批，没到就等下一批。
+   *
+   * 挂在哪一步之后由编排决定，不是固定尾部：交接清楚了就能开始清，不必等归档。
+   * 这里放在签署之后 —— 合同签完、日期一到，排班就该收。
+   *
+   * 两件事分开表达，别合成一句「停班并释放名额」：
+   *   清 —— 生效日之后本来就不该有他的排班，那几行结果直接清掉，**不动名额**（名额是容量）
+   *   补 —— 他占的名额时段还要人顶，按优先序列找人接替，名额本身不注销、不回池
+   */
+  {
+    key: 'effective.check',
+    goal: '离职日期已到达',
+    needs: 'always',
+    gate: 'must',
+    after: ['sign'],
+    note: '按天查一次，没到就等下一批（不是失败）；实际离职日期取审核结论，不另录',
+    paths: [system('effectiveDateReached', '1d', 40)]
+  },
+  {
+    key: 'schedule.clear',
+    goal: '生效日之后仍存在的排班已清除',
+    needs: 'always',
+    gate: 'must',
+    after: ['effective.check'],
+    note: '清的是结果表里那几行，不动名额；生效日之前（含当天）的班照排，不碰',
+    paths: [action('act.cancelSchedule', '离职生效日之后仍存在的排班结果行', { times: 2, interval: '30m', onExhaust: 'human' })]
+  },
+  {
+    key: 'schedule.fill',
+    goal: '他占的名额已找到人接替',
+    needs: 'always',
+    gate: 'must',
+    after: ['schedule.clear'],
+    note: '名额不释放：时段还要人，按优先序列换一个人上来；没人接就留空标「无人接」',
+    paths: [action('act.allocateShift', '他占过的时段名额', { times: 2, interval: '1h', onExhaust: 'human' })]
+  },
+  {
+    key: 'schedule.result',
+    goal: '排班结果已写入',
+    needs: 'always',
+    gate: 'must',
+    after: ['schedule.fill'],
+    note: '全流程唯一写占位的口：清除与接替都落在这张结果表上，历史另存',
+    paths: [action('act.writeScheduleResult', '这一单的排班收尾结果', { times: 3, interval: '1h', onExhaust: 'human' })]
   }
 ]
 
