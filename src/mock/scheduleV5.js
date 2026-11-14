@@ -27,6 +27,7 @@ export const PEOPLE5 = [
   { id: 'E-121', name: '阿禾', spaceId: 'S-201', kind: 'parttime', position: '推拿师', score: 78 },
   { id: 'E-126', name: '小满', spaceId: 'S-201', kind: 'parttime', position: '客户经理', score: 81 },
   { id: 'E-133', name: '陈晚', spaceId: 'S-202', kind: 'fulltime', position: '推拿师', score: 84 },
+  { id: 'E-137', name: '石全', spaceId: 'S-201', kind: 'fulltime', position: '客户经理', score: 70 },
   { id: 'E-141', name: '周野', spaceId: 'S-202', kind: 'parttime', position: '推拿师', score: 75 },
   { id: 'E-150', name: '小唐', spaceId: 'S-203', kind: 'fulltime', position: '推拿师', score: 88 },
   { id: 'E-151', name: '阿橙', spaceId: 'S-203', kind: 'parttime', position: '客户经理', score: 79 }
@@ -80,6 +81,15 @@ export const SLOTS5 = [
     quota: { source: 'manual', value: 3 }, clamp: [1, 4], snapN: 3,
     list: [
       { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
+  },
+  {
+    /* 收尾班次（兜底）：窗口排在同一天其他班次之后，直派到点执行——
+       前面没排上班的人到这时还空着手，被它收进去；已排到班的时段重叠排不了 */
+    id: 'SL-06', spaceId: 'S-201', name: '通班', start: '10:00', end: '22:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
     ]
   }
 ]
@@ -443,7 +453,7 @@ export function windowLabel5(row, slot = null, date = null, round = null) {
 }
 
 export function gateLabel5(row, slot) {
-  if (row.way === 'direct') return '发布即定，不用抢'
+  if (row.way === 'direct') return '到点直派，不用抢'
   if (row.way === 'apply') return `截止 ${ROUND5.applyDeadline} · 按综合分排序截断`
   return `开班（${slot.start}）即关闸`
 }
@@ -503,6 +513,39 @@ export function rowUsed5(state, slotId, date, slot, row) {
     p.slotId === slotId && p.date === date && p.status === 'active' &&
     matchWho5(state, personById(state, p.personId), slot, row.who)
   ).length
+}
+
+/*
+  直派到点执行：直派分人的时刻 = 那一档窗口开放的时刻，不是发布那一刻。
+  窗口开了才分人——这时候前面先开的班次都跑完了，落空的人自然被收尾班次（通班）收进去；
+  已排到班的人时段重叠排不了，被冲突检查挡在外面。位满即停，装不下的人事当场安排。
+  执行过的档记进 state.directDone，重跑不重复分（幂等）。
+*/
+export function runDueDirect5(state, now = state.now) {
+  const all = [...state.slots, ...state.temps]
+  all.forEach(slot => {
+    WEEK_DATES.filter(d => slotsOn5(state, d).some(s => s.id === slot.id) || slot.date === d).forEach(date => {
+      slot.list.forEach(row => {
+        if (row.way !== 'direct') return
+        const key = `${slot.id}|${date}|${row.k}`
+        if (state.directDone.has(key)) return
+        const at = openAt5(row, state.round, date)
+        if (!at || now < at) return // 还没到点，不分
+        state.directDone.add(key)
+        state.people.forEach(person => {
+          if (!matchWho5(state, person, slot, row.who)) return
+          if (activeCount5(state, slot.id, date) >= snapN5(state, slot.id, date)) return
+          if (row.cap && rowUsed5(state, slot.id, date, slot, row) >= row.cap) return
+          if (personBusy5(state, person.id, date, slot.start, slot.end)) return
+          if (!worktimeOk5(state, person, date, slot.start, slot.end).ok) return
+          state.placements.push({
+            id: `P-${state.seq++}`, slotId: slot.id, date, personId: person.id,
+            way: `直派 · 第${row.k}档`, status: 'active', at, history: []
+          })
+        })
+      })
+    })
+  })
 }
 
 /* 能不能拿：可见 ≠ 可拿，可拿层要给具体原因（员工侧同一套判定，抢单时不会再变） */
@@ -673,7 +716,7 @@ export function addFact5(state, fact) {
 }
 
 export function buildV5State() {
-  return {
+  const state = {
     seq: 100,
     now: NOW,
     today: TODAY,
@@ -690,6 +733,15 @@ export function buildV5State() {
     notices: JSON.parse(JSON.stringify(NOTICES5)),
     swapRequests: [],
     dayQuota: {},
-    configDirty: false
+    configDirty: false,
+    /* 种子里的直派（早班/晚班第 1 档，发布即开）在 11-12 06:00 已执行 */
+    directDone: new Set()
   }
+  ;['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'].forEach(d => {
+    state.directDone.add(`SL-01|${d}|1`)
+    state.directDone.add(`SL-02|${d}|1`)
+  })
+  /* 直派到点执行：窗口已开的档现在分人（通班 11-14 09:00 开，NOW 之前已到点） */
+  runDueDirect5(state, state.now)
+  return state
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -101,6 +101,24 @@ test('档位自检：上限不能超过名额', () => {
   assert.ok(errs.some(e => e.includes('上限 5 超过了名额 3')), '超名额的上限要报错')
   form.list[0].cap = null
   assert.ok(!checkSlotForm(s.spaces[0].id, form).some(e => e.includes('名额')), '不封顶不报错')
+})
+
+test('通班=收尾班次：直派到点执行，收落空的人，已排到班的跳过', () => {
+  const s = mk()
+  const mon = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-16' && p.status === 'active')
+  assert.ok(mon.length >= 1, '通班窗口（11-14 09:00）已到，直派应已分人')
+  assert.equal(mon[0].at, '2026-11-14 09:00', '分人时刻 = 窗口开放时刻，不是发布时刻')
+  assert.ok(mon.every(p => p.personId === 'E-137'), '已排到早/晚班的全职被冲突检查挡外，只有落空的石全进来')
+  assert.equal(mon.length, 1, '名额 2，只有 1 个落空的人，剩的位待人事安排')
+  /* 11-19 沈书（E-113）没排到班：通班把他收进去，位满 2/2 */
+  const thu = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-19' && p.status === 'active')
+  assert.deepEqual(thu.map(p => p.personId).sort(), ['E-113', 'E-137'], '落空的沈书和石全都被收进通班')
+  /* 还没到点：不执行 */
+  const s2 = mk()
+  s2.placements = s2.placements.filter(p => p.slotId !== 'SL-06')
+  s2.directDone.delete('SL-06|2026-11-16|1')
+  runDueDirect5(s2, '2026-11-13 10:00')
+  assert.equal(s2.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-16').length, 0, '窗口没开不分人')
 })
 
 test('抢：占位成功；位满当场说原因', () => {

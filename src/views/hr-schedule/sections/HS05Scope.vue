@@ -336,7 +336,7 @@
 
         <text x="40" y="64" font-size="12" font-weight="500" fill="#2C2C2A">① 本店全职 · 直派</text>
         <rect x="210" y="52" width="380" height="18" rx="4" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
-        <text x="400" y="65" text-anchor="middle" font-size="11" fill="#0C447C">发布即定，不用抢</text>
+        <text x="400" y="65" text-anchor="middle" font-size="11" fill="#0C447C">到点直派，不用抢</text>
 
         <text x="40" y="104" font-size="12" font-weight="500" fill="#2C2C2A">② 本店非全 · 抢</text>
         <rect x="300" y="92" width="290" height="18" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
