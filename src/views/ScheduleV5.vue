@@ -1031,7 +1031,12 @@ function tlBandsFor(day) {
     const s = f.slotId ? slotById(v5, f.slotId) : null
     const st = f.start || s?.start
     const en = f.end || s?.end
-    return st && en ? { s: toMin(st), e: toMin(en), text: `${f.type} · ${f.at.slice(5, 16)}`, sub: `占据 ${st}–${en}`, cls: 'fact' } : null
+    if (!st || !en) return null
+    const whole = s && st === s.start && en === s.end
+    const sub = !s ? `占用 ${st}–${en}`
+      : whole ? `${s.name}整班被占用（${st}–${en}）`
+      : `${s.name}只占 ${st}–${en}，其余时间照常`
+    return { s: toMin(st), e: toMin(en), text: `${f.type}（${f.at.slice(5, 16)} 提交）`, sub, cls: 'fact' }
   }).filter(Boolean)
   if (facts.length) rows.push({ label: '事实', bands: facts })
   const makes = []
