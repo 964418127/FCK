@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5 } from '../src/mock/scheduleV5.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -57,6 +57,30 @@ test('窗口：发布即开、周五 06:00 已开、开班前一天 20:00 未开
   assert.equal(windowOpen5(sl01.list[2], '2026-11-16'), false)
 })
 
+test('开放窗口抽象：锚点+偏移落成具体日期时间，旧字符串写法兼容', () => {
+  const s = mk()
+  const sl01 = s.slots.find(x => x.id === 'SL-01')
+  /* 发布即开：发布时刻就是开放时刻 */
+  assert.equal(openAt5(sl01.list[0], s.round), '2026-11-12 06:00')
+  assert.ok(windowLabel5(sl01.list[0]).includes('发布即开'), '发布即开要带具体时刻')
+  /* 发布后的周五 06:00（发布 11-12 周四 → 11-13 周五） */
+  assert.equal(openAt5(sl01.list[1], s.round), '2026-11-13 06:00')
+  assert.ok(windowLabel5(sl01.list[1], sl01).includes('11-13 06:00 开（发布后的周五）'), '窗口展示要落成用户可读的日期时间')
+  /* 开班日相对：开班前一天 20:00 */
+  assert.equal(openAt5(sl01.list[2], s.round, '2026-11-16'), '2026-11-15 20:00')
+  assert.ok(windowLabel5(sl01.list[2], null, '2026-11-16').includes('11-15 20:00 开（开班前 1 天）'))
+  /* 发布后推 N 天 */
+  const off = { win: { base: 'publish', d: 2, t: '09:00' } }
+  assert.equal(openAt5(off, s.round), '2026-11-14 09:00')
+  assert.ok(windowLabel5(off).includes('发布后 2 天'))
+  /* 旧字符串写法照常工作（normWin5 兼容） */
+  assert.equal(openAt5({ win: 'fri0600' }, s.round), '2026-11-13 06:00')
+  assert.equal(openAt5({ win: 'day1' }, s.round, '2026-11-16'), '2026-11-15 20:00')
+  assert.equal(openAt5({ win: 'publish' }, s.round), '2026-11-12 06:00')
+  /* 没给日期的开班日相对窗口：算不出具体时刻 */
+  assert.equal(openAt5({ win: { base: 'date', d: -1, t: '20:00' } }, s.round, null), null)
+})
+
 test('抢：占位成功；位满当场说原因', () => {
   const s = mk()
   assert.equal(grab5(s, 'TL-01', '2026-11-21', 'E-107').ok, true)
@@ -89,7 +113,7 @@ test('抢：未开窗当场说开窗时刻', () => {
   })
   const r = grab5(s, 'SL-X', '2026-11-16', 'E-107')
   assert.equal(r.ok, false)
-  assert.equal(r.reason, '还没开：开班前一天 20:00 开')
+  assert.equal(r.reason, '还没开：11-15 20:00 开（开班前 1 天）')
 })
 
 test('申领：提交只登记；截止按综合分排序截断，非全工时超限排不了', () => {

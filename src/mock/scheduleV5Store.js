@@ -8,7 +8,8 @@ import { reactive, ref, computed } from 'vue'
 import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
-  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5
+  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5,
+  openAt5, slotFirstDate5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -208,10 +209,10 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
   if (form.quota?.source === 'manual' && !(form.quota.value > 0)) errs.push('名额要大于 0')
   if (form.quota?.source === 'service' && !form.quota.serviceId) errs.push('选了挂算法服务，但没指定是哪个')
 
-  /* 窗口顺序：后面的档不该比前面的档先开 */
-  const order = { publish: 0, fri0600: 1, day1: 2 }
-  const wins = form.list.map(r => order[r.win] ?? 0)
-  wins.forEach((w, i) => { if (i > 0 && w < wins[i - 1]) errs.push(`第 ${i + 1} 档比第 ${i} 档开得还早，员工会先看到后面那档`) })
+  /* 窗口顺序：后面的档不该比前面的档先开（都按这一轮第一天落成具体开放时刻比较） */
+  const first = slotFirstDate5({ days: form.days?.length ? form.days : [0, 1, 2, 3, 4, 5, 6] })
+  const wins = form.list.map(r => openAt5(r, state.round, first))
+  wins.forEach((w, i) => { if (i > 0 && w && wins[i - 1] && w < wins[i - 1]) errs.push(`第 ${i + 1} 档比第 ${i} 档开得还早，员工会先看到后面那档`) })
 
   /* 同空间、时间重叠、人群又写重了：同一个人两边都能拿 */
   const clash = state.slots
@@ -230,7 +231,7 @@ export function revertConfig() {
 }
 export function addTemp(temp) {
   state.temps.push({
-    id: `TL-${state.seq++}`, snapN: temp.quota.value, list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }], ...temp
+    id: `TL-${state.seq++}`, snapN: temp.quota.value, list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }], ...temp
   })
 }
 export function removeTemp(id) {

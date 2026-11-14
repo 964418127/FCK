@@ -47,39 +47,39 @@ export const SLOTS5 = [
     id: 'SL-01', spaceId: 'S-201', name: '早班', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-01' }, clamp: [1, 6], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: 'publish' },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' },
-      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: 'day1' }
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } },
+      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '20:00' } }
     ]
   },
   {
     id: 'SL-02', spaceId: 'S-201', name: '晚班', start: '14:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: 'publish' },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' }
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
     ]
   },
   {
     id: 'SL-03', spaceId: 'S-201', name: '周末全天', start: '10:00', end: '22:00', days: [6, 0],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: 'publish' }
+      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
     id: 'SL-04', spaceId: 'S-203', name: '晚市班', start: '17:00', end: '21:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-03' }, clamp: [1, 4], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: '推拿师' }, way: 'apply', win: 'publish' },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'fri0600' }
+      { k: 1, who: { scope: 'store', kind: 'all', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
     ]
   },
   {
     id: 'SL-05', spaceId: 'S-203', name: '周末午市', start: '11:00', end: '15:00', days: [6, 0],
     quota: { source: 'manual', value: 3 }, clamp: [1, 4], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }
+      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   }
 ]
@@ -89,7 +89,7 @@ export const TEMPS5 = [
   {
     id: 'TL-01', spaceId: 'S-201', date: '2026-11-21', name: '周六晚加场', start: '18:00', end: '22:00',
     quota: { source: 'manual', value: 2 }, snapN: 2,
-    list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' }]
+    list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
   }
 ]
 
@@ -379,25 +379,53 @@ export function matchWho5(state, person, slot, who) {
   return true
 }
 
-/* 窗口开放时刻：全部按当前轮推算，不再写死某一天 */
-export function openAt5(row, round) {
+/* 开放窗口 = 锚点 + 偏移。锚点：publish=发布时刻 / week=发布后的某个星期几 / date=开班日；
+   配置里只存锚点和偏移，展示一律落成具体日期时间（windowLabel5） */
+export function normWin5(w) {
+  if (typeof w === 'string') {
+    if (w === 'fri0600') return { base: 'week', dow: 5, t: '06:00' }
+    if (w === 'day1') return { base: 'date', d: -1, t: '20:00' }
+    return { base: 'publish', d: 0, t: '06:00' }
+  }
+  return { d: 0, dow: 1, t: '06:00', ...w }
+}
+/* 档位挂的时段在这一轮的第一天（开班日相对的窗口用它落具体日期） */
+export function slotFirstDate5(slot) {
+  if (slot?.date) return slot.date
+  return WEEK_DATES.find(d => slot?.days?.includes(new Date(`${d}T00:00:00`).getDay())) || WEEK_DATES[0]
+}
+/* 窗口开放时刻：按当前轮推算成具体时间 */
+export function openAt5(row, round, date = null) {
   const R = round || ROUND5
-  if (row.win === 'publish') return R.publishedAt
-  /* 「周五 06:00 开」= 本轮发布之后的那个周五 06:00 */
-  if (row.win === 'fri0600') return `${nextDow(R.publishedAt.slice(0, 10), 5)} 06:00`
-  return null // day1 按开班日期算
+  const w = normWin5(row.win)
+  const pub = R.publishedAt
+  if (w.base === 'publish') {
+    if (!w.d) return pub
+    const d0 = new Date(`${pub.slice(0, 10)}T00:00:00`)
+    d0.setDate(d0.getDate() + w.d)
+    return `${fmtDate(d0)} ${w.t}`
+  }
+  if (w.base === 'week') return `${nextDow(pub.slice(0, 10), w.dow)} ${w.t}`
+  if (!date) return null
+  const d0 = new Date(`${date}T00:00:00`)
+  d0.setDate(d0.getDate() + (w.d || 0))
+  return `${fmtDate(d0)} ${w.t}`
 }
 export function windowOpen5(row, date, now = NOW, round = null) {
-  let at = openAt5(row, round)
-  if (row.win === 'day1') {
-    const d = new Date(`${date}T00:00:00`)
-    d.setDate(d.getDate() - 1)
-    at = `${fmtDate(d)} 20:00`
-  }
-  return now >= at
+  const at = openAt5(row, round, date)
+  return at ? now >= at : false
 }
-export function windowLabel5(row) {
-  return row.win === 'publish' ? '发布即开' : row.win === 'fri0600' ? '周五 06:00 开' : '开班前一天 20:00 开'
+/* 展示成用户可读的具体日期时间：给 date 按那天算，给 slot 取这一轮第一天 */
+export function windowLabel5(row, slot = null, date = null, round = null) {
+  const R = round || ROUND5
+  const w = normWin5(row.win)
+  const at = openAt5(row, R, date || (slot ? slotFirstDate5(slot) : null))
+  const short = at ? at.slice(5, 16) : ''
+  if (w.base === 'publish' && !w.d) return `发布即开（${short}）`
+  if (w.base === 'publish') return `${short} 开（发布后 ${w.d} 天）`
+  if (w.base === 'week') return `${short} 开（发布后的周${'日一二三四五六'[w.dow]}）`
+  const rel = w.d === 0 ? '开班当天' : w.d < 0 ? `开班前 ${-w.d} 天` : `开班后 ${w.d} 天`
+  return `${short} 开（${rel}）`
 }
 
 export function gateLabel5(row, slot) {
@@ -472,7 +500,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
   if (!rows.length) return { ok: false, reason: way === 'apply' ? '这个时段不走申领' : '这个时段不靠抢' }
   const row = rows.find(r => matchWho5(state, person, slot, r.who))
   if (!row) return { ok: false, reason: '这一档不是你的档' }
-  if (!windowOpen5(row, date, now, state.round)) return { ok: false, reason: `还没开：${windowLabel5(row)}` }
+  if (!windowOpen5(row, date, now, state.round)) return { ok: false, reason: `还没开：${windowLabel5(row, null, date, state.round)}` }
   /* 行上限：这一档给几个就几个，多的留给下一档 */
   if (row.cap && rowUsed5(state, slotId, date, slot, row) >= row.cap) {
     return { ok: false, reason: `这一档只留 ${row.cap} 个，已经满了` }

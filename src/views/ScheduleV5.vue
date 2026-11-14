@@ -227,16 +227,31 @@
                       <el-option label="抢" value="grab" />
                       <el-option label="申领审核" value="apply" />
                     </el-select>
-                    <el-select v-model="r.win" size="small" style="width: 180px">
-                      <el-option label="发布即开" value="publish" />
-                      <el-option label="周五 06:00 开" value="fri0600" />
-                      <el-option label="开班前一天 20:00 开" value="day1" />
-                    </el-select>
+                    <!-- 开放窗口 = 锚点 + 偏移；配置选锚点，下面一行实时落成具体日期时间 -->
+                    <div class="win-cell">
+                      <div class="win-line">
+                        <el-select :model-value="winKind(r)" size="small" style="width: 104px" @change="onWinKind(r, $event)">
+                          <el-option label="发布即开" value="publish" />
+                          <el-option label="发布后推" value="pubOff" />
+                          <el-option label="发布后的周几" value="week" />
+                          <el-option label="开班日前" value="date" />
+                        </el-select>
+                        <el-input-number v-if="winKind(r) === 'pubOff'" v-model="r.win.d" :min="1" :max="14" size="small" controls-position="right" style="width: 62px" />
+                        <span v-if="winKind(r) === 'pubOff'" class="win-u">天</span>
+                        <el-select v-if="winKind(r) === 'week'" v-model="r.win.dow" size="small" style="width: 74px">
+                          <el-option v-for="(n, i) in DAY_NAMES" :key="i" :label="'周' + n" :value="i" />
+                        </el-select>
+                        <el-input-number v-if="winKind(r) === 'date'" v-model="r.win.d" :min="-7" :max="0" size="small" controls-position="right" style="width: 62px" />
+                        <span v-if="winKind(r) === 'date'" class="win-u">天前</span>
+                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
+                      </div>
+                      <div class="win-preview">{{ winPreview(r) }}</div>
+                    </div>
                     <el-input-number v-model="r.cap" :min="1" :max="6" size="small" controls-position="right"
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
-                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'publish' })">+ 加一档</button>
+                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
                   <div class="le-note">上限留空=这一档能吃满全部名额；填了就封顶，剩下的名额留给下一档。</div>
                 </div>
 
@@ -274,7 +289,7 @@
                   <span class="lr-k">{{ r.k }}</span>
                   <span class="lr-who">{{ whoLabel5(r.who) }}</span>
                   <span class="lr-way" :class="'way-' + r.way">{{ wayLabel(r.way) }}</span>
-                  <span class="lr-win">{{ windowLabel5(r) }}</span>
+                  <span class="lr-win">{{ windowLabel5(r, s) }}</span>
                   <span class="lr-cap">{{ r.cap ? `最多 ${r.cap} 人` : '不封顶' }}</span>
                 </div>
               </div>
@@ -679,7 +694,7 @@ import {
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5
 } from '../mock/scheduleV5Store.js'
 import {
-  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
+  slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
   dayCopyPlan5
 } from '../mock/scheduleV5.js'
 
@@ -860,9 +875,23 @@ const formErrs = ref([])
 const blankForm = () => ({
   name: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
   quota: { source: 'manual', value: 2 },
-  list: [{ who: '本店全员', way: 'grab', win: 'publish' }]
+  list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
 })
 const form = reactive(blankForm())
+/* 开放窗口：配置存锚点+偏移，界面展示一律落成具体日期时间 */
+function winKind(r) {
+  const w = normWin5(r.win)
+  return w.base === 'publish' ? (w.d ? 'pubOff' : 'publish') : w.base
+}
+function onWinKind(r, kind) {
+  r.win = kind === 'publish' ? { base: 'publish', d: 0, t: '06:00' }
+    : kind === 'pubOff' ? { base: 'publish', d: 1, t: '06:00' }
+    : kind === 'week' ? { base: 'week', dow: 5, t: '06:00' }
+    : { base: 'date', d: -1, t: '20:00' }
+}
+function winPreview(r) {
+  return windowLabel5(r, { days: form.days?.length ? form.days : [0, 1, 2, 3, 4, 5, 6] })
+}
 function openNew() {
   editing.value = 'new'
   Object.assign(form, blankForm())
@@ -1252,9 +1281,13 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 150px 130px 190px minmax(96px, 1fr) 40px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-head { display: grid; grid-template-columns: 44px 132px 108px 300px minmax(96px, 1fr) 40px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
 .le-head span:last-child { text-align: right; }
-.le-row { display: grid; grid-template-columns: 44px 150px 130px 190px minmax(96px, 1fr) 40px; align-items: center; gap: 6px; padding: 3px 0; }
+.le-row { display: grid; grid-template-columns: 44px 132px 108px 300px minmax(96px, 1fr) 40px; align-items: center; gap: 6px; padding: 3px 0; }
+.win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.win-line { display: flex; align-items: center; gap: 4px; }
+.win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
+.win-preview { font-size: 11px; color: #3B6D11; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
 .who-chip:hover { border-color: #a40035; }
 .who-chip-edit { font-size: 11px; color: #b0b3ba; }
