@@ -224,7 +224,7 @@
                     </button>
                     <el-select v-model="r.way" size="small" style="width: 120px">
                       <el-option label="直派轮转" value="direct" />
-                      <el-option label="抢" value="grab" />
+                      <el-option label="先到先得" value="grab" />
                       <el-option label="申领审核" value="apply" />
                     </el-select>
                     <!-- 开放窗口 = 锚点 + 偏移；配置选锚点，下面一行实时落成具体日期时间 -->
@@ -253,8 +253,8 @@
                   </div>
                   <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
                   <div class="le-ways">
-                    <div class="way-row"><span class="way-name">直派轮转</span><span class="way-desc">系统按人群顺位自动排人，<em>分人不在发布那一刻</em>，而是等这一档窗口开放时才执行——前面的人已经占到班的，冲突检查自动跳过、轮到下一个。不用抢。</span></div>
-                    <div class="way-row"><span class="way-name">抢</span><span class="way-desc">窗口一开自己点，先到先得，位满即关；成不了当场说原因。</span></div>
+                    <div class="way-row"><span class="way-name">直派轮转</span><span class="way-desc">系统把这一档的人群<em>按轮换次序轮流排</em>（这次你、下次他），到这一档窗口开放时执行。没有申领入口，人只收通知。</span></div>
+                    <div class="way-row"><span class="way-name">先到先得</span><span class="way-desc">窗口一开自己点，点了就成，位满即关；成不了当场说原因。</span></div>
                     <div class="way-row"><span class="way-name">申领审核</span><span class="way-desc">窗口内提交申领，截止后按综合分排序截断，人事不逐单审批。</span></div>
                   </div>
                   <div class="le-note">上限 = 这一档最多占掉多少个名额（不能超过名额 {{ quotaN || '?' }}）；留空 = 不封顶，能吃满全部名额。这一档吃剩的名额留给下一档。</div>
@@ -807,7 +807,7 @@ function quotaLabel(s) {
   const svc = v5.services.find(x => x.id === s.quota.serviceId)
   return `${svc?.name || '算法'} · 本轮 ${s.snapN}`
 }
-function wayLabel(w) { return w === 'direct' ? '直派轮转' : w === 'grab' ? '抢' : '申领审核' }
+function wayLabel(w) { return w === 'direct' ? '直派轮转' : w === 'grab' ? '先到先得' : '申领审核' }
 function onDay(s, d) {
   if (s.date) return s.date === d
   return s.days.includes(new Date(`${d}T00:00:00`).getDay())
