@@ -370,7 +370,7 @@
           <tr><td><strong>请假</strong></td><td>员工</td><td>找有空、没冲突的人顶</td></tr>
           <tr><td><strong>顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
           <tr><td><strong>换班</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
-          <tr><td><strong>离职</strong>（含长期假 / 调岗这一类资格退出）</td><td>人事</td><td>不找人，这个人直接从结果里消失；复职 = 新的资格事实</td></tr>
+          <tr><td><strong>离职</strong>（含长期假 / 调岗这一类资格退出）</td><td>离职流程模块写入</td><td>不找人，这个人直接从结果里消失；排班不提供登记入口，只承接结果。员工可见可选的班次，兜底选人时只挑状态在线、可排班的人</td></tr>
         </tbody>
       </table>
       <div class="note">

@@ -442,7 +442,37 @@
           <div class="fact-acts">
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
             <el-button size="small" @click="openAppoint()">找人顶班</el-button>
-            <el-button size="small" @click="exitDlg = true">登记离职</el-button>
+            <span class="fa-note">离职不在这里登记：由离职流程模块写入事实，排班只承接结果</span>
+          </div>
+
+          <!-- 个人时间线：班次条 + 事实条按天对齐，覆盖/补位一眼看清；下面保留事实清单 -->
+          <div class="tl-box">
+            <div class="tl-head">
+              <strong>个人时间线</strong>
+              <span>当前轮（{{ short(v5.round.span[0]) }}–{{ short(v5.round.span[1]) }}）这个人身上的班次和事实：被覆盖的班、顶进来的班，按天对齐看。</span>
+              <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event">
+                <el-option v-for="p in tlPeople" :key="p.id" :label="p.name" :value="p.id" />
+              </el-select>
+            </div>
+            <div v-if="tlPid" class="tl-grid" :style="{ gridTemplateColumns: `76px repeat(${tlDates.length}, minmax(0, 1fr))` }">
+              <div class="tl-date tl-corner" />
+              <div v-for="d in tlDates" :key="d.date" class="tl-date" :class="{ today: d.date === v5.today }">
+                {{ d.date.slice(5) }} 周{{ DAY_NAMES[d.dow] }}
+              </div>
+              <template v-for="row in tlRows" :key="row.kind">
+                <div class="tl-label" :class="'tl-' + row.kind">{{ row.label }}</div>
+                <div v-for="d in tlDates" :key="row.kind + d.date" class="tl-cell">
+                  <div v-for="b in row.byDate[d.date]" :key="b.text" class="tl-block" :class="b.cls">
+                    <strong>{{ b.text }}</strong>
+                    <span v-if="b.sub">{{ b.sub }}</span>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div v-if="tlRelated.length" class="tl-rel">
+              相关的人：
+              <button v-for="r in tlRelated" :key="r.id" @click="tlPidRaw = r.id">{{ r.name }}</button>
+            </div>
           </div>
 
           <table class="data-table">
@@ -633,28 +663,7 @@
       </template>
     </el-dialog>
 
-    <!-- 登记离职 -->
-    <el-dialog v-model="exitDlg" title="登记离职" width="480px">
-      <div class="svc-note">离职 / 长期假 / 调岗：不找人顶，这个人直接从 {{ WEEK_DATES[0] }} 起的结果里消失。复职 = 新的资格事实。</div>
-      <div class="dlg-row">
-        <label>谁</label>
-        <el-select v-model="exitForm.personId" size="small" style="width: 260px">
-          <el-option v-for="p in curSpacePeople" :key="p.id" :label="p.name" :value="p.id" />
-        </el-select>
-      </div>
-      <div class="dlg-row">
-        <label>情况</label>
-        <el-radio-group v-model="exitForm.subtype" size="small">
-          <el-radio-button value="离职">离职</el-radio-button>
-          <el-radio-button value="长期假">长期假</el-radio-button>
-          <el-radio-button value="调岗">调岗</el-radio-button>
-        </el-radio-group>
-      </div>
-      <template #footer>
-        <el-button size="small" @click="exitDlg = false">取消</el-button>
-        <el-button size="small" type="primary" @click="doExit">确认登记</el-button>
-      </template>
-    </el-dialog>
+    <!-- 登记离职已移除：离职入口在离职流程模块，它写事实，排班只承接结果 -->
   </div>
 </template>
 
@@ -667,7 +676,7 @@ import { usePager } from '../composables/usePager.js'
 import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
-  appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5
+  appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -927,6 +936,73 @@ const applies = computed(() => applicationRows5(selSpace.value))
 
 /* 事实与版本 */
 const facts = computed(() => factRows5())
+
+/* 个人时间线：当前轮覆盖区间，按天对齐这个人身上的班次（含被覆盖）与事实（提交的 / 被补进来的） */
+const tlPidRaw = ref('')
+const tlPid = computed(() => tlPidRaw.value || curSpacePeople.value[0]?.id || '')
+const tlDates = computed(() => {
+  const [a, b] = v5.round.span
+  const out = []
+  const pad = n => String(n).padStart(2, '0')
+  const d = new Date(`${a}T00:00:00`)
+  const end = new Date(`${b}T00:00:00`)
+  while (d <= end) {
+    out.push({ date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, dow: d.getDay() })
+    d.setDate(d.getDate() + 1)
+  }
+  return out
+})
+const tlPeople = computed(() => {
+  const ids = new Set(curSpacePeople.value.map(p => p.id))
+  const extra = tlRelated.value.filter(p => !ids.has(p.id))
+  return [...curSpacePeople.value, ...extra]
+})
+const tlRows = computed(() => {
+  const pid = tlPid.value
+  if (!pid) return []
+  const dates = tlDates.value
+  const inSpan = date => dates.some(d => d.date === date)
+  const mk = () => { const o = {}; dates.forEach(d => { o[d.date] = [] }); return o }
+  const rows = []
+  /* 班次行：这个人身上的占位；被覆盖的显示成虚线灰块，留痕可见 */
+  const shifts = mk()
+  v5.placements.filter(p => p.personId === pid && inSpan(p.date)).forEach(p => {
+    const s = slotById(v5, p.slotId)
+    if (!s) return
+    shifts[p.date].push(p.status === 'covered'
+      ? { text: `${s.name} ${s.start}–${s.end}`, sub: '已被覆盖：' + (p.history?.[0]?.note?.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} /, '') || ''), cls: 'covered' }
+      : { text: `${s.name} ${s.start}–${s.end}`, sub: p.way, cls: 'shift' })
+  })
+  rows.push({ kind: 'shift', label: '班次', byDate: shifts })
+  /* 事实行：这个人提交的事实（请假…）+ 因事实被补进来的班（顶班/补位） */
+  const fts = mk()
+  v5.facts.filter(f => f.by === pid && (!f.date || inSpan(f.date))).forEach(f => {
+    const s = f.slotId ? slotById(v5, f.slotId) : null
+    const day = f.date || dates[0]?.date
+    fts[day]?.push({ text: `${f.type} · ${f.at.slice(5, 16)}`, sub: s ? `盖住 ${f.date.slice(5)} ${s.name}` : (f.result || ''), cls: 'fact' })
+  })
+  v5.placements.filter(p => p.personId === pid && p.fromFact).forEach(p => {
+    const s = slotById(v5, p.slotId)
+    if (!s || !inSpan(p.date)) return
+    fts[p.date].push({ text: `顶上 ${s.name}`, sub: `${s.start}–${s.end}（${p.fromFact} 补位）`, cls: 'makeup' })
+  })
+  rows.push({ kind: 'fact', label: '事实', byDate: fts })
+  return rows
+})
+/* 相关的人：请假的人 ↔ 顶班的人，互相可跳 */
+const tlRelated = computed(() => {
+  const pid = tlPid.value
+  if (!pid) return []
+  const ids = new Set()
+  v5.facts.filter(f => f.by === pid).forEach(f => {
+    v5.placements.filter(p => p.fromFact === f.id).forEach(p => ids.add(p.personId))
+  })
+  v5.placements.filter(p => p.personId === pid && p.fromFact).forEach(p => {
+    const f = v5.facts.find(x => x.id === p.fromFact)
+    if (f?.by) ids.add(f.by)
+  })
+  return [...ids].filter(id => id !== pid).map(id => personById(v5, id)).filter(Boolean)
+})
 const openFact = ref('')
 const hlFact = ref('')
 function jumpFact(id) {
@@ -1012,16 +1088,6 @@ function doAddService() {
   Object.assign(svcForm, { name: '', input: '', calc: '', version: '', idempotent: false })
   svcErrs.value = []
   ElMessage.success('已登记：时段的名额来源里就能选到它了')
-}
-
-/* 离职 */
-const exitDlg = ref(false)
-const exitForm = reactive({ personId: '', subtype: '离职' })
-function doExit() {
-  if (!exitForm.personId) { ElMessage.warning('选一个人'); return }
-  const r = registerExit(exitForm.personId, exitForm.subtype)
-  exitDlg.value = false
-  ElMessage.success(r.text)
 }
 
 /* 演示：申领截止（按当前空间所有申领逐组截断） */
@@ -1235,6 +1301,27 @@ tr.covered td { color: #9a9fa9; }
 .st-off { color: #9a9fa9; }
 .fact-acts { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .fa-hint { font-size: 12px; color: #8a8a95; margin-right: auto; }
+.fa-note { font-size: 11.5px; color: #b0b3ba; }
+/* 个人时间线 */
+.tl-box { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 10px 12px 8px; margin-bottom: 14px; }
+.tl-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.tl-head strong { font-size: 13px; color: #2c2c2a; }
+.tl-head > span { font-size: 12px; color: #8a8a95; margin-right: auto; }
+.tl-grid { display: grid; gap: 4px; }
+.tl-date { font-size: 11px; color: #8a8a95; text-align: center; padding: 2px 0; border-bottom: 1px solid #f5f1f2; }
+.tl-date.today { color: #a40035; font-weight: 500; border-bottom-color: #a40035; }
+.tl-label { font-size: 12px; color: #6a6a75; display: flex; align-items: center; }
+.tl-cell { min-height: 40px; display: flex; flex-direction: column; gap: 3px; }
+.tl-block { border-radius: 6px; padding: 3px 6px; font-size: 11px; line-height: 1.35; }
+.tl-block strong { display: block; font-size: 11.5px; }
+.tl-block span { color: inherit; opacity: 0.75; }
+.tl-block.shift { background: #eef3fb; color: #24587f; }
+.tl-block.covered { background: #f7f7f4; color: #8a8a95; border: 1px dashed #c9c9c2; }
+.tl-block.fact { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
+.tl-block.makeup { background: #eaf6f1; color: #0f6e56; }
+.tl-rel { margin-top: 6px; font-size: 12px; color: #8a8a95; }
+.tl-rel button { border: 1px solid #eee6e8; background: #fcfbfc; border-radius: 12px; padding: 1px 10px; font-size: 11.5px; color: #a40035; cursor: pointer; margin-left: 4px; }
+.tl-rel button:hover { border-color: #a40035; }
 .ftype { font-size: 11.5px; background: #fdf1f4; color: #a40035; border-radius: 4px; padding: 2px 6px; }
 .trace-row td { background: #fbfaf9; }
 .trace { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11.5px; color: #6a6a75; }

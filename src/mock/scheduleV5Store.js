@@ -1,6 +1,7 @@
 /*
   排班策略 v5 · 响应式 store（Web 配置台与移动端共用）
-  动作全部收敛到事实与获取两个语义：抢 / 申领是获取；请假 / 顶班 / 换班 / 离职是事实。
+  动作全部收敛到事实与获取两个语义：抢 / 申领是获取；请假 / 顶班 / 换班是这里的事实；
+  离职事实由离职流程模块写入（这里不提供登记入口），排班只承接结果。
   求值 = 写事实 + 截短事实，每次重算推一个解版本。
 */
 import { reactive, ref, computed } from 'vue'
@@ -95,15 +96,6 @@ export function appointV5(slotId, date, personId) {
   const fact = {
     id: seq(), type: '顶班', at: state.now, by: 'HR',
     slotId, date, personId, result: ''
-  }
-  addFact5(state, fact)
-  return { ok: true, text: fact.result }
-}
-
-export function registerExit(personId, subtype) {
-  const fact = {
-    id: seq(), type: '离职', at: state.now, by: personId, subtype,
-    date: WEEK_DATES[0], result: ''
   }
   addFact5(state, fact)
   return { ok: true, text: fact.result }
