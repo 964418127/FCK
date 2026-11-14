@@ -81,6 +81,17 @@ test('开放窗口抽象：锚点+偏移落成具体日期时间，旧字符串�
   assert.equal(openAt5({ win: { base: 'date', d: -1, t: '20:00' } }, s.round, null), null)
 })
 
+test('发布后推 0 天：开窗不早于发布时刻', () => {
+  const s = mk()
+  /* t 晚于发布 06:00 → 取配置时刻，等于发布后推一小段 */
+  assert.equal(openAt5({ win: { base: 'puboff', d: 0, t: '09:00' } }, s.round), '2026-11-12 09:00')
+  /* t 早于发布 → 收敛到发布时刻 */
+  assert.equal(openAt5({ win: { base: 'puboff', d: 0, t: '05:00' } }, s.round), '2026-11-12 06:00')
+  assert.ok(windowLabel5({ win: { base: 'puboff', d: 0, t: '05:00' } }).includes('不早于发布'))
+  /* 推 1 天正常落成次日时刻 */
+  assert.equal(openAt5({ win: { base: 'puboff', d: 1, t: '09:00' } }, s.round), '2026-11-13 09:00')
+})
+
 test('抢：占位成功；位满当场说原因', () => {
   const s = mk()
   assert.equal(grab5(s, 'TL-01', '2026-11-21', 'E-107').ok, true)

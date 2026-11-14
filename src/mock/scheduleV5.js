@@ -408,6 +408,13 @@ export function openAt5(row, round, date = null) {
     d0.setDate(d0.getDate() + w.d)
     return `${fmtDate(d0)} ${w.t}`
   }
+  /* 发布后推（含 0 天）：落在发布日 + d 天的 t 点；不早于发布时刻，早了就取发布时刻 */
+  if (w.base === 'puboff') {
+    const d0 = new Date(`${pub.slice(0, 10)}T00:00:00`)
+    d0.setDate(d0.getDate() + (w.d || 0))
+    const at = `${fmtDate(d0)} ${w.t}`
+    return at < pub ? pub : at
+  }
   if (w.base === 'week') return `${nextDow(pub.slice(0, 10), w.dow)} ${w.t}`
   if (!date) return null
   const d0 = new Date(`${date}T00:00:00`)
@@ -426,6 +433,10 @@ export function windowLabel5(row, slot = null, date = null, round = null) {
   const short = at ? at.slice(5, 16) : ''
   if (w.base === 'publish' && !w.d) return `发布即开（${short}）`
   if (w.base === 'publish') return `${short} 开（发布后 ${w.d} 天）`
+  if (w.base === 'puboff') {
+    const clamped = w.d === 0 && w.t <= R.publishedAt.slice(11)
+    return `${short} 开（发布后推 ${w.d || 0} 天${clamped ? '，不早于发布，取发布时刻' : ''}）`
+  }
   if (w.base === 'week') return `${short} 开（发布后的周${'日一二三四五六'[w.dow]}）`
   const rel = w.d === 0 ? '开班当天' : w.d < 0 ? `开班前 ${-w.d} 天` : `开班后 ${w.d} 天`
   return `${short} 开（${rel}）`

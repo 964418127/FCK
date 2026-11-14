@@ -236,7 +236,7 @@
                           <el-option label="发布后的周几" value="week" />
                           <el-option label="开班日前" value="date" />
                         </el-select>
-                        <el-input-number v-if="winKind(r) === 'pubOff'" v-model="r.win.d" :min="1" :max="14" size="small" controls-position="right" style="width: 62px" />
+                        <el-input-number v-if="winKind(r) === 'pubOff'" v-model="r.win.d" :min="0" :max="14" size="small" controls-position="right" style="width: 62px" />
                         <span v-if="winKind(r) === 'pubOff'" class="win-u">天</span>
                         <el-select v-if="winKind(r) === 'week'" v-model="r.win.dow" size="small" style="width: 74px">
                           <el-option v-for="(n, i) in DAY_NAMES" :key="i" :label="'周' + n" :value="i" />
@@ -899,11 +899,12 @@ const form = reactive(blankForm())
 /* 开放窗口：配置存锚点+偏移，界面展示一律落成具体日期时间 */
 function winKind(r) {
   const w = normWin5(r.win)
+  if (w.base === 'puboff') return 'pubOff'
   return w.base === 'publish' ? (w.d ? 'pubOff' : 'publish') : w.base
 }
 function onWinKind(r, kind) {
   r.win = kind === 'publish' ? { base: 'publish', d: 0, t: '06:00' }
-    : kind === 'pubOff' ? { base: 'publish', d: 1, t: '06:00' }
+    : kind === 'pubOff' ? { base: 'puboff', d: 0, t: '09:00' }
     : kind === 'week' ? { base: 'week', dow: 5, t: '06:00' }
     : { base: 'date', d: -1, t: '20:00' }
 }
@@ -1341,7 +1342,7 @@ function devResolveApply() {
 .le-head span:last-child { text-align: right; }
 .le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0; }
 .win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.win-line { display: flex; align-items: center; gap: 4px; }
+.win-line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
 .win-preview { font-size: 11px; color: #3B6D11; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
