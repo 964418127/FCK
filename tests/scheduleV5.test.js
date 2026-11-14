@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf } from '../src/mock/scheduleV5.js'
 
 const mk = () => reactive(buildV5State())
 
@@ -181,14 +181,62 @@ test('行上限：这一档给几个就几个，多出来的留给下一档', ()
   assert.equal(r.reason, '这一档只留 1 个，已经满了')
 })
 
-test('节奏改发布时点：下一轮预告跟着重算', () => {
+test('节奏：自然周，提前 4 天 06:00 发，铺一周', () => {
   const s = mk()
-  s.round.config.publishDow = 3      // 改成周三
-  s.round.config.spanWeeks = 2       // 铺两周
+  assert.equal(s.round.nextAt, '2026-11-19 06:00')
+  assert.equal(s.round.nextSpan[0], '2026-11-23')
+  assert.equal(s.round.nextSpan[1], '2026-11-29')
+})
+
+test('节奏：改发布偏移（提前 5 天）→ 预告跟着重算', () => {
+  const s = mk()
+  s.round.config.publishOffsetDays = -5
   recalcRound(s)
   assert.equal(s.round.nextAt, '2026-11-18 06:00')
   assert.equal(s.round.nextSpan[0], '2026-11-23')
-  assert.equal(s.round.nextSpan[1], '2026-12-06')
+})
+
+test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
+  const s = mk()
+  s.round.config.cycle = { anchor: 'monthStart', unit: 'month', n: 1, start: '' }
+  s.round.config.publishOffsetDays = -5
+  s.round.config.publishHour = 9
+  recalcRound(s)
+  /* now=11-14，12 月周期起点 12-01，提前 5 天 = 11-26 09:00 发布，铺 12-01~12-31 */
+  assert.equal(s.round.nextAt, '2026-11-26 09:00')
+  assert.deepEqual(s.round.nextSpan, ['2026-12-01', '2026-12-31'])
+})
+
+test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => {
+  const s = mk()
+  s.round.config.cycle = { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }
+  s.round.config.publishOffsetDays = -6
+  s.round.config.publishHour = 8
+  recalcRound(s)
+  /* now=11-14 落在 10-26~11-25 期；发布 10-20 已过 → 下一期 11-26~12-25，提前 6 天 = 11-20 08:00 */
+  assert.equal(s.round.nextAt, '2026-11-20 08:00')
+  assert.deepEqual(s.round.nextSpan, ['2026-11-26', '2026-12-25'])
+})
+
+test('节奏：双周周期 + 隔一期发（每 4 周发一次铺 2 周）', () => {
+  const s = mk()
+  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 2, start: '' }
+  s.round.config.every = 2
+  s.round.config.publishOffsetDays = -4
+  recalcRound(s)
+  const span = (new Date(s.round.nextSpan[1]) - new Date(s.round.nextSpan[0])) / 86400000 + 1
+  assert.equal(span, 14, '一轮铺两周')
+  const gap = (new Date(s.round.nextSpan[0]) - new Date('2026-11-14')) / 86400000
+  assert.ok(gap >= 0 && gap <= 28, '隔期发的下一轮在四周之内')
+  assert.equal(s.round.nextSpan[0] > '2026-11-14', true)
+})
+
+test('节奏：改周期长度立即体现在预告区间', () => {
+  const s = mk()
+  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 3, start: '' }
+  recalcRound(s)
+  const span = (new Date(s.round.nextSpan[1]) - new Date(s.round.nextSpan[0])) / 86400000 + 1
+  assert.equal(span, 21, '铺三周')
 })
 
 test('时段不带岗位：岗位写在清单人群里，两个岗位可共用同一段时间', () => {

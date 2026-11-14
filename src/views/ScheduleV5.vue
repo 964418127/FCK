@@ -85,29 +85,78 @@
               </div>
               <div v-if="rhythmOpen" class="rh-body">
                 <div class="rh-row">
-                  <label>多久一轮</label>
-                  <el-radio-group v-model="rhythm.cadence" size="small" @change="applyRhythm">
-                    <el-radio-button value="weekly">每周</el-radio-button>
-                    <el-radio-button value="monthly">每月</el-radio-button>
+                  <label>循环周期</label>
+                  <el-radio-group v-model="rhythm.cycle.anchor" size="small" @change="onAnchor">
+                    <el-radio-button value="monday">自然周</el-radio-button>
+                    <el-radio-button value="monthStart">自然月</el-radio-button>
+                    <el-radio-button value="custom">业务自定义</el-radio-button>
                   </el-radio-group>
-                  <label>发布时点</label>
-                  <el-select v-model="rhythm.publishDow" size="small" style="width: 90px" @change="applyRhythm">
-                    <el-option v-for="(d, i) in DAY_NAMES" :key="i" :label="`周${d}`" :value="i" />
+                  <template v-if="rhythm.cycle.anchor === 'custom'">
+                    <span class="rh-unit">起点</span>
+                    <el-date-picker v-model="rhythm.cycle.start" type="date" size="small" value-format="YYYY-MM-DD"
+                      style="width: 140px" @change="applyRhythm" />
+                    <span class="rh-unit">长度</span>
+                    <el-input-number v-model="rhythm.cycle.n" :min="1" :max="12" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <el-select v-model="rhythm.cycle.unit" size="small" style="width: 84px" @change="applyRhythm">
+                      <el-option label="天" value="day" />
+                      <el-option label="周" value="week" />
+                      <el-option label="月" value="month" />
+                    </el-select>
+                  </template>
+                  <template v-else>
+                    <span class="rh-unit">每</span>
+                    <el-input-number v-model="rhythm.cycle.n" :min="1" :max="4" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <span class="rh-unit">{{ rhythm.cycle.anchor === 'monthStart' ? '个月' : '周' }}</span>
+                  </template>
+                </div>
+                <div class="rh-row">
+                  <label>多久发一次</label>
+                  <el-select v-model="rhythm.every" size="small" style="width: 110px" @change="applyRhythm">
+                    <el-option label="每期都发" :value="1" />
+                    <el-option label="隔一期发" :value="2" />
+                    <el-option label="隔两期发" :value="3" />
                   </el-select>
-                  <el-input-number v-model="rhythm.publishHour" :min="0" :max="23" size="small" controls-position="right" style="width: 96px" @change="applyRhythm" />
+                  <label>发布</label>
+                  <span class="rh-unit">周期开始前</span>
+                  <el-input-number v-model="publishAhead" :min="0" :max="15" size="small" controls-position="right"
+                    style="width: 84px" @change="applyRhythm" />
+                  <span class="rh-unit">天</span>
+                  <el-input-number v-model="rhythm.publishHour" :min="0" :max="23" size="small" controls-position="right"
+                    style="width: 84px" @change="applyRhythm" />
                   <span class="rh-unit">点</span>
                 </div>
                 <div class="rh-row">
-                  <label>覆盖跨度</label>
-                  <el-input-number v-model="rhythm.spanWeeks" :min="1" :max="4" size="small" controls-position="right" style="width: 96px" @change="applyRhythm" />
-                  <span class="rh-unit">周</span>
                   <label>申领截止</label>
-                  <span class="rh-unit">发布后第</span>
-                  <el-input-number v-model="rhythm.applyAheadDays" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" @change="applyRhythm" />
+                  <span class="rh-unit">周期开始前</span>
+                  <el-input-number v-model="applyAhead" :min="0" :max="15" size="small" controls-position="right"
+                    style="width: 84px" @change="applyRhythm" />
                   <span class="rh-unit">天</span>
-                  <el-input-number v-model="rhythm.applyHour" :min="0" :max="23" size="small" controls-position="right" style="width: 96px" @change="applyRhythm" />
+                  <el-input-number v-model="rhythm.applyHour" :min="0" :max="23" size="small" controls-position="right"
+                    style="width: 84px" @change="applyRhythm" />
                   <span class="rh-unit">点</span>
                 </div>
+
+                <!-- 节奏长什么样：一条时间轴，发布旗标 / 覆盖区间 / 申领截止 / 今天 -->
+                <svg class="rh-timeline" viewBox="0 0 680 132" role="img"
+                  aria-label="节奏时间轴：发布时刻、覆盖区间、申领截止与今天的位置">
+                  <line x1="40" y1="78" x2="640" y2="78" stroke="#D8DBE0" stroke-width="1" />
+                  <rect :x="rp.startX" y="66" :width="rp.width" height="24" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.8" />
+                  <text :x="rp.startX + rp.width / 2" y="82" text-anchor="middle" font-size="11" fill="#27500A">
+                    这一轮铺 {{ short(v5.round.nextSpan[0]) }} – {{ short(v5.round.nextSpan[1]) }}
+                  </text>
+                  <!-- 发布 -->
+                  <line :x1="rp.pubX" y1="50" :x2="rp.pubX" y2="78" stroke="#a40035" stroke-width="1.2" />
+                  <circle :cx="rp.pubX" cy="48" r="3.5" fill="#a40035" />
+                  <text :x="rp.pubX" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="#a40035">发布 {{ shortAt(v5.round.nextAt) }}</text>
+                  <!-- 申领截止 -->
+                  <line :x1="rp.dlX" y1="90" :x2="rp.dlX" y2="112" stroke="#854F0B" stroke-width="1" stroke-dasharray="3 2" />
+                  <text :x="rp.dlX" y="126" text-anchor="middle" font-size="11" fill="#854F0B">申领截止 {{ rp.dlText }}</text>
+                  <!-- 今天 -->
+                  <line :x1="rp.nowX" y1="30" :x2="rp.nowX" y2="112" stroke="#2C2C2A" stroke-width="0.8" stroke-dasharray="2 3" />
+                  <text :x="rp.nowX" y="24" text-anchor="middle" font-size="10.5" fill="#6a6a75">今天</text>
+                </svg>
                 <div class="rh-note">改了节奏，下一次生成就按新节奏走；正在跑的当前轮不动，清单窗口跟着本轮发布时刻算。</div>
               </div>
             </div>
@@ -541,7 +590,7 @@ import {
   appointV5, registerExit, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5
 } from '../mock/scheduleV5Store.js'
 import {
-  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5
+  slotById, personById, activeCount5, windowLabel5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -604,16 +653,70 @@ function bumpDay(s, d, delta) {
   else ElMessage.success(r.text)
 }
 
-/* 排班节奏 */
+/* 排班节奏：周期（锚点+长度）、多久发一次、发布与截止相对周期起点的偏移 */
 const rhythmOpen = ref(false)
-const rhythm = reactive({ ...v5.round.config })
+const rhythm = reactive({
+  cycle: { ...v5.round.config.cycle },
+  every: v5.round.config.every || 1,
+  publishOffsetDays: v5.round.config.publishOffsetDays ?? -4,
+  publishHour: v5.round.config.publishHour ?? 6,
+  applyOffsetDays: v5.round.config.applyOffsetDays ?? -1,
+  applyHour: v5.round.config.applyHour ?? 20
+})
+/* 界面上说「提前几天」，内部存负数偏移 */
+const publishAhead = computed({
+  get: () => Math.abs(rhythm.publishOffsetDays),
+  set: v => { rhythm.publishOffsetDays = -Math.abs(v || 0) }
+})
+const applyAhead = computed({
+  get: () => Math.abs(rhythm.applyOffsetDays),
+  set: v => { rhythm.applyOffsetDays = -Math.abs(v || 0) }
+})
+function onAnchor(a) {
+  if (a === 'monday') Object.assign(rhythm.cycle, { unit: 'week', n: 1 })
+  else if (a === 'monthStart') Object.assign(rhythm.cycle, { unit: 'month', n: 1 })
+  else Object.assign(rhythm.cycle, { unit: 'day', n: 7, start: rhythm.cycle.start || v5.round.nextSpan[0] })
+  applyRhythm()
+}
+const cycleText = computed(() => {
+  const c = v5.round.config.cycle
+  if (c.anchor === 'monday') return c.n > 1 ? `每 ${c.n} 周` : '自然周'
+  if (c.anchor === 'monthStart') return c.n > 1 ? `每 ${c.n} 个月` : '自然月'
+  const unit = c.unit === 'week' ? '周' : c.unit === 'month' ? '个月' : '天'
+  return `自定义 ${c.n} ${unit}（起 ${short(c.start)}）`
+})
 const rhythmLabel = computed(() => {
   const c = v5.round.config
-  const cad = c.cadence === 'monthly' ? '每月' : `每周${DAY_NAMES[c.publishDow]}`
-  return `${cad} ${String(c.publishHour).padStart(2, '0')}:00 发布 · 铺 ${c.spanWeeks} 周 · 申领截止发布后第 ${c.applyAheadDays} 天 ${String(c.applyHour).padStart(2, '0')}:00`
+  const every = c.every > 1 ? `隔 ${c.every - 1} 期发 · ` : ''
+  return `${cycleText.value} · ${every}提前 ${Math.abs(c.publishOffsetDays)} 天 ${String(c.publishHour).padStart(2, '0')}:00 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${String(c.applyHour).padStart(2, '0')}:00`
+})
+/* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
+const rp = computed(() => {
+  const c = v5.round.config
+  const span = v5.round.nextSpan
+  const day = s => new Date(`${String(s).slice(0, 10)}T00:00:00`).getTime()
+  const pubAt = day(v5.round.nextAt)
+  const startT = day(span[0])
+  const endT = day(span[1])
+  const dlT = day(applyDeadlineOf(c, span[0]))
+  const nowT = day(v5.now)
+  const lo = Math.min(nowT, pubAt, dlT) - 2 * 86400000
+  const hi = Math.max(endT, nowT) + 2 * 86400000
+  const x = t => 40 + ((t - lo) / (hi - lo)) * 600
+  return {
+    pubX: x(pubAt), startX: x(startT), width: x(endT) - x(startT), dlX: x(dlT), nowX: x(nowT),
+    dlText: shortAt(applyDeadlineOf(c, span[0]))
+  }
 })
 function applyRhythm() {
-  setRoundConfig({ ...rhythm })
+  setRoundConfig({
+    cycle: { ...rhythm.cycle },
+    every: rhythm.every,
+    publishOffsetDays: rhythm.publishOffsetDays,
+    publishHour: rhythm.publishHour,
+    applyOffsetDays: rhythm.applyOffsetDays,
+    applyHour: rhythm.applyHour
+  })
   ElMessage.success('节奏已改：下一轮按新节奏生成')
 }
 
@@ -844,6 +947,8 @@ function devResolveApply() {
 .sub-tabs > button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
 .sub-spacer { flex: 1; }
 .rhythm { border: 1px solid #f0eaec; border-radius: 10px; margin-bottom: 10px; background: #fcfbfc; }
+.rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
+.rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
 .rh-sum { display: flex; align-items: center; gap: 12px; padding: 9px 12px; cursor: pointer; font-size: 12.5px; color: #3d3d47; }
 .rh-sum strong { color: #a40035; }
 .rh-label { color: #6a6a75; }

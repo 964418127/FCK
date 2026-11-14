@@ -78,16 +78,22 @@ export const TEMPS5 = [
 export const ROUND5 = {
   id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
   applyDeadline: '2026-11-15 20:00',
-  /* 下一轮：配置改动到这时才生效（周四 06:00 生成，铺下周一到周日） */
+  /* 下一轮：配置改动到这时才生效 */
   nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
-  /* 排班节奏：这四个参数以前写死在代码里，页面上没地方配 */
+  /*
+    排班节奏：通用抽象，四个参数，不写死周/月枚举
+    cycle  = 循环周期：锚点（自然周一起 / 自然月 1 号 / 业务自定义起点）+ 长度（n 天 / n 周 / n 月）
+    every  = 多久发一次（每期 = 1，隔一期 = 2）
+    偏移   = 都相对「周期起点」：负数=提前，发布与申领截止各一条
+    现行口径：自然周 + 提前 4 天 06:00 发（周四）+ 提前 1 天 20:00 申领截止（周日）
+  */
   config: {
-    cadence: 'weekly',      // 周期粒度：weekly / monthly
-    publishDow: 4,          // 发布时点：周几发布（4=周四）
-    publishHour: 6,         // 发布时点：几点
-    spanWeeks: 1,           // 覆盖跨度：铺几周
-    applyAheadDays: 3,      // 申领截止：发布后第几天
-    applyHour: 20           // 申领截止：几点
+    cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
+    every: 1,
+    publishOffsetDays: -4,
+    publishHour: 6,
+    applyOffsetDays: -1,
+    applyHour: 20
   }
 }
 
@@ -104,14 +110,104 @@ export function addDays(date, n) {
   return fmtDate(d)
 }
 
-/* 按节奏配置重算「下一轮什么时候生成、铺哪一段」——改了发布时点，预告立刻跟着变 */
+/* ===== 节奏计算：周期起点 / 终点 / 期号 / 下一轮预告 ===== */
+const DAY_MS = 86400000
+const at0 = s => new Date(`${s}T00:00:00`)
+function blockDays(cycle) {
+  return (cycle.unit === 'week' ? 7 : 1) * (cycle.n || 1)
+}
+/* 期号从哪一天起算：自然周从 2026-01-05（周一）、自然月从 2026-01、自定义从起点 */
+function cycleBase(cycle) {
+  if (cycle.anchor === 'monday') return '2026-01-05'
+  if (cycle.anchor === 'monthStart') return '2026-01-01'
+  return cycle.start
+}
+export function cycleStartOf(cycle, dateStr) {
+  const dt = at0(dateStr)
+  const base = at0(cycleBase(cycle))
+  const n = cycle.n || 1
+  if (cycle.unit === 'month') {
+    /* 按月切块，但保留起点那天（自定义 26 日 – 次月 25 日这种） */
+    const months = (dt.getFullYear() - base.getFullYear()) * 12 + (dt.getMonth() - base.getMonth())
+    let k = Math.floor(months / n) * n
+    let cand = monthAnchor(base, k)
+    if (cand > dt) { k -= n; cand = monthAnchor(base, k) }
+    return fmtDate(cand)
+  }
+  if (cycle.anchor === 'monday') {
+    const dow = (dt.getDay() + 6) % 7 // 周一=0
+    const mon = new Date(dt)
+    mon.setDate(mon.getDate() - dow)
+    if (n === 1) return fmtDate(mon)
+    const len = blockDays(cycle)
+    const k = Math.floor((mon - base) / (DAY_MS * len))
+    return fmtDate(new Date(base.getTime() + k * DAY_MS * len))
+  }
+  const len = blockDays(cycle)
+  const k = Math.floor((dt - base) / (DAY_MS * len))
+  return fmtDate(new Date(base.getTime() + k * DAY_MS * len))
+}
+/* 第 k 个月的锚点日（31 日这种不存在的日子落到当月最后一天） */
+function monthAnchor(base, k) {
+  const y = base.getFullYear()
+  const m = base.getMonth() + k
+  const last = new Date(y, m + 1, 0).getDate()
+  return new Date(y, m, Math.min(base.getDate(), last))
+}
+export function cycleEndOf(cycle, startStr) {
+  const s = at0(startStr)
+  if (cycle.unit === 'month') {
+    const next = monthAnchor(s, cycle.n || 1)
+    next.setDate(next.getDate() - 1)
+    return fmtDate(next)
+  }
+  return fmtDate(new Date(s.getTime() + (blockDays(cycle) - 1) * DAY_MS))
+}
+export function cycleIndex(cycle, startStr) {
+  const base = at0(cycleBase(cycle))
+  if (cycle.unit === 'month') {
+    const s = at0(startStr)
+    return (s.getFullYear() - base.getFullYear()) * 12 + (s.getMonth() - base.getMonth())
+  }
+  return Math.round((at0(startStr) - base) / (DAY_MS * blockDays(cycle)))
+}
+function shiftCycle(cycle, startStr, k = 1) {
+  const s = at0(startStr)
+  if (cycle.unit === 'month') return fmtDate(monthAnchor(s, (cycle.n || 1) * k))
+  return fmtDate(new Date(s.getTime() + blockDays(cycle) * k * DAY_MS))
+}
+/* 发布时刻相对周期起点算 */
+export function publishAtOf(config, cycleStart) {
+  const d = at0(cycleStart)
+  d.setDate(d.getDate() + (config.publishOffsetDays || 0))
+  return `${fmtDate(d)} ${String(config.publishHour ?? 6).padStart(2, '0')}:00`
+}
+export function applyDeadlineOf(config, cycleStart) {
+  const d = at0(cycleStart)
+  d.setDate(d.getDate() + (config.applyOffsetDays || 0))
+  return `${fmtDate(d)} ${String(config.applyHour ?? 20).padStart(2, '0')}:00`
+}
+/* 下一个「会真正发布」的期：隔期发的期号跳过 */
+export function nextRoundPlan(config, now = NOW) {
+  let start = cycleStartOf(config.cycle, now.slice(0, 10))
+  const every = config.every || 1
+  for (let i = 0; i < 400; i++) {
+    const pub = publishAtOf(config, start)
+    if (pub >= now && cycleIndex(config.cycle, start) % every === 0) {
+      return { nextAt: pub, nextSpan: [start, cycleEndOf(config.cycle, start)], cycleStart: start }
+    }
+    start = shiftCycle(config.cycle, start, 1)
+  }
+  return null
+}
+
+/* 按节奏配置重算「下一轮什么时候生成、铺哪一段」——改了节奏，预告立刻跟着变 */
 export function recalcRound(state) {
-  const c = state.round.config || ROUND5.config
-  const at = nextDow(state.now.slice(0, 10), c.publishDow)
-  state.round.nextAt = `${at} ${String(c.publishHour).padStart(2, '0')}:00`
-  /* 覆盖跨度从发布日之后的那个周一开始铺 */
-  const mon = nextDow(at, 1)
-  state.round.nextSpan = [mon, addDays(mon, c.spanWeeks * 7 - 1)]
+  const plan = nextRoundPlan(state.round.config || ROUND5.config, state.now)
+  if (plan) {
+    state.round.nextAt = plan.nextAt
+    state.round.nextSpan = plan.nextSpan
+  }
   return state.round
 }
 
