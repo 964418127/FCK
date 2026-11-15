@@ -510,6 +510,12 @@ export const NOTICES5 = [
     detail: '蓝田 11-13 09:12 提交请假；你是附近 5km 推拿师档里当时有空、没冲突的人' }
 ]
 
+/* 演示用：一条还没答复的换班请求（罗盘拿 11-16 早班换谷雨 11-17 晚班） */
+export const SWAP_REQUESTS5 = [
+  { id: 'SR-01', from: 'E-205', to: 'E-206', placementId: 'P-XL0-0', partnerPlacementId: 'P-XL1-1',
+    at: '2026-11-14 21:10', status: 'pending' }
+]
+
 /* ===== 纯逻辑 ===== */
 
 export function slotById(state, id) {
@@ -952,7 +958,7 @@ export function buildV5State() {
     facts: JSON.parse(JSON.stringify(FACTS5)),
     versions: JSON.parse(JSON.stringify(VERSIONS5)),
     notices: JSON.parse(JSON.stringify(NOTICES5)),
-    swapRequests: [],
+    swapRequests: JSON.parse(JSON.stringify(SWAP_REQUESTS5)),
     dayQuota: {},
     configDirty: false,
     /* 种子里的直派（早班/晚班第 1 档，发布即开）在 11-12 06:00 已执行 */

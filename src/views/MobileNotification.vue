@@ -266,7 +266,7 @@ const notifications = computed(() => notificationStore.list.filter(item => item.
 
 /** 时间字段口径：系统推送类写「通知时间」，工资单确认写「推送时间」，待本人处理的确认单沿用「申请时间」 */
 const timeLabelOf = (item) => {
-  if (['system_dispatch', 'task_publication', 'checkin_reminder', 'forward_request', 'forward_result'].includes(item.type)) return '通知时间：'
+  if (['system_dispatch', 'task_publication', 'checkin_reminder', 'forward_request', 'forward_result', 'schedule'].includes(item.type)) return '通知时间：'
   if (item.type === 'salary_confirm') return '推送时间：'
   return '申请时间：'
 }
@@ -317,6 +317,11 @@ const openDetail = (item) => {
   // 打卡提醒直接进打卡页，少一步找门店
   if (item.type === 'checkin_reminder') {
     router.push('/mobile-account-manager-attendance?mode=parttime')
+    return
+  }
+  // 排班类通知：回排班页处理（确认补位 / 答复换班都落在那一天的班上）
+  if (item.type === 'schedule') {
+    router.push(item.route || '/v5/m')
     return
   }
   currentDetail.value = item

@@ -1010,12 +1010,6 @@ export const routes = [
     meta: { title: '排班 v5 移动端' }
   },
   {
-    path: '/v3/m/notice',
-    name: 'v3-mobile-notice',
-    component: () => import('../views/ScheduleV3MobileNotice.vue'),
-    meta: { title: '移动端排班通知' }
-  },
-  {
     path: '/v2/m/inst',
     name: 'v2-m-instance',
     component: () => import('../views/v2/mobile/MInstDetail.vue'),

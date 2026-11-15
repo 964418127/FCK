@@ -1,6 +1,7 @@
 <!--
   移动端 · 排班（v5）
-  员工侧三段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 请假 / 换班）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）· 通知（补位确认 / 排班安排 / 换班请求）。
+  员工侧两段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 请假 / 换班 / 补位确认）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）。
+  通知不在这页：通知是通用模块（/mobile-notification），这里只在班次上标「待你确认」，处理动作落在这一天的班上。
   原则：不摆数据摆事情——每个数字后面跟一句人话；不暴露分配机制术语；拿不了的原因是先说后做，不是点了才报错。
   视觉沿用移动端规范：全屏页、白 sticky 页头、#f5f5f5 底、白卡 12px、品牌红 #a40035、确认用自写底部弹层。
 -->
@@ -18,7 +19,6 @@
       <div class="view-tabs">
         <button :class="{ active: tab === 'mine' }" @click="tab = 'mine'">我的排班</button>
         <button :class="{ active: tab === 'pick' }" @click="tab = 'pick'">可获取<span v-if="okCount" class="dot-badge">{{ okCount }}</span></button>
-        <button :class="{ active: tab === 'notice' }" @click="tab = 'notice'">通知<span v-if="unacked" class="badge">{{ unacked }}</span></button>
       </div>
 
       <!-- 时间锚点：现在几点、这一轮铺到哪 -->
@@ -38,6 +38,27 @@
           <div class="ov-item">
             <span class="ov-label">待你确认</span>
             <b :class="['ov-value', { warn: weekStats.pending > 0 }]">{{ weekStats.pending }}<i>条</i></b>
+          </div>
+        </div>
+
+        <!-- 有人要跟你换班：这条请求落在某一天，处理也在这一天，不另开一页 -->
+        <div v-if="pendingSwaps.length" class="swap-req">
+          <div class="section-title-row">
+            <span class="red-bar"></span>
+            <span class="section-title">有人想跟你换班</span>
+            <span class="title-count">{{ pendingSwaps.length }} 条</span>
+          </div>
+          <div v-for="req in pendingSwaps" :key="req.id" class="notice-card unacked">
+            <div class="nc-head">
+              <strong>换班请求</strong>
+              <span class="nc-date">{{ dayShort(swapText(req).date) }}</span>
+            </div>
+            <p>{{ swapText(req).text }}</p>
+            <p class="nc-detail">双方同意才生效；等待期超时两边都不动</p>
+            <div class="nc-act">
+              <button class="act-btn ghost" @click="answer(req, false)">拒绝</button>
+              <button class="act-btn primary" @click="answer(req, true)">同意换班</button>
+            </div>
           </div>
         </div>
 
@@ -70,7 +91,7 @@
           <div class="rc-head">
             <div class="rc-tags">
               <span :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '时间被占用' : wayLabel(r) }}</span>
-              <span v-if="r.status === 'active' && pendingNoticeOf(r)" class="state-tag warn" @click="tab = 'notice'">待确认</span>
+              <span v-if="r.status === 'active' && pendingNoticeOf(r)" class="state-tag warn">待你确认</span>
               <span v-else-if="swapPendingOf(r)" class="state-tag">换班等对方</span>
             </div>
             <span :class="['rc-hours', { strike: r.status === 'covered' }]">{{ durText(r) }}</span>
@@ -87,7 +108,12 @@
           <p class="rc-note">{{ noteOf(r) }}</p>
           <p v-if="r.status === 'active' && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
 
-          <div v-if="r.status === 'active' && canAct(r)" class="rc-acts">
+          <div v-if="r.status === 'active' && pendingNoticeOf(r)" class="rc-acts pending">
+            <span class="rc-pending">人事安排你顶上这个班，确认一下</span>
+            <button class="act-line" @click="declineMakeup(r)">我去不了</button>
+            <button class="act-line strong" @click="ackMakeup(r)">收到，我来</button>
+          </div>
+          <div v-else-if="r.status === 'active' && canAct(r)" class="rc-acts">
             <button class="act-line" @click="openLeave(r)">这天我来不了</button>
             <button class="act-line" @click="openSwap(r)">找人换班</button>
           </div>
@@ -154,59 +180,6 @@
             </template>
           </div>
         </div>
-      </section>
-
-      <!-- ============ 通知 ============ -->
-      <section v-else>
-        <div v-if="!notices.length" class="empty-box">
-          <p class="empty-main">没有通知</p>
-          <p class="empty-sub">补位、排班安排、换班请求都会推到这里</p>
-        </div>
-
-        <template v-if="todoNotices.length">
-          <div class="section-title-row">
-            <span class="red-bar"></span>
-            <span class="section-title">待你处理</span>
-            <span class="title-count">{{ todoNotices.length }} 条</span>
-          </div>
-          <div v-for="n in todoNotices" :key="n.id" :class="['notice-card', n.kind, 'unacked']">
-            <div class="nc-head">
-              <strong>{{ kindLabel(n.kind) }}</strong>
-              <span class="nc-date">{{ n.at ? `发在 ${shortAt(n.at)}` : dayShort(n.date) }}</span>
-            </div>
-            <p>{{ n.text }}</p>
-            <p class="nc-detail">{{ n.detail }}</p>
-            <div class="nc-act">
-              <template v-if="n.kind === 'swap'">
-                <button class="act-btn ghost" @click="answer(n, false)">拒绝</button>
-                <button class="act-btn primary" @click="answer(n, true)">同意换班</button>
-              </template>
-              <template v-else-if="n.kind === 'makeup'">
-                <button class="act-btn ghost" @click="declineMakeup(n)">去不了</button>
-                <button class="act-btn primary" @click="ackNotice(n.id)">确认收到</button>
-              </template>
-              <template v-else>
-                <button class="act-btn primary" @click="ackNotice(n.id)">知道了</button>
-              </template>
-            </div>
-            <p v-if="n.kind === 'makeup'" class="nc-foot">不确认也不影响排班，只是人事看不到你的回执</p>
-          </div>
-        </template>
-
-        <template v-if="doneNotices.length">
-          <div class="section-title-row">
-            <span class="red-bar"></span>
-            <span class="section-title">已处理</span>
-          </div>
-          <div v-for="n in doneNotices" :key="n.id" :class="['notice-card', 'done']">
-            <div class="nc-head">
-              <strong>{{ kindLabel(n.kind) }}</strong>
-              <span class="nc-date">{{ n.at ? `发在 ${shortAt(n.at)}` : dayShort(n.date) }}</span>
-            </div>
-            <p>{{ n.text }}</p>
-            <span class="nc-done">已确认</span>
-          </div>
-        </template>
       </section>
     </div>
 
@@ -389,11 +362,7 @@ function pickDefaultPick() {
 }
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
 
-/* ---------- 通知 ---------- */
-const notices = computed(() => myNotices())
-const todoNotices = computed(() => notices.value.filter(n => !n.acked))
-const doneNotices = computed(() => notices.value.filter(n => n.acked))
-const unacked = computed(() => todoNotices.value.length)
+/* ---------- 待处理（通知走通用通知页，动作落在这页） ---------- */
 const pendingSwaps = computed(() => swapPendingFor())
 
 /* ---------- 小工具 ---------- */
@@ -467,7 +436,7 @@ function overtimeOf(r) {
   return total > 8 ? `当天合计 ${Math.round(total * 10) / 10} 小时，超出标准时间的部分计加班` : ''
 }
 function pendingNoticeOf(r) {
-  return notices.value.find(n => n.kind === 'makeup' && !n.acked && n.date === r.date && n.to === meId.value)
+  return myNotices().find(n => n.kind === 'makeup' && !n.acked && n.date === r.date && n.to === meId.value)
 }
 function swapPendingOf(r) {
   return (v5.swapRequests || []).some(x => x.status === 'pending' && x.from === meId.value && x.placementId === r.id)
@@ -512,8 +481,17 @@ const swapGroups = computed(() => {
   return [...map.values()]
 })
 
-function kindLabel(k) {
-  return { makeup: '补位通知', appoint: '排班安排', swap: '换班请求', swapDone: '换班结果' }[k] || '通知'
+/* 换班请求说人话：谁、拿哪天的哪个班、换我哪天的哪个班 */
+function swapText(req) {
+  const theirs = v5.placements.find(p => p.id === req.placementId)
+  const mine = v5.placements.find(p => p.id === req.partnerPlacementId)
+  if (!theirs || !mine) return { date: v5.today, text: '这条请求的班次已经不在了' }
+  const ts = slotOf(theirs.slotId)
+  const ms = slotOf(mine.slotId)
+  return {
+    date: mine.date,
+    text: `${personById(v5, req.from)?.name || '对方'} 想用他 ${dayShort(theirs.date)} ${ts.name}（${ts.start}–${ts.end}）换你 ${dayShort(mine.date)} ${ms.name}（${ms.start}–${ms.end}）`
+  }
 }
 function goBack() { router.push('/mobile-menu') }
 
@@ -552,17 +530,20 @@ function doSwap(partnerPlacementId) {
   sheet.value = null
   r.ok ? ElMessage.success(r.text) : ElMessage.error(r.reason)
 }
-function answer(n, accept) {
-  const req = pendingSwaps.value.find(x => x.to === meId.value)
-  if (!req) { ElMessage.error('这条请求已经处理过了'); return }
+function answer(req, accept) {
   const r = answerSwap(req.id, accept)
-  n.acked = true
   r.ok ? ElMessage.success(r.text) : ElMessage.error(r.reason)
 }
-function declineMakeup(n) {
-  const row = myRows.value.find(r => r.date === n.date && r.status === 'active')
-  if (!row) { ElMessage.error('这条班次已经不在你名下了'); return }
-  n.acked = true
+/* 补位确认就落在这条班次上：收到了记一条回执，去不了直接走请假 */
+function ackMakeup(r) {
+  const n = pendingNoticeOf(r)
+  if (!n) { ElMessage.error('这条已经确认过了'); return }
+  ackNotice(n.id)
+  ElMessage.success('已回执，人事那边同步可见')
+}
+function declineMakeup(row) {
+  const n = pendingNoticeOf(row)
+  if (n) n.acked = true
   sheet.value = { type: 'leave', row }
 }
 </script>
@@ -625,6 +606,10 @@ function declineMakeup(n) {
 .rc-acts { display: flex; gap: 16px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #f0eaec; }
 .act-line { border: none; background: none; padding: 0; font-size: 12px; color: #6a6a75; cursor: pointer; }
 .act-line:first-child { color: #a40035; }
+.rc-acts.pending { align-items: center; }
+.rc-pending { flex: 1; font-size: 11.5px; color: #8a8a95; }
+.rc-acts.pending .act-line { color: #6a6a75; white-space: nowrap; }
+.rc-acts.pending .act-line.strong { color: #a40035; font-weight: 500; }
 
 /* 可获取 */
 .pick-banner { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #f2eef0; }

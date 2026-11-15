@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue'
 
-const STORAGE_KEY = 'fck_notifications_v1'
+const STORAGE_KEY = 'fck_notifications_v2'
 
 /**
  * 应用级通知共享 store（localStorage 持久化）。
@@ -10,6 +10,67 @@ const STORAGE_KEY = 'fck_notifications_v1'
  */
 
 const seeds = [
+  /* 排班类通知示例：排班侧不再自带通知页，统一推到这里（点开回排班页处理） */
+  {
+    id: 'seed-sched-1',
+    type: 'schedule',
+    title: '补位安排',
+    desc: '蓝田店 11-17 早班（10:00–14:00）由你顶上，请在排班里确认一下',
+    entity: '蓝田店 · 早班',
+    applyTime: '2026-11-13 09:12:00',
+    displayDate: '11.13 09:12',
+    status: '待确认',
+    store: '蓝田店',
+    route: '/v5/m',
+    read: false,
+    processed: false,
+    done: false
+  },
+  {
+    id: 'seed-sched-2',
+    type: 'schedule',
+    title: '换班请求',
+    desc: '罗盘想用他 11-17 晚班（14:00–22:00）换你 11-16 早班（10:00–18:00）',
+    entity: '兴隆湖店 · 早班 ↔ 晚班',
+    applyTime: '2026-11-14 21:10:00',
+    displayDate: '11.14 21:10',
+    status: '待处理',
+    store: '兴隆湖店',
+    route: '/v5/m',
+    read: false,
+    processed: false,
+    done: false
+  },
+  {
+    id: 'seed-sched-3',
+    type: 'schedule',
+    title: '排班已发布',
+    desc: '11-16 至 11-22 的班已经排好，可在我的排班查看',
+    entity: '兴隆湖店',
+    applyTime: '2026-11-12 06:00:00',
+    displayDate: '11.12 06:00',
+    status: '已发布',
+    store: '兴隆湖店',
+    route: '/v5/m',
+    read: true,
+    processed: true,
+    done: true
+  },
+  {
+    id: 'seed-sched-4',
+    type: 'schedule',
+    title: '两个班次没排上',
+    desc: '11-18 早班、11-19 晚班申领没进名额，已按兜底顺序安排到通班',
+    entity: '兴隆湖店 · 通班',
+    applyTime: '2026-11-12 20:10:00',
+    displayDate: '11.12 20:10',
+    status: '已安排',
+    store: '兴隆湖店',
+    route: '/v5/m',
+    read: true,
+    processed: true,
+    done: true
+  },
   {
     id: 'seed-5',
     type: 'system_dispatch',

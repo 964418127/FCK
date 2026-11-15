@@ -527,3 +527,14 @@ test('白班晚班时间重叠但都是直派，不算「两个入口」——�
   const errs = checkSlotForm('S-206', form, 'SL-20')
   assert.equal(errs.length, 0, errs.join('；'))
 })
+
+/* 通知不再是排班页的一段：请求本身要能在「我的排班」里被读到并答复 */
+test('换班请求：躺着一条待答复的，收件人能看到、答复后状态收口', () => {
+  const s = mk()
+  const req = s.swapRequests.find(r => r.to === 'E-206' && r.status === 'pending')
+  assert.ok(req, '谷雨名下有一条待答复的换班请求')
+  assert.equal(req.from, 'E-205', '发起人是罗盘')
+  assert.equal(s.people.find(p => p.id === req.to).position, s.people.find(p => p.id === req.from).position, '同岗位才能换')
+  req.status = 'declined'
+  assert.equal(s.swapRequests.filter(r => r.status === 'pending').length, 0, '答复后不再挂在待处理')
+})
