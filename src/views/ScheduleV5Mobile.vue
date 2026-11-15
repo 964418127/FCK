@@ -24,7 +24,7 @@
       </div>
 
       <!-- 时间锚点：现在几点、这一轮铺到哪 -->
-      <div class="now-line">演示时刻 {{ v5.now }} · 本轮覆盖 {{ shortM(v5.round.span[0]) }}–{{ shortM(v5.round.span[1]) }} · 申领 {{ shortAt(v5.round.applyDeadline) }} 截止</div>
+      <div class="now-line">演示时刻 {{ v5.now }} · 本轮覆盖 {{ shortM(myRound.span[0]) }}–{{ shortM(myRound.span[1]) }} · 申领 {{ shortAt(myRound.applyDeadline) }} 截止</div>
 
       <!-- ============ 我的排班 ============ -->
       <section v-if="tab === 'mine'">
@@ -313,7 +313,7 @@ import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
 } from '../mock/scheduleV5Store.js'
-import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES } from '../mock/scheduleV5.js'
+import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf } from '../mock/scheduleV5.js'
 
 const router = useRouter()
 const tab = ref('mine')
@@ -328,7 +328,8 @@ const meId = computed({
   }
 })
 const me = computed(() => meRef.value)
-const roundDeadline = v5.round.applyDeadline
+const myRound = computed(() => roundOf(v5, me.value.spaceId))
+const roundDeadline = computed(() => myRound.value.applyDeadline)
 
 /* ---------- 我的排班 ---------- */
 const myRows = computed(() => myPlacements())

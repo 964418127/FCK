@@ -12,7 +12,7 @@
       </div>
       <div class="hr">
         <span v-if="v5.configDirty" class="dirty">
-          有配置改动 · 下一轮 {{ shortAt(v5.round.nextAt) }} 起生效
+          有配置改动 · 下一轮 {{ shortAt(round.nextAt) }} 起生效
           <button @click="revert">撤销</button>
         </span>
         <span v-else class="clean">配置与当前轮一致</span>
@@ -23,14 +23,14 @@
     <!-- 时间锚点：现在处在哪一轮、改动什么时候生效 -->
     <div class="round-strip">
       <div class="rs-main">
-        <span class="rs-tag">当前轮 {{ v5.round.id }}</span>
-        <span>{{ shortAt(v5.round.publishedAt) }} 发布 · 覆盖 {{ short(v5.round.span[0]) }}–{{ short(v5.round.span[1]) }}</span>
-        <span>清单开到第 {{ v5.round.k }} 档</span>
-        <span class="rs-dl">{{ shortAt(v5.round.applyDeadline) }} 申领截止</span>
+        <span class="rs-tag">当前轮 {{ round.id }}</span>
+        <span>{{ shortAt(round.publishedAt) }} 发布 · 覆盖 {{ short(round.span[0]) }}–{{ short(round.span[1]) }}</span>
+        <span>清单开到第 {{ round.k }} 档</span>
+        <span class="rs-dl">{{ shortAt(round.applyDeadline) }} 申领截止</span>
       </div>
       <div class="rs-side">
         <span class="rs-now">演示时刻 {{ v5.now }}</span>
-        <span class="rs-next">下一轮 {{ shortAt(v5.round.nextAt) }} 生成 · 铺 {{ short(v5.round.nextSpan[0]) }}–{{ short(v5.round.nextSpan[1]) }}；配置改动到那时生效</span>
+        <span class="rs-next">下一轮 {{ shortAt(round.nextAt) }} 生成 · 铺 {{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}；配置改动到那时生效</span>
       </div>
     </div>
 
@@ -84,7 +84,7 @@
               <div class="rh-sum" @click="rhythmOpen = !rhythmOpen">
                 <strong>排班节奏</strong>
                 <span class="rh-label">{{ rhythmLabel }}</span>
-                <span class="rh-next">下一轮 {{ shortAt(v5.round.nextAt) }} 生成 · 铺 {{ short(v5.round.nextSpan[0]) }}–{{ short(v5.round.nextSpan[1]) }}</span>
+                <span class="rh-next">下一轮 {{ shortAt(round.nextAt) }} 生成 · 铺 {{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}</span>
                 <span class="rh-toggle">{{ rhythmOpen ? '收起' : '改' }}</span>
               </div>
               <div v-if="rhythmOpen" class="rh-body">
@@ -148,12 +148,12 @@
                   <line x1="40" y1="78" x2="640" y2="78" stroke="#D8DBE0" stroke-width="1" />
                   <rect :x="rp.startX" y="66" :width="rp.width" height="24" rx="4" fill="#EAF3DE" stroke="#97C459" stroke-width="0.8" />
                   <text :x="rp.startX + rp.width / 2" y="82" text-anchor="middle" font-size="11" fill="#27500A">
-                    这一轮铺 {{ short(v5.round.nextSpan[0]) }} – {{ short(v5.round.nextSpan[1]) }}
+                    这一轮铺 {{ short(round.nextSpan[0]) }} – {{ short(round.nextSpan[1]) }}
                   </text>
                   <!-- 发布 -->
                   <line :x1="rp.pubX" y1="50" :x2="rp.pubX" y2="78" stroke="#a40035" stroke-width="1.2" />
                   <circle :cx="rp.pubX" cy="48" r="3.5" fill="#a40035" />
-                  <text :x="rp.pubX" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="#a40035">发布 {{ shortAt(v5.round.nextAt) }}</text>
+                  <text :x="rp.pubX" y="40" text-anchor="middle" font-size="11" font-weight="600" fill="#a40035">发布 {{ shortAt(round.nextAt) }}</text>
                   <!-- 申领截止 -->
                   <line :x1="rp.dlX" y1="90" :x2="rp.dlX" y2="112" stroke="#854F0B" stroke-width="1" stroke-dasharray="3 2" />
                   <text :x="rp.dlX" y="126" text-anchor="middle" font-size="11" fill="#854F0B">申领截止 {{ rp.dlText }}</text>
@@ -325,7 +325,7 @@
             <!-- 按周期：先配好一天，复制/覆盖到其他天；点班次照常进编辑 -->
             <template v-else>
               <div class="cyc-strip">
-                <strong>下一轮铺 {{ short(v5.round.nextSpan[0]) }}–{{ short(v5.round.nextSpan[1]) }}</strong>
+                <strong>下一轮铺 {{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}</strong>
                 <span>先配好一天，再把这一天复制 / 覆盖到其他天。班次按星期几定义，复制会落在每周的同一天。</span>
               </div>
               <div class="cyc-days">
@@ -411,7 +411,7 @@
             </div>
           </div>
 
-          <div class="table-title">申领登记 <em>提交只登记；{{ shortAt(v5.round.applyDeadline) }} 截止后按综合分排序截断，人事不逐单审批</em></div>
+          <div class="table-title">申领登记 <em>提交只登记；{{ shortAt(round.applyDeadline) }} 截止后按综合分排序截断，人事不逐单审批</em></div>
           <table class="data-table">
             <thead>
               <tr><th style="width: 90px;">日期</th><th style="width: 150px;">时段</th><th style="width: 90px;">人</th><th style="width: 80px;">综合分</th><th style="width: 110px;">登记时间</th><th>截止后会怎样</th></tr>
@@ -723,7 +723,8 @@ import { usePager } from '../composables/usePager.js'
 import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
-  appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice
+  appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
+  roundOf
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -742,6 +743,8 @@ const mainTab = ref('schedule')
 const kw = ref('')
 const city = ref('')
 const selSpace = ref(v5.spaces[0].id)
+/* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
+const round = computed(() => roundOf(v5, selSpace.value))
 
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
 const filteredSpaces = computed(() => v5.spaces.filter(s => {
@@ -755,7 +758,7 @@ const spaceTemps = computed(() => v5.temps.filter(t => t.spaceId === selSpace.va
 const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
-function pickSpace(id) { selSpace.value = id; editing.value = null }
+function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm() }
 /* 时间展示：日期只到日，时刻带上时分 */
 function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` }
 function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}` }
@@ -764,7 +767,7 @@ function peopleOf(id) { return v5.people.filter(p => p.spaceId === id).length }
 /* 按周期视图：下一轮覆盖区间，每天列出当天会跑的班次（周期班次按星期几 + 临时班次按日期） */
 const cycView = ref('cycle') /* 默认按周期：配置人员按天干活 */
 const cycleDays = computed(() => {
-  const [a, b] = v5.round.nextSpan
+  const [a, b] = round.value.nextSpan
   const out = []
   const pad = n => String(n).padStart(2, '0')
   const d = new Date(`${a}T00:00:00`)
@@ -834,16 +837,28 @@ function bumpDay(s, d, delta) {
   else ElMessage.success(r.text)
 }
 
-/* 排班节奏：周期（锚点+长度）、多久发一次、发布与截止相对周期起点的偏移 */
+/* 排班节奏：周期（锚点+长度）、多久发一次、发布与截止相对周期起点的偏移
+   节奏跟着空间走：切了空间就换成那个空间自己的节奏 */
 const rhythmOpen = ref(false)
 const rhythm = reactive({
-  cycle: { ...v5.round.config.cycle },
-  every: v5.round.config.every || 1,
-  publishOffsetDays: v5.round.config.publishOffsetDays ?? -4,
-  publishHour: v5.round.config.publishHour ?? 6,
-  applyOffsetDays: v5.round.config.applyOffsetDays ?? -1,
-  applyHour: v5.round.config.applyHour ?? 20
+  cycle: { ...round.value.config.cycle },
+  every: round.value.config.every || 1,
+  publishOffsetDays: round.value.config.publishOffsetDays ?? -4,
+  publishHour: round.value.config.publishHour ?? 6,
+  applyOffsetDays: round.value.config.applyOffsetDays ?? -1,
+  applyHour: round.value.config.applyHour ?? 20
 })
+function syncRhythm() {
+  const c = round.value.config
+  Object.assign(rhythm.cycle, c.cycle)
+  Object.assign(rhythm, {
+    every: c.every || 1,
+    publishOffsetDays: c.publishOffsetDays ?? -4,
+    publishHour: c.publishHour ?? 6,
+    applyOffsetDays: c.applyOffsetDays ?? -1,
+    applyHour: c.applyHour ?? 20
+  })
+}
 /* 界面上说「提前几天」，内部存负数偏移 */
 const publishAhead = computed({
   get: () => Math.abs(rhythm.publishOffsetDays),
@@ -856,27 +871,27 @@ const applyAhead = computed({
 function onAnchor(a) {
   if (a === 'monday') Object.assign(rhythm.cycle, { unit: 'week', n: 1 })
   else if (a === 'monthStart') Object.assign(rhythm.cycle, { unit: 'month', n: 1 })
-  else Object.assign(rhythm.cycle, { unit: 'day', n: 7, start: rhythm.cycle.start || v5.round.nextSpan[0] })
+  else Object.assign(rhythm.cycle, { unit: 'day', n: 7, start: rhythm.cycle.start || round.value.nextSpan[0] })
   applyRhythm()
 }
 const cycleText = computed(() => {
-  const c = v5.round.config.cycle
+  const c = round.value.config.cycle
   if (c.anchor === 'monday') return c.n > 1 ? `每 ${c.n} 周` : '自然周'
   if (c.anchor === 'monthStart') return c.n > 1 ? `每 ${c.n} 个月` : '自然月'
   const unit = c.unit === 'week' ? '周' : c.unit === 'month' ? '个月' : '天'
   return `自定义 ${c.n} ${unit}（起 ${short(c.start)}）`
 })
 const rhythmLabel = computed(() => {
-  const c = v5.round.config
+  const c = round.value.config
   const every = c.every > 1 ? `隔 ${c.every - 1} 期发 · ` : ''
   return `${cycleText.value} · ${every}提前 ${Math.abs(c.publishOffsetDays)} 天 ${String(c.publishHour).padStart(2, '0')}:00 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${String(c.applyHour).padStart(2, '0')}:00`
 })
 /* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
 const rp = computed(() => {
-  const c = v5.round.config
-  const span = v5.round.nextSpan
+  const c = round.value.config
+  const span = round.value.nextSpan
   const day = s => new Date(`${String(s).slice(0, 10)}T00:00:00`).getTime()
-  const pubAt = day(v5.round.nextAt)
+  const pubAt = day(round.value.nextAt)
   const startT = day(span[0])
   const endT = day(span[1])
   const dlT = day(applyDeadlineOf(c, span[0]))
@@ -897,7 +912,7 @@ function applyRhythm() {
     publishHour: rhythm.publishHour,
     applyOffsetDays: rhythm.applyOffsetDays,
     applyHour: rhythm.applyHour
-  })
+  }, selSpace.value)
   ElMessage.success('节奏已改：下一轮按新节奏生成')
 }
 
@@ -1007,7 +1022,7 @@ const facts = computed(() => factRows5())
 const tlPidRaw = ref('')
 const tlPid = computed(() => tlPidRaw.value || curSpacePeople.value[0]?.id || '')
 const tlDates = computed(() => {
-  const [a, b] = v5.round.span
+  const [a, b] = round.value.span
   const out = []
   const pad = n => String(n).padStart(2, '0')
   const d = new Date(`${a}T00:00:00`)

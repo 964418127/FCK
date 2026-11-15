@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -466,4 +466,64 @@ test('工时不由排班判断：排班只记班次起止，全天排满也放�
   const extra = grab5(s, 'SL-19', '2026-11-16', 'E-211')
   assert.equal(extra.ok, true)
   assert.equal(s.placements.filter(p => p.personId === 'E-211' && p.date === '2026-11-16').length, 2)
+})
+
+/* ===== 总部办公区：按月排、按岗位人数 1:1 定名额、排完直接分 ===== */
+test('办公区：轮按月，门店轮仍按周——节奏跟着空间走', () => {
+  const s = mk()
+  const off = roundOf(s, 'S-206')
+  assert.equal(off.span[0], '2026-11-01')
+  assert.equal(off.span[1], '2026-11-30', '这一期铺整月')
+  assert.equal(off.nextAt, '2026-11-27 06:00', '提前 4 天发下个月')
+  assert.deepEqual(off.nextSpan, ['2026-12-01', '2026-12-31'])
+  const shop = roundOf(s, 'S-201')
+  assert.equal(shop.id, 'R-1112')
+  assert.deepEqual(shop.span, ['2026-11-16', '2026-11-22'], '门店还是按周')
+})
+
+test('办公区：白班 3 晚班 2，只有直派一档，人群是本店全职在职产品经理', () => {
+  const s = mk()
+  const bai = s.slots.find(x => x.id === 'SL-20')
+  const wan = s.slots.find(x => x.id === 'SL-21')
+  assert.equal(bai.name, '白班')
+  assert.equal(bai.start, '09:30')
+  assert.equal(bai.end, '18:30')
+  assert.equal(snapN5(s, 'SL-20', '2026-11-16'), 3, '名额按岗位人数 1:1：白班 3')
+  assert.equal(snapN5(s, 'SL-21', '2026-11-16'), 2, '晚班 2')
+  assert.equal(bai.list.length, 1)
+  assert.equal(bai.list[0].way, 'direct', '排完直接分，没有抢单入口')
+  assert.equal(whoLabel5(bai.list[0].who), '本店 · 全职 · 在职 · 产品经理')
+})
+
+test('办公区：一天 3 白 2 晚正好放下 5 个人，同一个人不会同天上两个班', () => {
+  const s = mk()
+  WEEK_DATES.forEach(date => {
+    const rows = s.placements.filter(p => p.date === date && p.status === 'active' && ['SL-20', 'SL-21'].includes(p.slotId))
+    assert.equal(activeCount5(s, 'SL-20', date), 3, `${date} 白班 3 人`)
+    assert.equal(activeCount5(s, 'SL-21', date), 2, `${date} 晚班 2 人`)
+    assert.equal(new Set(rows.map(p => p.personId)).size, 5, `${date} 5 个人各占一个班`)
+  })
+})
+
+test('办公区：直派按轮换次序走，相邻两天的白晚班换人', () => {
+  const s = mk()
+  const of = date => ({
+    bai: s.placements.filter(p => p.date === date && p.slotId === 'SL-20').map(p => p.personId),
+    wan: s.placements.filter(p => p.date === date && p.slotId === 'SL-21').map(p => p.personId)
+  })
+  const d1 = of('2026-11-16')
+  const d2 = of('2026-11-17')
+  assert.notDeepEqual(d1.bai, d2.bai, '第二天白班换人')
+  assert.ok(d2.wan.includes(d1.bai[0]), '昨天上白班的人今天轮到晚班')
+})
+
+test('白班晚班时间重叠但都是直派，不算「两个入口」——保存不该被挡', () => {
+  const s = mk()
+  const bai = s.slots.find(x => x.id === 'SL-20')
+  const form = {
+    name: bai.name, start: bai.start, end: bai.end, days: [...bai.days],
+    quota: { ...bai.quota }, list: JSON.parse(JSON.stringify(bai.list))
+  }
+  const errs = checkSlotForm('S-206', form, 'SL-20')
+  assert.equal(errs.length, 0, errs.join('；'))
 })

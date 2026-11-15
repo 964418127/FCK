@@ -18,11 +18,13 @@ export const SPACES5 = [
   { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [50, 50] },
   { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [53.5, 52.2] },
   /* 兴隆湖店：把业务现行的四套策略原样配进同一个店（客经人数组合 / 推拿业务量 / 非全客经错峰 / 非全推拿签约÷2） */
-  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4] }
+  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4] },
+  /* 总部办公区：不是门店，是办公区——只有岗位和班次，没有营业高峰、没有抢单 */
+  { id: 'S-206', name: '总部办公区', city: '杭州', tag: '办公区', bizStart: '09:30', bizEnd: '22:30', xy: [7.6, 5.4] }
 ]
 
 /* 岗位字典：通用排班系统不写死某几个岗位，弹窗里从这里出 */
-export const JOBS5 = ['推拿师', '客户经理', '店长', '前台', '保洁']
+export const JOBS5 = ['推拿师', '客户经理', '店长', '前台', '保洁', '产品经理']
 
 /* 人员属性标签：在职（默认，无标签）/ 试用 / 储备。
    档位的「谁」可以按标签圈人——业务上「储备客户经理缺口补位」「试用期不单独排」都靠它表达。
@@ -58,7 +60,13 @@ export const PEOPLE5 = [
   { id: 'E-211', name: '桃夭', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 82, tag: 'regular' },
   { id: 'E-212', name: '半夏', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 79, tag: 'regular' },
   { id: 'E-213', name: '木木', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 77, tag: 'regular' },
-  { id: 'E-214', name: '星野', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 75, tag: 'regular' }
+  { id: 'E-214', name: '星野', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 75, tag: 'regular' },
+  /* 总部办公区：产品经理 5 人，3 人白班 9:30–18:30、2 人晚班 14:00–22:30，按月排、排完直接分 */
+  { id: 'E-301', name: '陆迟', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 90, tag: 'regular' },
+  { id: 'E-302', name: '顾南', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 88, tag: 'regular' },
+  { id: 'E-303', name: '时雨', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 86, tag: 'regular' },
+  { id: 'E-304', name: '陶然', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 84, tag: 'regular' },
+  { id: 'E-305', name: '谢临', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 82, tag: 'regular' }
 ]
 
 /* 算法服务：只登记不实现。登记四门槛：输入可声明 / 算式可解释 / 可单独调用幂等 / 有版本号 */
@@ -207,6 +215,31 @@ export const SLOTS5 = [
     list: [
       { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
+  },
+
+  /* ===================================================================
+     总部办公区 S-206：产品经理 5 人，3 白 2 晚，按月排班，排完直接分
+       · 名额按岗位人数 1:1 定：这个班要几个人就放几个名额，多一个不放（人工给定）
+       · 获取方式只有一个：直派轮转——发布后系统按轮换次序把人分到白班和晚班，人只收通知
+       · 白班 09:30–18:30 与晚班 14:00–22:30 中间重叠 4.5 小时：一个人同一天只能在一个班上，
+         系统分人时按时间撞不撞来挡，所以 3 + 2 正好把这 5 个人分开
+     =================================================================== */
+
+  /* 白班 09:30–18:30：名额 3 */
+  {
+    id: 'SL-20', spaceId: 'S-206', name: '白班', start: '09:30', end: '18:30', days: [0, 1, 2, 3, 4, 5, 6],
+    quota: { source: 'manual', value: 3 }, clamp: [1, 6], snapN: 3,
+    list: [
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '产品经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
+  },
+  /* 晚班 14:00–22:30：名额 2 */
+  {
+    id: 'SL-21', spaceId: 'S-206', name: '晚班', start: '14:00', end: '22:30', days: [0, 1, 2, 3, 4, 5, 6],
+    quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
+    list: [
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '产品经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
   }
 ]
 
@@ -219,7 +252,7 @@ export const TEMPS5 = [
   }
 ]
 
-/* 轮：清单切到第 k 档的一段窗口 */
+/* 轮：清单切到第 k 档的一段窗口。轮是每个空间自己的——发布时刻、覆盖区间、申领截止都按那个空间的节奏算 */
 export const ROUND5 = {
   id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
   applyDeadline: '2026-11-15 20:00',
@@ -240,6 +273,33 @@ export const ROUND5 = {
     applyOffsetDays: -1,
     applyHour: 20
   }
+}
+
+/*
+  总部办公区按月排：自然月 1 号起头，提前 4 天 06:00 发下个月，提前 1 天 20:00 截止。
+  当前这一期是 11 月整月（10-28 发），下一期是 12 月（11-27 发）。
+  节奏不同不代表机制不同——还是同一套「发布 → 窗口 → 截止」，只是周期长度换了。
+*/
+export const ROUND_OFFICE5 = {
+  id: 'R-2611', publishedAt: '2026-10-28 06:00', span: ['2026-11-01', '2026-11-30'], k: 1,
+  applyDeadline: '2026-10-31 20:00',
+  nextAt: '2026-11-27 06:00', nextSpan: ['2026-12-01', '2026-12-31'],
+  config: {
+    cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' },
+    every: 1,
+    publishOffsetDays: -4,
+    publishHour: 6,
+    applyOffsetDays: -1,
+    applyHour: 20
+  }
+}
+
+/* 按空间取轮：配了自己的节奏就用自己那份，没配的沿用门店的周节奏 */
+export const ROUNDS5 = { 'S-206': ROUND_OFFICE5 }
+export function roundOf(state, spaceId) {
+  const bySpace = state?.rounds?.[spaceId]
+  if (bySpace) return bySpace
+  return state?.round || ROUND5
 }
 
 /* 往后的第 N 个星期几（含当天） */
@@ -347,13 +407,14 @@ export function nextRoundPlan(config, now = NOW) {
 }
 
 /* 按节奏配置重算「下一轮什么时候生成、铺哪一段」——改了节奏，预告立刻跟着变 */
-export function recalcRound(state) {
-  const plan = nextRoundPlan(state.round.config || ROUND5.config, state.now)
+export function recalcRound(state, spaceId = "") {
+  const round = spaceId ? roundOf(state, spaceId) : state.round
+  const plan = nextRoundPlan(round.config || ROUND5.config, state.now)
   if (plan) {
-    state.round.nextAt = plan.nextAt
-    state.round.nextSpan = plan.nextSpan
+    round.nextAt = plan.nextAt
+    round.nextSpan = plan.nextSpan
   }
-  return state.round
+  return round
 }
 
 const P = (id, slotId, date, personId, way, extra = {}) => ({
@@ -599,9 +660,9 @@ export function windowLabel5(row, slot = null, date = null, round = null) {
   return `${short} 开（${rel}）`
 }
 
-export function gateLabel5(row, slot) {
+export function gateLabel5(row, slot, round = null) {
   if (row.way === 'direct') return '到点直派，不用抢'
-  if (row.way === 'apply') return `截止 ${ROUND5.applyDeadline} · 按综合分排序截断`
+  if (row.way === 'apply') return `截止 ${(round || ROUND5).applyDeadline} · 按综合分排序截断`
   return `开班（${slot.start}）即关闸`
 }
 
@@ -640,7 +701,7 @@ export function openOffers5(state, personId, now = NOW) {
         slot.list.forEach(row => {
           if (!matchWho5(state, person, slot, row.who)) return
           if (row.way === 'direct') return
-          if (!windowOpen5(row, date, now, state.round)) return
+          if (!windowOpen5(row, date, now, roundOf(state, slot.spaceId))) return
           if (row.way === 'grab' && now >= `${date}T${slot.start}:00`.replace('T', ' ')) return
           if (state.placements.some(p => p.slotId === slot.id && p.date === date && p.personId === personId && p.status === 'active')) return
           const occ = activeCount5(state, slot.id, date)
@@ -679,7 +740,7 @@ export function runDueDirect5(state, now = state.now) {
         if (row.way !== 'direct') return
         const key = `${slot.id}|${date}|${row.k}`
         if (state.directDone.has(key)) return
-        const at = openAt5(row, state.round, date)
+        const at = openAt5(row, roundOf(state, slot.spaceId), date)
         if (!at || now < at) return // 还没到点，不分
         state.directDone.add(key)
         ordered.forEach(person => {
@@ -706,7 +767,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
   if (!rows.length) return { ok: false, reason: way === 'apply' ? '这个时段不走申领' : '这个时段不靠抢' }
   const row = rows.find(r => matchWho5(state, person, slot, r.who))
   if (!row) return { ok: false, reason: '这一档不是你的档' }
-  if (!windowOpen5(row, date, now, state.round)) return { ok: false, reason: `还没开：${windowLabel5(row, null, date, state.round)}` }
+  if (!windowOpen5(row, date, now, roundOf(state, slot.spaceId))) return { ok: false, reason: `还没开：${windowLabel5(row, null, date, roundOf(state, slot.spaceId))}` }
   /* 行上限：这一档给几个就几个，多的留给下一档 */
   if (row.cap && rowUsed5(state, slotId, date, slot, row) >= row.cap) {
     return { ok: false, reason: `这一档只留 ${row.cap} 个，已经满了` }
@@ -717,7 +778,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
     if (personBusy5(state, personId, date, slot.start, slot.end)) return { ok: false, reason: '和已有班次时间撞了' }
     /* 工时不在排班判断：接不接得起由获取端背后的服务算，这里只记录班次起止 */
   } else {
-    if (now >= ROUND5.applyDeadline) return { ok: false, reason: '申领已截止' }
+    if (now >= roundOf(state, slot.spaceId).applyDeadline) return { ok: false, reason: "申领已截止" }
     if (state.applications.some(a => a.slotId === slotId && a.date === date && a.personId === personId)) return { ok: false, reason: '已登记过' }
   }
   return { ok: true, row }
@@ -870,7 +931,9 @@ export function buildV5State() {
     services: JSON.parse(JSON.stringify(SERVICES5)),
     slots: JSON.parse(JSON.stringify(SLOTS5)),
     temps: JSON.parse(JSON.stringify(TEMPS5)),
-    round: { ...ROUND5 },
+    round: JSON.parse(JSON.stringify(ROUND5)),
+    /* 自己的节奏自己那份轮；没配的空间沿用上面那份门店周节奏 */
+    rounds: JSON.parse(JSON.stringify(ROUNDS5)),
     placements: JSON.parse(JSON.stringify(PLACEMENTS5)),
     applications: JSON.parse(JSON.stringify(APPLICATIONS5)),
     facts: JSON.parse(JSON.stringify(FACTS5)),
