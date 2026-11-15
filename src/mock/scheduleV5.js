@@ -66,7 +66,9 @@ export const PEOPLE5 = [
   { id: 'E-302', name: '顾南', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 88, tag: 'regular' },
   { id: 'E-303', name: '时雨', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 86, tag: 'regular' },
   { id: 'E-304', name: '陶然', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 84, tag: 'regular' },
-  { id: 'E-305', name: '谢临', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 82, tag: 'regular' }
+  { id: 'E-305', name: '谢临', spaceId: 'S-206', kind: 'fulltime', position: '产品经理', score: 82, tag: 'regular' },
+  /* 非全产品经理：周末来顶晚班的人，名额要自己领（办公区唯一的获取段入口） */
+  { id: 'E-306', name: '江遥', spaceId: 'S-206', kind: 'parttime', position: '产品经理', score: 76, tag: 'regular' }
 ]
 
 /* 算法服务：只登记不实现。登记四门槛：输入可声明 / 算式可解释 / 可单独调用幂等 / 有版本号 */
@@ -239,6 +241,14 @@ export const SLOTS5 = [
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
       { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '产品经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
+  },
+  /* 周末晚班 14:00–22:30：留给非全的人来领，名额 1（跟上面那条晚班同一个钟点，靠人群分开） */
+  {
+    id: 'SL-22', spaceId: 'S-206', name: '晚班', start: '14:00', end: '22:30', days: [0, 6],
+    quota: { source: 'manual', value: 1 }, clamp: [1, 3], snapN: 1,
+    list: [
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '产品经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   }
 ]

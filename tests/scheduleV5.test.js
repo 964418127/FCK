@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -537,4 +537,20 @@ test('换班请求：躺着一条待答复的，收件人能看到、答复后�
   assert.equal(s.people.find(p => p.id === req.to).position, s.people.find(p => p.id === req.from).position, '同岗位才能换')
   req.status = 'declined'
   assert.equal(s.swapRequests.filter(r => r.status === 'pending').length, 0, '答复后不再挂在待处理')
+})
+
+/* 办公区唯一的获取段入口：周末晚班留给非全的人自己领，整月范围里挑 */
+test('办公区非全：周末晚班整月开放，非全领得到、全职不在这档', () => {
+  const s = mk()
+  const slot = s.slots.find(x => x.id === 'SL-22')
+  assert.ok(slot, '有这条班')
+  assert.deepEqual(slot.days, [0, 6], '只排周六日')
+  assert.equal(snapN5(s, 'SL-22', '2026-11-14'), 1, '名额 1')
+  assert.equal(datesOfRound5(roundOf(s, 'S-206')).length, 30, '这一期是整月，挑班范围就是 30 天')
+  assert.ok(slotsOn5(s, '2026-11-14').some(x => x.id === 'SL-22'), '周六有')
+  assert.ok(!slotsOn5(s, '2026-11-17').some(x => x.id === 'SL-22'), '周二没有')
+  assert.equal(canTake5(s, 'SL-22', '2026-11-14', 'E-306', 'grab', s.now).ok, true, '非全产品经理能领')
+  const full = canTake5(s, 'SL-22', '2026-11-14', 'E-301', 'grab', s.now)
+  assert.equal(full.ok, false, '全职走直派，不在这档')
+  assert.equal(full.reason, '这一档不是你的档')
 })
