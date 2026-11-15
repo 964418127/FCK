@@ -441,6 +441,19 @@
       <p class="arch-cap">
         班次条与事实条画在同一根轴上但互不改动：事实只声明区间，补位是另一个人的新区间；撤销 = 截短事实区间，结果自己变回来。
       </p>
+
+      <h4 class="h4sub">设计参考 · 统一时间管理体系</h4>
+      <p class="doc-p">
+        时间维度的分层思路参考下方「统一时间管理体系」：<strong>排班只 owning 时间轴 + 排班层</strong>（哪天哪班、几个名额、谁占着）；
+        用工基数层（哪天默认该上班）归假勤的出勤方案；考勤组与打卡归考勤；订单、培训、会议等由各自业务系统写。
+        变化段的四类事实（请假 / 顶班 / 换班 / 离职）写进业务事件层，排班按事实重算、留解版本——<strong>事实只声明区间，不改班次本身</strong>。
+        时间线真正被消费是在几个动作上：员工领班、申领排序、找人顶班，三处都要拿时段到时间轴上做重叠校验（见 6.2.3、6.4.3）。
+      </p>
+      <DocFigure
+        :src="timeSystemImg"
+        title="统一时间管理体系 · 分层设计参考"
+        note="时间轴唯一；用工基数层定「哪天该上班」，排班层定「谁上哪个班」，其上各层由对应系统各自 owning"
+      />
     </div>
 
     <div id="hs-scope-cover" class="section">
@@ -495,6 +508,8 @@
 <script setup>
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
+import DocFigure from '../../../docs/components/DocFigure.vue'
+import timeSystemImg from '../../../docs/assets/unified-time-system.png'
 
 const tocItems = [
   { id: 'hs-scope', label: '五、需求范围' },
