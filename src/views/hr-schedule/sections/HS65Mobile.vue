@@ -1,75 +1,86 @@
 <template>
   <DocShell
     :toc-items="tocItems"
-    title="6.5 移动端选班"
-    subtitle="一套壳按资格过滤，不按岗位分入口；待审与被挤出必须各有下一步，否则链路断在人身上"
-    version="v3.0 基线"
-    date="2026-11-12"
+    title="6.5 移动端"
+    subtitle="员工在自己手机上只看两件事：我的排班、能领的班"
+    version="v5.0"
+    date="2026-11-15"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-65" class="section">
       <div class="section-header">
-        <h2>6.5 移动端选班</h2>
+        <h2>6.5 移动端</h2>
         <DocCopyButton section-id="hs-65" />
       </div>
+      <p class="doc-p">
+        这一章解决<strong>员工端看到什么、能做什么</strong>。移动端只有两个页签：我的排班、可获取。
+        按月排的空间（如总部办公区）整月都显示——<strong>排到哪天就显示哪天</strong>，日期范围跟着该空间这一轮的覆盖区间走。
+      </p>
       <div class="func-entry">
-        <strong>功能入口：</strong>移动端菜单 → 人事组「我的排班」；右上角可低调切换查看视角（演示用）
+        <strong>功能入口：</strong>移动端菜单 → 人事组 → <strong>我的排班</strong>（原型 <code>/v5/m</code>）；右上角切演示视角
       </div>
 
-      <h3 id="hs-65-1">6.5.1 三个页签，一套壳</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 130px;">页签</th><th style="width: 280px;">显示什么</th><th>不显示什么</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>可选班次</strong></td>
-            <td>对她已开放的时段：日期、门店、时间与净工时、已申与剩余名额、截止说明</td>
-            <td>没开放的时段完全不出现，<strong>不做灰掉展示</strong></td>
-          </tr>
-          <tr>
-            <td><strong>我的排班</strong></td>
-            <td>已得结果 + 怎么排上的 + 待审提示条</td>
-            <td>他人排班、内部调度原因</td>
-          </tr>
-          <tr>
-            <td><strong>通知</strong></td>
-            <td>已安排、兜底安排、没排上三类</td>
-            <td>不解释「为什么没轮到你」的算法细节</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="note">
-        <strong>为什么不分岗位入口：</strong>资格命中与否本来就是规则算出来的结果。
-        按岗位做四套壳，等于把规则判断搬到客户端，两边口径一定会分叉。
+      <DocScreens
+        mode="phone"
+        :images="[
+          { src: mineShot, label: '我的排班：月历承载整月班次，选中日看当天班次卡' },
+          { src: pickShot, label: '可获取：日期条按这一轮铺（门店 7 天 / 办公区整月 30 天），能拿的直接拿' }
+        ]"
+      />
+    </div>
+
+    <div id="hs-65-mine" class="section">
+      <div class="section-header">
+        <h3>6.5.1 我的排班</h3>
       </div>
-
-      <h3 id="hs-65-2">6.5.2 申领要当场校验三件事</h3>
       <table class="data-table">
         <thead>
-          <tr><th style="width: 150px;">校验</th><th>不通过时</th></tr>
+          <tr><th style="width: 150px;">区域</th><th style="width: 320px;">展示</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>时间不交叉</strong></td><td>置灰并写「该时段与已有任务冲突」；跨店间隔不足 30 分钟同样冲突</td></tr>
-          <tr><td><strong>单日工时上限</strong></td><td>置灰并写超出多少小时</td></tr>
-          <tr><td><strong>名额余量</strong></td><td>已申满则按钮变为「已满」，不让人白点</td></tr>
+          <tr><td><strong>月历</strong></td><td>这一轮覆盖的每一天，有班的日子打点；按月排的空间整月都有班</td><td>顶部统计是这一期的口径（本期班次数 / 合计工时）</td></tr>
+          <tr><td><strong>当天班次卡</strong></td><td>班次名、时间、空间；「这条班怎么来的」（系统排给你的 / 自己领的）</td><td>直派的班写明「系统按规则直接排给你的，不用抢」</td></tr>
+          <tr><td><strong>被占用历史</strong></td><td>这条班的哪一段时间被什么事件占用、谁来顶的</td><td>「一段时间被事件占用」的表达，不改动班次本身</td></tr>
+          <tr><td><strong>动作</strong></td><td>这天我来不了（发起请假）；找人对换（发起换班）</td><td>人事安排的补位确认直接落在班次卡上：待你确认 + 去不了 / 收到，我来</td></tr>
         </tbody>
       </table>
+    </div>
 
-      <h3 id="hs-65-3">6.5.3 三个状态都不能是死路</h3>
+    <div id="hs-65-pick" class="section">
+      <div class="section-header">
+        <h3>6.5.2 可获取</h3>
+      </div>
       <table class="data-table">
         <thead>
-          <tr><th style="width: 130px;">状态</th><th style="width: 260px;">页面必须给出</th><th>下一步</th></tr>
+          <tr><th style="width: 150px;">区域</th><th style="width: 320px;">展示</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>待审</strong></td><td>截止时间 + 审核口径（按业绩排序，不是先到先得）</td><td>截止后自动出结果，无需操作</td></tr>
-          <tr><td><strong>被挤出</strong></td><td>明确告知没排上 + 余额已再开放 / 已转兜底</td><td>可再申一轮，或等兜底通知</td></tr>
-          <tr><td><strong>兜底安排</strong></td><td>排到哪个班次（可能不是她申的那个）+ 时间</td><td>只通知，不接受拒绝</td></tr>
+          <tr><td><strong>日期条</strong></td><td>这一轮覆盖的每一天一格，标「n 个 / 拿不了 / 已过 / —」</td><td>门店 7 格、办公区 30 格横向滑动；选中格自动滑到视野中间</td></tr>
+          <tr><td><strong>当天名额卡</strong></td><td>班次、时间、面向谁、已占 x / N、获取方式</td><td>先到先得点一下就成；申领先登记、截止后按综合分排序</td></tr>
+          <tr><td><strong>当场判定</strong></td><td>成不了当场说原因</td><td>不是你的档 / 没到开放时间 / 时间重叠 / 已占满，原因前置不事后通知失败</td></tr>
+          <tr><td><strong>没有可领时</strong></td><td>整轮没有开放名额时直说</td><td>直派空间显示「这里的班排完直接分给你，没有要你领的名额」</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="hs-65-notice" class="section">
+      <div class="section-header">
+        <h3>6.5.3 通知与明确不做</h3>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 220px;">事项</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>通知</strong></td><td>排班类通知是通用通知页里的示例，不在排班页自带通知段；通知只负责告诉你，处理动作都在业务页</td></tr>
+          <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天</td></tr>
+          <tr><td><strong>补位确认</strong></td><td>落在当天班次卡上：待你确认 + 我去不了 / 收到，我来</td></tr>
+          <tr><td><strong>明确不做</strong></td><td>不做「浏览别的岗位班次自己挑」的入口；关闸之后个人不挑班，只能看到人事的安排</td></tr>
         </tbody>
       </table>
       <div class="note warn-note">
-        <strong>最常见的错法：</strong>只写「未中选」三个字就结束。人不知道还能不能再申、也不知道会不会被自动安排，
-        第二天就会出现「我以为没班」的争议。
+        <strong>关闸前后的分界：</strong>关闸前 = 个人自己领（档位或临时班次两条路）；关闸后 = 人事安排（顶班事实、通知即可）。
+        跨岗位的班也走同一套「可获取」——清单里有没有圈到你、窗口开没开，决定你在手机里看到什么。
       </div>
     </div>
   </DocShell>
@@ -78,19 +89,22 @@
 <script setup>
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
+import DocScreens from '../../../docs/components/DocScreens.vue'
+import mineShot from '../../../docs/assets/pages/m5-mine.png'
+import pickShot from '../../../docs/assets/pages/m5-pick.png'
 
 const tocItems = [
-  { id: 'hs-65', label: '6.5 移动端选班' },
-  { id: 'hs-65-1', label: '6.5.1 三个页签' },
-  { id: 'hs-65-2', label: '6.5.2 申领校验' },
-  { id: 'hs-65-3', label: '6.5.3 三个状态' }
+  { id: 'hs-65', label: '6.5 移动端' },
+  { id: 'hs-65-mine', label: '6.5.1 我的排班' },
+  { id: 'hs-65-pick', label: '6.5.2 可获取' },
+  { id: 'hs-65-notice', label: '6.5.3 通知与不做' }
 ]
 
 const breadcrumbs = [
   { label: '文档中心', to: '/docs' },
   { label: '人事中心', to: '/docs/hr-schedule' },
   { label: '六、功能详细说明', to: '/docs/hr-schedule/features' },
-  { label: '6.5 移动端选班' }
+  { label: '6.5 移动端' }
 ]
 </script>
 

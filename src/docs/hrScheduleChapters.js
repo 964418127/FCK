@@ -69,7 +69,7 @@ export const hrScheduleChapters = [
     order: '六',
     title: '功能详细说明',
     nav: '功能详细说明',
-    subtitle: '6.1 容器与时段 + 6.2 时段模板与班次库 + 6.3 获取规则（模式 / 轮 / 余额）+ 6.4 排班结果 + 6.5 移动端选班',
+    subtitle: '6.1 时段与清单 + 6.2 轮与获取 + 6.3 排班结果 + 6.4 变化与求值 + 6.5 移动端',
     routeName: 'doc-hr-schedule-features',
     path: '/docs/hr-schedule/features',
     file: 'HrScheduleFeatures.vue'
@@ -89,16 +89,17 @@ export const hrScheduleChapters = [
 /**
  * 第六章「功能详细说明」下的功能章节（6.1–6.5）。
  *
- * 6.1 容器与时段 → 6.2 时段模板与班次库 → 6.3 获取规则
- * → 6.4 排班结果 → 6.5 移动端选班。编号 6.x 只在第六章内部使用。
+ * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端。
+ * 章序就是数据流：先配出时段与清单，再切成轮让人领，领完写进结果表，之后的变化才有的改。
+ * 编号 6.x 只在第六章内部使用。
  */
 export const hrScheduleFeatureChapters = [
   {
     id: '6-1',
     no: '6.1',
-    title: '容器与时段',
-    nav: '容器与时段',
-    subtitle: '时段只描述时间形态（班次 / 星期 / 名额 / 生成节奏），不说「谁能领」；来源三态：引用模板 / 门店自建 / 引用后改',
+    title: '时段与清单',
+    nav: '时段与清单',
+    subtitle: '一个空间里的钟点怎么配出来：时段说时间与几个位，清单说谁能来、怎么来',
     routeName: 'doc-hr-schedule-6-1',
     path: '/docs/hr-schedule/6-1',
     file: 'sections/HS61Slot.vue'
@@ -106,39 +107,39 @@ export const hrScheduleFeatureChapters = [
   {
     id: '6-2',
     no: '6.2',
-    title: '时段模板与班次库',
-    nav: '模板与班次',
-    subtitle: '两个模板语义不同：班次模板引用即继承（跨店可比对），时段模板快照实例化（改模板不动存量）',
+    title: '轮与获取',
+    nav: '轮与获取',
+    subtitle: '轮把清单切成一段窗口：等系统派、自己点、提交申领，只有这三种动作',
     routeName: 'doc-hr-schedule-6-2',
     path: '/docs/hr-schedule/6-2',
-    file: 'sections/HS62Template.vue'
+    file: 'sections/HS62Round.vue'
   },
   {
     id: '6-3',
     no: '6.3',
-    title: '获取规则（模式 / 轮 / 余额）',
-    nav: '获取规则',
-    subtitle: '三种模式 + 轮的三个时刻（开放 → 截止 → 结算）+ 余额三条去向（再开一轮 / 兜底序列 / 不管）',
+    title: '排班结果',
+    nav: '排班结果',
+    subtitle: '谁哪天上了哪个班，只从这一张表读；附带占用矩阵、逐日名额与缺口入口',
     routeName: 'doc-hr-schedule-6-3',
     path: '/docs/hr-schedule/6-3',
-    file: 'sections/HS63Rule.vue'
+    file: 'sections/HS63Result.vue'
   },
   {
     id: '6-4',
     no: '6.4',
-    title: '排班结果',
-    nav: '排班结果',
-    subtitle: '唯一记录口：审核通过一条、兜底安排一条，都写既有结果表；带「怎么排上的」与落空余量',
+    title: '变化与求值',
+    nav: '变化与求值',
+    subtitle: '关闸之后的偏差写一条事实、重算一次、留一个解版本，不回头改历史',
     routeName: 'doc-hr-schedule-6-4',
     path: '/docs/hr-schedule/6-4',
-    file: 'sections/HS64Result.vue'
+    file: 'sections/HS64Facts.vue'
   },
   {
     id: '6-5',
     no: '6.5',
-    title: '移动端选班',
-    nav: '移动端选班',
-    subtitle: '一套壳按资格过滤：可选班次 / 我的排班 / 通知；待审与被挤出必须各有下一步，否则链路断在人身上',
+    title: '移动端',
+    nav: '移动端',
+    subtitle: '员工在自己手机上只看两件事：我的排班、能领的班',
     routeName: 'doc-hr-schedule-6-5',
     path: '/docs/hr-schedule/6-5',
     file: 'sections/HS65Mobile.vue'

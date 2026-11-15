@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="六、功能详细说明"
-    subtitle="6.1 容器与时段 → 6.2 模板与班次 → 6.3 获取规则 → 6.4 排班结果 → 6.5 移动端选班"
-    version="v3.0 基线"
-    date="2026-11-12"
+    subtitle="6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端"
+    version="v5.0"
+    date="2026-11-15"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-feat" class="section">
@@ -13,8 +13,8 @@
         <DocCopyButton section-id="hs-feat" />
       </div>
       <p class="doc-p">
-        五个功能章按<strong>「配置在前、结果在后」</strong>排：时段不配出来，后面一条名额也铺不出来；
-        结果不写进去，移动端就没有「我的排班」可看。
+        五个功能章按<strong>数据流顺序</strong>排：先配出时段与清单（6.1），再切成轮让人获取（6.2），
+        获取结果写进唯一记录口（6.3）；之后的变化写事实、重算、留版本（6.4）；员工端只看两件事（6.5）。
       </p>
 
       <div class="chapter-grid">
@@ -34,11 +34,11 @@
           <tr><th style="width: 130px;">功能</th><th style="width: 300px;">入口</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>6.1 容器与时段</strong></td><td>排班策略 → 时段</td><td>按容器看时段，改时间形态与生成节奏</td></tr>
-          <tr><td><strong>6.2 模板与班次</strong></td><td>排班策略 → 时段模板；时段详情 → 本店班次库</td><td>模板只读引用，班次可改名调时间</td></tr>
-          <tr><td><strong>6.3 获取规则</strong></td><td>排班策略 → 获取规则</td><td>改模式与余额去向，结果页即时重算</td></tr>
-          <tr><td><strong>6.4 排班结果</strong></td><td>排班策略 → 排班结果</td><td>唯一记录口，带「怎么排上的」</td></tr>
-          <tr><td><strong>6.5 移动端选班</strong></td><td>移动端菜单 → 人事组「我的排班」</td><td>一套壳按资格过滤，右上角可切视角</td></tr>
+          <tr><td><strong>6.1 时段与清单</strong></td><td>排班策略 v5 → 时段与清单（<code>/schedule-v5</code>）</td><td>班次时间与名额 + 清单逐档配「谁 / 方式 / 窗口 / 上限」</td></tr>
+          <tr><td><strong>6.2 轮与获取</strong></td><td>排班策略 v5 → 轮与结果；页头排班节奏</td><td>轮的三个时刻、三种获取方式、余额三条去向</td></tr>
+          <tr><td><strong>6.3 排班结果</strong></td><td>排班策略 v5 → 轮与结果</td><td>唯一记录口 + 占用矩阵 + 申领登记</td></tr>
+          <tr><td><strong>6.4 变化与求值</strong></td><td>排班策略 v5 → 事实记录</td><td>四类事实、个人时间线、解版本时间线</td></tr>
+          <tr><td><strong>6.5 移动端</strong></td><td>移动端菜单 → 人事组「我的排班」（<code>/v5/m</code>）</td><td>我的排班 + 可获取两页签，右上角切演示视角</td></tr>
         </tbody>
       </table>
       <div class="note">

@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="排班策略 · 产品需求说明"
-    subtitle="容器承接时段 → 时段只描述时间形态 → 获取规则独立定义「谁在什么时候、按什么、拿几个」→ 结算完直接写排班结果"
-    version="v3.0 基线"
-    date="2026-11-12"
+    subtitle="时段与清单配出钟点 → 轮把清单切成窗口让人获取 → 结果只写一张表 → 变化写事实、重算、留版本"
+    version="v5.0"
+    date="2026-11-15"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-nav" class="section">
@@ -24,8 +24,8 @@
       </div>
       <div class="note">
         <strong>本版范围：</strong>一、版本信息；二、变更日志；三、文档说明；四、需求背景；<strong>五、需求范围</strong>；
-        六、功能详细说明（6.1 容器与时段 / 6.2 时段模板与班次库 / 6.3 获取规则 / 6.4 排班结果 / 6.5 移动端选班）；七、附录。
-        四岗位的<strong>现行排班现状</strong>与 v3 的<strong>重构框架</strong>统一收在第五章。
+        六、功能详细说明（6.1 时段与清单 / 6.2 轮与获取 / 6.3 排班结果 / 6.4 变化与求值 / 6.5 移动端）；七、附录。
+        四岗位的<strong>现行排班现状</strong>与 v5 的<strong>三阶段设计</strong>统一收在第五章。
       </div>
     </div>
 
@@ -44,7 +44,7 @@
           </tr>
           <tr>
             <td><strong>重构改了什么、为什么这么切</strong></td>
-            <td><router-link to="/docs/hr-schedule/scope">5.3–5.6</router-link>：四层对象、三类模式、轮、余额去向</td>
+            <td><router-link to="/docs/hr-schedule/scope">5.3–5.6</router-link>：通用设计三阶段（定义 / 获取 / 变化）+ 拿现状对卷</td>
           </tr>
           <tr>
             <td><strong>某个名词是什么意思</strong></td>

@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="二、变更日志"
-    subtitle="v3.0 基线 → v3.6 整章重写 → v3.7 追加三阶段总图"
-    version="v3.0 基线 + v5 框架"
-    date="2026-11-14"
+    subtitle="v3.0 基线 → v3.7 三阶段总图 → v3.8 第六章按 v5 重写"
+    version="v3.0 基线 + v5 重构"
+    date="2026-11-15"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-chg" class="section">
@@ -102,11 +102,21 @@
               三段全貌一张图，图内用词与 5.1–5.6 正文口径对齐；作为 5.3–5.5 的导览图放在三段式小图之后。
             </td>
           </tr>
+          <tr>
+            <td><strong>v3.8</strong></td>
+            <td>2026-11-15</td>
+            <td>
+              <strong>第六章整章重写</strong>（v5.0）：五个功能章按排班策略 v5 三阶段重切——
+              6.1 时段与清单（班次 + 清单逐档）、6.2 轮与获取（三个时刻 + 三种方式 + 余额三条去向）、
+              6.3 排班结果（唯一记录口）、6.4 变化与求值（四类事实 + 解版本）、6.5 移动端（我的排班 / 可获取）。
+              全部按原型 <code>/schedule-v5</code> 现状配截图；旧六章（容器 / 模板 / 获取规则）作废。
+            </td>
+          </tr>
         </tbody>
       </table>
       <div class="note">
         <strong>写法：</strong>同一轮内的口径调整<strong>就地改正文</strong>，不再叠第二条日志；
-        只有对外发布版本（v3.0 → v3.1 → v3.2 → v3.3 → v3.4 → v3.5 → v3.6 → v3.7）才追加一行。
+        只有对外发布版本（v3.0 → … → v3.7 → v3.8）才追加一行。
       </div>
     </div>
   </DocShell>
