@@ -62,7 +62,7 @@ export const SLOTS5 = [
     ]
   },
   {
-    id: 'SL-03', spaceId: 'S-201', name: '周末全天', start: '10:00', end: '22:00', days: [6, 0],
+    id: 'SL-03', spaceId: 'S-201', name: '通班', start: '10:00', end: '22:00', days: [6, 0],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
       { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } }

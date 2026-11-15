@@ -314,7 +314,7 @@ const seed = [
         { name: '早班', start: '', end: '', breakMin: 0, seats: null, required: false },
         { name: '晚班', start: '', end: '', breakMin: 0, seats: null, required: false },
         { name: '中班', start: '', end: '', breakMin: 0, seats: null, required: false },
-        { name: '全天班', start: '12:00', end: '22:00', breakMin: 0, seats: 1, required: false }
+        { name: '通班', start: '12:00', end: '22:00', breakMin: 0, seats: 1, required: false }
       ]
     },
     quota: {
@@ -322,15 +322,15 @@ const seed = [
       clamp: { min: 0, max: 1 },
       adjustRange: 0,
       forms: [
-        { headcount: 1, combo: ['全天班'] },
+        { headcount: 1, combo: ['通班'] },
         { headcount: 2, combo: ['早班', '晚班'] },
         { headcount: 3, combo: ['早班', '晚班', '中班'] }
       ]
     },
     tiers: [
-      { crowd: '本店全职客户经理', method: 'assign', rule: '按上周倒班轮转', slots: ['早班', '晚班', '中班', '全天班'], openFrom: '立即', seats: null },
-      { crowd: '本店储备客户经理', method: 'assign', rule: '缺口补位', slots: ['早班', '晚班', '中班', '全天班'], openFrom: '立即', seats: null },
-      { crowd: '本店非全客户经理', method: 'self-grab', rule: '先到先得 + 资格校验', slots: ['早班', '晚班', '中班', '全天班'], openFrom: '发布即可见', seats: null },
+      { crowd: '本店全职客户经理', method: 'assign', rule: '按上周倒班轮转', slots: ['早班', '晚班', '中班', '通班'], openFrom: '立即', seats: null },
+      { crowd: '本店储备客户经理', method: 'assign', rule: '缺口补位', slots: ['早班', '晚班', '中班', '通班'], openFrom: '立即', seats: null },
+      { crowd: '本店非全客户经理', method: 'self-grab', rule: '先到先得 + 资格校验', slots: ['早班', '晚班', '中班', '通班'], openFrom: '发布即可见', seats: null },
       { crowd: '同城市同岗位', method: 'self-grab', rule: '先到先得', slots: ['早班', '晚班'], openFrom: '排班日 1 天前 06:00', seats: null }
     ],
     noTaker: '转临时时段',

@@ -137,14 +137,14 @@ test('名额试算：档位命中、原始值、钳制都算得出来', () => {
 
 test('改对的核心：时段是原子，谁来承接挂在时段上（1 人店 12:00–22:00）', () => {
   const cm = scheduleStrategies.find(s => s.id === 'SS-001')
-  const fullDay = cm.shiftStructure.slots.find(x => x.name === '全天班')
+  const fullDay = cm.shiftStructure.slots.find(x => x.name === '通班')
   assert.equal(fullDay.start, '12:00')
   assert.equal(fullDay.end, '22:00')
   assert.equal(fullDay.seats, 1)
   // 第一顺位 = 本店全职客户经理（指派），第二顺位 = 本店储备（缺口补位），第三顺位 = 本店非全（自抢）
   assert.deepEqual(cm.tiers.map(t => t.crowd), ['本店全职客户经理', '本店储备客户经理', '本店非全客户经理', '同城市同岗位'])
   assert.equal(cm.tiers[0].method, 'assign')
-  assert.ok(cm.tiers[0].slots.includes('全天班'), '第一顺位应覆盖全天班')
+  assert.ok(cm.tiers[0].slots.includes('通班'), '第一顺位应覆盖通班')
   assert.equal(cm.tiers[2].method, 'self-grab')
   assert.equal(cm.noTaker, '转临时时段')
   // 新增一个 10:00–12:00 的时段，只要它进了某档「适用时段」就有人兜——模型上配得出来

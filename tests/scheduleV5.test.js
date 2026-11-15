@@ -160,7 +160,7 @@ test('申领：提交只登记；截止按综合分排序截断，非全工时�
   const s = mk()
   assert.equal(applyFor5(s, 'SL-03', '2026-11-22', 'E-121').ok, true)
   // 预置 3 条申领（11-21），N=2：综合分 E-107(86) E-126(81) E-121(78)
-  // 周末全天 12 小时：E-107 全职可以（超限记加班），E-126 / E-121 非全 8 小时上限排不了
+  // 通班 12 小时：E-107 全职可以（超限记加班），E-126 / E-121 非全 8 小时上限排不了
   const res = resolveApplications5(s, '2026-11-21', 'SL-03')
   assert.deepEqual(res.picked, ['E-107'])
   assert.deepEqual(res.rejected, ['E-126', 'E-121'])
@@ -338,7 +338,7 @@ test('天级复制：源天班次覆盖到目标天（加缺的、移多余的�
   const slots = [
     { name: '早班', start: '10:00', end: '14:00', days: [1, 2] },
     { name: '晚班', start: '14:00', end: '22:00', days: [1] },
-    { name: '周末全天', start: '10:00', end: '22:00', days: [6, 0] }
+    { name: '通班', start: '10:00', end: '22:00', days: [6, 0] }
   ]
   /* 把周一(1)复制到周二(2)：周二补上晚班；早班两周都有不动 */
   const plan = dayCopyPlan5(slots, 1, [2])
