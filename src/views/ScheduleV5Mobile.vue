@@ -125,9 +125,10 @@
         <div class="pick-banner">
           <div class="pb-top">
             <el-icon><Clock /></el-icon>
-            <strong>{{ okCount ? `本轮还有 ${okCount} 个名额你能拿` : '现在没有你能拿的名额' }}</strong>
+            <strong>{{ okCount ? `本轮还有 ${okCount} 个名额你能拿` : (board.length ? '现在没有你能拿的名额' : '这里的班排完直接分给你，没有要你领的名额') }}</strong>
           </div>
-          <p>能拿的直接拿：抢的点一下就成；申领的先登记，{{ shortAt(roundDeadline) }} 截止后按综合分排序。拿不了的下面直接写了原因。</p>
+          <p v-if="board.length">能拿的直接拿：抢的点一下就成；申领的先登记，{{ shortAt(roundDeadline) }} 截止后按综合分排序。拿不了的下面直接写了原因。</p>
+          <p v-else>这一轮的班都是系统按规则排的，结果在「我的排班」里看。</p>
         </div>
 
         <div class="date-strip">
@@ -146,7 +147,7 @@
 
         <div v-if="!dayOffers.length" class="empty-box">
           <p class="empty-main">这天没有可拿的名额</p>
-          <p class="empty-sub">名额放出来会出现在这里，也会推一条通知给你</p>
+          <p class="empty-sub">{{ board.length ? '名额放出来会出现在这里，也会推一条通知给你' : '班次排好后直接进「我的排班」' }}</p>
         </div>
 
         <div v-for="o in dayOffers" :key="o.slotId + o.date" :class="['offer-card', { dim: !o.gate.ok }]">
@@ -275,7 +276,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Clock, Location, User } from '@element-plus/icons-vue'
@@ -285,7 +286,7 @@ import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
 } from '../mock/scheduleV5Store.js'
-import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf } from '../mock/scheduleV5.js'
+import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5 } from '../mock/scheduleV5.js'
 
 const router = useRouter()
 const tab = ref('mine')
@@ -296,6 +297,7 @@ const meId = computed({
   set: v => {
     setMe(v)
     mineSel.value = pickDefaultMine()
+    mineState.value = { year: Number(mineSel.value.slice(0, 4)), month: Number(mineSel.value.slice(5, 7)) }
     pickSel.value = pickDefaultPick()
   }
 })
@@ -344,7 +346,9 @@ function moveMine(delta) {
 /* ---------- 可获取 ---------- */
 const board = computed(() => myOfferBoard())
 const okCount = computed(() => board.value.filter(o => o.gate.ok).length)
-const weekDays = computed(() => WEEK_DATES.map(date => {
+/* 可获取的日期条 = 这一轮铺了几天就几天：门店七天、办公区整月 */
+const roundDates = computed(() => datesOfRound5(myRound.value))
+const weekDays = computed(() => roundDates.value.map(date => {
   const items = board.value.filter(o => o.date === date)
   return {
     date,
@@ -358,9 +362,16 @@ const weekDays = computed(() => WEEK_DATES.map(date => {
 const pickSel = ref(pickDefaultPick())
 function pickDefaultPick() {
   const okDates = board.value.filter(o => o.gate.ok).map(o => o.date).sort()
-  return okDates[0] || WEEK_DATES[0]
+  return okDates[0] || roundDates.value.find(d => d >= v5.today) || roundDates.value[0] || WEEK_DATES[0]
 }
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
+
+/* 日期条按这一天一天的铺：选中那天自动滑到视野中间，别让人自己找 */
+watch(pickSel, async () => {
+  await nextTick()
+  const el = document.querySelector('.date-strip .ds-cell.active')
+  if (el) el.scrollIntoView({ inline: 'center', block: 'nearest' })
+}, { immediate: true })
 
 /* ---------- 待处理（通知走通用通知页，动作落在这页） ---------- */
 const pendingSwaps = computed(() => swapPendingFor())

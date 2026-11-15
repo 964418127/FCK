@@ -9,7 +9,7 @@ import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5,
-  openAt5, slotFirstDate5, roundOf
+  openAt5, slotFirstDate5, roundOf, datesOfRound5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -275,7 +275,8 @@ export function myOfferBoard(pid = meId.value) {
   const map = new Map()
   const all = [...state.slots, ...state.temps]
   all.forEach(slot => {
-    const dates = slot.date ? [slot.date] : WEEK_DATES.filter(d => slotsOn5(state, d).some(s => s.id === slot.id))
+    /* 铺到哪天就看哪天的名额：门店这一轮七天、办公区这一轮整月 */
+    const dates = slot.date ? [slot.date] : datesOfRound5(roundOf(state, slot.spaceId)).filter(d => slotsOn5(state, d).some(s => s.id === slot.id))
     dates.forEach(date => {
       slot.list
         .filter(r => r.way !== 'direct' && matchWho5(state, person, slot, r.who))
