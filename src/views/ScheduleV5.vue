@@ -219,10 +219,10 @@
                     <span class="lr-k">{{ i + 1 }}</span>
                     <!-- 界面只显示组合结果；点开弹窗去设三个条件 -->
                     <button class="who-chip" type="button" @click="openWho(i)" title="点开设置这一档开放给谁">
-                      {{ whoLabel5(r.who) }}
+                      <span class="who-chip-txt">{{ whoLabel5(r.who) }}</span>
                       <span class="who-chip-edit">改</span>
                     </button>
-                    <el-select v-model="r.way" size="small" style="width: 120px">
+                    <el-select v-model="r.way" size="small" style="width: 104px">
                       <el-option label="直派轮转" value="direct" />
                       <el-option label="先到先得" value="grab" />
                       <el-option label="申领审核" value="apply" />
@@ -251,7 +251,7 @@
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
-                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', tag: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
+                  <button class="add-row" @click="form.list.push({ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
                   <div class="le-ways">
                     <div class="way-row"><span class="way-name">直派轮转</span><span class="way-desc">系统把这一档的人群<em>按轮换次序轮流排</em>（这次你、下次他），到这一档窗口开放时执行。没有申领入口，人只收通知。</span></div>
                     <div class="way-row"><span class="way-name">先到先得</span><span class="way-desc">窗口一开自己点，点了就成，位满即关；成不了当场说原因。</span></div>
@@ -907,7 +907,7 @@ const formErrs = ref([])
 const blankForm = () => ({
   name: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
   quota: { source: 'manual', value: 2 },
-  list: [{ who: { scope: 'store', kind: 'all', tag: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
+  list: [{ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
 })
 const form = reactive(blankForm())
 /* 开放窗口：配置存锚点+偏移，界面展示一律落成具体日期时间 */
@@ -1167,10 +1167,10 @@ function doAppoint() {
 /* 「这一档开放给谁」弹窗：几个条件在这里设，清单行只显示组合结果 */
 const whoDlg = ref(false)
 const whoEditIdx = ref(-1)
-const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', tag: 'all', pos: 'all' })
+const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', tag: 'regular', pos: 'all' })
 function openWho(i) {
   whoEditIdx.value = i
-  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', tag: 'all', pos: 'all', ...(form.list[i]?.who || {}) })
+  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', tag: 'regular', pos: 'all', ...(form.list[i]?.who || {}) })
   whoDlg.value = true
 }
 function saveWho() {
@@ -1361,16 +1361,17 @@ function devResolveApply() {
 .day-picks button.on { border-color: #a40035; background: #fdf1f4; color: #a40035; }
 .preview { font-size: 11.5px; color: #0f6e56; }
 .list-editor { border: 1px solid #f2eef0; border-radius: 8px; padding: 8px; }
-.le-head { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
+.le-head { display: grid; grid-template-columns: 44px 196px 112px minmax(280px, 1fr) 92px 44px; font-size: 11px; color: #9a9fa9; padding: 0 2px 4px; }
 .le-head span:last-child { text-align: right; }
-.le-row { display: grid; grid-template-columns: 44px 136px 122px minmax(300px, 1fr) 96px 44px; align-items: center; gap: 6px; padding: 3px 0 22px; }
+.le-row { display: grid; grid-template-columns: 44px 196px 112px minmax(280px, 1fr) 92px 44px; align-items: center; gap: 6px; padding: 3px 0 22px; }
 .win-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; position: relative; }
 .win-line { display: flex; align-items: center; gap: 6px; }
 .win-u { font-size: 11px; color: #9a9fa9; white-space: nowrap; }
 .win-preview { position: absolute; top: calc(100% + 1px); left: 2px; font-size: 11px; color: #3B6D11; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 4px); }
-.who-chip { display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: space-between; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
+.who-chip { display: flex; align-items: center; gap: 6px; width: 100%; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; padding: 4px 8px; font-size: 12px; color: #2c2c2a; cursor: pointer; text-align: left; }
 .who-chip:hover { border-color: #a40035; }
-.who-chip-edit { font-size: 11px; color: #b0b3ba; }
+.who-chip-txt { flex: 1; min-width: 0; line-height: 1.5; }
+.who-chip-edit { font-size: 11px; color: #b0b3ba; flex-shrink: 0; }
 .wr { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .wr > label { font-size: 12.5px; color: #6a6a75; width: 64px; }
 .wr-unit { font-size: 12.5px; color: #6a6a75; }

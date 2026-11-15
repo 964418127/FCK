@@ -25,7 +25,9 @@ export const SPACES5 = [
 export const JOBS5 = ['推拿师', '客户经理', '店长', '前台', '保洁']
 
 /* 人员属性标签：在职（默认，无标签）/ 试用 / 储备。
-   档位的「谁」可以按标签圈人——业务上「储备客户经理缺口补位」「试用期不单独排」都靠它表达 */
+   档位的「谁」可以按标签圈人——业务上「储备客户经理缺口补位」「试用期不单独排」都靠它表达。
+   口径：档位统一显式写「在职」= 正常上班的人（含试用），储备挡在外面（储备只在有缺时补，不参与获取）；
+   要把储备放进来才显式改成「不限」。 */
 export const TAGS5 = [
   { value: 'regular', label: '在职' },
   { value: 'probation', label: '试用' },
@@ -74,39 +76,39 @@ export const SLOTS5 = [
     id: 'SL-01', spaceId: 'S-201', name: '早班', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-01' }, clamp: [1, 6], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } },
-      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '20:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } },
+      { k: 3, who: { tag: 'regular', scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '20:00' } }
     ]
   },
   {
     id: 'SL-02', spaceId: 'S-201', name: '晚班', start: '14:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
     ]
   },
   {
     id: 'SL-03', spaceId: 'S-201', name: '通班', start: '10:00', end: '22:00', days: [6, 0],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
     id: 'SL-04', spaceId: 'S-203', name: '晚市班', start: '17:00', end: '21:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-03' }, clamp: [1, 4], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'all', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: { base: 'week', dow: 5, t: '06:00' } }
     ]
   },
   {
     id: 'SL-05', spaceId: 'S-203', name: '周末午市', start: '11:00', end: '15:00', days: [6, 0],
     quota: { source: 'manual', value: 3 }, clamp: [1, 4], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
@@ -115,7 +117,7 @@ export const SLOTS5 = [
     id: 'SL-06', spaceId: 'S-201', name: '通班', start: '10:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
     ]
   },
 
@@ -134,9 +136,9 @@ export const SLOTS5 = [
     id: 'SL-11', spaceId: 'S-205', name: '早班', start: '10:00', end: '18:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
-      { k: 2, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
-      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 3, who: { tag: 'regular', scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
     ]
   },
   /* 中班 12–20：推拿只排早/晚，中班只有客经 1 人 */
@@ -144,7 +146,7 @@ export const SLOTS5 = [
     id: 'SL-12', spaceId: 'S-205', name: '中班', start: '12:00', end: '20:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 1 }, clamp: [1, 6], snapN: 1,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 }
     ]
   },
   /* 晚班 14–22：客经 1（直派）+ 推拿 1（申领）= 2 */
@@ -152,9 +154,9 @@ export const SLOTS5 = [
     id: 'SL-13', spaceId: 'S-205', name: '晚班', start: '14:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
-      { k: 2, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
-      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 3, who: { tag: 'regular', scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
     ]
   },
   /* 通班 10–22：兜底——窗口排在早/中/晚之后，到点直派，收本店全职没排上的人 */
@@ -162,7 +164,7 @@ export const SLOTS5 = [
     id: 'SL-14', spaceId: 'S-205', name: '通班', start: '10:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
     ]
   },
   /* 非全客户经理的周期时段：门店提的时段需求，名额固定 3；三档错峰累计开放 */
@@ -170,18 +172,18 @@ export const SLOTS5 = [
     id: 'SL-15', spaceId: 'S-205', name: '周期时段', start: '11:00', end: '15:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 3 }, clamp: [0, 6], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
-      { k: 3, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
+      { k: 3, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
     ]
   },
   {
     id: 'SL-16', spaceId: 'S-205', name: '周期时段', start: '17:00', end: '21:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'manual', value: 3 }, clamp: [0, 6], snapN: 3,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
-      { k: 2, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
-      { k: 3, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
+      { k: 3, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
     ]
   },
   /* 非全推拿：签约 4 人 ÷ 2 向上 = 2 个位；必选早晚 + 常规，仅本店非全推拿先到先得 */
@@ -189,21 +191,21 @@ export const SLOTS5 = [
     id: 'SL-17', spaceId: 'S-205', name: '必选·早', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
     id: 'SL-18', spaceId: 'S-205', name: '必选·晚', start: '18:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
     id: 'SL-19', spaceId: 'S-205', name: '常规', start: '14:00', end: '18:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
-      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+      { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   }
 ]
@@ -213,7 +215,7 @@ export const TEMPS5 = [
   {
     id: 'TL-01', spaceId: 'S-201', date: '2026-11-21', name: '周六晚加场', start: '18:00', end: '22:00',
     quota: { source: 'manual', value: 2 }, snapN: 2,
-    list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
+    list: [{ k: 1, who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
   }
 ]
 
