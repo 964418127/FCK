@@ -301,6 +301,17 @@ export function roundOf(state, spaceId) {
   if (bySpace) return bySpace
   return state?.round || ROUND5
 }
+/* 这一轮铺到了哪些天：门店七天，办公区整月——从覆盖区间按自然日展开 */
+export function datesOfRound5(round) {
+  const out = []
+  const d = new Date(`${(round || ROUND5).span[0]}T00:00:00`)
+  const end = new Date(`${(round || ROUND5).span[1]}T00:00:00`)
+  while (d <= end) {
+    out.push(fmtDate(d))
+    d.setDate(d.getDate() + 1)
+  }
+  return out
+}
 
 /* 往后的第 N 个星期几（含当天） */
 export function nextDow(fromDate, dow) {
@@ -727,14 +738,16 @@ export function rowUsed5(state, slotId, date, slot, row) {
   窗口开了才分人——这时候前面先开的班次都跑完了，落空的人自然被收尾班次（通班）收进去；
   已排到班的人时段重叠排不了，被冲突检查挡在外面。位满即停，装不下的人事当场安排。
   执行过的档记进 state.directDone，重跑不重复分（幂等）。
+  跑的范围是「这个空间那一轮铺了哪些天」：门店一周、办公区一个月——不是写死七天的演示窗口。
 */
 export function runDueDirect5(state, now = state.now) {
   const all = [...state.slots, ...state.temps]
   all.forEach(slot => {
-    WEEK_DATES.filter(d => slotsOn5(state, d).some(s => s.id === slot.id) || slot.date === d).forEach(date => {
+    const round = roundOf(state, slot.spaceId)
+    datesOfRound5(round).filter(d => slotsOn5(state, d).some(s => s.id === slot.id) || slot.date === d).forEach(date => {
       /* 轮转：本店的人每天顺延一位起头，轮到谁是谁（业务上按上周倒班轮，原型用这个表达） */
       const local = state.people.filter(p => p.spaceId === slot.spaceId)
-      const k = local.length ? Math.max(0, WEEK_DATES.indexOf(date)) % local.length : 0
+      const k = local.length ? Math.max(0, datesOfRound5(round).indexOf(date)) % local.length : 0
       const ordered = [...local.slice(k), ...local.slice(0, k), ...state.people.filter(p => p.spaceId !== slot.spaceId)]
       slot.list.forEach(row => {
         if (row.way !== 'direct') return

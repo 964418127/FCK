@@ -10,9 +10,7 @@
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>排班</h1>
       <div class="ps-slot">
-        <select v-model="meId" class="ps-select">
-          <option v-for="p in v5.people" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
+        <PersonaSwitch5 @pick="meId = $event" />
       </div>
     </header>
 
@@ -309,6 +307,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Clock, Location, User } from '@element-plus/icons-vue'
 import MonthCalendar from '../components/v3/MonthCalendar.vue'
+import PersonaSwitch5 from '../components/v5/PersonaSwitch5.vue'
 import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
@@ -578,11 +577,7 @@ function declineMakeup(n) {
 }
 .back-icon { font-size: 18px; color: #333; cursor: pointer; }
 .page-header h1 { flex: 1; text-align: center; font-size: 15px; font-weight: 500; margin: 0; color: #222; }
-.ps-slot { width: 78px; display: flex; justify-content: flex-end; }
-.ps-select {
-  font-size: 12px; color: #a40035; background: #fdf1f4;
-  border: 1px solid #f3d3db; border-radius: 12px; padding: 3px 6px; max-width: 78px;
-}
+.ps-slot { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
 .content-container { padding: 10px 12px 0; }
 .view-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 .view-tabs button {

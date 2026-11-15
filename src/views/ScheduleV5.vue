@@ -303,7 +303,7 @@
               <div class="day-quota">
                 <span class="dq-title">这一轮每天 <em>只改这一天，不动模板，也不进下一轮</em></span>
                 <div class="dq-days">
-                  <template v-for="d in WEEK_DATES" :key="d">
+                  <template v-for="d in roundDates" :key="d">
                     <span v-if="onDay(s, d)" class="dq-day" :class="{ full: occupied(s.id, d) >= dayCap(s.id, d) }">
                       <em>{{ d.slice(5) }}</em>
                       <b>{{ occupied(s.id, d) }}/{{ dayCap(s.id, d) }}</b>
@@ -390,16 +390,16 @@
         <section v-else-if="tab === 'run'" class="pane">
           <div class="table-title">占用与缺口 <em>点缺人的格子直接补人；格子里的名字是当前占位的人</em></div>
           <div class="occ-wrap">
-            <div class="occ-head">
+            <div class="occ-head" :style="{ gridTemplateColumns: occCols }">
               <span class="occ-corner">时段</span>
-              <span v-for="d in WEEK_DATES" :key="d" class="occ-day">{{ d.slice(5) }}</span>
+              <span v-for="d in roundDates" :key="d" class="occ-day">{{ d.slice(5) }}</span>
             </div>
-            <div v-for="s in allSpaceSlots" :key="s.id" class="occ-row">
+            <div v-for="s in allSpaceSlots" :key="s.id" class="occ-row" :style="{ gridTemplateColumns: occCols }">
               <div class="occ-name">
                 <strong>{{ s.name }}</strong>
                 <em>{{ s.start }}–{{ s.end }} · 名额 {{ s.snapN }}</em>
               </div>
-              <div v-for="d in WEEK_DATES" :key="d" class="occ-cell"
+              <div v-for="d in roundDates" :key="d" class="occ-cell"
                 :class="{ off: !onDay(s, d), gap: onDay(s, d) && occupied(s.id, d) < s.snapN, pointable: onDay(s, d) && occupied(s.id, d) < s.snapN }"
                 @click="onDay(s, d) && occupied(s.id, d) < s.snapN && openGap(s, d)">
                 <template v-if="onDay(s, d)">
@@ -728,7 +728,7 @@ import {
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
-  dayCopyPlan5
+  dayCopyPlan5, datesOfRound5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -745,6 +745,9 @@ const city = ref('')
 const selSpace = ref(v5.spaces[0].id)
 /* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
 const round = computed(() => roundOf(v5, selSpace.value))
+/* 这一轮铺到了哪些天：门店七天、办公区整月——矩阵和逐日名额都按它走 */
+const roundDates = computed(() => datesOfRound5(round.value))
+const occCols = computed(() => `150px repeat(${roundDates.value.length}, minmax(78px, 1fr))`)
 
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
 const filteredSpaces = computed(() => v5.spaces.filter(s => {
@@ -803,10 +806,11 @@ function serviceUsage(id) {
   return [...v5.slots, ...v5.temps].filter(s => s.quota?.source === 'service' && s.quota?.serviceId === id).length
 }
 function gapsOf(id) {
+  const dates = datesOfRound5(roundOf(v5, id))
   return [...v5.slots.filter(s => s.spaceId === id), ...v5.temps.filter(t => t.spaceId === id)]
     .some(s => {
-      const dates = s.date ? [s.date] : WEEK_DATES
-      return dates.some(d => onDay(s, d) && activeCount5(v5, s.id, d) < s.snapN)
+      const ds = s.date ? [s.date] : dates
+      return ds.some(d => onDay(s, d) && activeCount5(v5, s.id, d) < s.snapN)
     })
 }
 function daysLabel(days) {
@@ -1410,8 +1414,7 @@ function devResolveApply() {
 .rb-k { color: #0f6e56; background: #eaf6f1; border-radius: 4px; padding: 2px 6px; }
 .rb-dl { color: #a35b00; }
 .occ-wrap { border: 1px solid #f0eaec; border-radius: 10px; overflow: auto; }
-.occ-head, .occ-row { display: grid; grid-template-columns: 150px repeat(7, minmax(78px, 1fr)); }
-.occ-head { background: #fbfaf9; border-bottom: 1px solid #f0eaec; }
+.occ-head, .occ-row { display: grid; grid-template-columns: 150px repeat(7, minmax(78px, 1fr)); }.occ-head { background: #fbfaf9; border-bottom: 1px solid #f0eaec; }
 .occ-corner, .occ-day { font-size: 11px; color: #9a9fa9; padding: 6px 8px; }
 .occ-day { text-align: center; }
 .occ-row { border-bottom: 1px solid #f6f2f3; }
