@@ -14,12 +14,23 @@ export const WEEK_DATES = [
 export const SPACES5 = [
   { id: 'S-201', name: '蓝田店', city: '杭州', tag: '旗舰店', bizStart: '10:00', bizEnd: '22:00', xy: [0, 0] },
   { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] },
-  { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [0, 0] },
-  { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [3.5, 2.2] }
+  /* 坐标按城市分区（成都组整体 +50），否则「附近 N 公里」会把另一座城市的店也圈进来 */
+  { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [50, 50] },
+  { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [53.5, 52.2] },
+  /* 兴隆湖店：把业务现行的四套策略原样配进同一个店（客经人数组合 / 推拿业务量 / 非全客经错峰 / 非全推拿签约÷2） */
+  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4] }
 ]
 
 /* 岗位字典：通用排班系统不写死某几个岗位，弹窗里从这里出 */
 export const JOBS5 = ['推拿师', '客户经理', '店长', '前台', '保洁']
+
+/* 人员属性标签：在职（默认，无标签）/ 试用 / 储备。
+   档位的「谁」可以按标签圈人——业务上「储备客户经理缺口补位」「试用期不单独排」都靠它表达 */
+export const TAGS5 = [
+  { value: 'regular', label: '在职' },
+  { value: 'probation', label: '试用' },
+  { value: 'reserve', label: '储备' }
+]
 
 export const PEOPLE5 = [
   { id: 'E-107', name: '蓝田', spaceId: 'S-201', kind: 'fulltime', position: '推拿师', score: 86 },
@@ -30,7 +41,22 @@ export const PEOPLE5 = [
   { id: 'E-137', name: '石全', spaceId: 'S-201', kind: 'fulltime', position: '客户经理', score: 70 },
   { id: 'E-141', name: '周野', spaceId: 'S-202', kind: 'parttime', position: '推拿师', score: 75 },
   { id: 'E-150', name: '小唐', spaceId: 'S-203', kind: 'fulltime', position: '推拿师', score: 88 },
-  { id: 'E-151', name: '阿橙', spaceId: 'S-203', kind: 'parttime', position: '客户经理', score: 79 }
+  { id: 'E-151', name: '阿橙', spaceId: 'S-203', kind: 'parttime', position: '客户经理', score: 79 },
+  /* 兴隆湖店：3 在职 + 1 试用 + 1 储备的全职客经（3 人店形态：早/晚/中各 1 人），推拿 3，非全客经 3，非全推拿 4 */
+  { id: 'E-201', name: '何川', spaceId: 'S-205', kind: 'fulltime', position: '客户经理', score: 88, tag: 'regular' },
+  { id: 'E-202', name: '白露', spaceId: 'S-205', kind: 'fulltime', position: '客户经理', score: 82, tag: 'probation' },
+  { id: 'E-203', name: '徐青', spaceId: 'S-205', kind: 'fulltime', position: '客户经理', score: 85, tag: 'regular' },
+  { id: 'E-204', name: '岑岭', spaceId: 'S-205', kind: 'fulltime', position: '客户经理', score: 74, tag: 'reserve' },
+  { id: 'E-205', name: '罗盘', spaceId: 'S-205', kind: 'fulltime', position: '推拿师', score: 90, tag: 'regular' },
+  { id: 'E-206', name: '谷雨', spaceId: 'S-205', kind: 'fulltime', position: '推拿师', score: 86, tag: 'regular' },
+  { id: 'E-207', name: '安然', spaceId: 'S-205', kind: 'fulltime', position: '推拿师', score: 80, tag: 'regular' },
+  { id: 'E-208', name: '叶青', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 80, tag: 'regular' },
+  { id: 'E-209', name: '米朵', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 78, tag: 'regular' },
+  { id: 'E-210', name: '简宁', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 76, tag: 'regular' },
+  { id: 'E-211', name: '桃夭', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 82, tag: 'regular' },
+  { id: 'E-212', name: '半夏', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 79, tag: 'regular' },
+  { id: 'E-213', name: '木木', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 77, tag: 'regular' },
+  { id: 'E-214', name: '星野', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 75, tag: 'regular' }
 ]
 
 /* 算法服务：只登记不实现。登记四门槛：输入可声明 / 算式可解释 / 可单独调用幂等 / 有版本号 */
@@ -90,6 +116,94 @@ export const SLOTS5 = [
     quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
     list: [
       { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
+    ]
+  },
+
+  /* ===================================================================
+     兴隆湖店 S-205：业务现行四套策略原样落地（3 人店形态）
+       ① 全职客户经理：人数组合 → 早 / 晚 / 中各 1 人；轮转直派在前，储备只在有缺时补
+       ② 全职推拿师：业务量算名额 → 早 / 晚各 1 人；本店申领审核，同城先到先得在最后
+       ③ 非全客户经理：时段需求固定名额 → 三档错峰累计开放
+       ④ 非全推拿师：签约 4 人 ÷ 2 向上 = 2 → 必选·早 / 必选·晚 / 常规，仅本店非全先到先得
+       名额来源写清：客经那 1 个位是人数组合给的，推拿那 1 个位是业务量给的，
+       一条时段只有一个名额数，所以这里填合计（2），用每一档的「上限」把两个岗位的份切清楚。
+     =================================================================== */
+
+  /* 早班 10–18：客经 1（直派）+ 推拿 1（申领）= 2 */
+  {
+    id: 'SL-11', spaceId: 'S-205', name: '早班', start: '10:00', end: '18:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 2, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
+    ]
+  },
+  /* 中班 12–20：推拿只排早/晚，中班只有客经 1 人 */
+  {
+    id: 'SL-12', spaceId: 'S-205', name: '中班', start: '12:00', end: '20:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 1 }, clamp: [1, 6], snapN: 1,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 }
+    ]
+  },
+  /* 晚班 14–22：客经 1（直派）+ 推拿 1（申领）= 2 */
+  {
+    id: 'SL-13', spaceId: 'S-205', name: '晚班', start: '14:00', end: '22:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }, way: 'direct', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 2, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'apply', win: { base: 'publish', d: 0, t: '06:00' }, cap: 1 },
+      { k: 3, who: { scope: 'radius', km: 5, kind: 'all', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' }, cap: 1 }
+    ]
+  },
+  /* 通班 10–22：兜底——窗口排在早/中/晚之后，到点直派，收本店全职没排上的人 */
+  {
+    id: 'SL-14', spaceId: 'S-205', name: '通班', start: '10:00', end: '22:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 2 }, clamp: [1, 6], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'fulltime', pos: 'all' }, way: 'direct', win: { base: 'puboff', d: 2, t: '09:00' } }
+    ]
+  },
+  /* 非全客户经理的周期时段：门店提的时段需求，名额固定 3；三档错峰累计开放 */
+  {
+    id: 'SL-15', spaceId: 'S-205', name: '周期时段', start: '11:00', end: '15:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 3 }, clamp: [0, 6], snapN: 3,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
+      { k: 3, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
+    ]
+  },
+  {
+    id: 'SL-16', spaceId: 'S-205', name: '周期时段', start: '17:00', end: '21:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'manual', value: 3 }, clamp: [0, 6], snapN: 3,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '客户经理' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } },
+      { k: 2, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -3, t: '06:00' } },
+      { k: 3, who: { scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
+    ]
+  },
+  /* 非全推拿：签约 4 人 ÷ 2 向上 = 2 个位；必选早晚 + 常规，仅本店非全推拿先到先得 */
+  {
+    id: 'SL-17', spaceId: 'S-205', name: '必选·早', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
+  },
+  {
+    id: 'SL-18', spaceId: 'S-205', name: '必选·晚', start: '18:00', end: '22:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
+    ]
+  },
+  {
+    id: 'SL-19', spaceId: 'S-205', name: '常规', start: '14:00', end: '18:00', days: [1, 2, 3, 4, 5],
+    quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
+    list: [
+      { k: 1, who: { scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   }
 ]
@@ -273,6 +387,28 @@ export const PLACEMENTS5 = [
   P('P-23', 'SL-02', '2026-11-20', 'E-121', '抢 · 第2档')
 ]
 
+/*
+  兴隆湖店：整周铺满，用来验业务现行四套规则
+  客经的直派位、通班的兜底位由 runDueDirect5 到点生成（不写死在这里，否则看不出「到点才分人」）；
+  这里只放申领排上的、和非全自己抢到的。
+*/
+WEEK_DATES.slice(0, 5).forEach((d, i) => {
+  const rows = [
+    ['SL-11', 'E-205', '申领 · 排上（综合分90）'],   // 全职推拿 · 早班申领排上
+    ['SL-13', 'E-206', '申领 · 排上（综合分86）'],   // 全职推拿 · 晚班申领排上
+    ['SL-15', 'E-208', '抢 · 第1档'],               // 非全客经 · 午段
+    ['SL-15', 'E-209', '抢 · 第1档'],
+    ['SL-16', 'E-210', '抢 · 第1档'],               // 非全客经 · 晚段
+    ['SL-17', 'E-211', '抢 · 第1档'],               // 非全推拿 · 必选早（签约 4÷2=2 个位）
+    ['SL-17', 'E-212', '抢 · 第1档'],
+    ['SL-18', 'E-213', '抢 · 第1档'],               // 非全推拿 · 必选晚
+    ['SL-18', 'E-214', '抢 · 第1档']
+  ]
+  rows.forEach(([slotId, personId, way], j) => {
+    PLACEMENTS5.push(P(`P-XL${i}-${j}`, slotId, d, personId, way))
+  })
+})
+
 /* 申领登记：提交只登记，截止后按综合分排序截断 */
 export const APPLICATIONS5 = [
   { id: 'A-01', slotId: 'SL-03', date: '2026-11-21', personId: 'E-107', at: '2026-11-12 08:10' },
@@ -363,8 +499,8 @@ export function applyDayCopy5(slots, srcDow, targetDows) {
 }
 
 /*
-  清单行的「谁」：范围（本店/附近 N 公里）+ 合作性质（不限/全职/非全）+ 岗位（不限/具体岗位）
-  三个条件组合圈人，不写在时段上——「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提。
+  清单行的「谁」：范围（本店/附近 N 公里）+ 合作性质（不限/全职/非全）+ 人员标签（不限/在职/试用/储备）+ 岗位
+  条件组合圈人，不写在时段上——「一个时段 A 岗位先挑、B 岗位隔一会儿加入」能成立的前提。
   范围半径按门店坐标算（含本店）。
 */
 export function whoLabel5(who) {
@@ -372,9 +508,11 @@ export function whoLabel5(who) {
   if (typeof who === 'string') return who // 兼容旧字符串口径
   const scope = who.scope === 'radius' ? `附近 ${who.km}km` : '本店'
   const kind = who.kind === 'fulltime' ? '全职' : who.kind === 'parttime' ? '非全' : ''
+  const tag = who.tag === 'reserve' ? '储备' : who.tag === 'probation' ? '试用' : who.tag === 'regular' ? '在职' : ''
   const pos = who.pos && who.pos !== 'all' ? who.pos : ''
-  if (!kind && !pos) return scope === '本店' ? '本店全员' : `${scope}全员`
-  return `${scope} · ${kind}${pos}`.replace(/\s+$/, '')
+  const body = [kind, tag, pos].filter(Boolean)
+  if (!body.length) return scope === '本店' ? '本店全员' : `${scope}全员`
+  return [scope, ...body].join(' · ')
 }
 export function matchWho5(state, person, slot, who) {
   if (!person || !slot) return false
@@ -387,7 +525,14 @@ export function matchWho5(state, person, slot, who) {
     const dist = Math.hypot(space.xy[0] - personSpace.xy[0], space.xy[1] - personSpace.xy[1])
     if (dist > (who.km || 0)) return false
   }
-  if (who.kind !== 'all' && person.kind !== who.kind) return false
+  if (who.kind && who.kind !== 'all' && person.kind !== who.kind) return false
+  /* 人员标签：在职（默认，含试用期）/ 试用 / 储备。
+     选「在职」= 正常上班的人（含试用），把储备挡在外面；储备只在有缺时才补（缺口响应，排班不做） */
+  if (who.tag && who.tag !== 'all') {
+    const t = person.tag || 'regular'
+    if (who.tag === 'regular') { if (t === 'reserve') return false }
+    else if (t !== who.tag) return false
+  }
   if (who.pos && who.pos !== 'all' && person.position !== who.pos) return false
   return true
 }
@@ -471,16 +616,15 @@ export function personBusy5(state, personId, date, start, end, exceptId = null) 
   return state.placements.some(p => p.personId === personId && p.date === date && p.status === 'active'
     && p.id !== exceptId && overlap5(start, end, slotById(state, p.slotId).start, slotById(state, p.slotId).end))
 }
-/* 工时按各岗位规则：全职超限记加班（放行），非全超限排不了 */
-export function worktimeOk5(state, person, date, start, end, exceptId = null) {
-  if (person.kind === 'fulltime') return { ok: true, overtime: false }
-  let mins = (hours5(start, end) * 60)
-  state.placements.forEach(p => {
-    if (p.personId === person.id && p.date === date && p.status === 'active' && p.id !== exceptId) {
-      mins += hours5(slotById(state, p.slotId).start, slotById(state, p.slotId).end) * 60
-    }
-  })
-  return { ok: mins <= 480, overtime: false }
+/* 工时不由排班判断——排班只负责记下这一个班是几点到几点。
+   业务口径：非全一店一天 4 小时、一店一周 24 小时；全职正常上班 8 小时，超出部分计加班。
+   能不能接、多少算正常上班、多少算加班，由获取端背后的服务与薪酬侧判定，排班这里不算、也不拦。 */
+export function worktimeOk5() {
+  return { ok: true, overtime: false }
+}
+/* 这一个班有多长（小时）—— 排班只提供这个数，怎么解读是别人的事 */
+export function shiftHours5(start, end) {
+  return hours5(start, end)
 }
 
 /* 可获取清单：窗口已开、关闸未到、人群匹配、还有空位 */
@@ -525,6 +669,10 @@ export function runDueDirect5(state, now = state.now) {
   const all = [...state.slots, ...state.temps]
   all.forEach(slot => {
     WEEK_DATES.filter(d => slotsOn5(state, d).some(s => s.id === slot.id) || slot.date === d).forEach(date => {
+      /* 轮转：本店的人每天顺延一位起头，轮到谁是谁（业务上按上周倒班轮，原型用这个表达） */
+      const local = state.people.filter(p => p.spaceId === slot.spaceId)
+      const k = local.length ? Math.max(0, WEEK_DATES.indexOf(date)) % local.length : 0
+      const ordered = [...local.slice(k), ...local.slice(0, k), ...state.people.filter(p => p.spaceId !== slot.spaceId)]
       slot.list.forEach(row => {
         if (row.way !== 'direct') return
         const key = `${slot.id}|${date}|${row.k}`
@@ -532,12 +680,11 @@ export function runDueDirect5(state, now = state.now) {
         const at = openAt5(row, state.round, date)
         if (!at || now < at) return // 还没到点，不分
         state.directDone.add(key)
-        state.people.forEach(person => {
+        ordered.forEach(person => {
           if (!matchWho5(state, person, slot, row.who)) return
           if (activeCount5(state, slot.id, date) >= snapN5(state, slot.id, date)) return
           if (row.cap && rowUsed5(state, slot.id, date, slot, row) >= row.cap) return
           if (personBusy5(state, person.id, date, slot.start, slot.end)) return
-          if (!worktimeOk5(state, person, date, slot.start, slot.end).ok) return
           state.placements.push({
             id: `P-${state.seq++}`, slotId: slot.id, date, personId: person.id,
             way: `直派 · 第${row.k}档`, status: 'active', at, history: []
@@ -566,8 +713,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
     if (now >= `${date}T${slot.start}:00`.replace('T', ' ')) return { ok: false, reason: '已开班，闸关了' }
     if (activeCount5(state, slotId, date) >= snapN5(state, slotId, date)) return { ok: false, reason: '位已占满' }
     if (personBusy5(state, personId, date, slot.start, slot.end)) return { ok: false, reason: '和已有班次时间撞了' }
-    const wt = worktimeOk5(state, person, date, slot.start, slot.end)
-    if (!wt.ok) return { ok: false, reason: '非全当日工时已满 8 小时，排不了' }
+    /* 工时不在排班判断：接不接得起由获取端背后的服务算，这里只记录班次起止 */
   } else {
     if (now >= ROUND5.applyDeadline) return { ok: false, reason: '申领已截止' }
     if (state.applications.some(a => a.slotId === slotId && a.date === date && a.personId === personId)) return { ok: false, reason: '已登记过' }
@@ -601,9 +747,7 @@ export function resolveApplications5(state, date, slotId) {
   const picked = []
   apps.forEach(a => {
     if (picked.length >= snapN5(state, slotId, date)) return
-    const p = personById(state, a.personId)
-    const wt = worktimeOk5(state, p, date, slot.start, slot.end)
-    if (personBusy5(state, a.personId, date, slot.start, slot.end) || !wt.ok) return
+    if (personBusy5(state, a.personId, date, slot.start, slot.end)) return
     picked.push(a)
   })
   picked.forEach(a => {
@@ -626,8 +770,7 @@ export function pickReplacement5(state, slotId, date, exceptPersonId = null) {
     const cands = state.people.filter(p =>
       matchWho5(state, p, slot, row.who)
       && p.id !== exceptPersonId
-      && !personBusy5(state, p.id, date, slot.start, slot.end)
-      && worktimeOk5(state, p, date, slot.start, slot.end).ok)
+      && !personBusy5(state, p.id, date, slot.start, slot.end))
     if (cands.length) return { person: cands[0], row }
   }
   return null

@@ -156,14 +156,14 @@ test('抢：未开窗当场说开窗时刻', () => {
   assert.equal(r.reason, '还没开：11-15 20:00 开（开班前 1 天）')
 })
 
-test('申领：提交只登记；截止按综合分排序截断，非全工时超限排不了', () => {
+test('申领：提交只登记；截止按综合分排序截断（工时不由排班判断）', () => {
   const s = mk()
   assert.equal(applyFor5(s, 'SL-03', '2026-11-22', 'E-121').ok, true)
   // 预置 3 条申领（11-21），N=2：综合分 E-107(86) E-126(81) E-121(78)
-  // 通班 12 小时：E-107 全职可以（超限记加班），E-126 / E-121 非全 8 小时上限排不了
+  // 工时不在排班判断——排班只记这个班几点到几点，接不接得起由获取端背后的服务算
   const res = resolveApplications5(s, '2026-11-21', 'SL-03')
-  assert.deepEqual(res.picked, ['E-107'])
-  assert.deepEqual(res.rejected, ['E-126', 'E-121'])
+  assert.deepEqual(res.picked, ['E-107', 'E-126'])
+  assert.deepEqual(res.rejected, ['E-121'])
   const ways = s.placements.filter(p => p.slotId === 'SL-03').map(p => p.way)
   assert.ok(ways.some(w => w.includes('综合分86')))
 })
@@ -366,4 +366,103 @@ test('天级复制：源天班次覆盖到目标天（加缺的、移多余的�
   const plan3 = dayCopyPlan5(slots2, 1, [2])
   assert.deepEqual(plan3.adds, [{ name: '早班 08:00–12:00', dow: 2 }])
   assert.deepEqual(plan3.removes, [{ name: '早班 10:00–14:00', dow: 2 }])
+})
+
+/* ============================================================
+ * 兴隆湖店：业务现行四套策略原样落进 v5（客经人数组合 / 推拿业务量
+ * / 非全客经三档错峰 / 非全推拿签约÷2），用来自查「通用设计是否满足业务」
+ * ============================================================ */
+
+test('兴隆湖店：人员属性标签（在职 / 试用 / 储备）能圈人', () => {
+  const s = mk()
+  const sl = s.slots.find(x => x.id === 'SL-11')
+  const xl = s.people.filter(p => p.spaceId === 'S-205')
+  assert.equal(xl.filter(p => p.tag === 'reserve').length, 1, '1 名储备')
+  assert.equal(xl.filter(p => p.tag === 'probation').length, 1, '1 名试用')
+  const row = sl.list[0]
+  const picked = xl.filter(p => matchWho5(s, p, sl, row.who)).map(p => p.name)
+  assert.ok(picked.includes('白露'), '试用期照常上班，要能排')
+  assert.ok(!picked.includes('岑岭'), '储备不进常规直派这一档')
+  assert.deepEqual(picked.sort(), ['何川', '徐青', '白露'].sort())
+  /* 储备这一档只圈储备 */
+  const only = xl.filter(p => matchWho5(s, p, sl, { scope: 'store', kind: 'all', tag: 'reserve', pos: 'all' })).map(p => p.name)
+  assert.deepEqual(only, ['岑岭'])
+  assert.equal(whoLabel5({ scope: 'store', kind: 'fulltime', tag: 'regular', pos: '客户经理' }), '本店 · 全职 · 在职 · 客户经理')
+})
+
+test('兴隆湖店：全职客户经理按人数组合出早/晚/中各 1 人，直派在到点执行', () => {
+  const s = mk()
+  const slots = s.slots.filter(x => x.spaceId === 'S-205')
+  const early = slots.find(x => x.id === 'SL-11')
+  const mid = slots.find(x => x.id === 'SL-12')
+  const late = slots.find(x => x.id === 'SL-13')
+  /* 3 人店形态：早 2（客经 1 + 推拿 1）、中 1（只有客经）、晚 2（客经 1 + 推拿 1） */
+  assert.equal(early.snapN, 2)
+  assert.equal(mid.snapN, 1)
+  assert.equal(late.snapN, 2)
+  const on = (slotId, date) => s.placements.filter(p => p.slotId === slotId && p.date === date && p.status === 'active')
+  assert.equal(on('SL-11', '2026-11-16').length, 2, '早班客经 + 推拿各 1')
+  assert.equal(on('SL-12', '2026-11-16').length, 1)
+  assert.equal(on('SL-13', '2026-11-16').length, 2)
+  /* 直派的分人时刻 = 窗口开放时刻（发布即开 = 发布那一刻），不是交付时临时编的 */
+  const direct = on('SL-11', '2026-11-16').find(p => p.way.startsWith('直派'))
+  assert.equal(direct.at, s.round.publishedAt)
+})
+
+test('兴隆湖店：直派轮转——相邻两天同一班次换成不同的人', () => {
+  const s = mk()
+  const who = (slotId, date) => s.placements
+    .filter(p => p.slotId === slotId && p.date === date && p.status === 'active' && p.way.startsWith('直派'))
+    .map(p => p.personId)
+  const d1 = who('SL-11', '2026-11-16')
+  const d2 = who('SL-11', '2026-11-17')
+  assert.equal(d1.length, 1)
+  assert.equal(d2.length, 1)
+  assert.notEqual(d1[0], d2[0], '周一和周二排早班的不该是同一个人')
+})
+
+test('兴隆湖店：通班是最后开放的收尾班次，落空的人被它收进去', () => {
+  const s = mk()
+  const tong = s.slots.find(x => x.id === 'SL-14')
+  const row = tong.list[0]
+  /* 通班的窗口晚于早/中/晚三班（发布后推 2 天 09:00 > 发布即开） */
+  assert.ok(openAt5(row, s.round) > s.round.publishedAt)
+  assert.ok(openAt5(row, s.round) > openAt5(s.slots.find(x => x.id === 'SL-11').list[0], s.round))
+  const got = s.placements.filter(p => p.slotId === 'SL-14' && p.date === '2026-11-16' && p.status === 'active')
+  assert.equal(got.length, 2, '名额 2 装满')
+  const names = got.map(p => s.people.find(x => x.id === p.personId).name).sort()
+  assert.deepEqual(names, ['岑岭', '安然'].sort(), '储备 + 没排上早/晚的推拿')
+})
+
+test('兴隆湖店：非全推拿名额 = 签约 4 人 ÷ 2 向上 = 2，仅本店非全先到先得', () => {
+  const s = mk()
+  const must = s.slots.find(x => x.id === 'SL-17')
+  assert.equal(must.quota.source, 'service')
+  assert.equal(must.quota.serviceId, 'AS-02')
+  assert.equal(must.snapN, 2)
+  assert.equal(must.list.length, 1)
+  assert.equal(must.list[0].way, 'grab')
+  assert.deepEqual(must.list[0].who, { scope: 'store', kind: 'parttime', pos: '推拿师' })
+  const got = s.placements.filter(p => p.slotId === 'SL-17' && p.date === '2026-11-16')
+  assert.equal(got.length, 2)
+})
+
+test('兴隆湖店：非全客经三档错峰——非全客经 → 非全推拿 → 全职推拿，开放时刻递增', () => {
+  const s = mk()
+  const cyc = s.slots.find(x => x.id === 'SL-15')
+  assert.equal(cyc.list.length, 3)
+  assert.equal(whoLabel5(cyc.list[0].who), '本店 · 非全 · 客户经理')
+  assert.equal(whoLabel5(cyc.list[1].who), '本店 · 非全 · 推拿师')
+  assert.equal(whoLabel5(cyc.list[2].who), '本店 · 全职 · 推拿师')
+  const t = cyc.list.map(r => openAt5(r, s.round, '2026-11-16'))
+  assert.ok(t[0] < t[1], '非全客经先开')
+  assert.ok(t[1] < t[2], '非全推拿次之，全职推拿最后')
+})
+
+test('工时不由排班判断：排班只记班次起止，全天排满也放行', () => {
+  const s = mk()
+  /* 非全推拿 桃夭 同一天连拿必选·早 + 常规（10–14 + 14–18，共 8 小时），排班不再拦 */
+  const extra = grab5(s, 'SL-19', '2026-11-16', 'E-211')
+  assert.equal(extra.ok, true)
+  assert.equal(s.placements.filter(p => p.personId === 'E-211' && p.date === '2026-11-16').length, 2)
 })

@@ -251,7 +251,7 @@
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
-                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
+                  <button class="add-row" @click="form.list.push({ who: { scope: 'store', kind: 'all', tag: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
                   <div class="le-ways">
                     <div class="way-row"><span class="way-name">直派轮转</span><span class="way-desc">系统把这一档的人群<em>按轮换次序轮流排</em>（这次你、下次他），到这一档窗口开放时执行。没有申领入口，人只收通知。</span></div>
                     <div class="way-row"><span class="way-name">先到先得</span><span class="way-desc">窗口一开自己点，点了就成，位满即关；成不了当场说原因。</span></div>
@@ -662,6 +662,15 @@
         </el-radio-group>
       </div>
       <div class="wr">
+        <label>人员标签</label>
+        <el-radio-group v-model="whoEdit.tag" size="small">
+          <el-radio-button value="all">不限</el-radio-button>
+          <el-radio-button value="regular">在职</el-radio-button>
+          <el-radio-button value="probation">试用</el-radio-button>
+          <el-radio-button value="reserve">储备</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="wr">
         <label>岗位</label>
         <el-radio-group v-model="whoEdit.pos" size="small">
           <el-radio-button value="all">不限</el-radio-button>
@@ -898,7 +907,7 @@ const formErrs = ref([])
 const blankForm = () => ({
   name: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
   quota: { source: 'manual', value: 2 },
-  list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
+  list: [{ who: { scope: 'store', kind: 'all', tag: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
 })
 const form = reactive(blankForm())
 /* 开放窗口：配置存锚点+偏移，界面展示一律落成具体日期时间 */
@@ -1155,13 +1164,13 @@ function doAppoint() {
   ElMessage.success(r.text)
 }
 
-/* 「这一档开放给谁」弹窗：三个条件在这里设，清单行只显示组合结果 */
+/* 「这一档开放给谁」弹窗：几个条件在这里设，清单行只显示组合结果 */
 const whoDlg = ref(false)
 const whoEditIdx = ref(-1)
-const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', pos: 'all' })
+const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', tag: 'all', pos: 'all' })
 function openWho(i) {
   whoEditIdx.value = i
-  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', pos: 'all', ...(form.list[i]?.who || {}) })
+  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', tag: 'all', pos: 'all', ...(form.list[i]?.who || {}) })
   whoDlg.value = true
 }
 function saveWho() {
