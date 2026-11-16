@@ -33,13 +33,15 @@ try {
       continue
     }
     if (act.clickSel) {
-      const ok = await page.evaluate(sel => {
+      /* 真实鼠标点击：Element Plus 的 input-number 等控件不响应合成 click */
+      const pos = await page.evaluate(sel => {
         const el = [...document.querySelectorAll(sel)].find(n => n.offsetParent !== null)
-        if (!el) return false
-        el.click()
-        return true
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
       }, act.clickSel)
-      console.log('[clickSel]', act.clickSel, ok)
+      if (pos) await page.mouse.click(pos.x, pos.y)
+      console.log('[clickSel]', act.clickSel, !!pos)
       await sleep(act.after ?? 800)
     }
   }

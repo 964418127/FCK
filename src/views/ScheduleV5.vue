@@ -113,6 +113,10 @@
                     <span class="rh-unit">{{ rhythm.kind === 'month' ? '个月' : '周' }}</span>
                   </template>
                 </div>
+                <div class="rh-guide">
+                  <p>{{ rhythmGuide.mode }}</p>
+                  <p class="rh-ex">{{ rhythmGuide.ex }}</p>
+                </div>
                 <!-- 业务周的发布与截止：每周几发布 + 发布几个业务周之后的那期 + 发布后几天截止 -->
                 <template v-if="rhythm.kind === 'bizweek'">
                   <div class="rh-row">
@@ -180,7 +184,14 @@
                   <line :x1="rp.nowX" y1="30" :x2="rp.nowX" y2="112" stroke="#2C2C2A" stroke-width="0.8" stroke-dasharray="2 3" />
                   <text :x="rp.nowX" y="24" text-anchor="middle" font-size="10.5" fill="#6a6a75">今天</text>
                 </svg>
-                <div class="rh-note">改了节奏，下一次生成就按新节奏走；正在跑的当前轮不动，清单窗口跟着本轮发布时刻算。</div>
+                <div class="rh-note">
+                  三个时刻各管一件事——<b>发布</b>：当天起窗口开放，员工开始领（发的已是之后某期，发布≠生效）；<b>申领截止</b>：窗口关闭，申领的按综合分排序定人，抢的在这之前点了就成；<b>生效</b>：到覆盖那一周才真正上这些班。
+                  改了节奏，下一次生成就按新节奏走；正在跑的当前轮不动，清单窗口跟着本轮发布时刻算。
+                </div>
+                <div v-if="rhythmDirty" class="rh-reset-row">
+                  <span>节奏已改动，下一轮按新节奏走</span>
+                  <button class="rh-reset-btn" @click="resetRhythm">恢复当前轮的节奏</button>
+                </div>
               </div>
             </div>
 
@@ -1342,6 +1353,24 @@ const rhythmLabel = computed(() => {
   }
   return `${cycleText.value} · 提前 ${Math.abs(c.publishOffsetDays)} 天 ${c.publishHour ?? '06:00'} 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${c.applyHour ?? '20:00'}`
 })
+/* 模式释义 + 示例：随所选周期类型换，示例落成当前配置的真实日期 */
+const rhythmGuide = computed(() => {
+  const c = round.value.config
+  const span = round.value.nextSpan
+  const dl = applyDeadlineOf(c, span[0])
+  const dow = s => (DOW_NAMES[new Date(`${s}T00:00:00`).getDay()] || '').slice(1)
+  const mode = c.kind === 'bizweek'
+    ? '周期按业务周走：起点是周几、发布固定在每周几某时刻、发布的是几个业务周之后的那期。适合排班早于班表很久、要给员工留足选择窗口的门店。'
+    : c.kind === 'custom'
+      ? '周期起点和长度自己定（10 天一轮、双周、双月都行），发布和截止按「周期开始前 N 天」算。适合班表结构不随日历走的业态。'
+      : c.kind === 'month'
+        ? '周期就是自然月，发布和截止按「月初前 N 天」算。适合按月排班的门店或办公区。'
+        : '周期就是自然周，发布和截止按「周期开始前 N 天」算。适合一周一定、节奏固定的门店。'
+  const ex = c.kind === 'bizweek'
+    ? `例：${shortAt(round.value.nextAt)}（周${dow(round.value.nextAt)}）发布，发的是 ${short(span[0])}（周${dow(span[0])}）–${short(span[1])} 那一期——员工 ${shortAt(dl)} 前选完，班到 ${short(span[0])} 才真正上`
+    : `例：${short(span[0])}（周${dow(span[0])}）开始的那期，${shortAt(round.value.nextAt)} 发布、${shortAt(dl)} 截止——员工在这段窗口里选，班到 ${short(span[0])} 才真正上`
+  return { mode, ex }
+})
 /* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
 const rp = computed(() => {
   const c = round.value.config
@@ -1383,6 +1412,32 @@ function applyRhythm() {
     }, selSpace.value)
   }
   ElMessage.success('节奏已改：下一轮按新节奏生成')
+}
+
+/* 节奏改动可反悔：展开编辑时记下这一轮正在用的节奏做基线，改过就在编辑区里给「恢复」 */
+const RHYTHM_KEYS = ['kind', 'cycle', 'startDow', 'publishDow', 'publishTime', 'leadWeeks', 'deadlineDays', 'deadlineTime', 'publishOffsetDays', 'publishHour', 'applyOffsetDays', 'applyHour']
+const rhythmBase = ref('')
+function rhythmSnap() {
+  const c = round.value.config
+  return JSON.stringify(RHYTHM_KEYS.map(k => JSON.stringify(c[k] ?? null)))
+}
+const rhythmDirty = computed(() => rhythmOpen.value && rhythmBase.value !== '' && rhythmSnap() !== rhythmBase.value)
+watch([rhythmOpen, selSpace], () => { if (rhythmOpen.value) rhythmBase.value = rhythmSnap() }, { immediate: true })
+async function resetRhythm() {
+  try {
+    await ElMessageBox.confirm(
+      '节奏回到这一轮正在用的版本：刚才的改动全部放弃，下一轮仍按原来的节奏生成。',
+      '恢复节奏',
+      { type: 'warning', confirmButtonText: '恢复', cancelButtonText: '再想想' }
+    )
+  } catch { return }
+  const snap = JSON.parse(rhythmBase.value)
+  const patch = {}
+  RHYTHM_KEYS.forEach((k, i) => { patch[k] = JSON.parse(snap[i]) })
+  setRoundConfig(patch, selSpace.value)
+  syncRhythm()
+  rhythmBase.value = rhythmSnap()
+  ElMessage.success('已恢复：按这一轮正在用的节奏继续跑')
 }
 
 /* 编辑周期时段：新建和编辑共用一份表单 */
@@ -2013,6 +2068,14 @@ function devResolveApply() {
 .rh-row label { color: #3d3d47; }
 .rh-unit { color: #9a9aa4; }
 .rh-note { font-size: 11.5px; color: #9a9aa4; line-height: 1.6; }
+.rh-guide { margin-top: 8px; padding: 8px 12px; background: #f7f8fa; border: 1px solid #ececf0; border-radius: 8px; }
+.rh-guide p { margin: 0; font-size: 12px; color: #6a6a75; line-height: 1.7; }
+.rh-guide .rh-ex { margin-top: 4px; color: #854F0B; font-variant-numeric: tabular-nums; }
+.rh-guide .rh-ex::before { content: '▸ '; color: #a40035; }
+.rh-reset-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; padding: 7px 10px; background: #fdf6ec; border: 1px solid #f3e3c3; border-radius: 8px; }
+.rh-reset-row > span { font-size: 12px; color: #854F0B; }
+.rh-reset-btn { border: none; background: none; font-size: 12px; font-weight: 500; color: #a40035; cursor: pointer; white-space: nowrap; }
+.rh-reset-btn:hover { text-decoration: underline; }
 .day-quota { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #f4eef0; }
 .dq-title { font-size: 11.5px; color: #6a6a75; }
 .dq-title em { font-style: normal; color: #a8a8b2; margin-left: 6px; }
