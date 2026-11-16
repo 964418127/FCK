@@ -184,8 +184,8 @@
               <div class="edit-box drawer-box">
                 <div class="er">
                   <label>名称</label><el-input v-model="form.name" size="small" placeholder="如：中班" style="width: 140px" />
-                  <label>起</label><el-input v-model="form.start" size="small" placeholder="12:00" style="width: 80px" />
-                  <label>止</label><el-input v-model="form.end" size="small" placeholder="16:00" style="width: 80px" />
+                  <label>起</label><el-time-select v-model="form.start" size="small" style="width: 96px" start="00:00" step="00:10" end="23:50" placeholder="12:00" />
+                  <label>止</label><el-time-select v-model="form.end" size="small" style="width: 96px" start="00:00" step="00:10" end="23:50" placeholder="16:00" />
                   <label>类别</label>
                   <el-select v-model="form.category" size="small" clearable
                     placeholder="不分类" style="width: 120px">
@@ -246,7 +246,7 @@
                         </el-select>
                         <el-input-number v-if="winKind(r) === 'date'" v-model="r.win.d" :min="-7" :max="0" size="small" controls-position="right" style="width: 62px" />
                         <span v-if="winKind(r) === 'date'" class="win-u">天前</span>
-                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 92px" start="00:00" step="00:30" end="23:30" placeholder="时刻" />
+                        <el-time-select v-if="winKind(r) !== 'publish'" v-model="r.win.t" size="small" style="width: 96px" start="00:00" step="00:10" end="23:50" placeholder="时刻" />
                       </div>
                       <div class="win-preview">{{ winPreview(r) }}</div>
                     </div>
@@ -410,9 +410,9 @@
                 </div>
                 <div class="er">
                   <label>起止</label>
-                  <el-input v-model="tempForm.start" size="small" style="width: 80px" />
+                  <el-time-select v-model="tempForm.start" size="small" style="width: 96px" start="00:00" step="00:10" end="23:50" placeholder="18:00" />
                   <span class="dash">–</span>
-                  <el-input v-model="tempForm.end" size="small" style="width: 80px" />
+                  <el-time-select v-model="tempForm.end" size="small" style="width: 96px" start="00:00" step="00:10" end="23:50" placeholder="22:00" />
                   <label>名额</label>
                   <el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" />
                 </div>
