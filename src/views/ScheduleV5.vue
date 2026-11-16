@@ -1744,9 +1744,10 @@ function devResolveApply() {
 .cat-dlg-hint { font-size: 12px; color: #8a8a95; margin-bottom: 10px; line-height: 1.6; }
 .cat-dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .cat-dlg-row.add { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
-.cd-id { width: 18px; font-size: 12px; color: #a40035; font-weight: 600; }
-.cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.cd-use { font-size: 11.5px; color: #9a9fa9; white-space: nowrap; }
+.cd-id { width: 18px; font-size: 12px; color: #a40035; font-weight: 600; line-height: 24px; }
+.cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cd-use { font-size: 11.5px; color: #9a9fa9; white-space: nowrap; line-height: 18px; }
+.cat-dlg-row { align-items: flex-start; }
 
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }
