@@ -126,7 +126,7 @@
                   <span class="rh-unit">天</span>
                   <el-time-select v-model="rhythm.publishHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
                     size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
-                  <span class="rh-unit">每次触发都生成下一周期（N+1），一期接一期连续铺</span>
+                  <span class="rh-unit">每次触发生成的是「下一个还没排的周期」（N+1）：当天发布、窗口内选择，到那一周才生效使用</span>
                 </div>
                 <div class="rh-row">
                   <label>申领截止</label>
