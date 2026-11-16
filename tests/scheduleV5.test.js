@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -914,4 +914,54 @@ test('观澜店周五截止：此刻这一轮已经排完、等开工', () => {
   assert.equal(roundListOf(s, 'S-205').slice(-1)[0].status, 'applying')
   /* 已截止的轮仍然能定人补缺口（名单定了但缺人） */
   assert.equal(s.placements.some(p => p.slotId === 'SL-05' && p.date === '2026-11-21'), true)
+})
+
+/* 缺口规则：名额是必要人数，规则只决定「按什么算还需几个、来不来得及」 */
+test('缺口规则：G1 补齐名额、G2 剩余不足 1 小时不补', () => {
+  const s = mk()
+  const g1 = GAP_RULES5.find(r => r.id === 'G1')
+  const g2 = GAP_RULES5.find(r => r.id === 'G2')
+  /* 11-16 早班只有一个缺口，明天发生，剩余按整天算 */
+  const out1 = evalGap5(s, 'SL-01', '2026-11-16', g1)
+  assert.equal(out1.action, 'supplement')
+  assert.equal(out1.need, snapN5(s, 'SL-01', '2026-11-16') - activeCount5(s, 'SL-01', '2026-11-16'))
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2).action, 'supplement', '还剩一整天，叫得来人')
+  /* 同一条缺口假定只剩 30 分钟：G2 判成补不上，G1 照补 */
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2, { remainMin: 30 }).action, 'missed')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g1, { remainMin: 30 }).action, 'supplement')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2, { remainMin: 0 }).action, 'missed', '已经开始的补不上')
+})
+
+test('缺口规则：G3 按当下预测算，够人就不补', () => {
+  const s = mk()
+  const g3 = GAP_RULES5.find(r => r.id === 'G3')
+  const n = snapN5(s, 'SL-01', '2026-11-16')
+  const occ = activeCount5(s, 'SL-01', '2026-11-16')
+  assert.ok(n > occ)
+  /* 预测就等于名额：缺几个补几个 */
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: n }).need, n - occ)
+  /* 预测说现在这些人够：不补——不需要另立「剩余够不够长」的规则 */
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: occ }).action, 'none')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: occ }).text, '按预测不用补')
+})
+
+test('缺口来路：事实拿走 / 排班没排满 / 临时加位，三种分开', () => {
+  const s = mk()
+  /* 蓝田 11-17 早班有请假事实覆盖了一段 */
+  assert.equal(gapSrcOf5(s, 'SL-01', '2026-11-17'), 'fact')
+  /* 没人请假的空位就是获取段没排满 */
+  const bare = slotsOn5(s, '2026-11-20').find(x => !x.tmp && activeCount5(s, x.id, '2026-11-20') < snapN5(s, x.id, '2026-11-20'))
+  assert.ok(bare)
+  assert.equal(gapSrcOf5(s, bare.id, '2026-11-20'), 'short')
+  /* 临时班次加的位没人接 */
+  assert.equal(gapSrcOf5(s, 'TL-01', '2026-11-21'), 'temp')
+})
+
+test('缺口剩余时长：未来算全天、当天按此刻往后截、过去算 0', () => {
+  const s = mk()
+  assert.equal(gapRemain5(s, 'SL-01', '2026-11-16'), 240, '早班 10:00–14:00 四小时')
+  assert.equal(gapRemain5(s, 'SL-01', '2026-11-10'), 0, '已经过去')
+  assert.equal(fmtRemain5(0), '已开始 / 已过')
+  assert.equal(fmtRemain5(45), '45 分钟')
+  assert.equal(fmtRemain5(180), '3 小时')
 })

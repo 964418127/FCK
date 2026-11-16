@@ -66,6 +66,7 @@
           <button :class="{ on: tab === 'def' }" @click="tab = 'def'">时段与清单</button>
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
+          <button :class="{ on: tab === 'gap' }" @click="tab = 'gap'">缺口规则</button>
           <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.tag === '办公区' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
@@ -657,7 +658,7 @@
         </section>
 
         <!-- ③ 变化段：事实与记录 -->
-        <section v-else class="pane">
+        <section v-else-if="tab === 'fact'" class="pane">
           <div class="fact-acts">
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
             <el-button size="small" @click="openAppoint()">定人</el-button>
@@ -750,6 +751,75 @@
               <span class="v-no">v{{ x.v }}</span>
               <span class="v-at">{{ x.at.slice(5) }}</span>
               <span class="v-note">{{ x.note }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ④ 缺口规则：缺口发生时按什么判断补不补。改的是判断方法，不进快照 -->
+        <section v-else-if="tab === 'gap'" class="pane">
+          <p class="gp-intro">
+            名额一律是必要人数，所以规则不讨论「要不要人」，只决定「按什么算还需几个、来不来得及」。
+            规则改完立即生效——它改的是怎么判断，不是判断结果，所以不等下一轮。
+          </p>
+
+          <div class="gp-rules">
+            <button
+              v-for="r in gapRules" :key="r.id" class="gp-rule"
+              :class="{ on: curGapRule.id === r.id }" @click="chooseGapRule(r.id)"
+            >
+              <div class="gr-top">
+                <span class="gr-id">{{ r.id }}</span>
+                <strong>{{ r.name }}</strong>
+                <em v-if="curGapRule.id === r.id" class="gr-on">使用中</em>
+              </div>
+              <div class="gr-note">{{ r.note }}</div>
+            </button>
+          </div>
+
+          <div class="table-title">这个空间的缺口 <em>按当前规则判一遍；来路不同，用的是同一条规则</em></div>
+          <table class="data-table">
+            <thead>
+              <tr><th style="width: 130px;">来路</th><th style="width: 170px;">时段</th><th style="width: 80px;">日期</th><th style="width: 100px;">还剩</th><th style="width: 80px;">缺几个</th><th>按当前规则</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="g in gapRows" :key="g.slotId + g.date" class="pointable" @click="trialPick(g)">
+                <td><span class="src-tag">{{ g.srcLabel }}</span></td>
+                <td>{{ g.slot.name }} <span class="muted">{{ g.slot.start }}–{{ g.slot.end }}</span></td>
+                <td class="mono">{{ g.date.slice(5) }}</td>
+                <td>{{ fmtRemain(g.remain) }}</td>
+                <td>{{ g.quota }} / {{ g.n }}</td>
+                <td><span class="vd" :class="g.verdict.action">{{ g.verdict.text }}</span><em class="vd-why">{{ g.verdict.why }}</em></td>
+              </tr>
+              <tr v-if="!gapRows.length"><td colspan="6" class="muted">这一轮没有缺口</td></tr>
+            </tbody>
+          </table>
+
+          <div class="table-title">试算 <em>挑一条缺口，假定它发生在另一个时刻，看三条规则各判成什么</em></div>
+          <div class="gp-trial">
+            <div class="gt-left">
+              <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
+                <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />
+              </el-select>
+              <div class="gt-field">
+                <label>假定此刻</label>
+                <div class="mini-pills">
+                  <button :class="{ on: trialWhen === 'real' }" @click="trialWhen = 'real'">按实际剩余</button>
+                  <button :class="{ on: trialWhen === 'soon' }" @click="trialWhen = 'soon'">不足 1 小时</button>
+                  <button :class="{ on: trialWhen === 'now' }" @click="trialWhen = 'now'">已开始</button>
+                </div>
+              </div>
+              <div class="gt-field">
+                <label>预测这段要几人</label>
+                <el-input-number v-model="trialForecast" size="small" :min="0" :max="20" controls-position="right" style="width: 110px;" />
+                <span class="gt-hint">只有 G3 用</span>
+              </div>
+            </div>
+            <div class="gt-right">
+              <div v-for="t in trialOut" :key="t.rule.id" class="gt-card" :class="{ on: curGapRule.id === t.rule.id }">
+                <div class="gtc-h"><span class="gr-id">{{ t.rule.id }}</span>{{ t.rule.name }}</div>
+                <div class="vd" :class="t.out.action">{{ t.out.text }}</div>
+                <div class="vd-why">{{ t.out.why }}</div>
+              </div>
             </div>
           </div>
         </section>
@@ -953,11 +1023,12 @@ import {
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
-  addCategory5, renameCategory5, removeCategory5, categoryUsage
+  addCategory5, renameCategory5, removeCategory5, categoryUsage,
+  gapRules, gapRuleOf, setGapRule, gapList5, trialGap
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
-  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5, dutyPersonId5, snapN5
+  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5, dutyPersonId5, snapN5, fmtRemain5 as fmtRemain
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -987,6 +1058,36 @@ function roundStatusLabel(st) {
 }
 /* 下一轮还没生成：只说什么时候发，不给假数据 */
 const nextPub = computed(() => nextPublish(selSpace.value))
+
+/* ===== 缺口规则：变化段的判断方法，不进快照，改完立即生效 ===== */
+const curGapRule = computed(() => gapRuleOf(selSpace.value))
+const gapRows = computed(() => gapList5(selSpace.value))
+function chooseGapRule(id) {
+  const r = setGapRule(selSpace.value, id)
+  if (r.ok) ElMessage.success(`已切到「${gapRules.find(x => x.id === id).name}」，立即生效`)
+}
+const trialKey = ref('')
+const trialWhen = ref('real')
+const trialForecast = ref(0)
+watch(gapRows, list => {
+  if (!list.some(g => `${g.slotId}|${g.date}` === trialKey.value)) {
+    trialKey.value = list[0] ? `${list[0].slotId}|${list[0].date}` : ''
+  }
+}, { immediate: true })
+/* 预测值默认就是这条时段的名额：人事不改，就等于「按名额补齐」 */
+watch(trialKey, k => {
+  const g = gapRows.value.find(x => `${x.slotId}|${x.date}` === k)
+  trialForecast.value = g ? g.n : 0
+}, { immediate: true })
+const trialOut = computed(() => {
+  const [slotId, date] = (trialKey.value || '').split('|')
+  if (!slotId) return []
+  const opts = { forecast: trialForecast.value }
+  if (trialWhen.value === 'soon') opts.remainMin = 30
+  if (trialWhen.value === 'now') opts.remainMin = 0
+  return trialGap(selSpace.value, slotId, date, opts)
+})
+function trialPick(g) { trialKey.value = `${g.slotId}|${g.date}` }
 
 /* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
 const runView = ref('grid')
@@ -2093,7 +2194,36 @@ tr.hl td { background: #fdf3e6 !important; }
 .ax-gap.pointable { cursor: pointer; text-decoration: underline; }
 .ax-empty { font-size: 12px; color: #9a9fa9; padding: 10px 0; }
 .out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
-.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
 .tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
+
+/* 缺口规则 */
+.gp-intro { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 14px; max-width: 780px; }
+.gp-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gp-rule { text-align: left; border: 1px solid #eee6e8; background: #fff; border-radius: 10px; padding: 11px 13px; cursor: pointer; font-family: inherit; }
+.gp-rule:hover { border-color: #d9c6cc; }
+.gp-rule.on { border-color: #a40035; background: #fdf6f8; }
+.gr-top { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2c2c2a; }
+.gr-id { font-size: 10.5px; color: #a40035; background: #fdf1f4; border-radius: 4px; padding: 1px 5px; letter-spacing: .3px; }
+.gr-on { margin-left: auto; font-style: normal; font-size: 10.5px; color: #fff; background: #a40035; border-radius: 4px; padding: 1px 6px; }
+.gr-note { font-size: 12px; color: #8a8a95; line-height: 1.55; margin-top: 7px; }
+.src-tag { font-size: 11.5px; color: #6a6a75; background: #f6f4f5; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+.vd { font-size: 12.5px; font-weight: 500; }
+.vd.supplement { color: #a40035; }
+.vd.missed { color: #8a8a95; }
+.vd.none { color: #2f7d5c; }
+.vd-why { font-style: normal; font-size: 11.5px; color: #a8a8b2; margin-left: 8px; }
+.gp-trial { display: grid; grid-template-columns: 300px 1fr; gap: 18px; background: #fff; border: 1px solid #f0eaec; border-radius: 12px; padding: 14px; }
+.gt-field { margin-top: 14px; }
+.gt-field label { display: block; font-size: 12px; color: #6a6a75; margin-bottom: 6px; }
+.gt-field .el-input-number { margin-right: 6px; }
+.gt-hint { font-size: 11.5px; color: #a8a8b2; }
+.mini-pills { display: flex; gap: 4px; }
+.mini-pills button { border: 1px solid #eee6e8; background: #fff; font-size: 12px; color: #6a6a75; padding: 3px 9px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+.mini-pills button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.gt-right { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; }
+.gt-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; }
+.gt-card.on { border-color: #a40035; background: #fdf6f8; }
+.gtc-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #6a6a75; margin-bottom: 8px; }
+.gt-card .vd-why { display: block; margin: 6px 0 0; line-height: 1.5; }
 
 </style>

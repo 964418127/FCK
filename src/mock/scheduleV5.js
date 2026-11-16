@@ -735,6 +735,72 @@ export function slotsOn5(state, date) {
   ]
 }
 
+/* ===== 缺口规则：缺口发生时，用哪条规则决定补不补 =====
+   名额一律是必要人数，所以规则不讨论「要不要有人」，只讨论「按什么算还需要几个、来不来得及」。
+   三条锁死，不给自由条件编辑器：G1 补齐名额 / G2 剩余不足 1 小时不补 / G3 按当下经营预测。
+   规则改的是「怎么判断」，不改名额、不改归属，也不需要快照。 */
+export const GAP_RULES5 = [
+  { id: 'G1', name: '补齐名额', note: '名额缺几个就补几个，不看还剩多久', kind: 'quota', minGap: 0 },
+  { id: 'G2', name: '补齐名额 · 剩余不足 1 小时不补', note: '还剩不到 1 小时，人叫不来也不值当，记成没补上', kind: 'quota', minGap: 60 },
+  { id: 'G3', name: '按当下经营预测', note: '按实时经营预测重算这段现在要几个人，现在的人够就不补', kind: 'forecast', minGap: 0 }
+]
+export const GAP_SRC5 = {
+  fact: '事件拿走一段',
+  short: '获取段没排满',
+  temp: '临时加的名额没人接'
+}
+/* 缺口是怎么来的：临时加位 / 被事实拿走了人 / 这一轮就没排满 */
+export function gapSrcOf5(state, slotId, date) {
+  const s = slotById(state, slotId)
+  if (!s) return 'short'
+  if ((state.temps || []).some(t => t.id === slotId)) return 'temp'
+  /* 被事实拿走：整段（占位被覆盖）或一段（请假只占几小时，班次还挂在本人身上）都算 */
+  const covered = state.placements.some(p => p.slotId === slotId && p.date === date && p.status === 'covered')
+  const held = (state.facts || []).some(f => !f.revokedAt && f.type === '请假' && f.slotId === slotId && f.date === date)
+  return covered || held ? 'fact' : 'short'
+}
+/* 这段还剩多久（分钟）：未来整天算全天；当天的按此刻往后截；已经过去的算 0 */
+export function gapRemain5(state, slotId, date) {
+  const s = slotById(state, slotId)
+  if (!s) return 0
+  const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+  const total = mins(s.end) - mins(s.start)
+  if (date > state.today) return total
+  if (date < state.today) return 0
+  const nowM = mins(state.now.slice(11, 16))
+  if (nowM <= mins(s.start)) return total
+  if (nowM >= mins(s.end)) return 0
+  return mins(s.end) - nowM
+}
+export function fmtRemain5(min) {
+  if (min <= 0) return '已开始 / 已过'
+  if (min < 60) return `${min} 分钟`
+  const h = Math.floor(min / 60), m = min % 60
+  return m ? `${h} 小时 ${m} 分` : `${h} 小时`
+}
+/*
+  一条缺口按某条规则算一遍：只出结论，不落动作。
+  remainMin / forecast 传进来是为了试算时假定「缺口发生在另一个时刻」「预测值是另一个数」。
+*/
+export function evalGap5(state, slotId, date, rule, opts = {}) {
+  const n = snapN5(state, slotId, date)
+  const occ = activeCount5(state, slotId, date)
+  const quota = Math.max(0, n - occ)
+  const remain = opts.remainMin != null ? opts.remainMin : gapRemain5(state, slotId, date)
+  const forecast = opts.forecast != null ? opts.forecast : n
+  if (quota === 0) return { need: 0, action: 'none', text: '人够了，不用动', why: `名额 ${n} 人，现在 ${occ} 人` }
+  if (rule.kind === 'forecast') {
+    const need = Math.max(0, forecast - occ)
+    if (need === 0) return { need: 0, action: 'none', text: '按预测不用补', why: `预测这段要 ${forecast} 人，现在 ${occ} 人` }
+    return { need, action: 'supplement', text: `补 ${need} 人`, why: `预测这段要 ${forecast} 人，现在 ${occ} 人` }
+  }
+  if (remain === 0) return { need: quota, action: 'missed', text: '补不上，记成没补上', why: '这段已经开始了' }
+  if (rule.minGap && remain < rule.minGap) {
+    return { need: quota, action: 'missed', text: '补不上，记成没补上', why: `还剩 ${fmtRemain5(remain)}，不到 ${rule.minGap} 分钟` }
+  }
+  return { need: quota, action: 'supplement', text: `补 ${quota} 人`, why: `名额 ${n} 人，现在 ${occ} 人` }
+}
+
 /*
   天级复制/覆盖：把一天配好的班次照搬（覆盖）到其他天。
   同名同起止才算同一个班次；源天有、目标天没有 → 目标天加上；源天没有、目标天有 → 从目标天移出。
@@ -1359,6 +1425,8 @@ export function buildV5State() {
     notices: JSON.parse(JSON.stringify(NOTICES5)),
     swapRequests: JSON.parse(JSON.stringify(SWAP_REQUESTS5)),
     dayQuota: {},
+    /* 每个空间用哪条缺口规则：默认补齐名额；规则不进快照，改了立即生效 */
+    gapRuleOf: {},
     configDirty: false,
     /* 种子里的直派（早班/晚班第 1 档，发布即开）在 11-12 06:00 已执行 */
     directDone: new Set()

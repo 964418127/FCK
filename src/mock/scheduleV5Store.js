@@ -11,7 +11,8 @@ import {
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
   openAt5, slotFirstDate5, roundOf, datesOfRound5, roundListOf, roundStatusOf, nextPublishOf,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
-  claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5
+  claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5,
+  GAP_RULES5, GAP_SRC5, gapSrcOf5, gapRemain5, evalGap5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -357,6 +358,31 @@ export function gaps5(spaceId, dates = null) {
   })
   return out
 }
+/* ===== 缺口规则（变化段判断方法，不进快照，改了立即生效） ===== */
+export const gapRules = GAP_RULES5
+export function gapRuleOf(spaceId) {
+  const id = state.gapRuleOf?.[spaceId]
+  return GAP_RULES5.find(r => r.id === id) || GAP_RULES5[0]
+}
+export function setGapRule(spaceId, id) {
+  if (!GAP_RULES5.some(r => r.id === id)) return { ok: false, reason: '没有这条规则' }
+  if (!state.gapRuleOf) state.gapRuleOf = {}
+  state.gapRuleOf[spaceId] = id
+  return { ok: true }
+}
+/* 缺口清单：来路、还剩多久、按当前规则会怎么判 */
+export function gapList5(spaceId, dates = null) {
+  const rule = gapRuleOf(spaceId)
+  return gaps5(spaceId, dates).map(g => {
+    const src = gapSrcOf5(state, g.slotId, g.date)
+    const remain = gapRemain5(state, g.slotId, g.date)
+    return { ...g, src, srcLabel: GAP_SRC5[src], quota: g.n - g.occ, remain, verdict: evalGap5(state, g.slotId, g.date, rule) }
+  }).sort((a, b) => (a.date + a.slot.start).localeCompare(b.date + b.slot.start))
+}
+/* 试算：同一条缺口，三条规则各判一次（假定发生时刻与预测值可调） */
+export function trialGap(spaceId, slotId, date, opts = {}) {
+  return GAP_RULES5.map(r => ({ rule: r, out: evalGap5(state, slotId, date, r, opts) }))
+}
 export function resultRows5(spaceId, dates = null) {
   const days = dates && dates.length ? new Set(dates) : null
   return state.placements
@@ -370,11 +396,9 @@ export function resultRows5(spaceId, dates = null) {
         ...p, slotName: s.name, start: s.start, end: s.end,
         /* 临时班次：结果表也要看得出这条不是周期排的 */
         isTmp: (state.temps || []).some(t => t.id === p.slotId),
-        /* 临时班次：结果表也要看得出这条不是周期排的 */
-        isTmp: (state.temps || []).some(t => t.id === p.slotId),
         space: spaceById(state, s.spaceId)?.name, person: personById(state, p.personId)?.name,
         personCode: personById(state, p.personId)?.id,
-        /* 换班是事件占住时段：原计划人不动，履约人单列一栏 */
+        /* 换班是事件占住时段：归属人不动，另给一栏「这段今天谁在」（由换班事实推出来） */
         duty: p.swap ? personById(state, p.swap.personId)?.name : '',
         factId: fact?.id || '', factType: fact?.type || ''
       }
