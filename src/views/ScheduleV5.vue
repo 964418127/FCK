@@ -706,8 +706,7 @@
         <section v-else-if="tab === 'fact'" class="pane">
           <div class="fact-acts">
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
-            <el-button size="small" @click="openAppoint()">定人</el-button>
-            <span class="fa-note">离职不在这里登记：由离职流程模块写入事实，排班只承接结果</span>
+            <span class="fa-note">定人在「轮与结果」里：点占用矩阵空格、时间轴缺口条，或从待人事处理的通知进；离职不在这里登记，由离职流程模块写入事实</span>
           </div>
 
           <!-- 个人时间线：横轴是这个人当天的时间，纵向是班次条/事实条/补位条——请假可能只占一小时 -->
