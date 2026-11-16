@@ -9,7 +9,8 @@ import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5,
-  openAt5, slotFirstDate5, roundOf, datesOfRound5
+  openAt5, slotFirstDate5, roundOf, datesOfRound5,
+  claimCheck5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -109,7 +110,7 @@ export function saveSlotEdit(slotId, form) {
   const slot = slotById(state, slotId)
   if (!slot) return { ok: false, reason: '时段不存在' }
   Object.assign(slot, {
-    name: form.name, start: form.start, end: form.end, days: [...form.days],
+    name: form.name, category: form.category || undefined, start: form.start, end: form.end, days: [...form.days],
     quota: { ...form.quota }, list: normList(form)
   })
   /* 人工给定的名额即时体现在模板上；服务供数要等下一轮快照 */
@@ -123,7 +124,7 @@ export function addSlot(spaceId, form) {
   const id = `SL-${String(state.seq++).padStart(2, '0')}`
   const quota = { ...form.quota }
   state.slots.push({
-    id, spaceId, name: form.name || '新班次',
+    id, spaceId, name: form.name || '新班次', category: form.category || undefined,
     start: form.start, end: form.end, days: [...form.days],
     quota, clamp: [1, 6],
     snapN: quota.source === 'manual' ? quota.value : 2,
@@ -368,4 +369,47 @@ export function factRows5() {
     }
   })
 }
+
+/* ===== 排班时段选择规则（配置层） =====
+   规则挂「空间 × 人群」，不是挂时段；改了立即用于试算，正式生效下一轮。 */
+export const claimRules = computed(() => state.claimRules || [])
+export const hourLimits = computed(() => state.hourLimits || [])
+export function rulesOfSpace(spaceId) {
+  return (state.claimRules || []).filter(r => r.spaceId === spaceId)
+}
+export function saveRule5(rule) {
+  state.claimRules = state.claimRules || []
+  if (!rule.id) {
+    rule.id = `CR-${state.seq++}`
+    state.claimRules.push(rule)
+  } else {
+    const i = state.claimRules.findIndex(r => r.id === rule.id)
+    if (i >= 0) state.claimRules.splice(i, 1, rule)
+    else state.claimRules.push(rule)
+  }
+  state.configDirty = true
+  return rule
+}
+export function removeRule5(id) {
+  state.claimRules = (state.claimRules || []).filter(r => r.id !== id)
+  state.configDirty = true
+}
+/* 试算：看某人某天在这家店占到的班过不过规则、额度还剩多少 */
+export function trialClaim(personId, spaceId, date) {
+  return claimCheck5(state, spaceId, personId, date)
+}
+/* 额度：按门店配，只控周和月 */
+export function limitsOfSpace(spaceId, kind = 'parttime') {
+  return (state.hourLimits || []).find(l => l.spaceId === spaceId && l.kind === kind) || null
+}
+export function setHourLimits(spaceId, week, month, kind = 'parttime') {
+  state.hourLimits = state.hourLimits || []
+  const i = state.hourLimits.findIndex(l => l.spaceId === spaceId && l.kind === kind)
+  const rec = { spaceId, kind, week, month }
+  if (i >= 0) state.hourLimits.splice(i, 1, rec)
+  else state.hourLimits.push(rec)
+  state.configDirty = true
+  return rec
+}
+
 export { state as v5, WEEK_DATES, NOW, roundOf }

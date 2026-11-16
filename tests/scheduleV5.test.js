@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -553,4 +553,92 @@ test('办公区非全：周末晚班整月开放，非全领得到、全职不�
   const full = canTake5(s, 'SL-22', '2026-11-14', 'E-301', 'grab', s.now)
   assert.equal(full.ok, false, '全职走直派，不在这档')
   assert.equal(full.reason, '这一档不是你的档')
+})
+
+/* ===== 排班时段选择规则：类（或语义）+ 集合校验 + 周/月额度 ===== */
+test('类别：兴隆湖有 A/B 两类，非全推拿早/晚挂 A、常规挂 B', () => {
+  const s = mk()
+  const xl = s.spaces.find(x => x.id === 'S-205')
+  assert.deepEqual(xl.categories.map(c => c.id), ['A', 'B'])
+  assert.equal(s.slots.find(x => x.id === 'SL-17').category, 'A')
+  assert.equal(s.slots.find(x => x.id === 'SL-18').category, 'A')
+  assert.equal(s.slots.find(x => x.id === 'SL-19').category, 'B')
+  assert.equal(s.slots.find(x => x.id === 'SL-01').category, undefined, '没分类的空间不乱标')
+})
+
+test('规则按人群命中：非全推拿 2 条，别人 0 条（空规则放行）', () => {
+  const s = mk()
+  const p = id => s.people.find(x => x.id === id)
+  assert.equal(claimRulesOf5(s, 'S-205', p('E-211')).length, 2)
+  assert.equal(claimRulesOf5(s, 'S-205', p('E-208')).length, 0, '非全客经没配规则')
+  assert.equal(claimRulesOf5(s, 'S-205', p('E-205')).length, 0, '全职推拿没配规则')
+  const empty = claimCheck5(s, 'S-201', 'E-121', '2026-11-16')
+  assert.equal(empty.hasRule, false)
+  assert.equal(empty.ok, true, '没配规则直接放行')
+  assert.equal(empty.limits.length, 0, '蓝田店没配额度')
+})
+
+test('A 类是「或」：只占晚班不占早班，A 类照样满足', () => {
+  const s = mk()
+  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-16')   // 只有 SL-18 晚班（A 类 18–22）
+  assert.equal(r.hasRule, true)
+  const a = r.items.find(i => i.id === 'CR-01')
+  assert.equal(a.ok, true, '类下任一条都算数')
+  assert.equal(a.actual, '1 条')
+})
+
+test('A 类一条都没占到 → 差 1 条', () => {
+  const s = mk()
+  s.placements = s.placements.filter(p => !(p.personId === 'E-213' && p.date === '2026-11-16'))
+  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-16')
+  const a = r.items.find(i => i.id === 'CR-01')
+  assert.equal(a.ok, false)
+  assert.equal(a.actual, '0 条')
+})
+
+test('每日时长线 360–540 分钟：4 小时不够，加常规班凑到 8 小时满足', () => {
+  const s = mk()
+  const before = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const m1 = before.items.find(i => i.id === 'CR-02')
+  assert.equal(m1.ok, false, '只有早班 240 分钟，少于 360')
+  assert.equal(m1.actual, '240 分钟')
+  assert.equal(grab5(s, 'SL-19', '2026-11-16', 'E-211').ok, true)
+  const after = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const m2 = after.items.find(i => i.id === 'CR-02')
+  assert.equal(m2.actual, '480 分钟')
+  assert.equal(m2.ok, true)
+  assert.equal(after.ok, true, 'A 类 1 条 + 480 分钟，全部满足')
+})
+
+test('自然周从周一起、自然月按日历', () => {
+  assert.deepEqual(weekRange5('2026-11-16'), ['2026-11-16', '2026-11-22'])
+  assert.deepEqual(weekRange5('2026-11-22'), ['2026-11-16', '2026-11-22'], '周日仍属本周')
+  assert.deepEqual(monthRange5('2026-11-16'), ['2026-11-01', '2026-11-30'])
+  assert.deepEqual(monthRange5('2026-02-10'), ['2026-02-01', '2026-02-28'])
+})
+
+test('周/月额度按门店算：本周 20 小时合规；凑到 28 小时超周上限', () => {
+  const s = mk()
+  const r1 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const w1 = r1.limits.find(l => l.name === '本周额度')
+  assert.equal(w1.used, 20)
+  assert.equal(w1.cap, 24)
+  assert.equal(w1.ok, true, '5 天 × 4 小时 = 20 小时，没超')
+  /* 再多占一天晚班（4 小时）→ 24 小时，正好压线仍合规 */
+  s.placements.push({ id: 'P-T1', slotId: 'SL-18', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const w2 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16').limits.find(l => l.name === '本周额度')
+  assert.equal(w2.used, 24)
+  assert.equal(w2.ok, true, '正好 24 小时不超')
+  s.placements.push({ id: 'P-T2', slotId: 'SL-19', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const w3 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16').limits.find(l => l.name === '本周额度')
+  assert.equal(w3.used, 28)
+  assert.equal(w3.ok, false, '28 小时超了周 24')
+})
+
+test('额度按店各算一套：同一个人另一家店没有额度配置就不受管', () => {
+  const s = mk()
+  s.placements.push({ id: 'P-T3', slotId: 'SL-18', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const other = claimCheck5(s, 'S-201', 'E-211', '2026-11-16')
+  assert.equal(other.limits.length, 0)
+  assert.equal(other.ok, true)
 })

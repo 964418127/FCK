@@ -74,6 +74,7 @@
           <div class="sub-tabs">
             <button :class="{ on: sub === 'cyc' }" @click="sub = 'cyc'">周期时段</button>
             <button :class="{ on: sub === 'tmp' }" @click="sub = 'tmp'">临时班次</button>
+            <button :class="{ on: sub === 'rule' }" @click="sub = 'rule'">申领规则</button>
             <span class="sub-spacer" />
             <el-button v-if="sub === 'cyc'" size="small" type="primary" @click="openNew">+ 新增班次</el-button>
           </div>
@@ -227,6 +228,11 @@
                   <label>名称</label><el-input v-model="form.name" size="small" placeholder="如：中班" style="width: 140px" />
                   <label>起</label><el-input v-model="form.start" size="small" placeholder="12:00" style="width: 80px" />
                   <label>止</label><el-input v-model="form.end" size="small" placeholder="16:00" style="width: 80px" />
+                  <label v-if="categoriesOf5(curSpace).length">类别</label>
+                  <el-select v-if="categoriesOf5(curSpace).length" v-model="form.category" size="small" clearable
+                    placeholder="不分类" style="width: 120px">
+                    <el-option v-for="c in categoriesOf5(curSpace)" :key="c.id" :label="c.name" :value="c.id" />
+                  </el-select>
                 </div>
                 <div class="er">
                   <label>星期</label>
@@ -318,6 +324,7 @@
                   <strong>{{ s.name }}</strong>
                   <span class="time">{{ s.start }}–{{ s.end }}</span>
                   <span class="days">{{ daysLabel(s.days) }}</span>
+                  <span v-if="s.category" class="cat-tag">{{ catName5(curSpace, s.category) }}</span>
                 </div>
                 <div class="sacts">
                   <span class="quota-tag">{{ quotaLabel(s) }}</span>
@@ -389,7 +396,7 @@
             </template>
           </template>
 
-          <template v-else>
+          <template v-else-if="sub === 'tmp'">
             <div class="hint-line">临时班次 = 特殊情况下的新增名额：只改那一天的容量，不进周期安排，保存即进当前窗口。</div>
             <div class="temp-list">
               <article v-for="t in spaceTemps" :key="t.id" class="temp-card">
@@ -420,6 +427,106 @@
                 <el-button size="small" type="primary" @click="saveTemp">保存并开放</el-button>
               </div>
               <div class="tf-note">默认清单一行：本店全员 · 抢 · 发布即开。要别的档位，先建周期时段再改。</div>
+            </div>
+          </template>
+
+          <!-- 申领规则：挂人群，不挂时段。空规则放行；类下任一条都算数 -->
+          <template v-else>
+            <div class="hint-line">规则挂「人群」不挂时段：管谁、管哪一类（或全部）、计量（条数 / 分钟）、上下限。没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）。改了立即用于试算，正式生效下一轮。</div>
+
+            <div class="rule-list">
+              <article v-for="r in spaceRules" :key="r.id" class="rule-card">
+                <div class="rc-main">
+                  <strong>{{ r.name }}</strong>
+                  <span class="rc-who">{{ whoLabel5(r.who) }}</span>
+                  <span class="rc-scope">{{ r.scope.type === 'all' ? '全部时段' : (catName5(curSpace, r.scope.id) || r.scope.id) }}</span>
+                  <span class="rc-need">{{ ruleNeedText(r) }}</span>
+                </div>
+                <div class="rc-acts">
+                  <el-button link size="small" @click="openRule(r)">编辑</el-button>
+                  <el-button link size="small" type="danger" @click="doRemoveRule(r)">删除</el-button>
+                </div>
+              </article>
+              <div v-if="!spaceRules.length" class="empty">
+                <p>这个空间没有申领规则：所有人不受选择约束，直接放行</p>
+              </div>
+              <el-button size="small" type="primary" @click="openRule(null)">+ 新增规则</el-button>
+            </div>
+
+            <article v-if="ruleEditing" class="slot-card">
+              <header>
+                <div class="sn">
+                  <strong>{{ ruleForm.id ? '编辑规则' : '新增规则' }}</strong>
+                  <span class="draft-tag">改了立即用于试算，正式生效下一轮</span>
+                </div>
+                <div class="sacts"><el-button link size="small" @click="ruleEditing = false">收起</el-button></div>
+              </header>
+              <div class="edit-box">
+                <div class="er">
+                  <label>名称</label>
+                  <el-input v-model="ruleForm.name" size="small" placeholder="如：非全推拿 · A 类至少 1" style="width: 260px" />
+                </div>
+                <div class="er">
+                  <label>管谁</label>
+                  <button class="who-chip" type="button" @click="openWhoFor(ruleForm)" title="点开设置这条规则管哪些人">
+                    <span class="who-chip-txt">{{ whoLabel5(ruleForm.who) }}</span>
+                    <span class="who-chip-edit">改</span>
+                  </button>
+                </div>
+                <div class="er">
+                  <label>管哪类</label>
+                  <el-select v-model="ruleForm.scopeType" size="small" style="width: 140px">
+                    <el-option label="全部时段" value="all" />
+                    <el-option v-for="c in categoriesOf5(curSpace)" :key="c.id" :label="c.name" :value="c.id" />
+                  </el-select>
+                  <span v-if="!categoriesOf5(curSpace).length" class="form-hint">这个空间还没设类别，只能管全部时段</span>
+                </div>
+                <div class="er">
+                  <label>计量</label>
+                  <el-radio-group v-model="ruleForm.unit" size="small">
+                    <el-radio-button value="count">条数</el-radio-button>
+                    <el-radio-button value="minute">分钟</el-radio-button>
+                  </el-radio-group>
+                  <label>下限</label>
+                  <el-input-number v-model="ruleForm.min" :min="0" :max="1440" size="small" controls-position="right" style="width: 96px" />
+                  <label>上限</label>
+                  <el-input-number v-model="ruleForm.max" :min="0" :max="1440" size="small" controls-position="right" style="width: 96px" />
+                  <span class="form-hint">上限留空或 0 = 不封顶；分钟按「这一天合计」算</span>
+                </div>
+                <div v-if="ruleErr" class="rule-err">{{ ruleErr }}</div>
+                <div class="er">
+                  <el-button size="small" @click="ruleEditing = false">取消</el-button>
+                  <el-button size="small" type="primary" @click="saveRule">保存</el-button>
+                </div>
+              </div>
+            </article>
+
+            <div class="limit-card">
+              <strong>非全工时额度</strong>
+              <span class="lc-note">按门店各算一套，只控周和月；日的要求在上面规则里配</span>
+              <span class="lc-line">
+                本周 <el-input-number v-model="limitForm.week" :min="0" :max="80" size="small" controls-position="right" style="width: 90px" /> 小时
+                · 本月 <el-input-number v-model="limitForm.month" :min="0" :max="400" size="small" controls-position="right" style="width: 90px" /> 小时
+              </span>
+              <el-button link size="small" type="primary" @click="applyLimits">保存额度</el-button>
+            </div>
+
+            <div class="trial-card">
+              <strong>试算</strong>
+              <span class="lc-note">按「这个人这天最终占到的班」判，不是按勾了什么</span>
+              <el-select v-model="trialPerson" size="small" filterable style="width: 140px">
+                <el-option v-for="p in curSpacePeople" :key="p.id" :label="p.name" :value="p.id" />
+              </el-select>
+              <el-date-picker v-model="trialDate" type="date" size="small" value-format="YYYY-MM-DD" style="width: 140px" />
+              <div v-if="trial" class="trial-body">
+                <div v-if="!trial.hasRule" class="trial-line muted">这个人没命中任何规则：直接放行</div>
+                <div v-for="i in trial.items" :key="i.id" class="trial-line" :class="{ bad: !i.ok }">
+                  <span class="tl-dot" />{{ i.name }}：{{ i.actual }}，要求 {{ i.need }}{{ i.ok ? '（满足）' : '（差）' }}
+                </div>
+                <div v-for="l in trial.limits" :key="l.name" class="trial-line" :class="{ bad: !l.ok }">
+                  <span class="tl-dot" />{{ l.name }}：{{ l.used }} / {{ l.cap }} 小时{{ l.ok ? '' : '（超了）' }}
+                </div>
+              </div>
             </div>
           </template>
         </section>
@@ -679,7 +786,7 @@
     </el-dialog>
 
     <!-- 这一档开放给谁：三个条件单独设置，界面只显示组合结果 -->
-    <el-dialog v-model="whoDlg" title="这一档开放给谁" width="440px">
+    <el-dialog v-model="whoDlg" :title="whoTitle" width="440px">
       <div class="wr">
         <label>范围</label>
         <el-radio-group v-model="whoEdit.scope" size="small">
@@ -762,11 +869,11 @@ import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
-  roundOf
+  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
-  dayCopyPlan5, datesOfRound5
+  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -775,12 +882,12 @@ const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 /* 人群：雇佣类型和岗位都写在人群里——时段本身不带岗位 */
 /* 「谁」是三个条件组合（范围/合作性质/岗位），不是平铺清单 */
 const tab = ref('def')
-const sub = ref('cyc')
+const sub = ref(['cyc', 'tmp', 'rule'].includes(route.query.sub) ? route.query.sub : 'cyc')
 /* 一级导航：排班 / 系统服务（算法服务是公共资产） */
 const mainTab = ref('schedule')
 const kw = ref('')
 const city = ref('')
-const selSpace = ref(v5.spaces.some(s => s.id === route.query.space) ? route.query.space : v5.spaces[0].id)
+const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.query.sub === 'rule' ? 'S-205' : ''))) ? (route.query.space || (route.query.sub === 'rule' ? 'S-205' : '')) : v5.spaces[0].id)
 /* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
 const round = computed(() => roundOf(v5, selSpace.value))
 /* 这一轮铺到了哪些天：门店七天、办公区整月——矩阵和逐日名额都按它走 */
@@ -799,7 +906,7 @@ const spaceTemps = computed(() => v5.temps.filter(t => t.spaceId === selSpace.va
 const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
-function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm() }
+function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits(); initTrial() }
 
 /* ===== 这天的时间轴：把一天的班次画在钟点上 =====
    尺子 = 空间的营业/作业时段（bizStart/bizEnd），只画出来作参考，不拦时段；
@@ -992,7 +1099,7 @@ function applyRhythm() {
 const editing = ref(null)
 const formErrs = ref([])
 const blankForm = () => ({
-  name: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
+  name: '', category: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
   quota: { source: 'manual', value: 2 },
   list: [{ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
 })
@@ -1020,6 +1127,7 @@ function openNew() {
 function openEdit(s) {
   editing.value = s.id
   form.name = s.name
+  form.category = s.category || ''
   form.start = s.start
   form.end = s.end
   form.days = [...s.days]
@@ -1254,16 +1362,99 @@ function doAppoint() {
 /* 「这一档开放给谁」弹窗：几个条件在这里设，清单行只显示组合结果 */
 const whoDlg = ref(false)
 const whoEditIdx = ref(-1)
+const whoTarget = ref(null)
+const whoTitle = ref('这一档开放给谁')
 const whoEdit = reactive({ scope: 'store', km: 3, kind: 'all', tag: 'regular', pos: 'all' })
 function openWho(i) {
   whoEditIdx.value = i
+  whoTarget.value = null
+  whoTitle.value = '这一档开放给谁'
   Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', tag: 'regular', pos: 'all', ...(form.list[i]?.who || {}) })
+  whoDlg.value = true
+}
+/* 规则的人群也用同一个弹窗，写回它自己的 who */
+function openWhoFor(obj) {
+  whoEditIdx.value = -1
+  whoTarget.value = obj
+  whoTitle.value = '这条规则管谁'
+  Object.assign(whoEdit, { scope: 'store', km: 3, kind: 'all', tag: 'regular', pos: 'all', ...(obj.who || {}) })
   whoDlg.value = true
 }
 function saveWho() {
   if (whoEditIdx.value >= 0) form.list[whoEditIdx.value].who = { ...whoEdit }
+  if (whoTarget.value) whoTarget.value.who = { ...whoEdit }
   whoDlg.value = false
 }
+
+/* ===== 申领规则（配置层）：管谁 + 管哪类 + 计量 + 上下限 ===== */
+const spaceRules = computed(() => rulesOfSpace(selSpace.value))
+const ruleEditing = ref(false)
+const ruleErr = ref('')
+const ruleForm = reactive({
+  id: '', name: '', who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: 'all' },
+  scopeType: 'all', unit: 'count', min: 1, max: 0
+})
+function ruleNeedText(r) {
+  if (r.unit === 'count') return [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
+  return r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
+}
+function openRule(r) {
+  ruleErr.value = ''
+  if (r) {
+    Object.assign(ruleForm, {
+      id: r.id, name: r.name, who: { ...r.who },
+      scopeType: r.scope.type === 'all' ? 'all' : r.scope.id, unit: r.unit, min: r.min || 0, max: r.max || 0
+    })
+  } else {
+    Object.assign(ruleForm, {
+      id: '', name: '', who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: 'all' },
+      scopeType: 'all', unit: 'count', min: 1, max: 0
+    })
+  }
+  ruleEditing.value = true
+}
+function saveRule() {
+  const e = []
+  if (!ruleForm.name.trim()) e.push('名称没填')
+  if (!ruleForm.min && !ruleForm.max) e.push('下限和上限至少填一个')
+  if (ruleForm.max && ruleForm.min > ruleForm.max) e.push('下限比上限大')
+  if (ruleForm.scopeType !== 'all' && !spaceSlots.value.some(s => s.category === ruleForm.scopeType)) e.push('这个类下还没有时段')
+  ruleErr.value = e.join('；')
+  if (e.length) return
+  saveRule5({
+    id: ruleForm.id, spaceId: selSpace.value, name: ruleForm.name.trim(),
+    who: { ...ruleForm.who },
+    scope: ruleForm.scopeType === 'all' ? { type: 'all' } : { type: 'category', id: ruleForm.scopeType },
+    unit: ruleForm.unit, min: ruleForm.min || 0, max: ruleForm.max || null
+  })
+  ruleEditing.value = false
+  ElMessage.success('规则已保存：立即用于试算，正式生效下一轮')
+}
+function doRemoveRule(r) {
+  removeRule5(r.id)
+  ElMessage.success('规则已删除，这些人恢复直接放行')
+}
+const limitForm = reactive({ week: 24, month: 96 })
+function syncLimits() {
+  const l = limitsOfSpace(selSpace.value)
+  limitForm.week = l ? l.week : 24
+  limitForm.month = l ? l.month : 96
+}
+function applyLimits() {
+  setHourLimits(selSpace.value, limitForm.week, limitForm.month)
+  ElMessage.success('额度已保存：按门店各算一套，只控周和月')
+}
+const trialPerson = ref('')
+const trialDate = ref('')
+const trial = computed(() => (trialPerson.value && trialDate.value
+  ? trialClaim(trialPerson.value, selSpace.value, trialDate.value) : null))
+function initTrial() {
+  trialDate.value = roundDates.value[0] || ''
+  /* 优先选一个命中规则的人，试算一打开就有内容 */
+  const hit = curSpacePeople.value.find(p => claimRulesOf5(v5, selSpace.value, p).length)
+  trialPerson.value = (hit || curSpacePeople.value[0])?.id || ''
+}
+initTrial()
 
 /* 算法服务登记：四门槛必填，登记完时段的名额来源里就能选到 */
 const svcDlg = ref(false)
@@ -1440,6 +1631,46 @@ function devResolveApply() {
 .sw-band { background: #B7E5CF; border: 1px solid #6FBF97; }
 .sw-tmp { background: #CFE0F5; border: 1px solid #7FA6D9; }
 .sw-out { background: #EDEFF2; border: 1px dashed #B4B9C2; }
+
+/* 申领规则 */
+.cat-tag { font-size: 11px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 4px; padding: 0 5px; }
+.rule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; align-items: flex-start; }
+.rule-card { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 8px 12px; }
+.rc-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rc-main strong { font-size: 13px; color: #2C2C2A; }
+.rc-who { font-size: 12px; color: #6a6a75; }
+.rc-scope { font-size: 11.5px; color: #6a4b8a; background: #f4eefb; border-radius: 4px; padding: 1px 6px; }
+.rc-need { font-size: 12px; color: #a40035; font-weight: 500; }
+.limit-card, .trial-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; }
+.limit-card strong, .trial-card strong { font-size: 13px; color: #2C2C2A; }
+.lc-note { font-size: 11.5px; color: #9a9fa9; }
+.lc-line { display: inline-flex; align-items: center; gap: 6px; }
+.trial-body { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.trial-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
+.trial-line.bad { color: #a4441d; }
+.trial-line.muted { color: #9a9fa9; }
+.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+.rule-err { font-size: 12px; color: #a40035; margin: 4px 0; }
+
+/* 申领规则 */
+.cat-tag { font-size: 11px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 4px; padding: 0 5px; }
+.rule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; align-items: flex-start; }
+.rule-card { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 8px 12px; }
+.rc-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rc-main strong { font-size: 13px; color: #2C2C2A; }
+.rc-who { font-size: 12px; color: #6a6a75; }
+.rc-scope { font-size: 11.5px; color: #6a4b8a; background: #f4eefb; border-radius: 4px; padding: 1px 6px; }
+.rc-need { font-size: 12px; color: #a40035; font-weight: 500; }
+.limit-card, .trial-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; }
+.limit-card strong, .trial-card strong { font-size: 13px; color: #2C2C2A; }
+.lc-note { font-size: 11.5px; color: #9a9fa9; }
+.lc-line { display: inline-flex; align-items: center; gap: 6px; }
+.trial-body { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.trial-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
+.trial-line.bad { color: #a4441d; }
+.trial-line.muted { color: #9a9fa9; }
+.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+.rule-err { font-size: 12px; color: #a40035; margin: 4px 0; }
 
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }

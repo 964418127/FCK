@@ -18,7 +18,9 @@ export const SPACES5 = [
   { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [50, 50] },
   { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [53.5, 52.2] },
   /* 兴隆湖店：把业务现行的四套策略原样配进同一个店（客经人数组合 / 推拿业务量 / 非全客经错峰 / 非全推拿签约÷2） */
-  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4] },
+  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4],
+    /* 类别 = 这一组时段共享同一条申领要求；规则里的「类」是「或」：类下任一条都算数 */
+    categories: [{ id: 'A', name: 'A 类' }, { id: 'B', name: 'B 类' }] },
   /* 总部办公区：不是门店，是办公区——只有岗位和班次，没有营业高峰、没有抢单 */
   { id: 'S-206', name: '总部办公区', city: '杭州', tag: '办公区', bizStart: '09:30', bizEnd: '22:30', xy: [7.6, 5.4] }
 ]
@@ -196,23 +198,25 @@ export const SLOTS5 = [
       { k: 3, who: { tag: 'regular', scope: 'store', kind: 'fulltime', pos: '推拿师' }, way: 'grab', win: { base: 'date', d: -1, t: '06:00' } }
     ]
   },
-  /* 非全推拿：签约 4 人 ÷ 2 向上 = 2 个位；必选早晚 + 常规，仅本店非全推拿先到先得 */
+  /* 非全推拿：签约 4 人 ÷ 2 向上 = 2 个位；仅本店非全推拿先到先得。
+     时段本身不再叫「必选」——「至少要接几条 A 类」是人群上的规则（见 CLAIM_RULES5），
+     类下任一条都算数，所以其中一条名额满了可以换同类的另一条。 */
   {
-    id: 'SL-17', spaceId: 'S-205', name: '必选·早', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
+    id: 'SL-17', spaceId: 'S-205', name: '早班', category: 'A', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
       { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
-    id: 'SL-18', spaceId: 'S-205', name: '必选·晚', start: '18:00', end: '22:00', days: [1, 2, 3, 4, 5],
+    id: 'SL-18', spaceId: 'S-205', name: '晚班', category: 'A', start: '18:00', end: '22:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
       { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
     ]
   },
   {
-    id: 'SL-19', spaceId: 'S-205', name: '常规', start: '14:00', end: '18:00', days: [1, 2, 3, 4, 5],
+    id: 'SL-19', spaceId: 'S-205', name: '常规', category: 'B', start: '14:00', end: '18:00', days: [1, 2, 3, 4, 5],
     quota: { source: 'service', serviceId: 'AS-02' }, clamp: [0, 4], snapN: 2,
     list: [
       { k: 1, who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }
@@ -262,7 +266,30 @@ export const TEMPS5 = [
   }
 ]
 
-/* 轮：清单切到第 k 档的一段窗口。轮是每个空间自己的——发布时刻、覆盖区间、申领截止都按那个空间的节奏算 */
+/* ===== 排班时段选择规则（业务口径：现在只有非全推拿师配了） =====
+   一条规则 = 管谁（人群）+ 管哪一组时段（某个类 / 全部）+ 计量（条数 or 分钟）+ 下限上限。
+   规则里的「类」是「或」：类下任一条都算数——所以 A 类某条名额满了，换同类的另一条照样满足。
+   没有配规则的人 → 直接放行（空规则 ≠ 配了 0）。
+   校验对象是「这个人这一天最终占到的班」，不是「他勾了什么」。 */
+export const CLAIM_RULES5 = [
+  {
+    id: 'CR-01', spaceId: 'S-205', name: '非全推拿 · A 类至少 1',
+    who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' },
+    scope: { type: 'category', id: 'A' }, unit: 'count', min: 1, max: null
+  },
+  {
+    id: 'CR-02', spaceId: 'S-205', name: '非全推拿 · 每日 6–9 小时',
+    who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' },
+    scope: { type: 'all' }, unit: 'minute', min: 360, max: 540
+  }
+]
+
+/* ===== 非全工时额度：按门店各算一套（业务口径），只控周和月 =====
+   日维度不设合规上限（业务现状），日的要求在规则里配（如每日 6–9 小时）。 */
+export const HOUR_LIMITS5 = [
+  { spaceId: 'S-205', kind: 'parttime', week: 24, month: 96 }
+]
+
 export const ROUND5 = {
   id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
   applyDeadline: '2026-11-15 20:00',
@@ -717,6 +744,83 @@ export function shiftHours5(start, end) {
   return hours5(start, end)
 }
 
+/* ===== 排班时段选择规则：判定 =====
+   校验对象是「这个人这天最终占到的班」（占位表里的），不是「他勾了什么」。
+   命中规则才校验；没配规则的人直接放行。 */
+function fmtDate5(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
+/* 自然周：周一到周日 */
+export function weekRange5(date) {
+  const [y, m, d] = date.split('-').map(Number)
+  const dow = (new Date(y, m - 1, d).getDay() + 6) % 7
+  return [fmtDate5(new Date(y, m - 1, d - dow)), fmtDate5(new Date(y, m - 1, d - dow + 6))]
+}
+/* 自然月 */
+export function monthRange5(date) {
+  const [y, m] = date.split('-').map(Number)
+  const last = new Date(y, m, 0).getDate()
+  return [`${date.slice(0, 7)}-01`, `${date.slice(0, 7)}-${String(last).padStart(2, '0')}`]
+}
+export function categoriesOf5(space) { return space?.categories || [] }
+export function catName5(space, id) { return (categoriesOf5(space).find(c => c.id === id) || {}).name || '' }
+function minutesOfSlot5(slot) { return Math.round(hours5(slot.start, slot.end) * 60) }
+
+/* 已占合计：只认占位表里状态为 active 的；按「人 × 空间（门店）× 日期区间」算 */
+export function usedMinutes5(state, personId, spaceId, from, to) {
+  return state.placements
+    .filter(p => p.personId === personId && p.status === 'active'
+      && p.date >= from && p.date <= to
+      && slotById(state, p.slotId)?.spaceId === spaceId)
+    .reduce((s, p) => s + minutesOfSlot5(slotById(state, p.slotId)), 0)
+}
+/* 这个人这天在这家店占到的班 */
+export function claimedSlots5(state, personId, spaceId, date) {
+  return state.placements
+    .filter(p => p.personId === personId && p.status === 'active' && p.date === date)
+    .map(p => slotById(state, p.slotId))
+    .filter(s => s && s.spaceId === spaceId)
+}
+/* 命中的规则：规则的人群圈到这个人 */
+export function claimRulesOf5(state, spaceId, person) {
+  return (state.claimRules || []).filter(r => r.spaceId === spaceId && matchWho5(state, person, { spaceId }, r.who))
+}
+/* 判一次：规则逐条 + 周/月额度。items 里带「差什么」，好直接给人看 */
+export function claimCheck5(state, spaceId, personId, date) {
+  const person = personById(state, personId)
+  const rules = claimRulesOf5(state, spaceId, person)
+  const got = claimedSlots5(state, personId, spaceId, date)
+  const dayUsed = got.reduce((s, sl) => s + minutesOfSlot5(sl), 0)
+  const items = rules.map(r => {
+    if (r.unit === 'count') {
+      const hit = got.filter(sl => r.scope.type === 'all' || sl.category === r.scope.id)
+      const ok = hit.length >= (r.min || 0) && (!r.max || hit.length <= r.max)
+      const need = [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
+      return { id: r.id, name: r.name, actual: `${hit.length} 条`, need, ok }
+    }
+    const ok = dayUsed >= (r.min || 0) && (!r.max || dayUsed <= r.max)
+    const need = r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
+    return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, need, ok }
+  })
+  const lim = (state.hourLimits || []).find(l => l.spaceId === spaceId && l.kind === person?.kind)
+  let limits = []
+  if (lim) {
+    const [ws, we] = weekRange5(date)
+    const [ms, me] = monthRange5(date)
+    const wUsed = usedMinutes5(state, personId, spaceId, ws, we)
+    const mUsed = usedMinutes5(state, personId, spaceId, ms, me)
+    limits = [
+      { name: '本周额度', used: Math.round(wUsed / 60 * 10) / 10, cap: lim.week, ok: wUsed <= lim.week * 60 },
+      { name: '本月额度', used: Math.round(mUsed / 60 * 10) / 10, cap: lim.month, ok: mUsed <= lim.month * 60 }
+    ]
+  }
+  return {
+    hasRule: rules.length > 0, rules, dayUsed, got,
+    items, limits,
+    ok: items.every(i => i.ok) && limits.every(l => l.ok)
+  }
+}
+
 /* 可获取清单：窗口已开、关闸未到、人群匹配、还有空位 */
 export function openOffers5(state, personId, now = NOW) {
   const person = personById(state, personId)
@@ -960,6 +1064,8 @@ export function buildV5State() {
     services: JSON.parse(JSON.stringify(SERVICES5)),
     slots: JSON.parse(JSON.stringify(SLOTS5)),
     temps: JSON.parse(JSON.stringify(TEMPS5)),
+    claimRules: JSON.parse(JSON.stringify(CLAIM_RULES5)),
+    hourLimits: JSON.parse(JSON.stringify(HOUR_LIMITS5)),
     round: JSON.parse(JSON.stringify(ROUND5)),
     /* 自己的节奏自己那份轮；没配的空间沿用上面那份门店周节奏 */
     rounds: JSON.parse(JSON.stringify(ROUNDS5)),
