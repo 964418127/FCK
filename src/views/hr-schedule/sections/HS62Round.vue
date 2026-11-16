@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="6.2 轮与获取"
     subtitle="轮把清单切成一段窗口：等系统派、自己点、提交申领，只有这三种动作"
-    version="v5.0"
-    date="2026-11-15"
+    version="v5.2"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-62" class="section">
@@ -18,50 +18,65 @@
       </p>
       <div class="func-entry">
         <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>轮与结果</strong>；
-        排班节奏在页头「排班节奏」折叠条里改
+        排班节奏在「时段与清单」页头的折叠条里改（轮跟空间走，每个空间一套节奏）
       </div>
+    </div>
 
+    <div id="hs-62-rhythm" class="section">
+      <div class="section-header">
+        <h3>6.2.1 排班节奏：业务周</h3>
+      </div>
       <DocScreens
-        :height="360"
+        :height="420"
         :images="[
-          { src: roundShot, label: '轮与结果：顶部轮条（发布 / 覆盖 / 申领截止 / 下一轮预告），下方占用矩阵与排班结果表' }
+          { src: rhythmShot, label: '节奏折叠条：周期类型四选，业务周三行参数配完直接落成下一轮的具体日期时间' }
         ]"
       />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 130px;">参数</th><th style="width: 280px;">定义</th><th>现行口径（门店）</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>循环周期</strong></td><td>周期类型四选：业务周 / 自然周 / 自然月 / 业务自定义；业务周 = 每周几为起点</td><td>业务周，周一起</td></tr>
+          <tr><td><strong>发布</strong></td><td>每周几什么时间发布，发布的是<strong>几个业务周之后的那期</strong></td><td>周四 06:00，发布下下周那期</td></tr>
+          <tr><td><strong>申领截止</strong></td><td>发布后 n 天的时刻</td><td>发布后 2 天 20:00（周六）</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>两条口径：</strong>① 每次触发生成的都是「下一个还没排的周期」，一期接一期连续铺，不跳期；
+        ② <strong>发布 ≠ 生效</strong>——周四发布的班是下下周才用的，发布当天窗口打开让人选，到那一周才生效使用。
+        页面上配置落成具体日期时间（如「下一轮 11/19 06:00 生成 · 铺 11/30–12/6」），研发与业务看到同一句话。
+      </div>
     </div>
 
     <div id="hs-62-round" class="section">
       <div class="section-header">
-        <h3>6.2.1 轮的三个时刻</h3>
+        <h3>6.2.2 轮的三个时刻与四态并存</h3>
       </div>
+      <DocScreens
+        :height="420"
+        :images="[
+          { src: roundShot, label: '轮与结果：顶部轮条四态并存（已结束 / 执行中 / 已截止待开始 / 申领中）+ 空间时间轴' }
+        ]"
+      />
       <table class="data-table">
         <thead>
-          <tr><th style="width: 130px;">时刻</th><th style="width: 260px;">发生什么</th><th>口径</th></tr>
+          <tr><th style="width: 120px;">时刻</th><th style="width: 260px;">发生什么</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>发布</strong></td><td>按节奏定时生成，铺出这一轮的班次与名额快照</td><td>配置改动从下一轮起生效；改了当下轮快照不变</td></tr>
+          <tr><td><strong>发布</strong></td><td>按节奏定时生成，铺出这一轮的班次与名额快照</td><td>配置改动从下一轮起生效；当前轮快照不变</td></tr>
           <tr><td><strong>开放</strong></td><td>清单逐档按各自的开放窗口放开</td><td>分档开放就是「错峰」：不同的人在不同时刻看同一个班</td></tr>
-          <tr><td><strong>关闸</strong></td><td>申领类 = 申领截止；抢类 = 班次开班（时段开始即关，现行口径定为规则）</td><td>关闸是变化段的起点：关闸前的缺席属于获取段，关闸后出的偏差走事实（见 6.4）</td></tr>
-        </tbody>
-      </table>
-      <h4 class="h4sub">排班节奏（每个空间自己的）</h4>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 130px;">参数</th><th style="width: 260px;">定义</th><th>现行口径</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>周期</strong></td><td>锚点 + 长度：自然周一起 / 自然月 1 号起</td><td>门店按周，办公区按月</td></tr>
-          <tr><td><strong>发布偏移</strong></td><td>相对周期起点提前 n 天的时刻</td><td>提前 4 天 06:00 发（门店 = 周四）</td></tr>
-          <tr><td><strong>申领截止偏移</strong></td><td>相对周期起点提前 n 天的时刻</td><td>提前 1 天 20:00 截止（门店 = 周日）</td></tr>
+          <tr><td><strong>关闸</strong></td><td>申领类 = 申领截止；抢类 = 班次开班（时段开始即关，现行口径定为规则）</td><td>关闸是变化段的起点：关闸前的缺席属获取段，关闸后的偏差走事实（见 6.4）</td></tr>
         </tbody>
       </table>
       <div class="note">
-        页面上节奏配置后<strong>落成具体日期时间</strong>（如「下一轮 11/19 06:00 生成，铺 11/23–11/29」），研发与业务看到的是同一句话。
+        多轮并存是常态：上一轮在执行中、这一轮已截止待开始、下一轮正在申领——互不干扰，切换查看即可。
       </div>
     </div>
 
     <div id="hs-62-ways" class="section">
       <div class="section-header">
-        <h3>6.2.2 三种获取方式</h3>
+        <h3>6.2.3 三种获取方式</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -77,11 +92,8 @@
 
     <div id="hs-62-gate" class="section">
       <div class="section-header">
-        <h3>6.2.3 可见 ≠ 可拿：当场判定</h3>
+        <h3>6.2.4 可见 ≠ 可拿：当场判定</h3>
       </div>
-      <p class="doc-p">
-        能不能领由系统在动作发生的那一刻判定，<strong>原因前置</strong>——不是领完再通知失败。判定项与原因话术：
-      </p>
       <table class="data-table">
         <thead>
           <tr><th style="width: 180px;">判定</th><th>原因话术</th></tr>
@@ -101,16 +113,16 @@
 
     <div id="hs-62-balance" class="section">
       <div class="section-header">
-        <h3>6.2.4 名额没占满：三条去向</h3>
+        <h3>6.2.5 名额没占满：三条去向</h3>
       </div>
       <table class="data-table">
         <thead>
-          <tr><th style="width: 180px;">去向</th><th style="width: 320px;">怎么走</th><th>什么时候用</th></tr>
+          <tr><th style="width: 160px;">去向</th><th style="width: 320px;">怎么走</th><th>什么时候用</th></tr>
         </thead>
         <tbody>
           <tr><td><strong>再开一轮</strong></td><td>改配置（加档、放宽人群），下一轮生效</td><td>结构性的余量：配法本身不对</td></tr>
-          <tr><td><strong>兜底序列</strong></td><td>同一天最后开放的班次（通班）把前面落空的人收进去；直派到点执行</td><td>跨班次的兜底：早 / 中 / 晚没排上的人进通班</td></tr>
-          <tr><td><strong>不管</strong></td><td>余量留给下一轮，或人事当场安排（临时班次）</td><td>偶发余量，不值得为它改配置</td></tr>
+          <tr><td><strong>兜底序列</strong></td><td>同一天最后开放的班次（通班）把前面落空的人收进去；直派到点执行</td><td>跨班次的兜底：早 / 晚没排上的人进通班</td></tr>
+          <tr><td><strong>不管</strong></td><td>余量留给下一轮，或人事当场补（临时班次）</td><td>偶发余量，不值得为它改配置</td></tr>
         </tbody>
       </table>
       <div class="note warn-note">
@@ -125,14 +137,16 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
+import rhythmShot from '../../../docs/assets/pages/v5-rhythm.png'
 import roundShot from '../../../docs/assets/pages/v5-round.png'
 
 const tocItems = [
   { id: 'hs-62', label: '6.2 轮与获取' },
-  { id: 'hs-62-round', label: '6.2.1 轮的三个时刻' },
-  { id: 'hs-62-ways', label: '6.2.2 三种获取方式' },
-  { id: 'hs-62-gate', label: '6.2.3 可见≠可拿' },
-  { id: 'hs-62-balance', label: '6.2.4 名额没占满' }
+  { id: 'hs-62-rhythm', label: '6.2.1 排班节奏' },
+  { id: 'hs-62-round', label: '6.2.2 轮的三个时刻' },
+  { id: 'hs-62-ways', label: '6.2.3 三种获取方式' },
+  { id: 'hs-62-gate', label: '6.2.4 可见≠可拿' },
+  { id: 'hs-62-balance', label: '6.2.5 名额没占满' }
 ]
 
 const breadcrumbs = [

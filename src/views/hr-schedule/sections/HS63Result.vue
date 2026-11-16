@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="6.3 排班结果"
-    subtitle="谁哪天上了哪个班，只从这一张表读；附带占用矩阵、逐日名额与缺口入口"
-    version="v5.0"
-    date="2026-11-15"
+    subtitle="谁哪天上了哪个班，只从这一张表读；时间轴看现场、矩阵看名额、缺口看异常"
+    version="v5.2"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-63" class="section">
@@ -17,20 +17,40 @@
         最终都写成同一条记录。任何系统或页面要问「谁哪天在哪个班」，都从这张表读，不另立第二份。
       </p>
       <div class="func-entry">
-        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>轮与结果</strong>（占用矩阵 / 排班结果 / 申领登记三块）
+        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>轮与结果</strong>
+        （三个视图：空间时间轴 / 占用矩阵 / 缺口；下方申领登记 + 排班结果表）
       </div>
+    </div>
 
+    <div id="hs-63-views" class="section">
+      <div class="section-header">
+        <h3>6.3.1 三个视图</h3>
+      </div>
       <DocScreens
-        :height="360"
+        :height="420"
         :images="[
-          { src: roundShot, label: '轮与结果：占用矩阵（行=班次、列=这一轮每一天）+ 排班结果表（唯一记录口）+ 申领登记' }
+          { src: axisShot, label: '空间时间轴（默认）：横轴时间、纵轴班次，每格显示谁在、哪个班还缺人' },
+          { src: tableShot, label: '排班结果表：唯一记录口，下方申领登记按综合分排序并标出截止后会排上的名次' }
         ]"
       />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 140px;">视图</th><th style="width: 300px;">看什么</th><th>什么时候用</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>空间时间轴</strong></td><td>横轴这一轮每一天的时刻，纵轴班次；格子放人名条，缺人的班红字点名「还缺 1 人·没有人」</td><td>看一天现场怎么运转</td></tr>
+          <tr><td><strong>占用矩阵</strong></td><td>行 = 班次，列 = 这一轮每一天；每格「已占 x / N」</td><td>核对名额占用进度</td></tr>
+          <tr><td><strong>缺口</strong></td><td>有效名额没占满的班次 + 日期，附缺口规则名</td><td>找异常：哪些班缺人、要不要处理</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        日期范围跟着该空间这一轮的覆盖区间走：门店 7 天、办公区整月——排到哪天就显示哪天。
+      </div>
     </div>
 
     <div id="hs-63-rows" class="section">
       <div class="section-header">
-        <h3>6.3.1 排班结果表：唯一记录口</h3>
+        <h3>6.3.2 排班结果表：唯一记录口</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -38,32 +58,13 @@
         </thead>
         <tbody>
           <tr><td><strong>日期 · 班次 · 人</strong></td><td>哪天、哪条班次、谁</td><td>一条记录 = 一个人占一条班次的一天</td></tr>
-          <tr><td><strong>怎么排上的</strong></td><td>直派 · 第 n 档 / 抢 · 第 n 档 / 申领 · 排上（综合分 x） / 顶班 / 顶班 · 补位</td><td>来源跟着动作走，读表的人不用猜</td></tr>
-          <tr><td><strong>状态</strong></td><td>有效 / 被覆盖</td><td>被事实覆盖后原记录保留、标记状态，痕迹不删（见 6.4）</td></tr>
-          <tr><td><strong>变动历史</strong></td><td>逐条记录发生了什么</td><td>原计划 → 被什么覆盖 → 谁来补位，全程可回看</td></tr>
+          <tr><td><strong>怎么排上的</strong></td><td>直派 · 第 n 档 / 抢 · 第 n 档 / 申领 · 排上（综合分 x）/ 顶班 / 换班</td><td>来源跟着动作走，读表不用猜</td></tr>
+          <tr><td><strong>状态</strong></td><td>有效 / 被覆盖</td><td>被事实覆盖后原记录保留、标记状态，痕迹不删</td></tr>
+          <tr><td><strong>变动历史</strong></td><td>逐条记录发生了什么</td><td>原计划 → 被什么覆盖 → 谁来顶，全程可回看</td></tr>
         </tbody>
       </table>
       <div class="note">
         直派到点分人与申领截止结算<strong>自动写表</strong>；人事不在这张表上手工改人——要改走事实（换班 / 顶班）。
-      </div>
-    </div>
-
-    <div id="hs-63-matrix" class="section">
-      <div class="section-header">
-        <h3>6.3.2 占用矩阵与逐日名额</h3>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 150px;">区块</th><th style="width: 300px;">展示</th><th>口径</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>占用矩阵</strong></td><td>行 = 班次，列 = 这一轮覆盖的每一天；每格「已占 x / N」</td><td>N 是当天名额数；空格 = 班次当天不出勤</td></tr>
-          <tr><td><strong>逐日名额</strong></td><td>班次编辑里每一天的名额数，可单日加减</td><td>只改那一天，不动班次配置</td></tr>
-          <tr><td><strong>缺口</strong></td><td>有效名额没占满的班次 + 日期</td><td>缺口不自动补人；补人走 6.4 的顶班或临时班次</td></tr>
-        </tbody>
-      </table>
-      <div class="note">
-        矩阵列数跟空间轮走：门店 7 列、办公区 30 列（横向滚动）。「排了多少天就显示多少天」，不写死展示范围。
       </div>
     </div>
 
@@ -92,12 +93,13 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
-import roundShot from '../../../docs/assets/pages/v5-round.png'
+import axisShot from '../../../docs/assets/pages/v5-round.png'
+import tableShot from '../../../docs/assets/pages/v5-run-table.png'
 
 const tocItems = [
   { id: 'hs-63', label: '6.3 排班结果' },
-  { id: 'hs-63-rows', label: '6.3.1 唯一记录口' },
-  { id: 'hs-63-matrix', label: '6.3.2 矩阵与逐日名额' },
+  { id: 'hs-63-views', label: '6.3.1 三个视图' },
+  { id: 'hs-63-rows', label: '6.3.2 唯一记录口' },
   { id: 'hs-63-apply', label: '6.3.3 申领登记' }
 ]
 

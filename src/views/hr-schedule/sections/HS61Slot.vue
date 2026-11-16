@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="6.1 时段与清单"
-    subtitle="一个空间里的钟点怎么配出来：时段说时间与几个位，清单说谁能来、怎么来"
-    version="v5.0"
-    date="2026-11-15"
+    subtitle="一个空间的班怎么配出来：班次说时间与几个位，清单说谁能来、怎么来"
+    version="v5.2"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-61" class="section">
@@ -18,14 +18,14 @@
       </p>
       <div class="func-entry">
         <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ 左侧选空间 → <strong>时段与清单</strong>；
-        班次卡上点「编辑」展开配置表单
+        页签三块：周期时段 / 临时班次 / 申领规则；横向配置（缺口规则、算法服务）在顶部一级导航
       </div>
 
       <DocScreens
         :height="360"
         :images="[
-          { src: slotEditShot, label: '班次编辑：上方班次信息（名称 / 起止 / 出勤日 / 名额来源），下方清单逐档配「谁 / 方式 / 开放窗口 / 上限」' },
-          { src: slotListShot, label: '按班次视图：一条班次一张卡，卡面直接能看到清单每档的关键信息' }
+          { src: slotCycleShot, label: '按周期：节奏条铺出每一天，每天一张卡列出当天班次与名额来源' },
+          { src: slotListShot, label: '按班次：一条班次一张卡，清单档位的关键信息直接摆在卡面上' }
         ]"
       />
       <div class="note">
@@ -34,49 +34,38 @@
       </div>
     </div>
 
-    <div id="hs-61-view" class="section">
-      <div class="section-header">
-        <h3>6.1.1 两条查看视图</h3>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 130px;">视图</th><th style="width: 280px;">看到什么</th><th>什么时候用</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>按班次</strong></td><td>一条班次一张卡：起止、出勤日、名额来源、清单各档；卡上「编辑 / 复制 / 删除」</td><td>改一条班次的配置</td></tr>
-          <tr><td><strong>按周期</strong></td><td>按这一轮覆盖的每一天展开：每天列出当天开哪些班、各占几个名额</td><td>核对某一天到底排了多少班</td></tr>
-        </tbody>
-      </table>
-      <div class="note">
-        周期视图与矩阵的日期范围<strong>跟着该空间这一轮的覆盖区间走</strong>：门店按周铺 7 天，办公区按月铺整月——排到哪天就显示哪天。
-      </div>
-    </div>
-
     <div id="hs-61-slot" class="section">
       <div class="section-header">
-        <h3>6.1.2 班次：时间与名额</h3>
+        <h3>6.1.1 班次：时间与名额</h3>
       </div>
+      <DocScreens
+        :height="420"
+        :images="[
+          { src: slotEditShot, label: '班次编辑抽屉：上方时间与名额，下方清单逐档配置，底部选缺口规则' }
+        ]"
+      />
       <table class="data-table">
         <thead>
-          <tr><th style="width: 130px;">字段</th><th style="width: 240px;">取值</th><th>说明</th></tr>
+          <tr><th style="width: 120px;">字段</th><th style="width: 240px;">取值</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>名称</strong></td><td>早班 / 中班 / 晚班 / 通班</td><td>沿用业务现行班次名，不造新名</td></tr>
-          <tr><td><strong>起止时间</strong></td><td>当天时刻，止晚于起</td><td>只记这一班是多少时间；超时记加班、上限校验在获取端背后算（见 6.1.5 不做）</td></tr>
-          <tr><td><strong>出勤日</strong></td><td>全周或指定几天</td><td>同一店同名的班可以只排部分天（如周末晚班只排周六日）</td></tr>
-          <tr><td><strong>名额来源</strong></td><td>人工给定 / 算法服务</td><td>算法服务在配置台顶部「算法服务」页登记，见 6.1.4</td></tr>
-          <tr><td><strong>名额上限</strong></td><td>整数区间</td><td>算法服务算出的名额不会超出这个区间；人工给定的名额就在区间内取值</td></tr>
-          <tr><td><strong>逐日名额</strong></td><td>单日加减</td><td>只改那一天的数，不动班次配置（临时加名额用临时班次，见 6.1.4）</td></tr>
+          <tr><td><strong>名称</strong></td><td>早班 / 晚班 / 通班等</td><td>沿用业务现行班次名，不造新名</td></tr>
+          <tr><td><strong>起止时间</strong></td><td>时刻控件，10 分钟颗粒</td><td>只记这一班是多少时间；超时记加班、上限校验由获取端算</td></tr>
+          <tr><td><strong>出勤日</strong></td><td>全周或指定几天</td><td>同一店同名的班可以只排部分天</td></tr>
+          <tr><td><strong>名额来源</strong></td><td>人工给定 / 挂算法服务</td><td>算法服务在顶部「算法服务」页登记（见 6.1.3）</td></tr>
+          <tr><td><strong>名额数</strong></td><td>整数</td><td>页面一律「已占 x / N」容量口径</td></tr>
+          <tr><td><strong>单日名额</strong></td><td>按周期视图逐日加减</td><td>只改那一天的数，不动班次配置</td></tr>
+          <tr><td><strong>缺口规则</strong></td><td>每条班次选一条</td><td>只管排班确定后因事件缺人怎么判（见 6.4.3）</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>名额显示口径：</strong>一律「已占 x / N」容量口径，N 是这一天该班的名额数，x 是已经被占掉的数。
+        <strong>生效时机：</strong>周期时段是模板——保存后从下一轮起生效，当前轮按已生成快照跑，不热改。
       </div>
     </div>
 
     <div id="hs-61-list" class="section">
       <div class="section-header">
-        <h3>6.1.3 清单：谁能来、怎么来</h3>
+        <h3>6.1.2 清单：谁能来、怎么来</h3>
       </div>
       <p class="doc-p">
         清单是班次下面的一串<strong>有序档位</strong>：排在前面的档先开放、先挑名额，后面的档接着；每一档四个字段：
@@ -86,65 +75,86 @@
           <tr><th style="width: 110px;">字段</th><th style="width: 300px;">取值</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>谁</strong></td><td>范围（本店 / 附近 n km）· 合作性质（全职 / 非全）· 人员标签（在职 / 试用 / 储备）· 岗位</td><td>圈人条件；「在职」含试用、把储备挡在外面，要放储备进来才显式改</td></tr>
-          <tr><td><strong>方式</strong></td><td>直派轮转 / 先到先得 / 申领审核</td><td>三种都是系统枚举的服务能力（见 6.2）</td></tr>
-          <tr><td><strong>开放窗口</strong></td><td>锚点（发布 / 发布后推 n 天 / 发布后第几周几 / 开班前后 n 天）+ 时刻</td><td>配置用锚点+偏移，页面上<strong>落成具体日期时间</strong>（如「11-14 09:00 开（开班前 1 天）」）</td></tr>
-          <tr><td><strong>上限</strong></td><td>整数，≤ 该班名额数</td><td>这一档最多占几个名额；留出来的给后面的档</td></tr>
+          <tr><td><strong>谁</strong></td><td>范围（本店 / 附近 n km）· 合作性质（全职 / 非全）· 岗位</td><td>圈人条件；在职含试用、挡储备</td></tr>
+          <tr><td><strong>方式</strong></td><td>直派轮转 / 先到先得 / 申领审核</td><td>三种系统枚举能力（见 6.2.2）</td></tr>
+          <tr><td><strong>开放窗口</strong></td><td>锚点（发布 / 每周几 / 开班前 n 天）+ 时刻</td><td>页面落成具体日期时间</td></tr>
+          <tr><td><strong>上限</strong></td><td>整数，≤ 该班名额数</td><td>这一档最多占几个，留出的给后面的档</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>档位的人群是优先级，不是份额划分。</strong>各档「谁」圈出来的是候选人群的<strong>合集</strong>——同一个人可以同时落在多档里，不存在「这个名额专属某个人群」；
-        档位顺序只决定<strong>优先级</strong>：前面的档先挑，占不完的名额后面的档接着挑。清单这么配的目的是<strong>让尽量多的人上到班</strong>——人群圈得越合得拢、档位排得越顺，名额越不会闲置在某一档手里。
+        <strong>档位的人群是优先级，不是份额划分。</strong>各档「谁」圈出来的是候选人群的<strong>合集</strong>——同一个人可以同时落在多档；
+        档位顺序只决定优先级：前面的档先挑，占不完的名额后面的档接着挑。目的是<strong>让尽量多的人上到班</strong>。
       </div>
       <div class="note warn-note">
-        <strong>可见 ≠ 可拿：</strong>档位开着只是「看得到」，能不能领由系统当场判定并给出原因（时间冲突、不是你的档、窗口没到等，见 6.2.3）。
+        <strong>可见 ≠ 可拿：</strong>档位开着只是「看得到」，能不能领由系统当场判定并给出原因（见 6.2.3）。
       </div>
     </div>
 
     <div id="hs-61-service" class="section">
       <div class="section-header">
-        <h3>6.1.4 名额来源与临时班次</h3>
+        <h3>6.1.3 算法服务：两类，先登记后引用</h3>
       </div>
-      <h4 class="h4sub">算法服务（登记一项，班次引用）</h4>
+      <DocScreens
+        :height="360"
+        :images="[
+          { src: algoShot, label: '算法服务页：名额来源类与缺口判定类分开列，登记时校验输入、算法、输出齐备' }
+        ]"
+      />
       <table class="data-table">
         <thead>
-          <tr><th style="width: 150px;">服务</th><th style="width: 220px;">输入</th><th>算法</th></tr>
+          <tr><th style="width: 130px;">类</th><th style="width: 200px;">服务</th><th>算法</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>按在岗人数</strong></td><td>人事在册状态</td><td>全员到岗基数 2 人，缺勤 1 人减 1</td></tr>
-          <tr><td><strong>按签约人数</strong></td><td>合作类型与签约数</td><td>签约非全 ÷ 2 向上取整</td></tr>
-          <tr><td><strong>按业务量</strong></td><td>业务系统预约量</td><td>每 6 单 1 人，最少 1</td></tr>
+          <tr><td rowspan="4"><strong>名额来源</strong><br>（算这一班要几个人）</td><td>按在岗人数</td><td>全员到岗基数 2 人，缺勤 1 人减 1</td></tr>
+          <tr><td>按签约人数</td><td>签约非全 ÷ 2 向上取整</td></tr>
+          <tr><td>按业务量（推拿师）</td><td>每 6 单 1 人，最少 1</td></tr>
+          <tr><td>按业务量（客户经理）</td><td>每 8 单 1 人，最少 1</td></tr>
+          <tr><td><strong>缺口判定</strong><br>（算现在还差几个人）</td><td>实时经营需求</td><td>岗位、合作形式、空间、时段、实时数据都是<strong>调用时传入</strong>的——各店各岗分开动态算，不拉通一个数</td></tr>
         </tbody>
       </table>
       <div class="note">
-        名额来源决定「这一班要几个人」由谁定；人工给定就是配置里直接写数，算法服务就是登记好的能力按输入算数。
-        服务必须先登记才能被班次引用（登记时校验输入、算法、输出齐备）。
+        名额来源类决定「这一班要几个人」由谁定；缺口判定类（G3 引用）决定「这段现在还差几个人」。
+        服务必须先登记才能被班次引用。
       </div>
-      <h4 class="h4sub">临时班次</h4>
+    </div>
+
+    <div id="hs-61-tmp" class="section">
+      <div class="section-header">
+        <h3>6.1.4 临时班次：当天新增，立即生效</h3>
+      </div>
+      <DocScreens
+        :height="340"
+        :images="[
+          { src: slotTmpShot, label: '临时班次：不进周期配置、只改那一天，保存并开放立即生效' }
+        ]"
+      />
       <p class="doc-p">
-        特殊情况下当天新增名额：不进周期配置、只改那一天，<strong>立即生效</strong>。周期班次与临时班次在页面上是两个入口，互不混用。
+        特殊情况下当天新增名额：不进周期配置、只改那一天，<strong>立即生效</strong>。周期时段与临时班次是两个入口，互不混用——
+        周期改配置等下一轮，临时当天就要人。
       </p>
     </div>
 
-    <div id="hs-61-check" class="section">
+    <div id="hs-61-rule" class="section">
       <div class="section-header">
-        <h3>6.1.5 校验与明确不做</h3>
+        <h3>6.1.5 申领规则：挂人群的门槛</h3>
       </div>
+      <DocScreens
+        :height="340"
+        :images="[
+          { src: slotRuleShot, label: '申领规则：规则挂人群不挂时段，计量按天合计，类下任一条都算数' }
+        ]"
+      />
       <table class="data-table">
         <thead>
-          <tr><th style="width: 220px;">校验</th><th>口径</th></tr>
+          <tr><th style="width: 160px;">要点</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>窗口顺序</strong></td><td>后面的档不能比前面的档先开放（都按这一轮第一天落成具体时刻比较）</td></tr>
-          <tr><td><strong>档位上限</strong></td><td>每档上限相加不超过该班名额数</td></tr>
-          <tr><td><strong>两个入口</strong></td><td>同空间时间重叠且人群写重的两条班次，只查「先到先得 / 申领审核」类——直派不算入口（系统分人时自己挡时间冲突）</td></tr>
-          <tr><td><strong>生效时机</strong></td><td>配置改动保存后下一轮生效；当前轮按已生成的快照跑完，不热改</td></tr>
+          <tr><td><strong>挂谁</strong></td><td>规则挂「人群」，不挂时段；没配规则的人直接放行</td></tr>
+          <tr><td><strong>计量</strong></td><td>条数 / 分钟两种，配下限与上限；按这一天合计，不跨天累加</td></tr>
+          <tr><td><strong>类别</strong></td><td>类别是空间的字典；规则可管某一类或全部，<strong>类下任一条都算数</strong>（名额满了可换同类另一条）</td></tr>
+          <tr><td><strong>生效</strong></td><td>改了立即用于试算，正式生效下一轮</td></tr>
         </tbody>
       </table>
-      <div class="note warn-note">
-        <strong>明确不做：</strong>① 工时上限不在排班里配——排班只记班次起止，能否接与加班由获取端背后的工时规则算；
-        ② 不做「一条班次按岗位拆名额」——拆成两条班次；③ 实例级覆盖（只改某周某天的配置）挂起未做，见附录。
-      </div>
     </div>
   </DocShell>
 </template>
@@ -153,16 +163,20 @@
 import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
-import slotEditShot from '../../../docs/assets/pages/v5-slots.png'
-import slotListShot from '../../../docs/assets/pages/v5-list.png'
+import slotCycleShot from '../../../docs/assets/pages/v5-slots.png'
+import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
+import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'
+import algoShot from '../../../docs/assets/pages/v5-algo.png'
+import slotTmpShot from '../../../docs/assets/pages/v5-slot-tmp.png'
+import slotRuleShot from '../../../docs/assets/pages/v5-slot-rule.png'
 
 const tocItems = [
   { id: 'hs-61', label: '6.1 时段与清单' },
-  { id: 'hs-61-view', label: '6.1.1 查看视图' },
-  { id: 'hs-61-slot', label: '6.1.2 班次：时间与名额' },
-  { id: 'hs-61-list', label: '6.1.3 清单：谁能来' },
-  { id: 'hs-61-service', label: '6.1.4 名额来源' },
-  { id: 'hs-61-check', label: '6.1.5 校验与不做' }
+  { id: 'hs-61-slot', label: '6.1.1 班次：时间与名额' },
+  { id: 'hs-61-list', label: '6.1.2 清单：谁能来' },
+  { id: 'hs-61-service', label: '6.1.3 算法服务' },
+  { id: 'hs-61-tmp', label: '6.1.4 临时班次' },
+  { id: 'hs-61-rule', label: '6.1.5 申领规则' }
 ]
 
 const breadcrumbs = [

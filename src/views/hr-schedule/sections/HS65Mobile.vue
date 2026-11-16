@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="6.5 移动端"
     subtitle="员工在自己手机上只看两件事：我的排班、能领的班"
-    version="v5.0"
-    date="2026-11-15"
+    version="v5.2"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-65" class="section">
@@ -56,7 +56,8 @@
         </thead>
         <tbody>
           <tr><td><strong>日期条</strong></td><td>这一轮覆盖的每一天一格，标「n 个 / 拿不了 / 已过 / —」</td><td>门店 7 格、办公区 30 格横向滑动；选中格自动滑到视野中间</td></tr>
-          <tr><td><strong>当天名额卡</strong></td><td>班次、时间、面向谁、已占 x / N、获取方式</td><td>先到先得点一下就成；申领先登记、截止后按综合分排序</td></tr>
+          <tr><td><strong>当天名额卡</strong></td><td>班次、时间、面向谁、已占 x / N、获取方式</td><td>先到先得点一下就成；申领先登记、截止后按综合分排序（截止时刻是轮级的，页头横幅显示）</td></tr>
+          <tr><td><strong>分类必选数量</strong></td><td>配了类别规则的空间：类头进度（要求 n 条 · 占 x 条 · 还差）+ 卡上「选这条」勾选 + 底部集合提交条</td><td>同类任一条都算数，勾满一起提交；额度（周 / 月）进度随勾选实时变化</td></tr>
           <tr><td><strong>当场判定</strong></td><td>成不了当场说原因</td><td>不是你的档 / 没到开放时间 / 时间重叠 / 已占满，原因前置不事后通知失败</td></tr>
           <tr><td><strong>没有可领时</strong></td><td>整轮没有开放名额时直说</td><td>直派空间显示「这里的班排完直接分给你，没有要你领的名额」</td></tr>
         </tbody>

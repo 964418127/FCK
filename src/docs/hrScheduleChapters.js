@@ -69,7 +69,7 @@ export const hrScheduleChapters = [
     order: '六',
     title: '功能详细说明',
     nav: '功能详细说明',
-    subtitle: '6.1 时段与清单 + 6.2 轮与获取 + 6.3 排班结果 + 6.4 变化与求值 + 6.5 移动端',
+    subtitle: '6.1 时段与清单 + 6.2 轮与获取 + 6.3 排班结果 + 6.4 变化与求值 + 6.5 移动端 + 6.6 通知',
     routeName: 'doc-hr-schedule-features',
     path: '/docs/hr-schedule/features',
     file: 'HrScheduleFeatures.vue'
@@ -87,9 +87,9 @@ export const hrScheduleChapters = [
 ]
 
 /**
- * 第六章「功能详细说明」下的功能章节（6.1–6.5）。
+ * 第六章「功能详细说明」下的功能章节（6.1–6.6）。
  *
- * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端。
+ * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知。
  * 章序就是数据流：先配出时段与清单，再切成轮让人领，领完写进结果表，之后的变化才有的改。
  * 编号 6.x 只在第六章内部使用。
  */
