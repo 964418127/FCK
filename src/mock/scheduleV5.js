@@ -907,31 +907,27 @@ export function claimCheck5(state, spaceId, personId, date, opts = {}) {
   }
 }
 
-/* 集合提交：一个人这一天要的是一组班，组要过要求才让交。
+/* 集合提交：一个人这一天要的是「有类型 + 数量要求」的那组班，这组要过要求才让交。
+   只管这类要求（A 类至少 1 条这种）：其他要求（当天总时长之类）不在提交门槛上——
+   普通班次各走各的（点了就成 / 单条申领），整天时长只能等这一天的班都到手才看得准。
    空组是最直接的一种不合规（一条都没选就不该有提交这个动作）。
    返回 reasons 是给人看的话，不是字段名。 */
 export function claimSet5(state, spaceId, personId, date, slotIds = [], opts = {}) {
   const ids = [...new Set(slotIds)]
   const check = claimCheck5(state, spaceId, personId, date, { ...opts, extraSlotIds: ids })
   const space = state.spaces.find(s => s.id === spaceId)
+  /* 提交门槛 = 圈了类型的条数要求；上限/额度撑破也不让交 */
+  const gating = check.items.filter(i => i.unit === 'count' && i.scope?.type === 'category')
   const reasons = []
-  check.items.filter(i => !i.ok).forEach(i => {
-    const what = i.unit === 'count'
-      ? (i.scope?.type === 'category' ? catName5(space, i.scope.id) : '班次')
-      : '时长'
-    if (i.unit === 'count') {
-      if (i.min && i.num < i.min) reasons.push(`${what}还差 ${i.min - i.num} 条`)
-      else if (i.max && i.num > i.max) reasons.push(`${what}多了 ${i.num - i.max} 条`)
-    } else {
-      const h = m => Math.round(m / 6) / 10
-      if (i.min && i.num < i.min) reasons.push(`当天合计还差 ${h(i.min - i.num)} 小时`)
-      else if (i.max && i.num > i.max) reasons.push(`当天合计超了 ${h(i.num - i.max)} 小时`)
-    }
+  gating.filter(i => !i.ok).forEach(i => {
+    const what = catName5(space, i.scope.id)
+    if (i.min && i.num < i.min) reasons.push(`${what}还差 ${i.min - i.num} 条`)
+    else if (i.max && i.num > i.max) reasons.push(`${what}多了 ${i.num - i.max} 条`)
   })
   check.limits.filter(l => !l.ok).forEach(l => reasons.push(`${l.name}不够（用到 ${l.used}，上限 ${l.cap} 小时）`))
   return {
-    ...check, empty: ids.length === 0, count: ids.length,
-    reasons, ok: ids.length > 0 && check.ok
+    ...check, gating, empty: ids.length === 0, count: ids.length,
+    reasons, ok: ids.length > 0 && gating.every(i => i.ok) && check.limits.every(l => l.ok)
   }
 }
 

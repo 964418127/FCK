@@ -191,9 +191,9 @@
 
           <div class="oc-foot">
             <template v-if="o.gate.ok">
-              <!-- 有要求的人：这一天的班是一组，勾好再一起交；能不能交先算给你看 -->
+              <!-- 有「类型 + 数量」要求的班次：这一天这组勾好再一起交；普通班次照旧点了就成 -->
               <button
-                v-if="basketMode"
+                v-if="needBasket(o)"
                 :class="['act-btn', isSel(o) ? 'picked' : 'ghost']"
                 @click="toggleSel(o)"
               >{{ isSel(o) ? '已选上' : '选这条' }}</button>
@@ -209,8 +209,8 @@
           </div>
         </div>
 
-        <!-- 集合提交：一条没选就交不了；选不够要求也交不了，差什么直接写在这儿 -->
-        <div v-if="basketMode" class="basket-bar">
+        <!-- 集合提交：有类型 + 数量要求的班次才勾着一起交；一条没选就交不了 -->
+        <div v-if="basketVisible" class="basket-bar">
           <div class="bb-info">
             <b>{{ selItems.length ? `已选 ${selItems.length} 条 · 合计 ${selHours} 小时` : '这一天还没选班次' }}</b>
             <span :class="{ bad: selItems.length && !setPreview?.ok }">{{ basketHint }}</span>
@@ -445,9 +445,12 @@ const claimBoard = computed(() => {
 })
 
 /* ---------- 集合提交 ----------
-   有要求的人，这一天的班是一组：先勾班次，再一起交。
-   没要求的店不搞这套，照旧点了就成。 */
-const basketMode = computed(() => !!claimBoard.value?.hasRule)
+   只有「按类型 + 数量」要求的班次才这么走：这一天这类班勾好一起交。
+   其他班次（没这类要求的人、没被规则圈到的班）照旧按自己的方式——抢点了就成、申领单条登记。 */
+const countRules = computed(() => (claimBoard.value?.rules || []).filter(r => r.unit === 'count' && r.scope?.type === 'category'))
+const needBasket = o => countRules.value.some(r => r.scope.id === o.slot.category)
+/* 当天还有这类可拿的班次，才出提交条 */
+const basketVisible = computed(() => dayOffers.value.some(o => o.gate.ok && needBasket(o)))
 const sel = ref([])
 const selKey = o => `${o.slotId}|${o.date}`
 const isSel = o => sel.value.includes(selKey(o))
@@ -459,21 +462,22 @@ watch([pickSel, pickStore, () => meId.value], () => { sel.value = [] })
 const selItems = computed(() => dayOffers.value.filter(o => isSel(o)))
 const selHours = computed(() => Math.round(selItems.value.reduce((s, o) => s + hours5(o.slot.start, o.slot.end), 0) * 10) / 10)
 const setPreview = computed(() => {
-  if (!basketMode.value) return null
   try {
     return previewClaimSet(pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today, selItems.value.map(o => o.slotId))
   } catch { return null }
 })
 /* 进度条在勾选时就要跟着动：看的是「勾上以后这天到手的样子」 */
 const meterBoard = computed(() => {
-  const src = basketMode.value ? setPreview.value : claimBoard.value
+  const src = setPreview.value || claimBoard.value
   return { items: src?.items || [], limits: src?.limits || [] }
 })
 const basketHint = computed(() => {
   if (!selItems.value.length) return '先选班次才能提交'
   const p = setPreview.value
   if (!p) return ''
-  return p.ok ? '要求已满足，可以提交' : p.reasons.join('；')
+  if (!p.ok) return p.reasons.join('；')
+  const allOk = p.items.every(i => i.ok) && p.limits.every(l => l.ok)
+  return allOk ? '要求已满足，可以提交' : '可以提交'
 })
 const canSubmit = computed(() => selItems.value.length > 0 && !!setPreview.value?.ok)
 function doSubmitSet() {

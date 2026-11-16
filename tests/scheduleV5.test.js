@@ -610,17 +610,21 @@ test('每日时长线 360–540 分钟：4 小时不够，加常规班凑到 8 �
   assert.equal(after.ok, true, 'A 类 1 条 + 480 分钟，全部满足')
 })
 
-test('集合提交：一条没选不算数；只选 B 类不给交，会写清还差什么', () => {
+test('集合提交只看「类型 + 数量」：一条没选不许交，A 类没勾够不许交', () => {
   const s = mk()
   s.placements = s.placements.filter(p => p.personId !== 'E-213')   // 这周还什么都没占
   const empty = claimSet5(s, 'S-205', 'E-213', '2026-11-16', [])
   assert.equal(empty.empty, true)
   assert.equal(empty.ok, false, '空组不是合规的提交')
+  /* 只勾 B 类常规：A 类还是一条没有 */
   const onlyB = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-19'])
   assert.equal(onlyB.ok, false)
-  assert.ok(onlyB.reasons.includes('A 类还差 1 条'), onlyB.reasons.join('|'))
-  assert.ok(onlyB.reasons.some(r => r.includes('当天合计还差 2 小时')), onlyB.reasons.join('|'))
-  /* 勾上 A 类早班 + B 类常规：4 + 4 = 8 小时，A 类 1 条，这组才合规 */
+  assert.deepEqual(onlyB.reasons, ['A 类还差 1 条'])
+  /* 勾上 A 类早班：类的要求够了就能交；当天时长只有 4 小时——那是整天合计，不卡提交 */
+  const onlyA = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17'])
+  assert.equal(onlyA.ok, true, '时长下限不在提交门槛上')
+  assert.equal(onlyA.items.find(i => i.id === 'CR-02').ok, false, '但进度条上仍标着时长没够')
+  /* 两条一起勾：8 小时，全部满足 */
   const okSet = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17', 'SL-19'])
   assert.equal(okSet.ok, true)
   assert.equal(okSet.dayUsed, 480)
