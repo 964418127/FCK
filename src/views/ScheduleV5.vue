@@ -83,10 +83,11 @@
             <!-- 排班节奏：以前这四个参数写死在代码里，页面上没地方配 -->
             <div class="rhythm">
               <div class="rh-sum" @click="rhythmOpen = !rhythmOpen">
+                <span class="rh-caret">{{ rhythmOpen ? '▾' : '▸' }}</span>
                 <strong>排班节奏</strong>
                 <span class="rh-label">{{ rhythmLabel }}</span>
                 <span class="rh-next">下一轮 {{ shortAt(round.nextAt) }} 生成 · 铺 {{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}</span>
-                <span class="rh-toggle">{{ rhythmOpen ? '收起' : '改' }}</span>
+                <span class="rh-toggle">{{ rhythmOpen ? '收起' : '展开 · 改' }}</span>
               </div>
               <div v-if="rhythmOpen" class="rh-body">
                 <div class="rh-row">
@@ -1638,10 +1639,11 @@ function devResolveApply() {
 .sub-tabs > button { border: 1px solid #eee6e8; background: #fff; padding: 4px 10px; font-size: 12.5px; border-radius: 6px; color: #6a6a75; cursor: pointer; }
 .sub-tabs > button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
 .sub-spacer { flex: 1; }
-.rhythm { border: 1px solid #f0eaec; border-radius: 10px; margin-bottom: 10px; background: #fcfbfc; }
+.rhythm { border: 1px solid #eadfe3; border-left: 3px solid #a40035; border-radius: 8px; margin: 12px 0 10px; background: #fcfbfc; box-shadow: 0 1px 4px rgba(164, 0, 53, 0.06); }
 .rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
 .rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
-.rh-sum { display: flex; align-items: center; gap: 12px; padding: 9px 12px; cursor: pointer; font-size: 12.5px; color: #3d3d47; }
+.rh-sum { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; font-size: 12.5px; color: #3d3d47; }
+.rh-caret { color: #a40035; font-size: 11px; width: 12px; }
 .rh-sum strong { color: #a40035; }
 .rh-label { color: #6a6a75; }
 .rh-next { margin-left: auto; color: #9a9aa4; font-size: 11.5px; }
