@@ -837,7 +837,7 @@
     <!-- 算法服务：系统固定提供，这里只登记使用（挂到名额来源 / 缺口规则），不提供自编 -->
     <section v-show="mainTab === 'algo'" class="svc-pane">
       <div class="svc-head">
-        <p>下面的算法由系统写好固定提供，不在这里编写、也不能自建——这里只做<b>登记使用</b>：把哪条算法挂到哪个时段的名额来源，或者被缺口规则 G3 引用。同一条算法按不同人群算出来的不是一个数，所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条；人群写死在算法里，选用时不能改。</p>
+        <p>下面的算法由系统写好固定提供，不在这里编写、也不能自建——这里只做<b>登记使用</b>：把哪条算法挂到哪个时段的名额来源，或者被缺口规则 G3 引用。两类算法不一样：<b>名额来源类</b>（按在岗人数 / 按签约人数 / 按业务量）的人群写死在登记里，同一条算法按不同人群算出来的不是一个数，所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条；<b>缺口判定类</b>（实时经营需求）是<b>计算传参</b>——岗位、合作形式、时段、实时数据都由调用时传入，各店各岗分开动态算，不是模糊的拉通一个数。</p>
       </div>
       <table class="data-table">
         <thead><tr><th style="width: 130px;">服务</th><th style="width: 140px;">给谁算</th><th style="width: 80px;">用在哪</th><th style="width: 170px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th><th style="width: 130px;">被引用</th></tr></thead>
@@ -845,8 +845,14 @@
           <tr v-for="v in v5.services" :key="v.id">
             <td><strong>{{ v.name }}</strong></td>
             <td>
-              <span class="who-chip">{{ v.kind }}</span>
-              <span class="who-chip">{{ v.job }}</span>
+              <template v-if="v.params">
+                <span class="use-tag gap">计算传参</span>
+                <div class="param-line">调用时传入：{{ v.params.join(' / ') }}</div>
+              </template>
+              <template v-else>
+                <span class="who-chip">{{ v.kind }}</span>
+                <span class="who-chip">{{ v.job }}</span>
+              </template>
             </td>
             <td>
               <span class="use-tag" :class="v.use">{{ v.use === 'gap' ? '缺口判定' : '名额来源' }}</span>
@@ -2122,6 +2128,7 @@ tr.covered td { color: #9a9fa9; }
 .tl-chip.ft { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
 .tl-chip.mk { background: #eaf6f1; color: #0f6e56; }
 .tl-chip.sw { background: #faf3dd; color: #854f0b; }
+.param-line { font-size: 11px; color: #8a8a95; margin-top: 3px; line-height: 1.4; }
 /* 待人事处理：求值没人顶时发给人事的待办 */
 .hr-todo { background: #faeeda; border: 1px solid #ecd9b0; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
 .hr-todo > strong { font-size: 12.5px; color: #854F0B; }
