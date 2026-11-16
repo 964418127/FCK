@@ -434,6 +434,14 @@
           <template v-else>
             <div class="hint-line">规则挂「人群」不挂时段：管谁、管哪一类（或全部）、计量（条数 / 分钟）、上下限。两项计量都按这一天合计（不跨天累加）。没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）。改了立即用于试算，正式生效下一轮。</div>
 
+            <!-- 类别是空间的字典：规则按类管，类下任一条都算数 -->
+            <div class="cat-row">
+              <span class="cr-label">空间类别</span>
+              <span v-for="c in categoriesOf5(curSpace)" :key="c.id" class="cat-pill">{{ c.name }}</span>
+              <span v-if="!categoriesOf5(curSpace).length" class="lc-none">还没设类别：规则只能管「全部时段」</span>
+              <el-button link size="small" @click="openCatDlg">管理类别</el-button>
+            </div>
+
             <div class="rule-list">
               <article v-for="r in spaceRules" :key="r.id" class="rule-card">
                 <div class="rc-main">
@@ -840,6 +848,23 @@
       </template>
     </el-dialog>
 
+    <!-- 管理类别：空间的字典，业务自己起名；删除要挡「还有班次 / 规则在用」 -->
+    <el-dialog v-model="catDlg" title="管理类别" width="460px">
+      <div class="cat-dlg-hint">类别只是把「同一句要求」套到一组班次上；类下任一条都算数，所以某条名额满了可以换同类的另一条。</div>
+      <div v-for="c in categoriesOf5(curSpace)" :key="c.id" class="cat-dlg-row">
+        <span class="cd-id">{{ c.id }}</span>
+        <el-input :model-value="c.name" size="small" style="width: 200px"
+          @change="val => doRenameCat(c, val)" />
+        <span class="cd-use">{{ catUseText(c.id) }}</span>
+        <el-button link size="small" type="danger" @click="doRemoveCat(c)">删除</el-button>
+      </div>
+      <div v-if="!categoriesOf5(curSpace).length" class="empty"><p>这家店还没有类别</p></div>
+      <div class="cat-dlg-row add">
+        <el-input v-model="newCatName" size="small" placeholder="新类别名字，如 C 类 / 高峰班" style="width: 240px" />
+        <el-button size="small" type="primary" @click="doAddCat">添加</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 找人顶班 -->
     <el-dialog v-model="appointDlg" title="找人顶班" width="560px">
       <div class="svc-note">经营性安排：名额限定到这一个人，别人进不来；不需对方同意，通知即可。</div>
@@ -880,7 +905,8 @@ import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
-  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo
+  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
+  addCategory5, renameCategory5, removeCategory5, categoryUsage
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -1426,12 +1452,39 @@ function openRule(r) {
   }
   ruleEditing.value = true
 }
+/* 类别管理：空间的字典，增 / 改名 / 删（删要挡还有班次或规则在用） */
+const catDlg = ref(false)
+const newCatName = ref('')
+function openCatDlg() { newCatName.value = ''; catDlg.value = true }
+function catUseText(id) {
+  const u = categoryUsage(selSpace.value, id)
+  return u.slots || u.rules ? `${u.slots} 条班次 · ${u.rules} 条规则在用` : '没人用'
+}
+function doAddCat() {
+  const r = addCategory5(selSpace.value, newCatName.value)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  newCatName.value = ''
+  ElMessage.success('类别已添加')
+}
+function doRenameCat(c, val) {
+  const r = renameCategory5(selSpace.value, c.id, val)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  ElMessage.success('改名已保存')
+}
+function doRemoveCat(c) {
+  const r = removeCategory5(selSpace.value, c.id)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  ElMessage.success('类别已删除')
+}
+
 function saveRule() {
   const e = []
   if (!ruleForm.name.trim()) e.push('名称没填')
   if (!ruleForm.min && !ruleForm.max) e.push('下限和上限至少填一个')
   if (ruleForm.max && ruleForm.min > ruleForm.max) e.push('下限比上限大')
   if (ruleForm.scopeType !== 'all' && !spaceSlots.value.some(s => s.category === ruleForm.scopeType)) e.push('这个类下还没有时段')
+  /* 圈到的人得在这个空间里真的有人，否则规则永远管不到任何人 */
+  if (!curSpacePeople.value.some(p => matchWho5(v5, p, { spaceId: selSpace.value }, ruleForm.who))) e.push('这条规则圈到的人在这个空间里没有')
   ruleErr.value = e.join('；')
   if (e.length) return
   saveRule5({
@@ -1678,6 +1731,14 @@ function devResolveApply() {
 .trial-line.muted { color: #9a9fa9; }
 .tl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
 .rule-err { font-size: 12px; color: #a40035; margin: 4px 0; }
+.cat-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12.5px; }
+.cr-label { color: #6a6a75; }
+.cat-pill { font-size: 11.5px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 10px; padding: 1px 9px; }
+.cat-dlg-hint { font-size: 12px; color: #8a8a95; margin-bottom: 10px; line-height: 1.6; }
+.cat-dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cat-dlg-row.add { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
+.cd-id { width: 18px; font-size: 12px; color: #a40035; font-weight: 600; }
+.cd-use { font-size: 11.5px; color: #9a9fa9; flex: 1; }
 
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }

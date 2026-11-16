@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5, runDueRounds5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -700,4 +700,41 @@ test('非全签约多店：兼签店的名额看得到、matchWho 按签约集�
   /* 没签的店照旧挡住 */
   const guanlan = { spaceId: 'S-203' }
   assert.equal(matchWho5(s, tao, guanlan, { scope: 'store', kind: 'parttime', pos: '推拿师' }), false)
+})
+
+/* ===== 类别维护（增 / 改名 / 删，带占用保护） ===== */
+test('类别：加 C 类只加一行数据，改名同步生效，删除挡住被占用', () => {
+  const s = mk()
+  const add = addCategory5(s, 'S-205', 'C 类')
+  assert.equal(add.ok, true)
+  assert.equal(s.spaces.find(x => x.id === 'S-205').categories.length, 3)
+  assert.deepEqual(add.id, 'C', '下一个未占用的字母')
+  assert.equal(addCategory5(s, 'S-205', 'C 类').ok, false, '不许重名')
+  assert.equal(addCategory5(s, 'S-205', '   ').ok, false, '名字不能空')
+
+  assert.equal(renameCategory5(s, 'S-205', 'A', '早高峰').ok, true)
+  assert.equal(s.spaces.find(x => x.id === 'S-205').categories.find(c => c.id === 'A').name, '早高峰')
+
+  /* A 类下有两个班次、一条规则 → 删不掉 */
+  const del = removeCategory5(s, 'S-205', 'A')
+  assert.equal(del.ok, false)
+  assert.ok(del.reason.includes('2 条班次'), del.reason)
+  /* 刚加的 C 类没人用 → 能删 */
+  assert.equal(removeCategory5(s, 'S-205', 'C').ok, true)
+})
+
+test('类别占用统计：班次与规则分别计数', () => {
+  const s = mk()
+  assert.deepEqual(categoryUsage5(s, 'S-205', 'A'), { slots: 2, rules: 1 })
+  assert.deepEqual(categoryUsage5(s, 'S-205', 'B'), { slots: 1, rules: 0 })
+  assert.deepEqual(categoryUsage5(s, 'S-201', 'A'), { slots: 0, rules: 0 })
+})
+
+test('规则进度项带 scope/unit，移动端才能按类给进度', () => {
+  const s = mk()
+  const r = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const count = r.items.find(i => i.unit === 'count')
+  const mins = r.items.find(i => i.unit === 'minute')
+  assert.deepEqual(count.scope, { type: 'category', id: 'A' })
+  assert.deepEqual(mins.scope, { type: 'all' })
 })

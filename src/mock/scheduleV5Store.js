@@ -10,6 +10,7 @@ import {
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
   openAt5, slotFirstDate5, roundOf, datesOfRound5,
+  addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
   claimCheck5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
 } from './scheduleV5.js'
 
@@ -393,6 +394,27 @@ export function saveRule5(rule) {
 export function removeRule5(id) {
   state.claimRules = (state.claimRules || []).filter(r => r.id !== id)
   state.configDirty = true
+}
+
+/* 类别维护：动作落在纯逻辑（mock）上，这里只负责改完标脏 */
+export function categoriesOf(spaceId) {
+  return state.spaces.find(s => s.id === spaceId)?.categories || []
+}
+export function categoryUsage(spaceId, catId) { return categoryUsage5(state, spaceId, catId) }
+export function addCategory5(spaceId, name) {
+  const r = addCategory5Pure(state, spaceId, name)
+  if (r.ok) state.configDirty = true
+  return r
+}
+export function renameCategory5(spaceId, catId, name) {
+  const r = renameCategory5Pure(state, spaceId, catId, name)
+  if (r.ok) state.configDirty = true
+  return r
+}
+export function removeCategory5(spaceId, catId) {
+  const r = removeCategory5Pure(state, spaceId, catId)
+  if (r.ok) state.configDirty = true
+  return r
 }
 /* 试算：看某人某天在这家店占到的班过不过规则、额度还剩多少。
    试算按刚改过的配置层算；正式判定按这一轮的快照（改动下一轮生效）。 */

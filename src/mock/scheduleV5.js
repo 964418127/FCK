@@ -800,6 +800,46 @@ export function monthRange5(date) {
   return [`${date.slice(0, 7)}-01`, `${date.slice(0, 7)}-${String(last).padStart(2, '0')}`]
 }
 export function categoriesOf5(space) { return space?.categories || [] }
+
+/* 类别维护：纯逻辑（带 state），store 只做包装。
+   类别是空间的字典，业务自己起名；类别承载「或」语义——类下任一条都算数。 */
+export function categoryUsage5(state, spaceId, catId) {
+  const slots = state.slots.filter(s => s.spaceId === spaceId && s.category === catId).length
+    + (state.temps || []).filter(s => s.spaceId === spaceId && s.category === catId).length
+  const rules = (state.claimRules || []).filter(r => r.spaceId === spaceId && r.scope?.type === 'category' && r.scope.id === catId).length
+  return { slots, rules }
+}
+export function addCategory5(state, spaceId, name) {
+  const sp = state.spaces.find(s => s.id === spaceId)
+  const n = (name || '').trim()
+  if (!sp) return { ok: false, reason: '空间不存在' }
+  if (!n) return { ok: false, reason: '名字没填' }
+  sp.categories = sp.categories || []
+  if (sp.categories.some(c => c.name === n)) return { ok: false, reason: '已经有同名的类别' }
+  const used = new Set(sp.categories.map(c => c.id))
+  const id = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find(x => !used.has(x)) || `C${sp.categories.length + 1}`
+  sp.categories.push({ id, name: n })
+  return { ok: true, id }
+}
+export function renameCategory5(state, spaceId, catId, name) {
+  const sp = state.spaces.find(s => s.id === spaceId)
+  const c = sp?.categories?.find(x => x.id === catId)
+  const n = (name || '').trim()
+  if (!c) return { ok: false, reason: '类别不存在' }
+  if (!n) return { ok: false, reason: '名字没填' }
+  if (sp.categories.some(x => x.id !== catId && x.name === n)) return { ok: false, reason: '已经有同名的类别' }
+  c.name = n
+  return { ok: true }
+}
+export function removeCategory5(state, spaceId, catId) {
+  const sp = state.spaces.find(s => s.id === spaceId)
+  if (!sp?.categories) return { ok: false, reason: '类别不存在' }
+  const use = categoryUsage5(state, spaceId, catId)
+  if (use.slots) return { ok: false, reason: `还有 ${use.slots} 条班次在用这个类别，先把它们改掉` }
+  if (use.rules) return { ok: false, reason: `还有 ${use.rules} 条规则在管这个类别，先删规则` }
+  sp.categories = sp.categories.filter(c => c.id !== catId)
+  return { ok: true }
+}
 export function catName5(space, id) { return (categoriesOf5(space).find(c => c.id === id) || {}).name || '' }
 function minutesOfSlot5(slot) { return Math.round(hours5(slot.start, slot.end) * 60) }
 
@@ -837,11 +877,11 @@ export function claimCheck5(state, spaceId, personId, date, opts = {}) {
       const hit = got.filter(sl => r.scope.type === 'all' || sl.category === r.scope.id)
       const ok = hit.length >= (r.min || 0) && (!r.max || hit.length <= r.max)
       const need = [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
-      return { id: r.id, name: r.name, actual: `${hit.length} 条`, need, ok }
+      return { id: r.id, name: r.name, actual: `${hit.length} 条`, need, ok, scope: r.scope, unit: 'count' }
     }
     const ok = dayUsed >= (r.min || 0) && (!r.max || dayUsed <= r.max)
     const need = r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
-    return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, need, ok }
+    return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, need, ok, scope: r.scope, unit: 'minute' }
   })
   const lim = limitPool.find(l => l.spaceId === spaceId && l.kind === person?.kind)
   let limits = []

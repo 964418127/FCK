@@ -165,7 +165,13 @@
           <p class="empty-sub">{{ board.length ? '名额放出来会出现在这里，也会推一条通知给你' : '班次排好后直接进「我的排班」' }}</p>
         </div>
 
-        <div v-for="o in dayOffers" :key="o.slotId + o.date" :class="['offer-card', { dim: !o.gate.ok }]">
+        <div v-for="g in dayGroups" :key="g.id || 'none'" class="offer-group">
+          <!-- 有类别时按类分组：类头上直接给这条规则今天的进度（或语义——同类的哪一条都算） -->
+          <div v-if="spaceCats.length" class="og-head">
+            <span class="og-name">{{ g.name }}</span>
+            <span v-if="g.item" :class="['og-req', { bad: !g.item.ok }]">{{ g.item.actual }} · 要求 {{ g.item.need }}</span>
+          </div>
+          <div v-for="o in g.offers" :key="o.slotId + o.date" :class="['offer-card', { dim: !o.gate.ok }]">
           <div class="oc-head">
             <span class="oc-where">{{ spaceName(o.slot.spaceId) }} · {{ o.slot.name }}</span>
             <span :class="['oc-way', o.row.way === 'grab' ? 'grab' : 'apply']">{{ o.row.way === 'grab' ? '先到先得' : '申领' }}</span>
@@ -193,6 +199,7 @@
               <span class="oc-hint bad">{{ o.gate.reason }}</span>
               <button class="act-btn disabled" disabled>拿不了</button>
             </template>
+          </div>
           </div>
         </div>
       </section>
@@ -300,7 +307,7 @@ import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice, myClaimBoard,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
 } from '../mock/scheduleV5Store.js'
-import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5 } from '../mock/scheduleV5.js'
+import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5 } from '../mock/scheduleV5.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -394,6 +401,27 @@ watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pic
 /* 演示辅具：?date=YYYY-MM-DD 直接定位到那一天（看不同日期的规则状态） */
 watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickSel.value = d }, { immediate: true })
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
+const curSpaceObj = computed(() => spaceById(v5, pickStore.value))
+const spaceCats = computed(() => categoriesOf5(curSpaceObj.value))
+/* 类头上的进度：这条类有没有条数规则、今天占到几条 */
+function catRuleItem(catId) {
+  return (claimBoard.value?.items || []).find(i => i.unit === 'count' && i.scope?.type === 'category' && i.scope.id === catId) || null
+}
+const dayGroups = computed(() => {
+  if (!spaceCats.value.length) return [{ id: '', name: '', offers: dayOffers.value, item: null }]
+  const byCat = new Map()
+  dayOffers.value.forEach(o => {
+    const k = o.slot.category || ''
+    if (!byCat.has(k)) byCat.set(k, [])
+    byCat.get(k).push(o)
+  })
+  const out = []
+  spaceCats.value.forEach(c => {
+    if (byCat.has(c.id)) out.push({ id: c.id, name: c.name, offers: byCat.get(c.id), item: catRuleItem(c.id) })
+  })
+  if (byCat.has('')) out.push({ id: '', name: '其他', offers: byCat.get(''), item: null })
+  return out
+})
 /* 这家店对我的要求：按这一轮快照口径（配了才有内容） */
 const claimBoard = computed(() => {
   try { return myClaimBoard(pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today) } catch { return null }
@@ -682,6 +710,11 @@ function declineMakeup(row) {
 .ds-n.zero { color: #b5b5bd; }
 .ds-cell.active .ds-wd, .ds-cell.active .ds-day, .ds-cell.active .ds-n { color: #fff; }
 
+.offer-group { margin-bottom: 4px; }
+.og-head { display: flex; align-items: center; gap: 8px; margin: 10px 2px 6px; }
+.og-name { font-size: 12px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 10px; padding: 1px 9px; }
+.og-req { font-size: 11.5px; color: #2f6f4f; }
+.og-req.bad { color: #a4441d; }
 .offer-card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #f2eef0; }
 .offer-card.dim { background: #fbfbfc; }
 .oc-head { display: flex; justify-content: space-between; align-items: center; }
