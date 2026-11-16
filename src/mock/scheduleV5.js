@@ -1282,7 +1282,7 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
     return { ok: false, reason: `这一档只留 ${row.cap} 个，已经满了`, quiet: true }
   }
   if (way === 'grab') {
-    /* 抢的关闸时刻按 v3.2 决议挂在规则上；这里默认沿用现行口径「时段开始即关」，具体可配待业务确认（附录待决） */
+    /* 抢的关闸定为班次开班（时段开始即关，现行口径定为规则，见文档 6.2.1） */
     if (now >= `${date}T${slot.start}:00`.replace('T', ' ')) return { ok: false, reason: '已开班，闸关了' }
     if (activeCount5(state, slotId, date) >= snapN5(state, slotId, date)) return { ok: false, reason: '位已占满' }
     if (personBusy5(state, personId, date, slot.start, slot.end)) return { ok: false, reason: '和已有班次时间撞了' }

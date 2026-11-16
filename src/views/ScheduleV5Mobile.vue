@@ -1,6 +1,6 @@
 <!--
   移动端 · 排班（v5）
-  员工侧两段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 请假 / 换班 / 补位确认）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）。
+  员工侧两段：我的排班（月历选中日看当天时间线 + 这条班怎么来的 + 换班 / 补位确认）· 可获取（按天看窗口内名额，能拿的直接拿，拿不了的当场说原因）。
   通知不在这页：通知是通用模块（/mobile-notification），这里只在班次上标「待你确认」，处理动作落在这一天的班上。
   原则：不摆数据摆事情——每个数字后面跟一句人话；不暴露分配机制术语；拿不了的原因是先说后做，不是点了才报错。
   视觉沿用移动端规范：全屏页、白 sticky 页头、#f5f5f5 底、白卡 12px、品牌红 #a40035、确认用自写底部弹层。
@@ -112,11 +112,10 @@
 
           <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
             <span class="rc-pending">人事安排你顶上这个班，确认一下</span>
-            <button class="act-btn ghost" @click="declineMakeup(r)">我去不了</button>
             <button class="act-btn primary" @click="ackMakeup(r)">收到，我来</button>
           </div>
           <div v-else-if="r.status === 'active' && !outTo(r) && canAct(r)" class="rc-acts">
-            <button class="act-btn primary" @click="openLeave(r)">这天我来不了</button>
+            <!-- 请假不在这里：有专门的请假模块；只有换班留在排班卡上 -->
             <button class="act-btn ghost" @click="openSwap(r)">找人换班</button>
           </div>
         </div>
@@ -267,28 +266,6 @@
       </div>
     </div>
 
-    <!-- 请假：确认 -->
-    <div v-if="sheet?.type === 'leave'" class="sheet-mask" @click.self="sheet = null">
-      <div class="sheet">
-        <div class="sheet-title">这天我来不了</div>
-        <div class="sheet-body">
-          <div class="sheet-shift">{{ dayLabel(sheet.row.date) }} · {{ slotOf(sheet.row.slotId).name }} {{ slotOf(sheet.row.slotId).start }}–{{ slotOf(sheet.row.slotId).end }}</div>
-          <div class="sheet-meta">{{ spaceName(slotOf(sheet.row.slotId).spaceId) }} · 你在 {{ shortAt(v5.now) }} 提交，影响的是这一班</div>
-          <div class="checks">
-            <div><i>•</i>提交请假，这段时间就空出来了</div>
-            <div><i>•</i>系统按顺位找有空、没冲突的人顶上</div>
-            <div><i>•</i>顶上班的人会推通知告诉你</div>
-            <div><i>•</i>请假记录留在你的排班里，请假撤了班就回来</div>
-          </div>
-          <p class="sheet-note">名额不能退；之后有需要可以再抢。</p>
-        </div>
-        <div class="sheet-acts">
-          <button class="act-btn ghost" @click="sheet = null">再想想</button>
-          <button class="act-btn primary" @click="doLeave">提交</button>
-        </div>
-      </div>
-    </div>
-
     <!-- 换班：选对方的班 -->
     <div v-if="sheet?.type === 'swap'" class="sheet-mask" @click.self="sheet = null">
       <div class="sheet">
@@ -324,7 +301,7 @@ import { ArrowLeft, Clock, Location, User } from '@element-plus/icons-vue'
 import MonthCalendar from '../components/v3/MonthCalendar.vue'
 import PersonaSwitch5 from '../components/v5/PersonaSwitch5.vue'
 import {
-  v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice, myClaimBoard,
+  v5, me as meRef, setMe, grabV5, applyV5, proposeSwap, answerSwap, ackNotice, myClaimBoard,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf, previewClaimSet, submitClaimSet
 } from '../mock/scheduleV5Store.js'
 import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5, dutyPersonId5 } from '../mock/scheduleV5.js'
@@ -661,16 +638,6 @@ function doApply() {
   sheet.value = null
   r.ok ? ElMessage.success('已登记，截止后按综合分排序') : ElMessage.error(r.reason || '现在拿不了')
 }
-function openLeave(r) { sheet.value = { type: 'leave', row: r } }
-function doLeave() {
-  const r0 = sheet.value.row
-  const r = submitLeave(r0.id)
-  sheet.value = null
-  if (r.ok) {
-    ElMessage.success(r.text || '已提交，系统开始找顶班的人')
-    mineSel.value = r0.date
-  } else ElMessage.error(r.reason)
-}
 function openSwap(r) { sheet.value = { type: 'swap', row: r } }
 function doSwap(partnerPlacementId) {
   const r = proposeSwap(sheet.value.row.id, partnerPlacementId)
@@ -681,17 +648,12 @@ function answer(req, accept) {
   const r = answerSwap(req.id, accept)
   r.ok ? ElMessage.success(r.text) : ElMessage.error(r.reason)
 }
-/* 补位确认就落在这条班次上：收到了记一条回执，去不了直接走请假 */
+/* 补位确认就落在这条班次上：收到了记一条回执 */
 function ackMakeup(r) {
   const n = pendingNoticeOf(r)
   if (!n) { ElMessage.error('这条已经确认过了'); return }
   ackNotice(n.id)
   ElMessage.success('已回执，人事那边同步可见')
-}
-function declineMakeup(row) {
-  const n = pendingNoticeOf(row)
-  if (n) n.acked = true
-  sheet.value = { type: 'leave', row }
 }
 </script>
 
