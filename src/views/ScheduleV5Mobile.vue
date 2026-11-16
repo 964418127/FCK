@@ -389,6 +389,10 @@ function pickDefaultPick() {
   const okDates = board.value.filter(o => o.gate.ok).map(o => o.date).sort()
   return okDates[0] || roundDates.value.find(d => d >= v5.today) || roundDates.value[0] || WEEK_DATES[0]
 }
+/* 演示辅具：?date=YYYY-MM-DD 直接定位到那一天（看不同日期的规则状态） */
+watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickSel.value = d }, { immediate: true })
+/* 演示辅具：?date=YYYY-MM-DD 直接定位到那一天（看不同日期的规则状态） */
+watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickSel.value = d }, { immediate: true })
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
 /* 这家店对我的要求：按这一轮快照口径（配了才有内容） */
 const claimBoard = computed(() => {
