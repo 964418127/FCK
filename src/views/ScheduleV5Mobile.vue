@@ -122,6 +122,11 @@
 
       <!-- ============ 可获取 ============ -->
       <section v-else-if="tab === 'pick'">
+        <!-- 签了多家门店的人：先选门店，下面的横幅 / 规则 / 额度都是这家店的 -->
+        <div v-if="myStores.length > 1" class="store-switch">
+          <button v-for="id in myStores" :key="id" :class="{ on: pickStore === id }" @click="switchStore(id)">{{ spaceName(id) }}</button>
+        </div>
+
         <div class="pick-banner">
           <div class="pb-top">
             <el-icon><Clock /></el-icon>
@@ -139,11 +144,6 @@
           <div v-for="l in claimBoard.limits" :key="l.name" :class="['cm-line', { bad: !l.ok }]">
             <span class="cm-dot" />{{ l.name }}：已用 {{ l.used }} / {{ l.cap }} 小时{{ l.ok ? `，还剩 ${Math.round((l.cap - l.used) * 10) / 10}h` : '，已满' }}
           </div>
-        </div>
-
-        <!-- 签了多家门店的人：选班时切换门店，各店名额 / 规则 / 额度各算各 -->
-        <div v-if="myStores.length > 1" class="store-switch">
-          <button v-for="id in myStores" :key="id" :class="{ on: pickStore === id }" @click="switchStore(id)">{{ spaceName(id) }}</button>
         </div>
 
         <div class="date-strip">
@@ -652,7 +652,7 @@ function declineMakeup(row) {
 .rc-acts.pending .act-line.strong { color: #a40035; font-weight: 500; }
 
 /* 可获取 */
-.store-switch { display: flex; gap: 8px; margin: 10px 0 8px; }
+.store-switch { display: flex; gap: 8px; margin: 2px 0 10px; }
 .store-switch button { border: 1px solid #e8e2e4; background: #fff; color: #6a6a75; border-radius: 16px; padding: 5px 14px; font-size: 13px; }
 .store-switch button.on { background: #a40035; border-color: #a40035; color: #fff; font-weight: 500; }
 .claim-meter { background: #fff; border: 1px solid #f0eaec; border-radius: 10px; padding: 9px 12px; margin: 10px 0 8px; display: flex; flex-direction: column; gap: 5px; }
