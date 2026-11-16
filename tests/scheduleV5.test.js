@@ -305,7 +305,7 @@ test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
   const s = mk()
   s.round.config.cycle = { anchor: 'monthStart', unit: 'month', n: 1, start: '' }
   s.round.config.publishOffsetDays = -5
-  s.round.config.publishHour = 9
+  s.round.config.publishHour = '09:00'
   recalcRound(s)
   /* now=11-14，12 月周期起点 12-01，提前 5 天 = 11-26 09:00 发布，铺 12-01~12-31 */
   assert.equal(s.round.nextAt, '2026-11-26 09:00')
@@ -316,7 +316,7 @@ test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => 
   const s = mk()
   s.round.config.cycle = { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }
   s.round.config.publishOffsetDays = -6
-  s.round.config.publishHour = 8
+  s.round.config.publishHour = '08:00'
   recalcRound(s)
   /* now=11-14 落在 10-26~11-25 期；发布 10-20 已过 → 下一期 11-26~12-25，提前 6 天 = 11-20 08:00 */
   assert.equal(s.round.nextAt, '2026-11-20 08:00')

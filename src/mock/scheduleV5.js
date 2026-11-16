@@ -313,9 +313,9 @@ export const ROUND5 = {
     cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
     every: 1,
     publishOffsetDays: -4,
-    publishHour: 6,
+    publishHour: '06:00',
     applyOffsetDays: -1,
-    applyHour: 20
+    applyHour: '20:00'
   }
 }
 
@@ -332,9 +332,9 @@ export const ROUND_OFFICE5 = {
     cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' },
     every: 1,
     publishOffsetDays: -4,
-    publishHour: 6,
+    publishHour: '06:00',
     applyOffsetDays: -1,
-    applyHour: 20
+    applyHour: '20:00'
   }
 }
 
@@ -348,9 +348,9 @@ export const ROUND_STORE_EARLY5 = {
     cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
     every: 1,
     publishOffsetDays: -4,
-    publishHour: 6,
+    publishHour: '06:00',
     applyOffsetDays: -3,
-    applyHour: 20
+    applyHour: '20:00'
   }
 }
 
@@ -456,12 +456,12 @@ function shiftCycle(cycle, startStr, k = 1) {
 export function publishAtOf(config, cycleStart) {
   const d = at0(cycleStart)
   d.setDate(d.getDate() + (config.publishOffsetDays || 0))
-  return `${fmtDate(d)} ${String(config.publishHour ?? 6).padStart(2, '0')}:00`
+  return `${fmtDate(d)} ${config.publishHour ?? '06:00'}`
 }
 export function applyDeadlineOf(config, cycleStart) {
   const d = at0(cycleStart)
   d.setDate(d.getDate() + (config.applyOffsetDays || 0))
-  return `${fmtDate(d)} ${String(config.applyHour ?? 20).padStart(2, '0')}:00`
+  return `${fmtDate(d)} ${config.applyHour ?? '20:00'}`
 }
 /* 下一个「会真正发布」的期：隔期发的期号跳过 */
 export function nextRoundPlan(config, now = NOW) {

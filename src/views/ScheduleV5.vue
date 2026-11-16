@@ -130,9 +130,8 @@
                   <el-input-number v-model="publishAhead" :min="0" :max="15" size="small" controls-position="right"
                     style="width: 84px" @change="applyRhythm" />
                   <span class="rh-unit">天</span>
-                  <el-input-number v-model="rhythm.publishHour" :min="0" :max="23" size="small" controls-position="right"
-                    style="width: 84px" @change="applyRhythm" />
-                  <span class="rh-unit">点</span>
+                  <el-time-select v-model="rhythm.publishHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                    size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
                 </div>
                 <div class="rh-row">
                   <label>申领截止</label>
@@ -140,9 +139,8 @@
                   <el-input-number v-model="applyAhead" :min="0" :max="15" size="small" controls-position="right"
                     style="width: 84px" @change="applyRhythm" />
                   <span class="rh-unit">天</span>
-                  <el-input-number v-model="rhythm.applyHour" :min="0" :max="23" size="small" controls-position="right"
-                    style="width: 84px" @change="applyRhythm" />
-                  <span class="rh-unit">点</span>
+                  <el-time-select v-model="rhythm.applyHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                    size="small" style="width: 104px" placeholder="截止时刻" @change="applyRhythm" />
                 </div>
 
                 <!-- 节奏长什么样：一条时间轴，发布旗标 / 覆盖区间 / 申领截止 / 今天 -->
@@ -571,8 +569,8 @@
           </div>
 
           <div class="run-switch">
-            <button :class="{ on: runView === 'grid' }" @click="runView = 'grid'">占用矩阵</button>
             <button :class="{ on: runView === 'axis' }" @click="runView = 'axis'">空间时间轴</button>
+            <button :class="{ on: runView === 'grid' }" @click="runView = 'grid'">占用矩阵</button>
             <button :class="{ on: runView === 'gap' }" @click="runView = 'gap'">缺口</button>
             <span class="rs-hint">{{ runViewHint }}</span>
           </div>
@@ -1238,9 +1236,9 @@ const rhythm = reactive({
   cycle: { ...round.value.config.cycle },
   every: round.value.config.every || 1,
   publishOffsetDays: round.value.config.publishOffsetDays ?? -4,
-  publishHour: round.value.config.publishHour ?? 6,
+  publishHour: round.value.config.publishHour ?? '06:00',
   applyOffsetDays: round.value.config.applyOffsetDays ?? -1,
-  applyHour: round.value.config.applyHour ?? 20
+  applyHour: round.value.config.applyHour ?? '20:00'
 })
 function syncRhythm() {
   const c = round.value.config
@@ -1248,9 +1246,9 @@ function syncRhythm() {
   Object.assign(rhythm, {
     every: c.every || 1,
     publishOffsetDays: c.publishOffsetDays ?? -4,
-    publishHour: c.publishHour ?? 6,
+    publishHour: c.publishHour ?? '06:00',
     applyOffsetDays: c.applyOffsetDays ?? -1,
-    applyHour: c.applyHour ?? 20
+    applyHour: c.applyHour ?? '20:00'
   })
 }
 /* 界面上说「提前几天」，内部存负数偏移 */
@@ -1278,7 +1276,7 @@ const cycleText = computed(() => {
 const rhythmLabel = computed(() => {
   const c = round.value.config
   const every = c.every > 1 ? `隔 ${c.every - 1} 期发 · ` : ''
-  return `${cycleText.value} · ${every}提前 ${Math.abs(c.publishOffsetDays)} 天 ${String(c.publishHour).padStart(2, '0')}:00 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${String(c.applyHour).padStart(2, '0')}:00`
+  return `${cycleText.value} · ${every}提前 ${Math.abs(c.publishOffsetDays)} 天 ${c.publishHour ?? '06:00'} 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${c.applyHour ?? '20:00'}`
 })
 /* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
 const rp = computed(() => {
