@@ -1729,7 +1729,7 @@ function devResolveApply() {
 .sub-tabs > button { border: 1px solid #eee6e8; background: #fff; padding: 4px 10px; font-size: 12.5px; border-radius: 6px; color: #6a6a75; cursor: pointer; }
 .sub-tabs > button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
 .sub-spacer { flex: 1; }
-.rhythm { border: 1px solid #eadfe3; border-left: 3px solid #a40035; border-radius: 8px; margin: 12px 0 10px; background: #fcfbfc; box-shadow: 0 1px 4px rgba(164, 0, 53, 0.06); }
+.rhythm { border: 1px solid #eadfe3; border-radius: 8px; margin: 12px 0 10px; background: #fcfbfc; }
 .rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
 .rh-timeline { width: 100%; height: auto; display: block; margin: 8px 0 2px; }
 .rh-sum { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; font-size: 12.5px; color: #3d3d47; }
@@ -1885,8 +1885,8 @@ function devResolveApply() {
 .add-row { margin-top: 4px; }
 .ea { display: flex; align-items: center; gap: 8px; }
 .ea-hint { font-size: 11.5px; color: #a35b00; margin-right: auto; }
-.temp-list { display: flex; flex-direction: column; gap: 6px; }
-.temp-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid #f0eaec; border-left: 3px solid #a40035; border-radius: 8px; padding: 8px 12px; }
+.temp-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.temp-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 12px; }
 .tc-l { display: flex; flex-direction: column; gap: 2px; }
 .tc-l strong { font-size: 13px; color: #2c2c2a; }
 .tc-got { font-size: 11.5px; color: #6a6a75; }
@@ -1983,7 +1983,7 @@ tr.covered td { color: #9a9fa9; }
 .empty { font-size: 12px; color: #9a9fa9; padding: 14px 0; }
 .svc-note { font-size: 12px; color: #6a6a75; background: #fbfaf9; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; line-height: 1.7; }
 .dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12.5px; color: #6a6a75; }
-.dlg-row label { width: 42px; color: #8a8a95; }
+.dlg-row > label { width: 42px; flex: none; color: #8a8a95; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
 .muted { color: #9a9fa9; }
 
