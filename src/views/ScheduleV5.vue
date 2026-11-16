@@ -228,11 +228,12 @@
                   <label>名称</label><el-input v-model="form.name" size="small" placeholder="如：中班" style="width: 140px" />
                   <label>起</label><el-input v-model="form.start" size="small" placeholder="12:00" style="width: 80px" />
                   <label>止</label><el-input v-model="form.end" size="small" placeholder="16:00" style="width: 80px" />
-                  <label v-if="categoriesOf5(curSpace).length">类别</label>
-                  <el-select v-if="categoriesOf5(curSpace).length" v-model="form.category" size="small" clearable
+                  <label>类别</label>
+                  <el-select v-model="form.category" size="small" clearable
                     placeholder="不分类" style="width: 120px">
                     <el-option v-for="c in categoriesOf5(curSpace)" :key="c.id" :label="c.name" :value="c.id" />
                   </el-select>
+                  <el-button link size="small" @click="openCatDlg">{{ categoriesOf5(curSpace).length ? '管理' : '建类别' }}</el-button>
                 </div>
                 <div class="er">
                   <label>星期</label>
