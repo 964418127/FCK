@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -226,16 +226,20 @@ test('顶班：人事安排，通知即可，不需同意', () => {
   assert.equal(notice.kind, 'appoint')
 })
 
-test('换班：两条班次对调，双方历史各自留痕', () => {
+test('换班：不搬占位行——两条互相指向的事件把履约换过去，人名和痕迹留在原行', () => {
   const s = mk()
   const a = s.placements.find(p => p.id === 'P-01')
   const b = s.placements.find(p => p.id === 'P-14')
+  const pa = a.personId
+  const pb = b.personId
   const fact = { id: 'F-S', type: '换班', at: '2026-11-14 12:00', by: 'E-107', slotId: 'SL-02', date: '2026-11-16', placementId: 'P-14', partnerPlacementId: 'P-01', result: '' }
   addFact5(s, fact)
-  assert.equal(a.personId, 'E-107')
-  assert.equal(b.personId, 'E-113')
+  assert.equal(a.personId, pa, '原计划人不动')
+  assert.equal(b.personId, pb, '原计划人不动')
+  assert.equal(a.swap.personId, pb)
+  assert.equal(b.swap.personId, pa)
   assert.ok(a.history[0].note.includes('换班'))
-  assert.ok(fact.result.includes('对调'))
+  assert.ok(fact.result.includes('改由'), fact.result)
 })
 
 test('离职：人直接出结果，不找人顶', () => {
@@ -766,4 +770,58 @@ test('规则进度项带 scope/unit，移动端才能按类给进度', () => {
   const mins = r.items.find(i => i.unit === 'minute')
   assert.deepEqual(count.scope, { type: 'category', id: 'A' })
   assert.deepEqual(mins.scope, { type: 'all' })
+})
+
+/* ===== 换班 = 两条互相指向的事件占住时段，不搬占位行 ===== */
+function swapSet(s) {
+  const a = s.placements.find(p => p.personId === 'E-211' && p.slotId === 'SL-17' && p.date === '2026-11-16')
+  const b = s.placements.find(p => p.personId === 'E-213' && p.slotId === 'SL-18' && p.date === '2026-11-16')
+  const fact = addFact5(s, {
+    id: 'F-SWAP', type: '换班', at: '2026-11-15 21:00', by: 'E-211',
+    slotId: 'SL-17', date: '', placementId: a.id, partnerPlacementId: b.id
+  })
+  return { a, b, fact }
+}
+
+test('换班：占位行不搬人，两条互相指向的换班事件把履约换过去', () => {
+  const s = mk()
+  const { a, b, fact } = swapSet(s)
+  assert.equal(a.personId, 'E-211', '原计划人不动')
+  assert.equal(b.personId, 'E-213', '原计划人不动')
+  assert.equal(a.swap.personId, 'E-213')
+  assert.equal(b.swap.personId, 'E-211')
+  assert.equal(a.swap.factId, fact.id)
+  assert.equal(b.swap.factId, fact.id, '两条指向同一条事件')
+  assert.equal(dutyPersonId5(a), 'E-213')
+  assert.equal(dutyPersonId5(b), 'E-211')
+  assert.ok(a.history.some(h => h.note.includes('换班')) && b.history.some(h => h.note.includes('换班')), '痕迹留在原行')
+})
+
+test('换班后判定按履约人：换出的那段我不忙、对方忙；工时算履约的', () => {
+  const s = mk()
+  const { a, b } = swapSet(s)
+  assert.equal(personBusy5(s, 'E-211', '2026-11-16', '10:00', '14:00'), false, '换出去后我不再占这段时间')
+  assert.equal(personBusy5(s, 'E-213', '2026-11-16', '10:00', '14:00'), true, '对方要去上这一段')
+  assert.equal(personBusy5(s, 'E-211', '2026-11-16', '18:00', '22:00'), true, '我要去上对方那条')
+  const tao = claimedSlots5(s, 'E-211', 'S-205', '2026-11-16').map(x => x.id)
+  const mu = claimedSlots5(s, 'E-213', 'S-205', '2026-11-16').map(x => x.id)
+  assert.deepEqual(tao, ['SL-18'], '我换出的早班不算我的，换入的晚班算我的')
+  assert.deepEqual(mu, ['SL-17'], '她的晚班换出去给别人了，接了我的早班')
+  /* 名额不回池：两条占位还在，容量口径不变 */
+  assert.equal(activeCount5(s, 'SL-17', '2026-11-16'), 2)
+  assert.equal(activeCount5(s, 'SL-18', '2026-11-16'), 2)
+})
+
+test('撤销换班：两条事件同时失效，各自回到原样', () => {
+  const s = mk()
+  const { a, b, fact } = swapSet(s)
+  const r = undoSwap5(s, fact.id, '2026-11-16 09:00')
+  assert.equal(r.ok, true)
+  assert.equal(r.count, 2)
+  assert.equal(a.swap, undefined)
+  assert.equal(b.swap, undefined)
+  assert.equal(dutyPersonId5(a), 'E-211')
+  assert.equal(dutyPersonId5(b), 'E-213')
+  assert.equal(s.facts.find(f => f.id === fact.id).revokedAt, '2026-11-16 09:00')
+  assert.equal(personBusy5(s, 'E-213', '2026-11-16', '10:00', '14:00'), false, '撤销后对方不再忙这段')
 })

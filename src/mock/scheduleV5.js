@@ -766,8 +766,14 @@ export function hours5(start, end) {
   const [eh, em] = end.split(':').map(Number)
   return (eh * 60 + em - (sh * 60 + sm)) / 60
 }
+/* 履约人：这条占位实际由谁去上。
+   换班不搬占位行、不改人名——两个人的时段各被一条互相指向的换班事件占住，
+   履约交给对方，原计划与痕迹全留着（撤销 = 两条事件同时失效，回到原样）。 */
+export function dutyPersonId5(p) {
+  return p.swap?.personId || p.personId
+}
 export function personBusy5(state, personId, date, start, end, exceptId = null) {
-  return state.placements.some(p => p.personId === personId && p.date === date && p.status === 'active'
+  return state.placements.some(p => dutyPersonId5(p) === personId && p.date === date && p.status === 'active'
     && p.id !== exceptId && overlap5(start, end, slotById(state, p.slotId).start, slotById(state, p.slotId).end))
 }
 /* 工时不由排班判断——排班只负责记下这一个班是几点到几点。
@@ -843,18 +849,18 @@ export function removeCategory5(state, spaceId, catId) {
 export function catName5(space, id) { return (categoriesOf5(space).find(c => c.id === id) || {}).name || '' }
 function minutesOfSlot5(slot) { return Math.round(hours5(slot.start, slot.end) * 60) }
 
-/* 已占合计：只认占位表里状态为 active 的；按「人 × 空间（门店）× 日期区间」算 */
+/* 已占合计：只认占位表里状态为 active 的；按「履约人 × 空间（门店）× 日期区间」算 */
 export function usedMinutes5(state, personId, spaceId, from, to) {
   return state.placements
-    .filter(p => p.personId === personId && p.status === 'active'
+    .filter(p => dutyPersonId5(p) === personId && p.status === 'active'
       && p.date >= from && p.date <= to
       && slotById(state, p.slotId)?.spaceId === spaceId)
     .reduce((s, p) => s + minutesOfSlot5(slotById(state, p.slotId)), 0)
 }
-/* 这个人这天在这家店占到的班 */
+/* 这个人这天在这家店要履约的班（换出去的不算他的，换进来的算他的） */
 export function claimedSlots5(state, personId, spaceId, date) {
   return state.placements
-    .filter(p => p.personId === personId && p.status === 'active' && p.date === date)
+    .filter(p => dutyPersonId5(p) === personId && p.status === 'active' && p.date === date)
     .map(p => slotById(state, p.slotId))
     .filter(s => s && s.spaceId === spaceId)
 }
@@ -1175,13 +1181,15 @@ export function addFact5(state, fact) {
     const a = state.placements.find(p => p.id === fact.placementId)
     const b = state.placements.find(p => p.id === fact.partnerPlacementId)
     if (a && b) {
-      const pa = a.personId
-      const pb = b.personId
-      a.personId = pb
-      b.personId = pa
-      a.history.push({ note: `${fact.at} 与 ${personById(state, pb).name} 换班` })
-      b.history.push({ note: `${fact.at} 与 ${personById(state, pa).name} 换班` })
-      fact.result = '两条班次已对调，同时生效'
+      const na = personById(state, a.personId)?.name || ''
+      const nb = personById(state, b.personId)?.name || ''
+      /* 两条互相指向的封闭事实：各自的时段被换班事件占住，履约交给对方。
+         占位行不动、人名不改——原计划照旧留在记录里，撤销就是这两条同时失效。 */
+      a.swap = { personId: b.personId, factId: fact.id, at: fact.at }
+      b.swap = { personId: a.personId, factId: fact.id, at: fact.at }
+      a.history.push({ note: `${fact.at} 换班：这段交给 ${nb} 履约，你不用去` })
+      b.history.push({ note: `${fact.at} 换班：这段交给 ${na} 履约，你不用去` })
+      fact.result = `${na} 的时段改由 ${nb} 履约，${nb} 的时段改由 ${na} 履约；两条原计划都留在记录里`
       touched.push(a, b)
     }
   } else if (fact.type === '离职') {
@@ -1197,6 +1205,19 @@ export function addFact5(state, fact) {
   bumpVersion5(state, `事实 ${fact.id}（${fact.type}）重算`, fact.id)
   fact.placements = touched.map(t => t.id)
   return fact
+}
+
+/* 撤销换班：两条互相指向的事实同时失效，两条时段各自回到本人名下（没有对调、没有回滚动作） */
+export function undoSwap5(state, factId, at = state.now) {
+  const rows = state.placements.filter(p => p.swap?.factId === factId)
+  rows.forEach(p => {
+    delete p.swap
+    p.history.push({ note: `${at} 换班撤销：这段回到 ${personById(state, p.personId)?.name || ''} 名下` })
+  })
+  const fact = state.facts.find(f => f.id === factId)
+  if (fact) fact.revokedAt = at
+  if (rows.length) bumpVersion5(state, `换班 ${factId} 撤销，两条同时失效`, factId)
+  return { ok: rows.length > 0, count: rows.length }
 }
 
 export function buildV5State() {

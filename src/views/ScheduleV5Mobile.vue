@@ -87,18 +87,20 @@
           <p class="empty-sub">有班的日子在月历上是红点，点一下看那天的安排</p>
         </div>
 
-        <div v-for="r in dayRows" :key="r.id" :class="['res-card', { covered: r.status === 'covered' }]">
+        <div v-for="r in dayRows" :key="r.id" :class="['res-card', { covered: r.status === 'covered' || !!outTo(r) }]">
           <div class="rc-head">
             <div class="rc-tags">
-              <span :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '时间被占用' : wayLabel(r) }}</span>
-              <span v-if="r.status === 'active' && pendingNoticeOf(r)" class="state-tag warn">待你确认</span>
+              <span v-if="outTo(r)" class="way-tag gray">已换给 {{ outTo(r) }}</span>
+              <span v-else-if="inFrom(r)" class="way-tag">换班来的 · {{ inFrom(r) }} 的班</span>
+              <span v-else :class="['way-tag', { gray: r.status === 'covered' }]">{{ r.status === 'covered' ? '时间被占用' : wayLabel(r) }}</span>
+              <span v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="state-tag warn">待你确认</span>
               <span v-else-if="swapPendingOf(r)" class="state-tag">换班等对方</span>
             </div>
-            <span :class="['rc-hours', { strike: r.status === 'covered' }]">{{ durText(r) }}</span>
+            <span :class="['rc-hours', { strike: r.status === 'covered' || !!outTo(r) }]">{{ durText(r) }}</span>
           </div>
 
           <div class="rc-main">
-            <div :class="['rc-time', { strike: r.status === 'covered' }]">{{ slotOf(r.slotId).start }}<span>–</span>{{ slotOf(r.slotId).end }}</div>
+            <div :class="['rc-time', { strike: r.status === 'covered' || !!outTo(r) }]">{{ slotOf(r.slotId).start }}<span>–</span>{{ slotOf(r.slotId).end }}</div>
             <div class="rc-where">
               <el-icon><Location /></el-icon>
               <span>{{ spaceName(slotOf(r.slotId).spaceId) }} · {{ slotOf(r.slotId).name }}</span>
@@ -106,14 +108,14 @@
           </div>
 
           <p class="rc-note">{{ noteOf(r) }}</p>
-          <p v-if="r.status === 'active' && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
+          <p v-if="r.status === 'active' && !outTo(r) && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
 
-          <div v-if="r.status === 'active' && pendingNoticeOf(r)" class="rc-acts pending">
+          <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
             <span class="rc-pending">人事安排你顶上这个班，确认一下</span>
             <button class="act-line" @click="declineMakeup(r)">我去不了</button>
             <button class="act-line strong" @click="ackMakeup(r)">收到，我来</button>
           </div>
-          <div v-else-if="r.status === 'active' && canAct(r)" class="rc-acts">
+          <div v-else-if="r.status === 'active' && !outTo(r) && canAct(r)" class="rc-acts">
             <button class="act-line" @click="openLeave(r)">这天我来不了</button>
             <button class="act-line" @click="openSwap(r)">找人换班</button>
           </div>
@@ -324,7 +326,7 @@ import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice, myClaimBoard,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf, previewClaimSet, submitClaimSet
 } from '../mock/scheduleV5Store.js'
-import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5 } from '../mock/scheduleV5.js'
+import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5, dutyPersonId5 } from '../mock/scheduleV5.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -367,16 +369,19 @@ const mineMarks = computed(() => {
   const m = {}
   myRows.value.forEach(r => {
     m[r.date] = m[r.date] || {}
-    if (r.status === 'covered') m[r.date].amber = (m[r.date].amber || 0) + 1
+    if (r.status === 'covered' || outTo(r)) m[r.date].amber = (m[r.date].amber || 0) + 1
     else m[r.date].red = (m[r.date].red || 0) + 1
   })
   return m
 })
+/* 换班是事件占住时段：原计划不改人，履约人可能已经不是我 */
+const outTo = r => (r.personId === meId.value && r.swap ? personById(v5, r.swap.personId)?.name || '对方' : '')
+const inFrom = r => (r.personId !== meId.value && r.swap ? personById(v5, r.personId)?.name || '同事' : '')
 const dayRows = computed(() => myRows.value.filter(r => r.date === mineSel.value))
 const weekStats = computed(() => {
-  const active = myRows.value.filter(r => r.status === 'active')
+  const active = myRows.value.filter(r => r.status === 'active' && !outTo(r))
   const hours = active.reduce((s, r) => s + hours5(slotOf(r.slotId).start, slotOf(r.slotId).end), 0)
-  const pending = myRows.value.filter(r => r.status === 'active' && pendingNoticeOf(r)).length
+  const pending = active.filter(r => pendingNoticeOf(r)).length
   return { count: active.length, hours: Math.round(hours * 10) / 10, pending }
 })
 function moveMine(delta) {
@@ -555,6 +560,8 @@ function wayLabel(r) {
   return '已排定'
 }
 function noteOf(r) {
+  if (outTo(r)) return `这段已经交给 ${outTo(r)}，你不用去；原来怎么排的还留在记录里`
+  if (inFrom(r)) return `${inFrom(r)} 的这段换给你，你要去上；他那条记录不动`
   if (r.status === 'covered') {
     const h = r.history?.[r.history.length - 1]?.note
     return h ? `这段时间被占用：${h}（班次记录没动，占用撤了班就回来）` : '这段时间被占用'
@@ -569,7 +576,7 @@ function noteOf(r) {
 }
 function overtimeOf(r) {
   if (me.value?.kind !== 'fulltime') return ''
-  const total = myRows.value.filter(x => x.date === r.date && x.status === 'active')
+  const total = myRows.value.filter(x => x.date === r.date && x.status === 'active' && !outTo(x))
     .reduce((s, x) => s + hours5(slotOf(x.slotId).start, slotOf(x.slotId).end), 0)
   return total > 8 ? `当天合计 ${Math.round(total * 10) / 10} 小时，超出标准时间的部分计加班` : ''
 }
@@ -591,6 +598,8 @@ const swapCands = computed(() => {
   const mySlot = slotOf(my.slotId)
   return v5.placements
     .filter(p => p.status === 'active' && p.personId !== meId.value && p.id !== my.id)
+    /* 已经换出去的班不在他名下，不能拿来换 */
+    .filter(p => !p.swap)
     .filter(p => {
       const s = slotOf(p.slotId)
       // 换过来和我换出的一条一模一样 = 没换，不列

@@ -11,7 +11,7 @@ import {
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
   openAt5, slotFirstDate5, roundOf, datesOfRound5,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
-  claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
+  claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -48,6 +48,9 @@ export function proposeSwap(placementId, partnerPlacementId) {
   const mine = state.placements.find(x => x.id === placementId)
   const theirs = state.placements.find(x => x.id === partnerPlacementId)
   if (!mine || !theirs) return { ok: false, reason: '班次不存在' }
+  if (mine.personId !== meId.value) return { ok: false, reason: '只能拿自己的班去换' }
+  if (mine.status !== 'active' || theirs.status !== 'active') return { ok: false, reason: '这条时段已经被占住了' }
+  if (mine.swap || theirs.swap) return { ok: false, reason: '这条班已经换过了' }
   const req = {
     id: seq(), from: meId.value, to: theirs.personId,
     placementId, partnerPlacementId, at: state.now, status: 'pending'
@@ -66,6 +69,15 @@ export function proposeSwap(placementId, partnerPlacementId) {
 export function answerSwap(reqId, accept) {
   const req = (state.swapRequests || []).find(r => r.id === reqId)
   if (!req || req.status !== 'pending') return { ok: false, reason: '请求已处理' }
+  if (accept) {
+    /* 发起到现在可能有变：两条时段都得还在、都还没被换过，才写得下这两条事件 */
+    const a = state.placements.find(p => p.id === req.placementId)
+    const b = state.placements.find(p => p.id === req.partnerPlacementId)
+    if (!a || !b || a.status !== 'active' || b.status !== 'active' || a.swap || b.swap) {
+      req.status = 'declined'
+      return { ok: false, reason: '这两条时段已经变了，换不成；重新发一次' }
+    }
+  }
   req.status = accept ? 'done' : 'declined'
   if (accept) {
     const fact = {
@@ -76,9 +88,9 @@ export function answerSwap(reqId, accept) {
     addFact5(state, fact)
     state.notices.unshift({
       id: seq(), to: req.from, kind: 'swapDone', acked: false, date: state.now.slice(0, 10),
-      text: '换班已生效：两条班次完成对调，历史各自留痕', detail: fact.result
+      text: '换班已生效：两段各改由对方履约，原计划都留着', detail: fact.result
     })
-    return { ok: true, text: '已同意，班次对调完成' }
+    return { ok: true, text: '已同意，两段各改由对方履约' }
   }
   state.notices.unshift({
     id: seq(), to: req.from, kind: 'swapDone', acked: false, date: state.now.slice(0, 10),
@@ -260,9 +272,10 @@ export function resolveApplyDemo(slotId, date) {
 }
 
 /* ===== 视图数据 ===== */
+/* 我的排班 = 我要履约的班 + 我换出去、由别人履约的班（原计划留着，标清楚谁去） */
 export function myPlacements(pid = meId.value) {
   return state.placements
-    .filter(p => p.personId === pid)
+    .filter(p => p.personId === pid || dutyPersonId5(p) === pid)
     .sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id))
 }
 export function myOffers(pid = meId.value) {
@@ -328,6 +341,8 @@ export function resultRows5(spaceId) {
       return {
         ...p, slotName: s.name, start: s.start, end: s.end,
         space: spaceById(state, s.spaceId)?.name, person: personById(state, p.personId)?.name,
+        /* 换班是事件占住时段：原计划人不动，履约人单列一栏 */
+        duty: p.swap ? personById(state, p.swap.personId)?.name : '',
         factId: fact?.id || '', factType: fact?.type || ''
       }
     })

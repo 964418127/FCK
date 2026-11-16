@@ -605,7 +605,7 @@
               <tr v-for="r in rows" :key="r.id" :class="{ covered: r.status === 'covered', pointable: !!r.factId }" @click="r.factId && jumpFact(r.factId)">
                 <td>{{ r.date.slice(5) }}</td>
                 <td>{{ r.slotName }} {{ r.start }}–{{ r.end }}</td>
-                <td>{{ r.person }}</td>
+                <td>{{ r.person }}<em v-if="r.duty" class="duty-note">→ {{ r.duty }} 履约</em></td>
                 <td>{{ r.way }}</td>
                 <td>
                   <span v-if="r.factId" class="fact-link">{{ r.factId }} · {{ r.factType }}</span>
@@ -910,7 +910,7 @@ import {
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
-  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5
+  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5, dutyPersonId5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -1262,7 +1262,7 @@ const tlDayOpts = computed(() => {
   const pid = tlPid.value
   if (!pid) return []
   const ds = new Set()
-  v5.placements.filter(p => p.personId === pid).forEach(p => ds.add(p.date))
+  v5.placements.filter(p => p.personId === pid || dutyPersonId5(p) === pid).forEach(p => ds.add(p.date))
   v5.facts.filter(f => f.by === pid && f.date).forEach(f => ds.add(f.date))
   return [...ds].filter(d => tlDates.value.some(x => x.date === d)).sort()
 })
@@ -1272,11 +1272,17 @@ function tlBandsFor(day) {
   const pid = tlPid.value
   if (!pid || !day) return []
   const rows = []
-  const shifts = v5.placements.filter(p => p.personId === pid && p.date === day).map(p => {
+  const shifts = v5.placements.filter(p => (p.personId === pid || dutyPersonId5(p) === pid) && p.date === day).map(p => {
     const s = slotById(v5, p.slotId)
     if (!s) return null
     const fac = p.status === 'covered' ? v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id)) : null
     if (p.status === 'covered') return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' }
+    /* 换班：原计划不动，这段的履约人换成了对方（事件占住，不是搬行） */
+    if (p.swap) {
+      const to = personById(v5, p.swap.personId)?.name || ''
+      const who = p.personId === pid ? `这段交给 ${to} 履约，你不用去` : `${personById(v5, p.personId)?.name || ''} 的这段换给你，你要去上`
+      return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `换班 · ${who}`, cls: 'covered' }
+    }
     /* 部分占用：这条班里被事实占据的段，蓝块上叠出来 */
     const segs = v5.facts.filter(f => f.by === pid && f.date === day && f.slotId === p.slotId && f.type === '请假').map(f => {
       const st = f.start || s.start
@@ -1887,6 +1893,7 @@ tr.covered td { color: #9a9fa9; }
 tr.pointable { cursor: pointer; }
 tr.pointable:hover td { background: #fdf8f9; }
 .fact-link { color: #a40035; font-size: 11.5px; }
+.duty-note { margin-left: 4px; color: #a4441d; font-size: 11px; font-style: normal; }
 tr.hl td { background: #fdf3e6 !important; }
 .empty-cell { text-align: center; color: #9a9fa9; font-size: 12px; padding: 14px 0; }
 
