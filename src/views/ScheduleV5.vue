@@ -2061,7 +2061,6 @@ tr.covered td { color: #9a9fa9; }
 .st-off { color: #9a9fa9; }
 .fact-acts { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .fa-hint { font-size: 12px; color: #8a8a95; margin-right: auto; }
-.fa-note { font-size: 11.5px; color: #b0b3ba; }
 /* 个人时间线 */
 .tl-box { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 10px 12px 8px; margin-bottom: 14px; }
 /* 待人事处理：求值没人顶时发给人事的待办 */
