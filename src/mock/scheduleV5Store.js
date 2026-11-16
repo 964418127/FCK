@@ -240,6 +240,17 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
 export function revertConfig() {
   const seed = buildV5State()
   state.slots = seed.slots
+  state.temps = seed.temps
+  state.claimRules = seed.claimRules
+  state.hourLimits = seed.hourLimits
+  state.spaces = seed.spaces
+  /* 节奏也是配置的一部分：全局轮 + 各空间自己的轮，config 一并回到种子 */
+  state.round.config = seed.round.config
+  if (state.rounds) {
+    for (const k of Object.keys(state.rounds)) {
+      if (seed.rounds?.[k]) state.rounds[k].config = seed.rounds[k].config
+    }
+  }
   state.configDirty = false
 }
 export function addTemp(temp) {

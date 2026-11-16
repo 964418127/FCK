@@ -29,7 +29,7 @@
       <DocScreens
         :height="320"
         :images="[
-          { src: rhythmShot, label: '排班节奏（展开）：周期类型四选，下方模式释义 + 落成真实日期的示例；时间轴标出发布、覆盖区间、申领截止与今天' }
+          { src: rhythmShot, label: '排班节奏（展开）：周期类型四选 + 模式释义与真实日期示例；改动后出现恢复条，点「恢复」放弃改动回到正在用的节奏' }
         ]"
       />
       <table class="data-table">

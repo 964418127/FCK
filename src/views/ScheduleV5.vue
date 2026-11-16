@@ -13,7 +13,7 @@
       <div class="hr">
         <span v-if="v5.configDirty" class="dirty">
           有配置改动 · 下一轮 {{ shortAt(round.nextAt) }} 起生效
-          <button @click="revert">撤销</button>
+          <button title="撤销今天在这里做过的全部配置改动（班次、节奏、规则），回到当前轮正在用的配置；当前轮跑的不受影响" @click="revert">撤销改动</button>
         </span>
         <span v-else class="clean">配置与当前轮一致</span>
         <el-button v-if="isDev" size="small" @click="devResolveApply">申领截止（演示）</el-button>
@@ -186,10 +186,10 @@
                 </svg>
                 <div class="rh-note">
                   三个时刻各管一件事——<b>发布</b>：当天起窗口开放，员工开始领（发的已是之后某期，发布≠生效）；<b>申领截止</b>：窗口关闭，申领的按综合分排序定人，抢的在这之前点了就成；<b>生效</b>：到覆盖那一周才真正上这些班。
-                  改了节奏，下一次生成就按新节奏走；正在跑的当前轮不动，清单窗口跟着本轮发布时刻算。
+                  改了节奏，下一次生成就按新节奏走；正在跑的当前轮不动，清单窗口跟着本轮发布时刻算。改乱了不想留？点下方<b>恢复当前轮的节奏</b>，一键回到这一轮正在用的版本。
                 </div>
                 <div v-if="rhythmDirty" class="rh-reset-row">
-                  <span>节奏已改动，下一轮按新节奏走</span>
+                  <span>节奏已改动，下一轮按新节奏走。点「恢复」＝放弃刚才的全部改动，回到这一轮正在用的节奏；确认后立即生效</span>
                   <button class="rh-reset-btn" @click="resetRhythm">恢复当前轮的节奏</button>
                 </div>
               </div>
@@ -1541,7 +1541,7 @@ function save() {
   formErrs.value = []
   ElMessage.success(isNew ? '已新建：从下一轮起生效' : '已保存：从下一轮起生效')
 }
-function revert() { revertConfig(); ElMessage.success('已撤销，回到当前轮的配置') }
+function revert() { revertConfig(); syncRhythm(); ElMessage.success('已撤销：班次、节奏、规则回到这一轮正在用的版本') }
 
 /* 临时班次 */
 const tempForm = reactive({ date: '2026-11-28', name: '', start: '18:00', end: '22:00', value: 2, gapRule: 'G2' })
