@@ -1335,10 +1335,38 @@ export function addFact5(state, fact) {
   if (fact.type === '请假') {
     const target = state.placements.find(p => p.id === fact.placementId && p.status === 'active')
     const slot = slotById(state, fact.slotId)
-    /* 只请一部分时间（如 1 小时）：班次还在这个人身上，只把那段画进事实；少的时间要不要补人待业务拍板 */
+    /* 只请一部分时间（如 1 小时）：班次还在这个人身上，被拿走的那段就是缺口，按班次声明的缺口规则处理 */
     const partial = target && slot && fact.start && fact.end && (fact.start > slot.start || fact.end < slot.end)
     if (target && partial) {
-      fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的时间要不要补人待业务拍板`
+      if (gapRuleOfSlot5(state, target.slotId).kind === 'none') {
+        fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的那段按班次规则不补充，已通知人事`
+        state.notices.unshift({
+          id: `N-${state.seq++}`, to: 'HR', kind: 'hr', acked: false, date: target.date, slotId: target.slotId,
+          text: `缺口：${target.date} ${slot.name} ${fact.start}–${fact.end} 设了「不补充」`,
+          detail: `${personById(state, fact.by)?.name || ''} ${fact.at.slice(11)} 请了 ${fact.start}–${fact.end}；这条班次的缺口规则是「不补充」，缺的人不找人顶，请留意门店现场`
+        })
+      } else {
+        const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
+        if (rep) {
+          /* 补位人只顶被拿走的那段：占位带 seg，剩下的时间仍是原人的 */
+          const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id, at: fact.at, seg: { start: fact.start, end: fact.end } })
+          state.placements.push(np)
+          touched.push(np)
+          fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的那段由 ${rep.person.name} 顶上`
+          state.notices.unshift({
+            id: `N-${state.seq++}`, to: rep.person.id, kind: 'makeup', acked: false, date: target.date,
+            text: `补位通知：${target.date} ${slot.name} ${fact.start}–${fact.end} 需要你顶上`,
+            detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 请了 ${fact.start}–${fact.end}；你是清单里当时有空、没冲突的人，只顶这一段`
+          })
+        } else {
+          fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的那段没人能顶，时段留空，已通知人事处理`
+          state.notices.unshift({
+            id: `N-${state.seq++}`, to: 'HR', kind: 'hr', acked: false, date: target.date, slotId: target.slotId,
+            text: `待处理：${target.date} ${slot.name} ${fact.start}–${fact.end} 没人能顶`,
+            detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 请了 ${fact.start}–${fact.end}；顺位里没有有空、没冲突的人，这一段留空，请人事找人顶班`
+          })
+        }
+      }
     } else if (target) {
       target.status = 'covered'
       target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，这段时间被请假占用` })

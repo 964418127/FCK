@@ -689,7 +689,7 @@
                 <td>{{ r.date.slice(5) }}</td>
                 <td>{{ r.slotName }} {{ r.start }}–{{ r.end }}<em v-if="r.isTmp" class="tmp-tag">临时</em></td>
                 <td><span class="p-code">{{ r.personCode }}</span>{{ r.person }}<em v-if="r.duty" class="duty-note">→ {{ r.duty }} 履约</em></td>
-                <td>{{ r.way }}</td>
+                <td>{{ r.way }}<em v-if="r.seg" class="seg-note">只顶 {{ r.seg.start }}–{{ r.seg.end }}</em></td>
                 <td>
                   <span v-if="r.factId" class="fact-link">{{ r.factId }} · {{ r.factType }}</span>
                   <span v-else class="muted">—</span>
@@ -1469,8 +1469,13 @@ function tlBandsFor(day) {
   const shifts = v5.placements.filter(p => (p.personId === pid || dutyPersonId5(p) === pid) && p.date === day).map(p => {
     const s = slotById(v5, p.slotId)
     if (!s) return null
+    /* 只顶一段的补位：带子画在 seg 上，剩下的时间仍是原人的 */
+    const seg = p.seg
+    const bStart = toMin(seg ? seg.start : s.start)
+    const bEnd = toMin(seg ? seg.end : s.end)
+    const bTime = seg ? `${seg.start}–${seg.end}（只顶这段）` : `${s.start}–${s.end}`
     const fac = p.status === 'covered' ? v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id)) : null
-    if (p.status === 'covered') return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' }
+    if (p.status === 'covered') return { s: bStart, e: bEnd, text: `${s.name} ${bTime}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' }
     /* 换班：事件占住时段，履约人换成了对方 */
     if (p.swap) {
       const to = personById(v5, p.swap.personId)?.name || ''
@@ -1484,7 +1489,7 @@ function tlBandsFor(day) {
       return st < en ? { s: toMin(st), e: toMin(en), label: `${st}–${en}` } : null
     }).filter(Boolean)
     const sub = segs.length ? `${p.way} · 其中 ${segs.map(x => x.label).join('、')} 被占用` : p.way
-    return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub, marks: segs, cls: 'shift' }
+    return { s: bStart, e: bEnd, text: `${s.name} ${bTime}`, sub, marks: segs, cls: 'shift' }
   }).filter(Boolean)
   if (shifts.length) rows.push({ label: '班次', bands: shifts })
   const facts = v5.facts.filter(f => f.by === pid && f.date === day).map(f => {
@@ -2128,6 +2133,7 @@ tr.pointable { cursor: pointer; }
 tr.pointable:hover td { background: #fdf8f9; }
 .fact-link { color: #a40035; font-size: 11.5px; }
 .duty-note { margin-left: 4px; color: #a4441d; font-size: 11px; font-style: normal; }
+.seg-note { margin-left: 4px; color: #854f0b; font-size: 11px; font-style: normal; }
 .p-code { color: #a0a0aa; font-size: 11px; margin-right: 5px; }
 tr.hl td { background: #fdf3e6 !important; }
 .empty-cell { text-align: center; color: #9a9fa9; font-size: 12px; padding: 14px 0; }
