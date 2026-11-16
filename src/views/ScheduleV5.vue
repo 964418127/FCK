@@ -1277,10 +1277,10 @@ function tlBandsFor(day) {
     if (!s) return null
     const fac = p.status === 'covered' ? v5.facts.find(f => f.placementId === p.id || f.placements?.includes(p.id)) : null
     if (p.status === 'covered') return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `时间被${fac?.type || '事实'}占用`, cls: 'covered' }
-    /* 换班：原计划不动，这段的履约人换成了对方（事件占住，不是搬行） */
+    /* 换班：事件占住时段，履约人换成了对方 */
     if (p.swap) {
       const to = personById(v5, p.swap.personId)?.name || ''
-      const who = p.personId === pid ? `这段交给 ${to} 履约，你不用去` : `${personById(v5, p.personId)?.name || ''} 的这段换给你，你要去上`
+      const who = p.personId === pid ? `换给 ${to}` : `${personById(v5, p.personId)?.name || ''} 换入`
       return { s: toMin(s.start), e: toMin(s.end), text: `${s.name} ${s.start}–${s.end}`, sub: `换班 · ${who}`, cls: 'covered' }
     }
     /* 部分占用：这条班里被事实占据的段，蓝块上叠出来 */

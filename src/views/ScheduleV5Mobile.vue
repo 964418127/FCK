@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <p class="rc-note">{{ noteOf(r) }}</p>
+          <p v-if="noteOf(r)" class="rc-note">{{ noteOf(r) }}</p>
           <p v-if="r.status === 'active' && !outTo(r) && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
 
           <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
@@ -560,8 +560,7 @@ function wayLabel(r) {
   return '已排定'
 }
 function noteOf(r) {
-  if (outTo(r)) return `这段已经交给 ${outTo(r)}，你不用去；原来怎么排的还留在记录里`
-  if (inFrom(r)) return `${inFrom(r)} 的这段换给你，你要去上；他那条记录不动`
+  if (outTo(r) || inFrom(r)) return ''
   if (r.status === 'covered') {
     const h = r.history?.[r.history.length - 1]?.note
     return h ? `这段时间被占用：${h}（班次记录没动，占用撤了班就回来）` : '这段时间被占用'
