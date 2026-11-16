@@ -273,12 +273,12 @@ export const TEMPS5 = [
    校验对象是「这个人这一天最终占到的班」，不是「他勾了什么」。 */
 export const CLAIM_RULES5 = [
   {
-    id: 'CR-01', spaceId: 'S-205', name: '非全推拿 · A 类至少 1',
+    id: 'CR-01', spaceId: 'S-205', name: '非全推拿 · A 类每天至少 1',
     who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' },
     scope: { type: 'category', id: 'A' }, unit: 'count', min: 1, max: null
   },
   {
-    id: 'CR-02', spaceId: 'S-205', name: '非全推拿 · 每日 6–9 小时',
+    id: 'CR-02', spaceId: 'S-205', name: '非全推拿 · 每天 6–9 小时',
     who: { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' },
     scope: { type: 'all' }, unit: 'minute', min: 360, max: 540
   }

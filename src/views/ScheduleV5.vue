@@ -432,7 +432,7 @@
 
           <!-- 申领规则：挂人群，不挂时段。空规则放行；类下任一条都算数 -->
           <template v-else>
-            <div class="hint-line">规则挂「人群」不挂时段：管谁、管哪一类（或全部）、计量（条数 / 分钟）、上下限。没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）。改了立即用于试算，正式生效下一轮。</div>
+            <div class="hint-line">规则挂「人群」不挂时段：管谁、管哪一类（或全部）、计量（条数 / 分钟）、上下限。两项计量都按这一天合计（不跨天累加）。没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）。改了立即用于试算，正式生效下一轮。</div>
 
             <div class="rule-list">
               <article v-for="r in spaceRules" :key="r.id" class="rule-card">
@@ -464,7 +464,7 @@
               <div class="edit-box">
                 <div class="er">
                   <label>名称</label>
-                  <el-input v-model="ruleForm.name" size="small" placeholder="如：非全推拿 · A 类至少 1" style="width: 260px" />
+                  <el-input v-model="ruleForm.name" size="small" placeholder="如：非全推拿 · A 类每天至少 1" style="width: 260px" />
                 </div>
                 <div class="er">
                   <label>管谁</label>
@@ -491,7 +491,7 @@
                   <el-input-number v-model="ruleForm.min" :min="0" :max="1440" size="small" controls-position="right" style="width: 96px" />
                   <label>上限</label>
                   <el-input-number v-model="ruleForm.max" :min="0" :max="1440" size="small" controls-position="right" style="width: 96px" />
-                  <span class="form-hint">上限留空或 0 = 不封顶；分钟按「这一天合计」算</span>
+                  <span class="form-hint">上限留空或 0 = 不封顶；条数和分钟都按这一天合计，不跨天累加</span>
                 </div>
                 <div v-if="ruleErr" class="rule-err">{{ ruleErr }}</div>
                 <div class="er">
@@ -1395,8 +1395,10 @@ const ruleForm = reactive({
   scopeType: 'all', unit: 'count', min: 1, max: 0
 })
 function ruleNeedText(r) {
-  if (r.unit === 'count') return [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
-  return r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
+  const body = r.unit === 'count'
+    ? [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
+    : (r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`)
+  return `每天 ${body}`
 }
 function openRule(r) {
   ruleErr.value = ''
@@ -1631,26 +1633,6 @@ function devResolveApply() {
 .sw-band { background: #B7E5CF; border: 1px solid #6FBF97; }
 .sw-tmp { background: #CFE0F5; border: 1px solid #7FA6D9; }
 .sw-out { background: #EDEFF2; border: 1px dashed #B4B9C2; }
-
-/* 申领规则 */
-.cat-tag { font-size: 11px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 4px; padding: 0 5px; }
-.rule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; align-items: flex-start; }
-.rule-card { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 8px 12px; }
-.rc-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.rc-main strong { font-size: 13px; color: #2C2C2A; }
-.rc-who { font-size: 12px; color: #6a6a75; }
-.rc-scope { font-size: 11.5px; color: #6a4b8a; background: #f4eefb; border-radius: 4px; padding: 1px 6px; }
-.rc-need { font-size: 12px; color: #a40035; font-weight: 500; }
-.limit-card, .trial-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; }
-.limit-card strong, .trial-card strong { font-size: 13px; color: #2C2C2A; }
-.lc-note { font-size: 11.5px; color: #9a9fa9; }
-.lc-line { display: inline-flex; align-items: center; gap: 6px; }
-.trial-body { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
-.trial-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
-.trial-line.bad { color: #a4441d; }
-.trial-line.muted { color: #9a9fa9; }
-.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
-.rule-err { font-size: 12px; color: #a40035; margin: 4px 0; }
 
 /* 申领规则 */
 .cat-tag { font-size: 11px; color: #6a4b8a; background: #f4eefb; border: 1px solid #e0d2f2; border-radius: 4px; padding: 0 5px; }
