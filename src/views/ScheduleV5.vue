@@ -427,7 +427,13 @@
 
           <!-- 申领规则：挂人群，不挂时段。空规则放行；类下任一条都算数 -->
           <template v-else>
-            <div class="hint-line">规则挂「人群」不挂时段：管谁、管哪一类（或全部）、计量（条数 / 分钟）、上下限。两项计量都按这一天合计（不跨天累加）。没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）。改了立即用于试算，正式生效下一轮。</div>
+            <ul class="hint-list">
+              <li>规则挂「人群」，不挂时段</li>
+              <li>一条规则 = 管谁 + 管哪一类（或全部）+ 计量（条数 / 分钟）+ 下限和上限</li>
+              <li>两项计量都按这一天合计，不跨天累加</li>
+              <li>没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）</li>
+              <li>改了立即用于试算，正式生效下一轮</li>
+            </ul>
 
             <!-- 类别是空间的字典：规则按类管，类下任一条都算数 -->
             <div class="cat-row">
@@ -457,15 +463,11 @@
               <el-button v-if="isDev" size="small" @click="devAdvanceRound">发布下一轮（演示）</el-button>
             </div>
 
-            <article v-if="ruleEditing" class="slot-card">
-              <header>
-                <div class="sn">
-                  <strong>{{ ruleForm.id ? '编辑规则' : '新增规则' }}</strong>
-                  <span class="draft-tag">改了立即用于试算，正式生效下一轮</span>
-                </div>
-                <div class="sacts"><el-button link size="small" @click="ruleEditing = false">收起</el-button></div>
-              </header>
-              <div class="edit-box">
+            <el-drawer :model-value="ruleEditing" size="520px"
+              :title="ruleForm.id ? '编辑规则' : '新增规则'"
+              @update:model-value="v => { if (!v) ruleEditing = false }">
+              <div class="drawer-tag">改了立即用于试算，正式生效下一轮</div>
+              <div class="edit-box drawer-box">
                 <div class="er">
                   <label>名称</label>
                   <el-input v-model="ruleForm.name" size="small" placeholder="如：非全推拿 · A 类每天至少 1" style="width: 260px" />
@@ -503,7 +505,7 @@
                   <el-button size="small" type="primary" @click="saveRule">保存</el-button>
                 </div>
               </div>
-            </article>
+            </el-drawer>
 
             <div class="limit-card">
               <strong>非全工时额度</strong>
@@ -1701,6 +1703,8 @@ function devResolveApply() {
 .sf-row .el-input { flex: 1; }
 .svc-link { margin-left: auto; }
 .hint-line { font-size: 12px; color: #8a8a95; margin: 8px 0 10px; }
+.hint-list { margin: 8px 0 10px; padding: 10px 12px 10px 26px; border: 1px solid #f0eaec; border-radius: 8px; background: #fcfbfc; font-size: 12px; color: #6a6a75; line-height: 1.9; }
+.hint-list li::marker { color: #a40035; }
 
 /* 这天的时间轴 */
 .day-axis { border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 8px 10px 7px; margin-bottom: 12px; }
