@@ -100,7 +100,7 @@
           </div>
 
           <div class="rc-main">
-            <div :class="['rc-time', { strike: r.status === 'covered' || !!outTo(r) }]">{{ slotOf(r.slotId).start }}<span>–</span>{{ slotOf(r.slotId).end }}</div>
+            <div :class="['rc-time', { strike: r.status === 'covered' || !!outTo(r) }]">{{ rowSpan(r).start }}<span>–</span>{{ rowSpan(r).end }}</div>
             <div class="rc-where">
               <el-icon><Location /></el-icon>
               <span>{{ spaceName(slotOf(r.slotId).spaceId) }} · {{ slotOf(r.slotId).name }}</span>
@@ -274,12 +274,12 @@
           <div class="sheet-shift">{{ dayLabel(sheet.row.date) }} · {{ slotOf(sheet.row.slotId).name }} {{ slotOf(sheet.row.slotId).start }}–{{ slotOf(sheet.row.slotId).end }}</div>
           <div class="sheet-meta">{{ spaceName(slotOf(sheet.row.slotId).spaceId) }} · 你在 {{ shortAt(v5.now) }} 提交，影响的是这一班</div>
           <div class="checks">
-            <div><i>•</i>提交一条请假事实，这段班的时间被占用</div>
+            <div><i>•</i>提交请假，这段时间就空出来了</div>
             <div><i>•</i>系统按顺位找有空、没冲突的人顶上</div>
             <div><i>•</i>顶上班的人会推通知告诉你</div>
-            <div><i>•</i>请假记录留在你的时间线里，不会消失；请假撤了班就回来</div>
+            <div><i>•</i>请假记录留在你的排班里，请假撤了班就回来</div>
           </div>
-          <p class="sheet-note">名额本身不能退，退的只是这一次的班次占用；之后有需要可以再抢。</p>
+          <p class="sheet-note">名额不能退；之后有需要可以再抢。</p>
         </div>
         <div class="sheet-acts">
           <button class="act-btn ghost" @click="sheet = null">再想想</button>
@@ -380,7 +380,7 @@ const inFrom = r => (r.personId !== meId.value && r.swap ? personById(v5, r.pers
 const dayRows = computed(() => myRows.value.filter(r => r.date === mineSel.value))
 const weekStats = computed(() => {
   const active = myRows.value.filter(r => r.status === 'active' && !outTo(r))
-  const hours = active.reduce((s, r) => s + hours5(slotOf(r.slotId).start, slotOf(r.slotId).end), 0)
+  const hours = active.reduce((s, r) => s + hours5(rowSpan(r).start, rowSpan(r).end), 0)
   const pending = active.filter(r => pendingNoticeOf(r)).length
   return { count: active.length, hours: Math.round(hours * 10) / 10, pending }
 })
@@ -418,8 +418,6 @@ function pickDefaultPick() {
   const okDates = board.value.filter(o => o.gate.ok).map(o => o.date).sort()
   return okDates[0] || roundDates.value.find(d => d >= v5.today) || roundDates.value[0] || WEEK_DATES[0]
 }
-/* 演示辅具：?date=YYYY-MM-DD 直接定位到那一天（看不同日期的规则状态） */
-watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickSel.value = d }, { immediate: true })
 /* 演示辅具：?date=YYYY-MM-DD 直接定位到那一天（看不同日期的规则状态） */
 watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pickSel.value = d }, { immediate: true })
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
@@ -529,8 +527,12 @@ function shortM(d) {
 function hoursText(slot) {
   return `${hours5(slot.start, slot.end)} 小时`
 }
+/* 只顶一段的补位：时间与工时都按那一段算，不按整班 */
+function rowSpan(r) {
+  return r.seg || slotOf(r.slotId)
+}
 function durText(r) {
-  return hoursText(slotOf(r.slotId))
+  return hoursText(rowSpan(r))
 }
 function whoText(who) {
   const label = typeof who === 'string' ? who : whoLabel5(who)
@@ -561,6 +563,7 @@ function wayLabel(r) {
 }
 function noteOf(r) {
   if (outTo(r) || inFrom(r)) return ''
+  if (r.seg) return '同事请了这段时间的假，你只顶这一段，其余时间还是原班'
   if (r.status === 'covered') {
     const h = r.history?.[r.history.length - 1]?.note
     return h ? `这段时间被占用：${h}（班次记录没动，占用撤了班就回来）` : '这段时间被占用'
@@ -576,7 +579,7 @@ function noteOf(r) {
 function overtimeOf(r) {
   if (me.value?.kind !== 'fulltime') return ''
   const total = myRows.value.filter(x => x.date === r.date && x.status === 'active' && !outTo(x))
-    .reduce((s, x) => s + hours5(slotOf(x.slotId).start, slotOf(x.slotId).end), 0)
+    .reduce((s, x) => s + hours5(rowSpan(x).start, rowSpan(x).end), 0)
   return total > 8 ? `当天合计 ${Math.round(total * 10) / 10} 小时，超出标准时间的部分计加班` : ''
 }
 function pendingNoticeOf(r) {
