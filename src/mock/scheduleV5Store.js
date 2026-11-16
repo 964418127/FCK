@@ -343,6 +343,7 @@ export function resultRows5(spaceId) {
       return {
         ...p, slotName: s.name, start: s.start, end: s.end,
         space: spaceById(state, s.spaceId)?.name, person: personById(state, p.personId)?.name,
+        personCode: personById(state, p.personId)?.id,
         /* 换班是事件占住时段：原计划人不动，履约人单列一栏 */
         duty: p.swap ? personById(state, p.swap.personId)?.name : '',
         factId: fact?.id || '', factType: fact?.type || ''

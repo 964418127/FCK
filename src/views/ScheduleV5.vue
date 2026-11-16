@@ -400,8 +400,13 @@
                   <span class="time">{{ t.date }} · {{ t.start }}–{{ t.end }}</span>
                   <!-- 名额分配结果：这几个人最后得到了 -->
                   <span class="tc-got">
-                    名额 {{ t.snapN }} · {{ occupantsOf(t.id, t.date).length ? `已定 ${occupantsOf(t.id, t.date).join('、')}` : '还没定人' }}
-                    <em v-if="occupied(t.id, t.date) < t.snapN">（还缺 {{ t.snapN - occupied(t.id, t.date) }}）</em>
+                    名额 {{ t.snapN }} ·
+                    <template v-if="occupantsOf(t.id, t.date).length">
+                      已定
+                      <em v-for="o in occupantsOf(t.id, t.date)" :key="o.id" class="tc-who">{{ o.id }} {{ o.name }}</em>
+                    </template>
+                    <template v-else>还没定人</template>
+                    <span v-if="occupied(t.id, t.date) < t.snapN" class="tc-gap">还缺 {{ t.snapN - occupied(t.id, t.date) }}</span>
                   </span>
                 </div>
                 <div class="tc-r">
@@ -441,6 +446,7 @@
                       <input type="checkbox" :value="p.id" :checked="tempForm.personIds.includes(p.id)"
                         :disabled="!tempForm.personIds.includes(p.id) && tempForm.personIds.length >= tempForm.value"
                         @change="toggleTempPerson(p.id)" />
+                      <span class="pb-code">{{ p.id }}</span>
                       <span class="pb-name">{{ p.name }}</span>
                       <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }}</span>
                     </label>
@@ -633,7 +639,7 @@
               <tr v-for="r in rows" :key="r.id" :class="{ covered: r.status === 'covered', pointable: !!r.factId }" @click="r.factId && jumpFact(r.factId)">
                 <td>{{ r.date.slice(5) }}</td>
                 <td>{{ r.slotName }} {{ r.start }}–{{ r.end }}</td>
-                <td>{{ r.person }}<em v-if="r.duty" class="duty-note">→ {{ r.duty }} 履约</em></td>
+                <td><span class="p-code">{{ r.personCode }}</span>{{ r.person }}<em v-if="r.duty" class="duty-note">→ {{ r.duty }} 履约</em></td>
                 <td>{{ r.way }}</td>
                 <td>
                   <span v-if="r.factId" class="fact-link">{{ r.factId }} · {{ r.factType }}</span>
@@ -913,6 +919,7 @@
             <input type="checkbox" :checked="appoint.personIds.includes(p.id)"
               :disabled="!appoint.personIds.includes(p.id) && appoint.personIds.length >= gapRemain"
               @change="toggleAppointPerson(p.id)" />
+            <span class="pb-code">{{ p.id }}</span>
             <span class="pb-name">{{ p.name }}</span>
             <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }} · {{ p.rowLabel }}</span>
           </label>
@@ -920,7 +927,7 @@
         </div>
       </div>
       <div class="dlg-hint">候选只列符合这一档、当时没班、时间不撞的人；一次最多选 {{ gapRemain }} 个（还缺几个名额就选几个）。</div>
-      <div v-if="appoint.personIds.length" class="pb-sum">已选 {{ appoint.personIds.length }} / {{ gapRemain }} 人：{{ appoint.personIds.map(id => personById(v5, id)?.name).join('、') }}</div>
+      <div v-if="appoint.personIds.length" class="pb-sum">已选 {{ appoint.personIds.length }} / {{ gapRemain }} 人：{{ appoint.personIds.map(id => `${id} ${personById(v5, id)?.name}`).join('、') }}</div>
       <template #footer>
         <el-button size="small" @click="appointDlg = false">取消</el-button>
         <el-button size="small" type="primary" @click="doAppoint">确认安排</el-button>
@@ -1081,7 +1088,7 @@ function occupied(slotId, date) { return activeCount5(v5, slotId, date) }
 function occupantsOf(slotId, date) {
   return v5.placements
     .filter(p => p.slotId === slotId && p.date === date && p.status === 'active')
-    .map(p => personById(v5, dutyPersonId5(p))?.name)
+    .map(p => personById(v5, dutyPersonId5(p)))
     .filter(Boolean)
 }
 function occupyNames(slotId, date) {
@@ -1891,6 +1898,9 @@ function devResolveApply() {
 .tc-l strong { font-size: 13px; color: #2c2c2a; }
 .tc-got { font-size: 11.5px; color: #6a6a75; }
 .tc-got em { color: #854F0B; font-style: normal; }
+.tc-who { display: inline-block; margin: 0 2px; padding: 1px 6px; border: 1px solid #eee6e8; border-radius: 4px; background: #fbfaf9; font-size: 11.5px; color: #4a4a54; }
+.tc-gap { color: #854F0B; margin-left: 4px; }
+.pb-code { font-size: 10.5px; color: #a0a0aa; }
 .tc-r { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #6a6a75; }
 .temp-form { margin-top: 12px; border: 1px dashed #e6dfe1; border-radius: 10px; padding: 10px 12px; }
 /* 一次选够名额的人选列表 */
@@ -2007,6 +2017,7 @@ tr.pointable { cursor: pointer; }
 tr.pointable:hover td { background: #fdf8f9; }
 .fact-link { color: #a40035; font-size: 11.5px; }
 .duty-note { margin-left: 4px; color: #a4441d; font-size: 11px; font-style: normal; }
+.p-code { color: #a0a0aa; font-size: 11px; margin-right: 5px; }
 tr.hl td { background: #fdf3e6 !important; }
 .empty-cell { text-align: center; color: #9a9fa9; font-size: 12px; padding: 14px 0; }
 
