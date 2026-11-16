@@ -232,15 +232,8 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
   const wins = form.list.map(r => openAt5(r, round, first))
   wins.forEach((w, i) => { if (i > 0 && w && wins[i - 1] && w < wins[i - 1]) errs.push(`第 ${i + 1} 档比第 ${i} 档开得还早，员工会先看到后面那档`) })
 
-  /* 同空间、时间重叠、人群又写重了：同一个人两边都能拿。
-     直派不算「入口」（人只收通知、系统分人时会按时间撞不撞挡），所以只查抢单与申领这两类 */
-  const grabLike = list => list.filter(r => r.way !== 'direct')
-  const clash = state.slots
-    .filter(s => s.spaceId === spaceId && s.id !== exceptId)
-    .filter(s => overlap5(form.start, form.end, s.start, s.end))
-    .filter(s => s.days.some(d => form.days.includes(d)))
-    .filter(s => grabLike(s.list).some(a => grabLike(form.list).some(b => whoLabel5(a.who) === whoLabel5(b.who))))
-  if (clash.length) errs.push(`和「${clash.map(s => s.name).join('、')}」时间撞了，人群也写重了——同一个人两个入口都能拿`)
+  /* 时间撞人、工时超限这些冲突不在这里查——那是获取段的事：
+     抢的时候「点了就成、成不了当场说原因」，申领截止后审核排序时挡（canTake5 统一判） */
 
   return errs
 }

@@ -978,3 +978,21 @@ test('缺口规则：G0 不补充——设了的班次缺人也不产生补人�
   /* 试算里四条规则各判一次，G0 恒为不补充 */
   assert.equal(GAP_RULES5.length, 4)
 })
+
+test('班次编排不拦时间撞人：重叠+人群写重是合法配置，冲突由获取段判', () => {
+  const s = mk()
+  /* 早班 10-14 已存在（客经抢档），再配一条同人群重叠的通班 10-19：配置期不许报错 */
+  const form = { name: '通班', start: '10:00', end: '19:00', days: [1], quota: { source: 'manual', value: 2 },
+    list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }] }
+  const errs = checkSlotForm('S-201', form)
+  assert.ok(!errs.some(e => e.includes('时间撞了')), '重叠+人群写重在编排阶段合法：' + errs.join('；'))
+})
+
+test('班次编排不拦时间撞人：重叠+人群写重是合法配置，冲突由获取段判', () => {
+  const s = mk()
+  /* 早班 10-14 已存在（客经抢档），再配一条同人群重叠的通班 10-19：配置期不许报错 */
+  const form = { name: '通班', start: '10:00', end: '19:00', days: [1], quota: { source: 'manual', value: 2 },
+    list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }] }
+  const errs = checkSlotForm('S-201', form)
+  assert.ok(!errs.some(e => e.includes('时间撞了')), '重叠+人群写重在编排阶段合法：' + errs.join('；'))
+})
