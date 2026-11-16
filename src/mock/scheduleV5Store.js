@@ -256,9 +256,11 @@ export function revertConfig() {
   state.configDirty = false
 }
 export function addTemp(temp) {
-  state.temps.push({
+  const row = {
     id: `TL-${state.seq++}`, snapN: temp.quota.value, list: [{ k: 1, who: { scope: 'store', kind: 'all', tag: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }], ...temp
-  })
+  }
+  state.temps.push(row)
+  return row
 }
 export function removeTemp(id) {
   state.temps = state.temps.filter(t => t.id !== id)

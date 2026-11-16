@@ -398,31 +398,62 @@
                 <div class="tc-l">
                   <strong>{{ t.name }}</strong>
                   <span class="time">{{ t.date }} · {{ t.start }}–{{ t.end }}</span>
+                  <!-- 名额分配结果：这几个人最后得到了 -->
+                  <span class="tc-got">
+                    名额 {{ t.snapN }} · {{ occupantsOf(t.id, t.date).length ? `已定 ${occupantsOf(t.id, t.date).join('、')}` : '还没定人' }}
+                    <em v-if="occupied(t.id, t.date) < t.snapN">（还缺 {{ t.snapN - occupied(t.id, t.date) }}）</em>
+                  </span>
                 </div>
                 <div class="tc-r">
-                  <span class="quota-tag">名额 {{ t.snapN }}</span>
-                  <span class="tc-occ">已占 {{ occupied(t.id, t.date) }}/{{ t.snapN }}</span>
-                  <el-button v-if="occupied(t.id, t.date) < t.snapN" link size="small" @click="openGap(t, t.date)">补人 →</el-button>
+                  <span class="tc-occ">{{ occupied(t.id, t.date) }}/{{ t.snapN }}</span>
+                  <el-button v-if="occupied(t.id, t.date) < t.snapN" link size="small" @click="openGap(t, t.date)">定人 →</el-button>
                   <el-button link size="small" type="danger" @click="removeTemp(t.id)">删除</el-button>
                 </div>
               </article>
               <div v-if="!spaceTemps.length" class="empty">还没有临时班次</div>
             </div>
 
-            <div class="temp-form">
-              <div class="tf-title">新增临时班次</div>
-              <div class="er">
-                <label>日期</label><el-input v-model="tempForm.date" size="small" style="width: 130px" />
-                <label>名称</label><el-input v-model="tempForm.name" size="small" placeholder="如：周六晚加场" style="width: 160px" />
-                <label>起止</label>
-                <el-input v-model="tempForm.start" size="small" style="width: 76px" />
-                <span class="dash">–</span>
-                <el-input v-model="tempForm.end" size="small" style="width: 76px" />
-                <label>名额</label><el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" />
-                <el-button size="small" type="primary" @click="saveTemp">保存并开放</el-button>
+            <el-button size="small" type="primary" @click="openTempDrawer">+ 新增临时班次</el-button>
+
+            <el-drawer :model-value="tempDrawer" size="560px" title="新增临时班次"
+              @update:model-value="v => { if (!v) tempDrawer = false }">
+              <div class="drawer-tag">保存即进当前窗口：这一天多出名额，能拿的人立刻可以拿。</div>
+              <div class="edit-box drawer-box">
+                <div class="er">
+                  <label>日期</label><el-input v-model="tempForm.date" size="small" style="width: 130px" />
+                  <label>名称</label><el-input v-model="tempForm.name" size="small" placeholder="如：周六晚加场" style="width: 200px" />
+                </div>
+                <div class="er">
+                  <label>起止</label>
+                  <el-input v-model="tempForm.start" size="small" style="width: 80px" />
+                  <span class="dash">–</span>
+                  <el-input v-model="tempForm.end" size="small" style="width: 80px" />
+                  <label>名额</label>
+                  <el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" />
+                </div>
+                <div class="pick-box">
+                  <div class="pb-head">
+                    <strong>直接定人</strong>
+                    <span>不选就留空位，开放后谁先拿谁得；要指定就一次选够（最多 {{ tempForm.value }} 人）</span>
+                  </div>
+                  <div class="pb-list">
+                    <label v-for="p in tempCands" :key="p.id" :class="['pb-item', { on: tempForm.personIds.includes(p.id), off: !tempForm.personIds.includes(p.id) && tempForm.personIds.length >= tempForm.value }]">
+                      <input type="checkbox" :value="p.id" :checked="tempForm.personIds.includes(p.id)"
+                        :disabled="!tempForm.personIds.includes(p.id) && tempForm.personIds.length >= tempForm.value"
+                        @change="toggleTempPerson(p.id)" />
+                      <span class="pb-name">{{ p.name }}</span>
+                      <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }}</span>
+                    </label>
+                    <span v-if="!tempCands.length" class="pb-none">这一天这个时段没有空着的人</span>
+                  </div>
+                  <div class="pb-sum">已选 {{ tempForm.personIds.length }} / {{ tempForm.value }} 人{{ tempForm.personIds.length ? `：${tempForm.personIds.map(id => personById(v5, id)?.name).join('、')}` : '' }}</div>
+                </div>
+                <div class="ea">
+                  <el-button size="small" @click="tempDrawer = false">取消</el-button>
+                  <el-button size="small" type="primary" @click="saveTemp">保存并开放</el-button>
+                </div>
               </div>
-              <div class="tf-note">默认清单一行：本店全员 · 抢 · 发布即开。要别的档位，先建周期时段再改。</div>
-            </div>
+            </el-drawer>
           </template>
 
           <!-- 申领规则：挂人群，不挂时段。空规则放行；类下任一条都算数 -->
@@ -622,7 +653,7 @@
         <section v-else class="pane">
           <div class="fact-acts">
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
-            <el-button size="small" @click="openAppoint()">找人顶班</el-button>
+            <el-button size="small" @click="openAppoint()">定人</el-button>
             <span class="fa-note">离职不在这里登记：由离职流程模块写入事实，排班只承接结果</span>
           </div>
 
@@ -669,7 +700,7 @@
             <strong>待人事处理（{{ hrTodos.length }}）</strong>
             <div v-for="n in hrTodos" :key="n.id" class="hrt-row">
               <span class="hrt-text">{{ n.text }}<em>{{ n.detail }}</em></span>
-              <el-button size="small" type="primary" @click="openGapFromNotice(n)">处理：找人顶班</el-button>
+              <el-button size="small" type="primary" @click="openGapFromNotice(n)">处理：定人</el-button>
               <el-button size="small" @click="ackNotice(n.id)">先不管</el-button>
             </div>
           </div>
@@ -863,26 +894,33 @@
       </div>
     </el-dialog>
 
-    <!-- 找人顶班 -->
-    <el-dialog v-model="appointDlg" title="找人顶班" width="560px">
-      <div class="svc-note">经营性安排：名额限定到这一个人，别人进不来；不需对方同意，通知即可。</div>
+    <!-- 定人：一次把空着的名额选够 -->
+    <el-dialog v-model="appointDlg" title="定人" width="600px">
       <div v-if="gapInfo" class="gap-banner">
         <strong>{{ gapInfo.date.slice(5) }} {{ gapInfo.name }} {{ gapInfo.start }}–{{ gapInfo.end }}</strong>
-        <span>现在 {{ gapInfo.occ }}/{{ gapInfo.n }}，这一格还缺 {{ gapInfo.n - gapInfo.occ }} 人</span>
+        <span>名额 {{ gapInfo.n }}，已定 {{ gapInfo.occ }} 人，还缺 {{ gapInfo.n - gapInfo.occ }} 个</span>
       </div>
       <div class="dlg-row">
         <label>空位</label>
-        <el-select v-model="appoint.gapKey" size="small" style="width: 340px" placeholder="先选一个有空位的时段">
+        <el-select v-model="appoint.gapKey" size="small" style="width: 380px" placeholder="先选一个有空位的时段">
           <el-option v-for="g in gaps" :key="g.slotId + g.date" :label="`${g.date.slice(5)} ${g.slot.name} ${g.slot.start}–${g.slot.end}（${g.occ}/${g.n}）`" :value="g.slotId + '|' + g.date" />
         </el-select>
       </div>
-      <div class="dlg-row">
-        <label>选人</label>
-        <el-select v-model="appoint.personId" size="small" style="width: 340px" placeholder="符合这口坑、当时没班的人">
-          <el-option v-for="p in appointCands" :key="p.id" :label="`${p.name} · ${p.position} · ${p.kind === 'fulltime' ? '全职' : '非全'} · 符合「${p.rowLabel}」`" :value="p.id" />
-        </el-select>
+      <div class="dlg-row align-top">
+        <label>定人</label>
+        <div class="pb-list dlg-pick">
+          <label v-for="p in appointCands" :key="p.id" :class="['pb-item', { on: appoint.personIds.includes(p.id), off: !appoint.personIds.includes(p.id) && appoint.personIds.length >= gapRemain }]">
+            <input type="checkbox" :checked="appoint.personIds.includes(p.id)"
+              :disabled="!appoint.personIds.includes(p.id) && appoint.personIds.length >= gapRemain"
+              @change="toggleAppointPerson(p.id)" />
+            <span class="pb-name">{{ p.name }}</span>
+            <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }} · {{ p.rowLabel }}</span>
+          </label>
+          <span v-if="!appointCands.length" class="pb-none">这个人这时候没班、时间不撞的人</span>
+        </div>
       </div>
-      <div class="dlg-hint">候选只列符合这一档、当时没班、时间不撞的人。</div>
+      <div class="dlg-hint">候选只列符合这一档、当时没班、时间不撞的人；一次最多选 {{ gapRemain }} 个（还缺几个名额就选几个）。</div>
+      <div v-if="appoint.personIds.length" class="pb-sum">已选 {{ appoint.personIds.length }} / {{ gapRemain }} 人：{{ appoint.personIds.map(id => personById(v5, id)?.name).join('、') }}</div>
       <template #footer>
         <el-button size="small" @click="appointDlg = false">取消</el-button>
         <el-button size="small" type="primary" @click="doAppoint">确认安排</el-button>
@@ -894,7 +932,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TablePagination from '../components/TablePagination.vue'
@@ -1039,6 +1077,13 @@ function onDay(s, d) {
   return s.days.includes(new Date(`${d}T00:00:00`).getDay())
 }
 function occupied(slotId, date) { return activeCount5(v5, slotId, date) }
+/* 名额分配结果：这几个人最后得到了（按履约人算，换出去的显示接手的人） */
+function occupantsOf(slotId, date) {
+  return v5.placements
+    .filter(p => p.slotId === slotId && p.date === date && p.status === 'active')
+    .map(p => personById(v5, dutyPersonId5(p))?.name)
+    .filter(Boolean)
+}
 function occupyNames(slotId, date) {
   return v5.placements
     .filter(p => p.slotId === slotId && p.date === date && p.status === 'active')
@@ -1212,15 +1257,42 @@ function save() {
 function revert() { revertConfig(); ElMessage.success('已撤销，回到当前轮的配置') }
 
 /* 临时班次 */
-const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2 })
+const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2, personIds: [] })
+const tempDrawer = ref(false)
+function openTempDrawer() {
+  tempForm.name = ''
+  tempForm.personIds = []
+  tempDrawer.value = true
+}
+/* 能直接定的人：这家店的人、这个时段空着（首尾相接可以） */
+const tempCands = computed(() => {
+  const d = tempForm.date, s = tempForm.start, e = tempForm.end
+  if (!d || !s || !e) return []
+  return v5.people.filter(p =>
+    (p.spaceIds || [p.spaceId]).includes(selSpace.value)
+    && !personBusy5(v5, p.id, d, s, e)
+  )
+})
+function toggleTempPerson(id) {
+  if (tempForm.personIds.includes(id)) tempForm.personIds = tempForm.personIds.filter(x => x !== id)
+  else if (tempForm.personIds.length < tempForm.value) tempForm.personIds.push(id)
+}
 function saveTemp() {
   if (!tempForm.name) { ElMessage.warning('给这个临时班次起个名'); return }
-  addTemp({
+  const row = addTemp({
     spaceId: selSpace.value, date: tempForm.date, name: tempForm.name,
     start: tempForm.start, end: tempForm.end, quota: { source: 'manual', value: tempForm.value }
   })
+  /* 一次把选好的人落位，名额分配结果当场可查 */
+  const picks = tempForm.personIds.slice(0, tempForm.value)
+  let done = 0
+  picks.forEach(id => { if (appointV5(row.id, row.date, id).ok) done += 1 })
   tempForm.name = ''
-  ElMessage.success('已新增：这一天多出名额，当前窗口就能拿')
+  tempForm.personIds = []
+  tempDrawer.value = false
+  ElMessage.success(done
+    ? `已新增：名额 ${row.snapN} 个，已定 ${done} 人，还差 ${row.snapN - done} 个等开放后自己拿`
+    : '已新增：这一天多出名额，当前窗口就能拿')
 }
 
 /* 结果表分页 */
@@ -1359,9 +1431,9 @@ function traceLine(pid) {
   return `${p.date.slice(5)} ${s?.name} · ${nm} · ${p.status === 'covered' ? '时间被占用' : p.way}`
 }
 
-/* 找人顶班：从缺口格子直接进来，时段和日期已经带好 */
+/* 定人：从缺口格子直接进来，时段和日期已经带好；空几个名额就一次选几个 */
 const appointDlg = ref(false)
-const appoint = reactive({ gapKey: '', personId: '' })
+const appoint = reactive({ gapKey: '', personIds: [] })
 const gaps = computed(() => gaps5(selSpace.value))
 const gapInfo = computed(() => {
   const [slotId, date] = appoint.gapKey.split('|')
@@ -1369,6 +1441,7 @@ const gapInfo = computed(() => {
   const s = slotById(v5, slotId)
   return { date, name: s?.name, start: s?.start, end: s?.end, occ: occupied(slotId, date), n: s?.snapN }
 })
+const gapRemain = computed(() => gapInfo.value ? Math.max(0, gapInfo.value.n - gapInfo.value.occ) : 0)
 const appointCands = computed(() => {
   const [slotId, date] = appoint.gapKey.split('|')
   if (!slotId) return []
@@ -1384,20 +1457,35 @@ const appointCands = computed(() => {
 })
 function openAppoint(gap) {
   appoint.gapKey = gap ? `${gap.slotId}|${gap.date}` : ''
-  appoint.personId = ''
+  appoint.personIds = []
   appointDlg.value = true
 }
 function openGap(slot, date) { openAppoint({ slotId: slot.id, date }) }
-/* 待人事处理：从通知直接进找人顶班，时段和日期已经带好 */
+/* 换了空位就清空已选的人：还缺几个名额，下面按新的坑重算 */
+watch(() => appoint.gapKey, () => { appoint.personIds = [] })
+/* 待人事处理：从通知直接进定人，时段和日期已经带好 */
 const hrTodos = computed(() => v5.notices.filter(n => n.kind === 'hr' && !n.acked))
 function openGapFromNotice(n) { openAppoint({ slotId: n.slotId, date: n.date }) }
+function toggleAppointPerson(id) {
+  if (appoint.personIds.includes(id)) appoint.personIds = appoint.personIds.filter(x => x !== id)
+  else if (appoint.personIds.length < gapRemain.value) appoint.personIds.push(id)
+}
 function doAppoint() {
-  if (!appoint.gapKey || !appoint.personId) { ElMessage.warning('选空位、选人'); return }
+  if (!appoint.gapKey || !appoint.personIds.length) { ElMessage.warning('选空位、选人'); return }
   const [slotId, date] = appoint.gapKey.split('|')
-  const r = appointV5(slotId, date, appoint.personId)
-  if (!r.ok) { ElMessage.error(r.reason); return }
+  const ids = appoint.personIds.slice(0, gapRemain.value)
+  const fails = []
+  let done = 0
+  ids.forEach(id => {
+    const r = appointV5(slotId, date, id)
+    if (r.ok) done += 1
+    else fails.push(`${personById(v5, id)?.name || id}：${r.reason}`)
+  })
+  if (!done) { ElMessage.error(fails.join('；')); return }
   appointDlg.value = false
-  ElMessage.success(r.text)
+  ElMessage.success(fails.length
+    ? `已定 ${done} 人；${fails.join('；')}`
+    : `已定 ${done} 人：名额满了，别人进不来`)
 }
 
 /* 「这一档开放给谁」弹窗：几个条件在这里设，清单行只显示组合结果 */
@@ -1801,8 +1889,26 @@ function devResolveApply() {
 .temp-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid #f0eaec; border-left: 3px solid #a40035; border-radius: 8px; padding: 8px 12px; }
 .tc-l { display: flex; flex-direction: column; gap: 2px; }
 .tc-l strong { font-size: 13px; color: #2c2c2a; }
+.tc-got { font-size: 11.5px; color: #6a6a75; }
+.tc-got em { color: #854F0B; font-style: normal; }
 .tc-r { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #6a6a75; }
 .temp-form { margin-top: 12px; border: 1px dashed #e6dfe1; border-radius: 10px; padding: 10px 12px; }
+/* 一次选够名额的人选列表 */
+.pick-box { border: 1px solid #f2eef0; border-radius: 8px; padding: 10px 12px; }
+.pb-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.pb-head strong { font-size: 12.5px; color: #2c2c2a; }
+.pb-head span { font-size: 11.5px; color: #9a9fa9; }
+.pb-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pb-item { display: flex; align-items: center; gap: 6px; border: 1px solid #eee6e8; border-radius: 6px; padding: 5px 9px; font-size: 12px; color: #4a4a54; cursor: pointer; background: #fff; }
+.pb-item.on { border-color: #a40035; background: #fdf6f8; color: #a40035; }
+.pb-item.off { opacity: .45; cursor: not-allowed; }
+.pb-item input { margin: 0; accent-color: #a40035; }
+.pb-name { font-weight: 500; }
+.pb-meta { font-size: 11px; color: #9a9fa9; }
+.pb-none { font-size: 11.5px; color: #9a9fa9; }
+.pb-sum { font-size: 11.5px; color: #a40035; margin-top: 8px; }
+.dlg-pick { max-height: 260px; overflow: auto; }
+.dlg-row.align-top { align-items: flex-start; }
 .tf-title { font-size: 12.5px; font-weight: 500; color: #2c2c2a; margin-bottom: 8px; }
 .tf-note { font-size: 11.5px; color: #9a9fa9; margin-top: 6px; }
 .dash { color: #9a9fa9; }
