@@ -20,8 +20,8 @@
       </div>
     </header>
 
-    <!-- 时间锚点：现在处在哪一轮、改动什么时候生效 -->
-    <div class="round-strip">
+    <!-- 时间锚点：现在处在哪一轮、改动什么时候生效——轮跟着空间走，只在「排班」页签出现 -->
+    <div v-show="mainTab === 'schedule'" class="round-strip">
       <div class="rs-main">
         <span class="rs-tag">当前轮 {{ round.id }}</span>
         <span>{{ shortAt(round.publishedAt) }} 发布 · 覆盖 {{ short(round.span[0]) }}–{{ short(round.span[1]) }}</span>
@@ -119,12 +119,6 @@
                   </template>
                 </div>
                 <div class="rh-row">
-                  <label>多久发一次</label>
-                  <el-select v-model="rhythm.every" size="small" style="width: 110px" @change="applyRhythm">
-                    <el-option label="每期都发" :value="1" />
-                    <el-option label="隔一期发" :value="2" />
-                    <el-option label="隔两期发" :value="3" />
-                  </el-select>
                   <label>发布</label>
                   <span class="rh-unit">周期开始前</span>
                   <el-input-number v-model="publishAhead" :min="0" :max="15" size="small" controls-position="right"
@@ -132,6 +126,7 @@
                   <span class="rh-unit">天</span>
                   <el-time-select v-model="rhythm.publishHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
                     size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
+                  <span class="rh-unit">每次触发都生成下一周期（N+1），一期接一期连续铺</span>
                 </div>
                 <div class="rh-row">
                   <label>申领截止</label>
@@ -1249,7 +1244,6 @@ function bumpDay(s, d, delta) {
 const rhythmOpen = ref(false)
 const rhythm = reactive({
   cycle: { ...round.value.config.cycle },
-  every: round.value.config.every || 1,
   publishOffsetDays: round.value.config.publishOffsetDays ?? -4,
   publishHour: round.value.config.publishHour ?? '06:00',
   applyOffsetDays: round.value.config.applyOffsetDays ?? -1,
@@ -1259,7 +1253,6 @@ function syncRhythm() {
   const c = round.value.config
   Object.assign(rhythm.cycle, c.cycle)
   Object.assign(rhythm, {
-    every: c.every || 1,
     publishOffsetDays: c.publishOffsetDays ?? -4,
     publishHour: c.publishHour ?? '06:00',
     applyOffsetDays: c.applyOffsetDays ?? -1,
@@ -1290,8 +1283,7 @@ const cycleText = computed(() => {
 })
 const rhythmLabel = computed(() => {
   const c = round.value.config
-  const every = c.every > 1 ? `隔 ${c.every - 1} 期发 · ` : ''
-  return `${cycleText.value} · ${every}提前 ${Math.abs(c.publishOffsetDays)} 天 ${c.publishHour ?? '06:00'} 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${c.applyHour ?? '20:00'}`
+  return `${cycleText.value} · 提前 ${Math.abs(c.publishOffsetDays)} 天 ${c.publishHour ?? '06:00'} 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${c.applyHour ?? '20:00'}`
 })
 /* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
 const rp = computed(() => {
@@ -1314,7 +1306,6 @@ const rp = computed(() => {
 function applyRhythm() {
   setRoundConfig({
     cycle: { ...rhythm.cycle },
-    every: rhythm.every,
     publishOffsetDays: rhythm.publishOffsetDays,
     publishHour: rhythm.publishHour,
     applyOffsetDays: rhythm.applyOffsetDays,

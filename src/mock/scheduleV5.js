@@ -308,15 +308,14 @@ export const ROUND5 = {
   /* 下一轮：配置改动到这时才生效 */
   nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
   /*
-    排班节奏：通用抽象，四个参数，不写死周/月枚举
+    排班节奏：通用抽象，三组参数，不写死周/月枚举
     cycle  = 循环周期：锚点（自然周一起 / 自然月 1 号 / 业务自定义起点）+ 长度（n 天 / n 周 / n 月）
-    every  = 多久发一次（每期 = 1，隔一期 = 2）
     偏移   = 都相对「周期起点」：负数=提前，发布与申领截止各一条
+    每次触发都生成「下一周期」（N+1），一期接一期连续铺——没有「隔一期发」，业务上不存在跳期
     现行口径：自然周 + 提前 4 天 06:00 发（周四）+ 提前 1 天 20:00 申领截止（周日）
   */
   config: {
     cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
-    every: 1,
     publishOffsetDays: -4,
     publishHour: '06:00',
     applyOffsetDays: -1,
@@ -335,7 +334,6 @@ export const ROUND_OFFICE5 = {
   nextAt: '2026-11-27 06:00', nextSpan: ['2026-12-01', '2026-12-31'],
   config: {
     cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' },
-    every: 1,
     publishOffsetDays: -4,
     publishHour: '06:00',
     applyOffsetDays: -1,
@@ -351,7 +349,6 @@ export const ROUND_STORE_EARLY5 = {
   nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
   config: {
     cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
-    every: 1,
     publishOffsetDays: -4,
     publishHour: '06:00',
     applyOffsetDays: -3,
@@ -468,13 +465,12 @@ export function applyDeadlineOf(config, cycleStart) {
   d.setDate(d.getDate() + (config.applyOffsetDays || 0))
   return `${fmtDate(d)} ${config.applyHour ?? '20:00'}`
 }
-/* 下一个「会真正发布」的期：隔期发的期号跳过 */
+/* 下一个发布时刻：每次触发都生成「下一周期」，一期接一期连续铺，不跳期 */
 export function nextRoundPlan(config, now = NOW) {
   let start = cycleStartOf(config.cycle, now.slice(0, 10))
-  const every = config.every || 1
   for (let i = 0; i < 400; i++) {
     const pub = publishAtOf(config, start)
-    if (pub >= now && cycleIndex(config.cycle, start) % every === 0) {
+    if (pub >= now) {
       return { nextAt: pub, nextSpan: [start, cycleEndOf(config.cycle, start)], cycleStart: start }
     }
     start = shiftCycle(config.cycle, start, 1)

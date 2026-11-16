@@ -323,17 +323,19 @@ test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => 
   assert.deepEqual(s.round.nextSpan, ['2026-11-26', '2026-12-25'])
 })
 
-test('节奏：双周周期 + 隔一期发（每 4 周发一次铺 2 周）', () => {
+test('节奏：每次触发都生成下一周期，一期接一期连续（没有隔期）', () => {
   const s = mk()
-  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 2, start: '' }
-  s.round.config.every = 2
+  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 1, start: '' }
   s.round.config.publishOffsetDays = -4
   recalcRound(s)
-  const span = (new Date(s.round.nextSpan[1]) - new Date(s.round.nextSpan[0])) / 86400000 + 1
-  assert.equal(span, 14, '一轮铺两周')
-  const gap = (new Date(s.round.nextSpan[0]) - new Date('2026-11-14')) / 86400000
-  assert.ok(gap >= 0 && gap <= 28, '隔期发的下一轮在四周之内')
-  assert.equal(s.round.nextSpan[0] > '2026-11-14', true)
+  /* 逐次推演：nextAt 发布 → 铺下一周 → 移到发布之后再看下一轮，两次覆盖区间首尾相接 */
+  const first = { at: s.round.nextAt, span: [...s.round.nextSpan] }
+  s.now = first.at.replace(' ', 'T') + '.001'
+  recalcRound(s)
+  const second = { at: s.round.nextAt, span: [...s.round.nextSpan] }
+  assert.equal(second.span[0], '2026-11-30', '第一次铺 11-23~29，第二次铺 11-30~12-6，首尾相接')
+  assert.equal(new Date(second.span[0]) - new Date(first.span[1]), 86400000, '相邻两轮覆盖区间无缝衔接')
+  assert.notEqual(second.at, first.at, '每次触发都在生成新的下一轮')
 })
 
 test('节奏：改周期长度立即体现在预告区间', () => {
