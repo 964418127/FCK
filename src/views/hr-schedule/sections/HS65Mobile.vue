@@ -83,6 +83,66 @@
         跨岗位的班也走同一套「可获取」——清单里有没有圈到你、窗口开没开，决定你在手机里看到什么。
       </div>
     </div>
+
+    <div id="hs-65-gallery" class="section">
+      <div class="section-header">
+        <h3>6.5.4 各岗位 × 合作性质的移动端画面全录</h3>
+      </div>
+      <p class="doc-p">
+        业务上在排班阶段出现的<strong>每个岗位、每种合作性质、每种班次形态</strong>，员工在移动端看到的画面如下。
+        每组截图就是该类人登录后真实看到的样子——研发按这些画面实现，不需要再猜「某类人打开是什么」。
+      </p>
+
+      <h4 class="h4sub">全职推拿师（门店）——直派为主，通班申领、临时加场自己领</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mTuinaFullMine, label: '我的排班：系统排定的班 + 有一天被请假占用（划线留痕）、补位由陈晚接手' },
+        { src: mTuinaFullPick, label: '可获取：通班（申领审核）+ 周六晚加场（临时班次，先到先得）' },
+        { src: mApplySheet, label: '申领确认：登记不占名额，截止后按综合分排序，显示当前登记人数与自己的综合分' }
+      ]" />
+
+      <h4 class="h4sub">全职客户经理（门店）——直派为主，通班与临时加场同样可领</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mKejingFullMine, label: '我的排班：直派班次「已排定」，卡上只有「找人换班」（请假走专门的请假模块，不在这里发起）' },
+        { src: mKejingFullPick, label: '可获取：通班申领 + 临时加场抢——直派的班不出现领的入口，没被直派占的场次照常放出' }
+      ]" />
+
+      <h4 class="h4sub">非全推拿师（门店）——先到先得 + 申领混合</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mTuinaPtPick, label: '可获取：早/晚班先到先得 + 通班申领 + 临时加场，一张卡一种拿法' },
+        { src: mGrabSheet, label: '抢确认：当场生效的三条检查（不撞车 / 剩余名额），先到先得点了就成' }
+      ]" />
+
+      <h4 class="h4sub">非全推拿师（兴隆湖）——分类必选数量：A 类每天至少 1 条</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mCatRequirePick, label: '还差的状态：A 类 0 条（要求至少 1）、每天 6–9 小时还差、周/月额度余量；卡上是「选这条」勾选按钮，底部集合提交条' },
+        { src: mCatRequireSelected, label: '勾选后：A 类进度变 1 条满足要求，底部「已选 1 条 · 合计 4 小时 · 可以提交」——同类任一条都算数' }
+      ]" />
+
+      <h4 class="h4sub">非全客户经理（兴隆湖）——三档错峰累计开放</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mKejingPtPick, label: '可获取：周期时段三档——本店非全客经先开，后面的档还没到窗口；额度进度按兴隆湖自己的算' }
+      ]" />
+
+      <h4 class="h4sub">被安排顶班的人——补位确认落在班次卡上</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mMakeupConfirm, label: '系统补位 + 待你确认：有人请假系统按顺位找到你；「收到，我来」记回执，去不了走专门的请假模块' }
+      ]" />
+
+      <h4 class="h4sub">被发起换班的人——换班请求落在「我的排班」顶部</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mSwapRequest, label: '换班请求：谁、拿哪天的哪个班换你哪天的哪个班；双方同意才生效，拒绝或超时两边都不动' }
+      ]" />
+
+      <h4 class="h4sub">办公区·全职产品经理——按月直派，人只收通知</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mOfficeDirectMine, label: '我的排班：整月月历（按月排的空间整月都显示），白/晚班系统分好，没有领的入口' }
+      ]" />
+
+      <h4 class="h4sub">办公区·非全产品经理——周末班自己领</h4>
+      <DocScreens mode="phone" :images="[
+        { src: mOfficePtPick, label: '可获取：周末晚班先到先得；按月铺的日期条整月 30 格' }
+      ]" />
+    </div>
   </DocShell>
 </template>
 
@@ -92,12 +152,27 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import mineShot from '../../../docs/assets/pages/m5-mine.png'
 import pickShot from '../../../docs/assets/pages/m5-pick.png'
+import mTuinaFullMine from '../../../docs/assets/pages/v5-m-tuina-full-mine.png'
+import mTuinaFullPick from '../../../docs/assets/pages/v5-m-tuina-full-pick.png'
+import mApplySheet from '../../../docs/assets/pages/v5-m-apply-sheet.png'
+import mKejingFullMine from '../../../docs/assets/pages/v5-m-kejing-full-mine.png'
+import mKejingFullPick from '../../../docs/assets/pages/v5-m-kejing-full-pick.png'
+import mTuinaPtPick from '../../../docs/assets/pages/v5-m-tuina-pt-pick.png'
+import mGrabSheet from '../../../docs/assets/pages/v5-m-grab-sheet.png'
+import mCatRequirePick from '../../../docs/assets/pages/v5-m-cat-require-pick.png'
+import mCatRequireSelected from '../../../docs/assets/pages/v5-m-cat-require-selected.png'
+import mKejingPtPick from '../../../docs/assets/pages/v5-m-kejing-pt-pick.png'
+import mMakeupConfirm from '../../../docs/assets/pages/v5-m-makeup-confirm.png'
+import mSwapRequest from '../../../docs/assets/pages/v5-m-swap-request.png'
+import mOfficeDirectMine from '../../../docs/assets/pages/v5-m-office-direct-mine.png'
+import mOfficePtPick from '../../../docs/assets/pages/v5-m-office-pt-pick.png'
 
 const tocItems = [
   { id: 'hs-65', label: '6.5 移动端' },
   { id: 'hs-65-mine', label: '6.5.1 我的排班' },
   { id: 'hs-65-pick', label: '6.5.2 可获取' },
-  { id: 'hs-65-notice', label: '6.5.3 通知与不做' }
+  { id: 'hs-65-notice', label: '6.5.3 通知与不做' },
+  { id: 'hs-65-gallery', label: '6.5.4 各岗位画面全录' }
 ]
 
 const breadcrumbs = [

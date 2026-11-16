@@ -477,7 +477,7 @@ test('兴隆湖店：非全推拿名额 = 签约 4 人 ÷ 2 向上 = 2，仅本�
   assert.equal(must.list[0].way, 'grab')
   assert.deepEqual(must.list[0].who, { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' })
   const got = s.placements.filter(p => p.slotId === 'SL-17' && p.date === '2026-11-23')
-  assert.equal(got.length, 2)
+  assert.equal(got.length, 1, '只放桃夭 1 人——留 1 个空位让移动端能演示分类必选的勾选提交')
 })
 
 test('兴隆湖店：非全客经三档错峰——非全客经 → 非全推拿 → 全职推拿，开放时刻递增', () => {
@@ -678,22 +678,26 @@ test('自然周从周一起、自然月按日历', () => {
   assert.deepEqual(monthRange5('2026-02-10'), ['2026-02-01', '2026-02-28'])
 })
 
-test('周/月额度按门店算：本周 20 小时合规；凑到 28 小时超周上限', () => {
+test('周/月额度按门店算：本周 16 小时合规；凑到 28 小时超周上限', () => {
   const s = mk()
   const r1 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23')
   const w1 = r1.limits.find(l => l.name === '本周额度')
-  assert.equal(w1.used, 20)
+  assert.equal(w1.used, 16)
   assert.equal(w1.cap, 24)
-  assert.equal(w1.ok, true, '5 天 × 4 小时 = 20 小时，没超')
-  /* 再多占一天晚班（4 小时）→ 24 小时，正好压线仍合规 */
+  assert.equal(w1.ok, true, '周一~周四 × 4 小时 = 16 小时（周五留白给移动端演示勾选提交），没超')
+  /* 再多占一天晚班（4 小时）→ 20 小时，仍合规 */
   s.placements.push({ id: 'P-T1', slotId: 'SL-18', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
   const w2 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23').limits.find(l => l.name === '本周额度')
-  assert.equal(w2.used, 24)
-  assert.equal(w2.ok, true, '正好 24 小时不超')
+  assert.equal(w2.used, 20)
+  assert.equal(w2.ok, true, '20 小时不超')
   s.placements.push({ id: 'P-T2', slotId: 'SL-19', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
   const w3 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23').limits.find(l => l.name === '本周额度')
-  assert.equal(w3.used, 28)
-  assert.equal(w3.ok, false, '28 小时超了周 24')
+  assert.equal(w3.used, 24)
+  assert.equal(w3.ok, true, '正好 24 小时压线仍合规')
+  s.placements.push({ id: 'P-T2b', slotId: 'SL-18', date: '2026-11-29', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const w4 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23').limits.find(l => l.name === '本周额度')
+  assert.equal(w4.used, 28)
+  assert.equal(w4.ok, false, '28 小时超了周 24')
 })
 
 test('额度按店各算一套：同一个人另一家店没有额度配置就不受管', () => {
@@ -716,10 +720,11 @@ test('超上限当场拦：接了这条今天合计超 9 小时，点了不成�
   assert.ok(g.reason.includes('超过每天 9 小时上限'), g.reason)
 })
 
-test('超周/月额度当场拦：本周已 20h，再抢 5h 不成；下限不拦单条', () => {
+test('超周/月额度当场拦：本周 16h，凑到 28h 再抢不成；下限不拦单条', () => {
   const s = mk()
   s.placements.push({ id: 'P-G3', slotId: 'SL-19', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
-  const g = grab5(s, 'SL-18', '2026-11-29', 'E-211')   /* 再 +4h = 28h > 24h */
+  s.placements.push({ id: 'P-G3b', slotId: 'SL-19', date: '2026-11-29', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const g = grab5(s, 'SL-18', '2026-11-29', 'E-211')   /* 16+4+4 再 +4 = 28h > 24h */
   assert.equal(g.ok, false)
   assert.ok(g.reason.includes('本周非全工时上限 24 小时已满'), g.reason)
   const s2 = mk()
@@ -835,8 +840,8 @@ test('换班后判定按履约人：换出的那段我不忙、对方忙；工�
   const mu = claimedSlots5(s, 'E-213', 'S-205', '2026-11-23').map(x => x.id)
   assert.deepEqual(tao, ['SL-18'], '我换出的早班不算我的，换入的晚班算我的')
   assert.deepEqual(mu, ['SL-17'], '她的晚班换出去给别人了，接了我的早班')
-  /* 名额不回池：两条占位还在，容量口径不变 */
-  assert.equal(activeCount5(s, 'SL-17', '2026-11-23'), 2)
+  /* 名额不回池：两条占位还在，容量口径不变（SL-17 基线留 1 空位做演示，换班后仍是 1） */
+  assert.equal(activeCount5(s, 'SL-17', '2026-11-23'), 1)
   assert.equal(activeCount5(s, 'SL-18', '2026-11-23'), 2)
 })
 
