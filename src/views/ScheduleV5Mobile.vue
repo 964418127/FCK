@@ -183,7 +183,8 @@
 
           <div class="oc-meta">
             <span><el-icon><User /></el-icon>{{ whoText(o.row.who) }}</span>
-            <span>{{ o.row.way === 'grab' ? `开班（${o.slot.start}）前都能拿` : `${shortAt(roundDeadline)} 截止 · 按综合分排序` }}</span>
+            <!-- 抢的关闸时刻挂规则上（待业务确认），员工侧不断言「开班前都能拿」 -->
+            <span v-if="o.row.way !== 'grab'">{{ shortAt(roundDeadline) }} 截止 · 按综合分排序</span>
           </div>
 
           <div class="oc-quota">
@@ -235,7 +236,6 @@
           <div class="checks">
             <div><i>✓</i>和你已有的班次不撞（首尾相接可以）</div>
             <div><i>✓</i>名额在你的档位里，现在还剩 {{ sheet.o.slot.snapN - occ(sheet.o.slotId, sheet.o.date) }} 个</div>
-            <div><i>✓</i>开班（{{ sheet.o.slot.start }}）前都能拿</div>
           </div>
           <p class="sheet-note">先到先得，点确认当场生效，直接进你的排班。</p>
         </div>
