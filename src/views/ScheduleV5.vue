@@ -298,6 +298,7 @@
                 <div class="ea">
                   <el-button size="small" @click="editing = null">取消</el-button>
                   <el-button size="small" type="primary" @click="save">{{ editing === 'new' ? '新建' : '保存' }}</el-button>
+                  <el-button v-if="editing !== 'new'" class="ea-discard" size="small" type="danger" link @click="discardFromDrawer">废弃这个班次</el-button>
                 </div>
               </div>
             </el-drawer>
@@ -1454,6 +1455,26 @@ async function doRemove(s) {
   const r = removeSlot(s.id)
   ElMessage.success(`已删除${r.dropped ? `，同时清掉 ${r.dropped} 条班次` : ''}`)
 }
+/* 编辑抽屉里的单独废弃：不回列表找卡片，改到一半直接废弃这个班次 */
+async function discardFromDrawer() {
+  const id = editing.value
+  const s = v5.slots.find(x => x.id === id)
+  if (!s) return
+  const n = v5.placements.filter(p => p.slotId === id && p.status === 'active').length
+  try {
+    await ElMessageBox.confirm(
+      n
+        ? `废弃「${s.name}」：从下一轮起不再生成；这一轮已经生成的 ${n} 条班次会一起消失，已登记的申领一并作废。`
+        : `废弃「${s.name}」：从下一轮起不再生成这个班次。`,
+      '废弃班次',
+      { type: 'warning', confirmButtonText: '废弃', cancelButtonText: '再想想' }
+    )
+  } catch { return }
+  const r = removeSlot(id)
+  editing.value = null
+  formErrs.value = []
+  ElMessage.success(`已废弃${r.dropped ? `，同时清掉 ${r.dropped} 条班次` : ''}；当前轮其余班次按已生成快照继续跑`)
+}
 function save() {
   const errs = checkSlotForm(selSpace.value, form, editing.value === 'new' ? '' : editing.value)
   formErrs.value = errs
@@ -2134,6 +2155,7 @@ function devResolveApply() {
 .add-row { margin-top: 4px; }
 .ea { display: flex; align-items: center; gap: 8px; }
 .ea-hint { font-size: 11.5px; color: #a35b00; margin-right: auto; }
+.drawer-box .ea .ea-discard { margin-left: auto; }
 .temp-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .temp-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 12px; }
 .tc-l { display: flex; flex-direction: column; gap: 2px; }

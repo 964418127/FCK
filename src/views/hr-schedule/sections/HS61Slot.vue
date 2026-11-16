@@ -39,9 +39,10 @@
         <h3>6.1.1 班次：时间与名额</h3>
       </div>
       <DocScreens
-        :height="420"
+        :height="460"
         :images="[
-          { src: slotEditShot, label: '班次编辑抽屉：上方时间与名额，下方清单逐档配置，底部选缺口规则' }
+          { src: slotEditShot, label: '班次编辑抽屉：上方时间与名额，下方清单逐档配置，底部动作区右侧可直接废弃这个班次' },
+          { src: slotDiscardShot, label: '废弃确认：写明从下一轮起不再生成、本轮已生成的班次与申领一起清掉' }
         ]"
       />
       <table class="data-table">
@@ -93,7 +94,7 @@
         ③ 两个入口——同空间时间重叠且人群写重的两条班次，只查「先到先得 / 申领审核」类（直派不算入口，系统分人时自己挡时间冲突）。
       </div>
       <div class="note">
-        <strong>删除一律二次确认：</strong>班次（挂着生效中的班次会一起消失）、临时班次、申领规则（删了恢复直接放行）、类别（被规则引用的删了规则改管全部时段）——弹确认写明后果，确认才执行。
+        <strong>删除 / 废弃一律二次确认：</strong>删除入口两处——「按班次」列表卡上的删除（可批量看后果）和编辑抽屉底部的「废弃这个班次」（改到一半直接废弃，不用回列表找卡）。后果一致：从下一轮起不再生成，这一轮已生成的班次与已登记的申领一起清掉，弹确认写明条数，确认才执行。临时班次（这一天的加场名额一起消失）、申领规则（删了恢复直接放行）、类别（被规则引用的删了规则改管全部时段）同理。
       </div>
     </div>
 
@@ -177,6 +178,7 @@ import DocScreens from '../../../docs/components/DocScreens.vue'
 import slotCycleShot from '../../../docs/assets/pages/v5-slots.png'
 import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
 import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'
+import slotDiscardShot from '../../../docs/assets/pages/v5-slot-discard.png'
 import algoShot from '../../../docs/assets/pages/v5-algo.png'
 import slotTmpShot from '../../../docs/assets/pages/v5-slot-tmp.png'
 import slotTmpEditShot from '../../../docs/assets/pages/v5-temp-edit.png'
