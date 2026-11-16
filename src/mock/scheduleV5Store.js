@@ -368,6 +368,10 @@ export function resultRows5(spaceId, dates = null) {
       const fact = state.facts.find(f => f.id === p.fromFact || (f.placements || []).includes(p.id))
       return {
         ...p, slotName: s.name, start: s.start, end: s.end,
+        /* 临时班次：结果表也要看得出这条不是周期排的 */
+        isTmp: (state.temps || []).some(t => t.id === p.slotId),
+        /* 临时班次：结果表也要看得出这条不是周期排的 */
+        isTmp: (state.temps || []).some(t => t.id === p.slotId),
         space: spaceById(state, s.spaceId)?.name, person: personById(state, p.personId)?.name,
         personCode: personById(state, p.personId)?.id,
         /* 换班是事件占住时段：原计划人不动，履约人单列一栏 */

@@ -639,7 +639,7 @@
             <tbody>
               <tr v-for="r in rows" :key="r.id" :class="{ covered: r.status === 'covered', pointable: !!r.factId }" @click="r.factId && jumpFact(r.factId)">
                 <td>{{ r.date.slice(5) }}</td>
-                <td>{{ r.slotName }} {{ r.start }}–{{ r.end }}</td>
+                <td>{{ r.slotName }} {{ r.start }}–{{ r.end }}<em v-if="r.isTmp" class="tmp-tag">临时</em></td>
                 <td><span class="p-code">{{ r.personCode }}</span>{{ r.person }}<em v-if="r.duty" class="duty-note">→ {{ r.duty }} 履约</em></td>
                 <td>{{ r.way }}</td>
                 <td>
@@ -905,8 +905,10 @@
     <el-dialog v-model="appointDlg" title="定人" width="600px">
       <div v-if="gapInfo" class="gap-banner">
         <strong>{{ gapInfo.date.slice(5) }} {{ gapInfo.name }} {{ gapInfo.start }}–{{ gapInfo.end }}</strong>
+        <em :class="['gb-src', gapInfo.tmp ? 'tmp' : 'cyc']">{{ gapInfo.tmp ? '临时班次' : '周期时段' }}</em>
         <span>名额 {{ gapInfo.n }}，已定 {{ gapInfo.occ }} 人，还缺 {{ gapInfo.n - gapInfo.occ }} 个</span>
       </div>
+      <div v-if="gapInfo" class="gap-why">{{ gapWhy }}</div>
       <div class="dlg-row">
         <label>空位</label>
         <el-select v-model="appoint.gapKey" size="small" style="width: 380px" placeholder="先选一个有空位的时段">
@@ -1024,9 +1026,9 @@ const filteredSpaces = computed(() => v5.spaces.filter(s => {
 const curSpace = computed(() => v5.spaces.find(s => s.id === selSpace.value))
 const spaceSlots = computed(() => v5.slots.filter(s => s.spaceId === selSpace.value))
 const spaceTemps = computed(() => v5.temps.filter(t => t.spaceId === selSpace.value))
-const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
+const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.map(t => ({ ...t, tmp: true }))])
 /* 结果层只列落在这一轮里的临时班次：别的轮次的临时班次不该出现 */
-const runSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.filter(t => runDates.value.includes(t.date))])
+const runSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.filter(t => runDates.value.includes(t.date)).map(t => ({ ...t, tmp: true }))])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
 function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits(); initTrial() }
@@ -1447,7 +1449,20 @@ const gapInfo = computed(() => {
   const [slotId, date] = appoint.gapKey.split('|')
   if (!slotId || !date) return null
   const s = slotById(v5, slotId)
-  return { date, name: s?.name, start: s?.start, end: s?.end, occ: occupied(slotId, date), n: s?.snapN }
+  const tmp = v5.temps.some(t => t.id === slotId)
+  const r = shownRound.value
+  const open = !!(r && r.applyDeadline && v5.now < r.applyDeadline)
+  const covered = v5.placements.filter(p => p.slotId === slotId && p.date === date && p.status === 'covered').length
+  return { date, name: s?.name, start: s?.start, end: s?.end, occ: occupied(slotId, date), n: s?.snapN, tmp, open, covered }
+})
+/* 这口缺口是怎么来的：临时加的位 / 没人请假留下的 / 获取段没排满 */
+const gapWhy = computed(() => {
+  const g = gapInfo.value
+  if (!g) return ''
+  if (g.tmp) return g.open ? '那天临时加的名额，还在开放；你定人就直接占掉一个位' : '那天临时加的名额，还缺人'
+  if (g.covered) return `有 ${g.covered} 人请假留下的洞`
+  if (g.open) return '这一轮还在选班次，缺的位一般是等截止后补'
+  return '这一轮的获取段排完还缺人'
 })
 const gapRemain = computed(() => gapInfo.value ? Math.max(0, gapInfo.value.n - gapInfo.value.occ) : 0)
 const appointCands = computed(() => {
@@ -2025,6 +2040,14 @@ tr.hl td { background: #fdf3e6 !important; }
 /* 顶班弹窗 */
 .gap-banner { display: flex; align-items: baseline; gap: 10px; background: #fdf6f8; border: 1px solid #f3d3db; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; color: #6a6a75; }
 .gap-banner strong { font-size: 13px; color: #a40035; }
+.gb-src { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; }
+.gb-src.cyc { background: #eaf3de; color: #27500A; }
+.gb-src.tmp { background: #e8eef8; color: #2B5286; }
+.gap-why { font-size: 11.5px; color: #8a8a95; margin: -4px 0 10px; }
+.gb-src { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; }
+.gb-src.cyc { background: #eaf3de; color: #27500A; }
+.gb-src.tmp { background: #e8eef8; color: #2B5286; }
+.gap-why { font-size: 11.5px; color: #8a8a95; margin: -4px 0 10px; }
 .dlg-hint { font-size: 11.5px; color: #9a9fa9; margin-top: -2px; }
 
 /* ===== 结果层：轮次切换 + 两个视图 ===== */

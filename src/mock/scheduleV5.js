@@ -331,8 +331,24 @@ export const ROUND_OFFICE5 = {
   }
 }
 
+/* 观澜店周五就截止（周末不再收），比别家早两天。
+   所以此刻这一轮已经排完：名单定了，等周一开工——「已截止 · 待开始」。 */
+export const ROUND_STORE_EARLY5 = {
+  id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
+  applyDeadline: '2026-11-13 20:00',
+  nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
+  config: {
+    cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
+    every: 1,
+    publishOffsetDays: -4,
+    publishHour: 6,
+    applyOffsetDays: -3,
+    applyHour: 20
+  }
+}
+
 /* 按空间取轮：配了自己的节奏就用自己那份，没配的沿用门店的周节奏 */
-export const ROUNDS5 = { 'S-206': ROUND_OFFICE5 }
+export const ROUNDS5 = { 'S-206': ROUND_OFFICE5, 'S-203': ROUND_STORE_EARLY5 }
 export function roundOf(state, spaceId) {
   const bySpace = state?.rounds?.[spaceId]
   if (bySpace) return bySpace
@@ -626,6 +642,24 @@ const HIST_SLOTS = [
     })
   }
 })
+/* 观澜店：晚市班工作日晚市两人、周末午市两人（午市名额 3，正好留一口缺，用来看「定人」）。
+   前两周同样铺，历史轮回查时不是空的。 */
+;['2026-11-02', '2026-11-09', '2026-11-16'].forEach(ws => {
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i)
+    const dow = new Date(`${d}T00:00:00`).getDay()
+    if (dow >= 1 && dow <= 5) {
+      ;['E-150', 'E-151'].forEach((pid, j) => {
+        PLACEMENTS5.push(P(`P-GL${ws.slice(5, 7)}${ws.slice(8)}-${i}-${j}`, 'SL-04', d, pid, '排定 · 晚市'))
+      })
+    } else {
+      ;['E-150', 'E-151'].forEach((pid, j) => {
+        PLACEMENTS5.push(P(`P-GL${ws.slice(5, 7)}${ws.slice(8)}-${i}-${j}`, 'SL-05', d, pid, '抢 · 第1档'))
+      })
+    }
+  }
+})
+
 /* 办公区上个月（10 月）也已经跑完：白班三个人照旧，留档供回查 */
 for (let i = 0; i < 31; i++) {
   const d = addDays('2026-10-01', i)
@@ -694,7 +728,11 @@ export function activeCount5(state, slotId, date) {
 }
 export function slotsOn5(state, date) {
   const dow = new Date(`${date}T00:00:00`).getDay()
-  return [...state.slots.filter(s => s.days.includes(dow)), ...state.temps.filter(t => t.date === date)]
+  /* 临时班次带 tmp 标记：结果页要一眼分出「周期排的」和「那天临时加的」 */
+  return [
+    ...state.slots.filter(s => s.days.includes(dow)),
+    ...state.temps.filter(t => t.date === date).map(t => ({ ...t, tmp: true }))
+  ]
 }
 
 /*
@@ -1334,9 +1372,14 @@ export function buildV5State() {
   const officeHist = [
     { id: 'R-2610', k: 0, span: ['2026-10-01', '2026-10-31'], publishedAt: '2026-09-27 06:00', applyDeadline: '2026-09-30 20:00' }
   ]
+  const earlyHist = [
+    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-10-30 20:00' },
+    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-06 20:00' }
+  ]
   state.roundHistory = {}
   state.spaces.forEach(sp => {
-    state.roundHistory[sp.id] = JSON.parse(JSON.stringify(sp.id === 'S-206' ? officeHist : storeHist))
+    const hist = sp.id === 'S-206' ? officeHist : sp.id === 'S-203' ? earlyHist : storeHist
+    state.roundHistory[sp.id] = JSON.parse(JSON.stringify(hist))
   })
   ;['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'].forEach(d => {
     state.directDone.add(`SL-01|${d}|1`)

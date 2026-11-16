@@ -871,3 +871,47 @@ test('班次期过了就是已结束，跟申领截止无关', () => {
   assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-16 20:00' }, '2026-11-16'), 'applying')
   assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-15 20:00' }, '2026-11-16'), 'locked')
 })
+
+/* ===== 结果层的两类来源：周期时段 / 临时班次 ===== */
+test('临时班次在结果层带标记，周期时段没有', () => {
+  const s = mk()
+  const day = slotsOn5(s, '2026-11-21')       // 周六：蓝田的临时班次就落在这天
+  const tmp = day.filter(x => x.tmp)
+  assert.equal(tmp.length, 1)
+  assert.equal(tmp[0].id, 'TL-01', '临时班次要一眼分得出来')
+  assert.ok(day.filter(x => !x.tmp).every(x => x.id.startsWith('SL-')), '周期时段不带临时标记')
+})
+
+test('补人不分来源：周期时段缺人、临时班次缺人，都能定人', () => {
+  const s = mk()
+  /* 周期时段：蓝田早班名额 3，11-16 只到 2 人 → 补一个 */
+  assert.ok(activeCount5(s, 'SL-01', '2026-11-16') < snapN5(s, 'SL-01', '2026-11-16'))
+  const cand = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-16', '10:00', '14:00'))
+  assert.ok(cand, '有一个当时空着的人')
+  addFact5(s, {
+    id: 'F-AP1', type: '顶班', at: '2026-11-14 10:00', by: 'HR',
+    slotId: 'SL-01', date: '2026-11-16', personId: cand.id, result: ''
+  })
+  assert.equal(activeCount5(s, 'SL-01', '2026-11-16'), snapN5(s, 'SL-01', '2026-11-16'))
+  /* 临时班次：周六晚加场 2 个名额一个都没定，同样补得进 */
+  assert.equal(activeCount5(s, 'TL-01', '2026-11-21'), 0)
+  const cand2 = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-21', '18:00', '22:00'))
+  addFact5(s, {
+    id: 'F-AP2', type: '顶班', at: '2026-11-14 10:10', by: 'HR',
+    slotId: 'TL-01', date: '2026-11-21', personId: cand2.id, result: ''
+  })
+  assert.equal(activeCount5(s, 'TL-01', '2026-11-21'), 1, '临时班次同样能定人')
+})
+
+test('观澜店周五截止：此刻这一轮已经排完、等开工', () => {
+  const s = mk()
+  const list = roundListOf(s, 'S-203')
+  const cur = list[list.length - 1]
+  assert.equal(cur.id, 'R-1112')
+  assert.equal(cur.applyDeadline, '2026-11-13 20:00')
+  assert.equal(cur.status, 'locked', '申领已截止、班次期还没到')
+  /* 同一时刻别家还在选班次：状态是按空间各自那条时间线判的 */
+  assert.equal(roundListOf(s, 'S-205').slice(-1)[0].status, 'applying')
+  /* 已截止的轮仍然能定人补缺口（名单定了但缺人） */
+  assert.equal(s.placements.some(p => p.slotId === 'SL-05' && p.date === '2026-11-21'), true)
+})
