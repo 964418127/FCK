@@ -139,9 +139,9 @@
         <h3>6.1.5 申领规则：挂人群的门槛</h3>
       </div>
       <DocScreens
-        :height="340"
+        :height="360"
         :images="[
-          { src: slotRuleShot, label: '申领规则：规则挂人群不挂时段，计量按天合计，类下任一条都算数' }
+          { src: slotRuleShot, label: '申领规则（兴隆湖）：类别 A / B，规则挂人群不挂时段，底部试算选人 + 选日期直接出判定' }
         ]"
       />
       <table class="data-table">
@@ -151,7 +151,8 @@
         <tbody>
           <tr><td><strong>挂谁</strong></td><td>规则挂「人群」，不挂时段；没配规则的人直接放行</td></tr>
           <tr><td><strong>计量</strong></td><td>条数 / 分钟两种，配下限与上限；按这一天合计，不跨天累加</td></tr>
-          <tr><td><strong>类别</strong></td><td>类别是空间的字典；规则可管某一类或全部，<strong>类下任一条都算数</strong>（名额满了可换同类另一条）</td></tr>
+          <tr><td><strong>类别</strong></td><td>类别是空间的字典（如 A 类 / B 类）；规则可管某一类或全部，<strong>类下任一条都算数</strong>（名额满了可换同类另一条）</td></tr>
+          <tr><td><strong>试算</strong></td><td>选一个人 + 一天，页面直接出判定：每条规则满足 / 不满足、周 / 月额度余量</td></tr>
           <tr><td><strong>生效</strong></td><td>改了立即用于试算，正式生效下一轮</td></tr>
         </tbody>
       </table>
