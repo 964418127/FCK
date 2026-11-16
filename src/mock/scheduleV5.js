@@ -478,34 +478,44 @@ function applyRoundSnapshots5(state, spaceId) {
 /* 到点翻轮：过了 nextAt 就自动生成下一轮，新轮快照按当时的配置层刷——
    「改动下一轮生效」由这条机制兑现；轮自动跑，不拆业务按钮。 */
 /* 轮的状态：按今天跟这一轮的覆盖区间比 */
-export function roundStatusOf(round, today) {
+/* 一轮有两条时间线，状态就落在这两条线的哪一段：
+   ① 获取线：publishedAt 发布（轮生成）→ applyDeadline 申领截止
+   ② 执行线：span[0] → span[1]（这几天实际要上班）
+   applying 申领中 / locked 已截止待开始 / running 执行中 / ended 已结束 */
+export function roundStatusOf(round, now = NOW) {
   if (!round?.span) return ''
+  const at = String(now)
+  const today = at.slice(0, 10)
   if (round.span[1] < today) return 'ended'
-  if (round.span[0] > today) return 'planned'
+  if (round.span[0] > today) {
+    /* 班次期还没到：申领窗口开着就是「申领中」，关了就等开始 */
+    return round.applyDeadline && at < round.applyDeadline ? 'applying' : 'locked'
+  }
   return 'running'
 }
 
-/* 轮次表：翻轮留痕的已结束轮 + 进行中的这一轮 + 已生成的下一轮。
-   业务上排 n+1 周，所以任何时刻至少两轮在系统里：正在跑的、已排定待开放的。 */
+/* 轮次表：只列已经生成的轮（发布时刻已到）。
+   没到发布时刻的下一轮还不存在，不列——用 nextPublishOf 给一条预告。 */
 export function roundListOf(state, spaceId) {
   const cur = roundOf(state, spaceId)
   const cfg = cur.config || ROUND5.config
-  const today = (state.now || '').slice(0, 10)
+  const now = state.now || NOW
   const out = []
-  ;(state.roundHistory?.[spaceId] || []).forEach(r => out.push({ ...r, status: roundStatusOf(r, today) }))
+  ;(state.roundHistory?.[spaceId] || []).forEach(r => out.push({ ...r, status: roundStatusOf(r, now) }))
   out.push({
     id: cur.id, k: cur.k, span: [...cur.span], publishedAt: cur.publishedAt,
-    applyDeadline: cur.applyDeadline, config: cfg, status: roundStatusOf(cur, today)
+    applyDeadline: cur.applyDeadline, config: cfg, status: roundStatusOf(cur, now)
   })
-  const plan = nextRoundPlan(cfg, state.now)
-  if (plan) {
-    out.push({
-      id: 'R-' + plan.nextSpan[0].slice(5).replace('-', ''),
-      k: (cur.k || 1) + 1, span: plan.nextSpan, publishedAt: plan.nextAt,
-      applyDeadline: applyDeadlineOf(cfg, plan.nextSpan[0]), config: cfg, status: 'planned'
-    })
-  }
-  return out.sort((a, b) => a.span[0].localeCompare(b.span[0]))
+  return out
+    .filter(r => !r.publishedAt || r.publishedAt <= now)
+    .sort((a, b) => a.span[0].localeCompare(b.span[0]))
+}
+
+/* 下一轮什么时候生成、铺哪一段：还没到点，只能预告，不能当数据看 */
+export function nextPublishOf(state, spaceId) {
+  const cur = roundOf(state, spaceId)
+  const plan = nextRoundPlan(cur.config || ROUND5.config, state.now || NOW)
+  return plan ? { at: plan.nextAt, span: plan.nextSpan } : null
 }
 
 export function runDueRounds5(state, now = state.now) {
@@ -597,6 +607,32 @@ WEEK_DATES.slice(0, 5).forEach((d, i) => {
     PLACEMENTS5.push(P(`P-XL${i}-${j}`, slotId, d, personId, way))
   })
 })
+
+/*
+  前两周的留档：结果页要回查「已经跑完的轮」，上一周（11-09–11-15）还在执行。
+  只放全职的常态位——非全的周/月额度按门店各算，塞进去会把额度演示数据弄脏。
+*/
+const HIST_SLOTS = [
+  ['SL-01', 'E-113', '排定 · 早班'],
+  ['SL-02', 'E-107', '排定 · 晚班'],
+  ['SL-11', 'E-205', '排定 · 推拿早班'],
+  ['SL-13', 'E-206', '排定 · 推拿晚班']
+]
+;['2026-11-02', '2026-11-09'].forEach((ws, wi) => {
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i)
+    HIST_SLOTS.forEach(([slotId, personId, way], j) => {
+      PLACEMENTS5.push(P(`P-H${wi}${i}-${j}`, slotId, d, personId, way))
+    })
+  }
+})
+/* 办公区上个月（10 月）也已经跑完：白班三个人照旧，留档供回查 */
+for (let i = 0; i < 31; i++) {
+  const d = addDays('2026-10-01', i)
+  ;['E-301', 'E-302', 'E-303'].forEach((pid, j) => {
+    PLACEMENTS5.push(P(`P-O10${i}-${j}`, 'SL-20', d, pid, '直派 · 第1档'))
+  })
+}
 
 /* 申领登记：提交只登记，截止后按综合分排序截断 */
 export const APPLICATIONS5 = [
@@ -1289,6 +1325,19 @@ export function buildV5State() {
     /* 种子里的直派（早班/晚班第 1 档，发布即开）在 11-12 06:00 已执行 */
     directDone: new Set()
   }
+  /* 历史轮：两周前的已经跑完、上一周正在执行——业务上「上一轮已经排完」是常态，
+     结果页要能回查，所以种子就带着，不靠翻轮才长出来 */
+  const storeHist = [
+    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-11-01 20:00' },
+    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-08 20:00' }
+  ]
+  const officeHist = [
+    { id: 'R-2610', k: 0, span: ['2026-10-01', '2026-10-31'], publishedAt: '2026-09-27 06:00', applyDeadline: '2026-09-30 20:00' }
+  ]
+  state.roundHistory = {}
+  state.spaces.forEach(sp => {
+    state.roundHistory[sp.id] = JSON.parse(JSON.stringify(sp.id === 'S-206' ? officeHist : storeHist))
+  })
   ;['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'].forEach(d => {
     state.directDone.add(`SL-01|${d}|1`)
     state.directDone.add(`SL-02|${d}|1`)

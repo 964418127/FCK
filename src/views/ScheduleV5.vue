@@ -536,7 +536,7 @@
 
         <!-- ② 获取段：轮与结果 -->
         <section v-else-if="tab === 'run'" class="pane">
-          <!-- 轮次：系统里同时有两轮（进行中 + 已排定待开放），切着看 -->
+          <!-- 轮次：已经生成的轮都在这里，切着看；没到发布时刻的下一轮只给预告 -->
           <div class="run-bar">
             <div class="rb-tabs">
               <button v-for="r in roundList(selSpace)" :key="r.id" :class="{ on: shownRound && shownRound.id === r.id }" @click="pickRound(r.id)">
@@ -545,6 +545,7 @@
               </button>
             </div>
             <span class="rb-note">{{ runNote }}</span>
+            <span v-if="nextPub" class="rb-next">下一轮 {{ shortAt(nextPub.at) }} 生成 · 铺 {{ short(nextPub.span[0]) }}–{{ short(nextPub.span[1]) }}</span>
           </div>
 
           <div class="run-switch">
@@ -949,7 +950,7 @@ import {
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
-  roundList, pickRound, viewRound, viewRoundDates, roundOfDate,
+  roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage
 } from '../mock/scheduleV5Store.js'
 import {
@@ -973,12 +974,17 @@ const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.q
 const round = computed(() => roundOf(v5, selSpace.value))
 /* 这一轮铺到了哪些天：门店七天、办公区整月——矩阵和逐日名额都按它走 */
 const roundDates = computed(() => datesOfRound5(round.value))
-/* 结果层看的是选中的那一轮：默认进行中，可切到已排定 / 已结束 */
+/* 结果层看的是选中的那一轮：默认落在「正在选班次」的那轮，可切到执行中 / 已结束 */
 const shownRound = computed(() => viewRound(selSpace.value))
 const runDates = computed(() => viewRoundDates(selSpace.value))
 const runReadonly = computed(() => shownRound.value?.status === 'ended')
 const occCols = computed(() => `150px repeat(${runDates.value.length}, minmax(78px, 1fr))`)
-function roundStatusLabel(st) { return st === 'ended' ? '已结束' : st === 'planned' ? '已排定 · 待开放' : '进行中' }
+/* 状态就是「此刻落在这轮的哪一段」：申领窗口 / 等开始 / 正在上 / 过完了 */
+function roundStatusLabel(st) {
+  return st === 'applying' ? '申领中' : st === 'locked' ? '已截止 · 待开始' : st === 'running' ? '执行中' : st === 'ended' ? '已结束' : ''
+}
+/* 下一轮还没生成：只说什么时候发，不给假数据 */
+const nextPub = computed(() => nextPublish(selSpace.value))
 
 /* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
 const runView = ref('grid')
@@ -1003,9 +1009,10 @@ function axisGap(s) { return Math.max(0, snapN5(v5, s.id, axisDay.value) - activ
 const runNote = computed(() => {
   const r = shownRound.value
   if (!r) return ''
-  if (r.status === 'ended') return `这一轮 ${short(r.span[0])}–${short(r.span[1])} 已结束，只能查看，不能再改人`
-  if (r.status === 'planned') return `${shortAt(r.publishedAt)} 发布，${shortAt(r.applyDeadline)} 申领截止；现在就可以按缺口定人`
-  return `申领 ${shortAt(r.applyDeadline)} 截止；点空格直接定人`
+  if (r.status === 'applying') return `${shortAt(r.publishedAt)} 发布，${shortAt(r.applyDeadline)} 申领截止——现在正在选班次`
+  if (r.status === 'locked') return `${shortAt(r.applyDeadline)} 已截止，${short(r.span[0])} 起执行；缺口现在就可以定人`
+  if (r.status === 'running') return `${short(r.span[0])}–${short(r.span[1])} 这几天正在上；临时缺人点空格定人`
+  return `${short(r.span[0])}–${short(r.span[1])} 已经过完，只能查看，不能再改人`
 })
 
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
@@ -2027,10 +2034,12 @@ tr.hl td { background: #fdf3e6 !important; }
 .rb-tabs button strong { font-weight: 500; }
 .rb-tabs button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
 .rb-badge { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; background: #f2f2f4; color: #8a8a95; }
+.rb-badge.applying { background: #fdf6f8; color: #a40035; }
+.rb-badge.locked { background: #fdf3e3; color: #854F0B; }
 .rb-badge.running { background: #eaf6f1; color: #0f6e56; }
-.rb-badge.planned { background: #fdf3e3; color: #854F0B; }
 .rb-badge.ended { background: #f4f4f5; color: #9a9fa9; }
 .rb-note { font-size: 11.5px; color: #9a9fa9; }
+.rb-next { font-size: 11.5px; color: #b0b0ba; margin-left: auto; }
 .run-switch { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
 .run-switch button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; color: #6a6a75; cursor: pointer; }
 .run-switch button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
@@ -2064,47 +2073,4 @@ tr.hl td { background: #fdf3e6 !important; }
 .out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
 .tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
 
-/* ===== 结果层：轮次切换 + 两个视图 ===== */
-.run-bar { display: flex; align-items: center; gap: 12px; border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; background: #fcfbfc; }
-.rb-tabs { display: flex; gap: 6px; }
-.rb-tabs button { display: flex; align-items: center; gap: 6px; border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #6a6a75; cursor: pointer; }
-.rb-tabs button strong { font-weight: 500; }
-.rb-tabs button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
-.rb-badge { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; background: #f2f2f4; color: #8a8a95; }
-.rb-badge.running { background: #eaf6f1; color: #0f6e56; }
-.rb-badge.planned { background: #fdf3e3; color: #854F0B; }
-.rb-badge.ended { background: #f4f4f5; color: #9a9fa9; }
-.rb-note { font-size: 11.5px; color: #9a9fa9; }
-.run-switch { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
-.run-switch button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; color: #6a6a75; cursor: pointer; }
-.run-switch button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
-.rs-hint { font-size: 11.5px; color: #9a9fa9; margin-left: 8px; }
-
-/* 空间时间轴 */
-.ax-days { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
-.ax-days button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #6a6a75; cursor: pointer; }
-.ax-days button em { font-style: normal; color: #a0a0aa; font-size: 11px; margin-left: 3px; }
-.ax-days button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
-.ax-days button.on em { color: #a40035; }
-.ax-box { border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 10px; }
-.ax-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; }
-.ax-label { width: 132px; flex: none; display: flex; flex-direction: column; gap: 1px; font-size: 12px; color: #2c2c2a; }
-.ax-label span { font-size: 11px; color: #9a9fa9; }
-.ax-src { font-style: normal; font-size: 10px; align-self: flex-start; padding: 0 4px; border-radius: 3px; }
-.ax-src.cyc { background: #eaf3de; color: #27500A; }
-.ax-src.tmp { background: #e8eef8; color: #2B5286; }
-.ax-track { position: relative; flex: 1; height: 30px; }
-.ax-head .ax-track { height: 18px; }
-.ax-tick-label { position: absolute; transform: translateX(-50%); font-size: 10px; color: #a0a0aa; font-weight: 400; }
-.ax-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: #f4f0f1; }
-.ax-band { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; font-size: 11.5px; }
-.ax-band.cyc { background: #eef7f2; border: 1px solid #b7e5cf; }
-.ax-band.tmp { background: #eef3fb; border: 1px dashed #7FA6D9; }
-.ax-person { background: #fff; border: 1px solid #e4e0e2; border-radius: 4px; padding: 1px 6px; color: #3d3d47; white-space: nowrap; }
-.ax-gap { color: #a40035; white-space: nowrap; }
-.ax-gap.pointable { cursor: pointer; text-decoration: underline; }
-.ax-empty { font-size: 12px; color: #9a9fa9; padding: 10px 0; }
-.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
-.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
-.tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
 </style>

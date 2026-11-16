@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -828,17 +828,30 @@ test('撤销换班：两条事件同时失效，各自回到原样', () => {
 
 
 /* ===== 轮次：系统里同时有进行中 + 已排定两轮 ===== */
-test('轮次表：已发布待开始的这一轮 + 已生成的下一轮并存', () => {
+test('轮次表：只列已经生成的轮，没到发布时刻的下一轮不冒充数据', () => {
   const s = mk()
   const list = roundListOf(s, 'S-205')
-  assert.equal(list.length, 2, '至少两轮并存')
-  const [cur, next] = list
-  assert.equal(cur.id.startsWith('R-'), true)
-  assert.equal(next.status, 'planned')
-  assert.ok(next.span[0] > cur.span[1], '下一轮接在当前轮之后，日期不重叠')
-  /* 时间来到覆盖区间内，这一轮就是进行中 */
-  s.now = '2026-11-17 10:00'
-  assert.equal(roundListOf(s, 'S-205')[0].status, 'running')
+  /* 11-14 的实况：前两周已生成（一个跑完、一个正在上）+ 这一轮正在选班次 */
+  assert.equal(list.length, 3, list.map(r => `${r.id}:${r.status}`).join(' | '))
+  assert.deepEqual(list.map(r => r.status), ['ended', 'running', 'applying'])
+  const cur = list[list.length - 1]
+  assert.equal(cur.id, 'R-1112')
+  assert.ok(list.every(r => r.publishedAt <= s.now), '列出来的都必须是已发布的')
+  /* 11-23 那轮 11-19 才发：现在还不存在 */
+  assert.equal(list.some(r => r.span[0] === '2026-11-23'), false)
+  const nx = nextPublishOf(s, 'S-205')
+  assert.equal(nx.at, '2026-11-19 06:00')
+  assert.deepEqual(nx.span, ['2026-11-23', '2026-11-29'])
+})
+
+test('同一轮随时刻换状态：申领中 → 已截止待开始 → 执行中 → 已结束', () => {
+  const r = { span: ['2026-11-16', '2026-11-22'], publishedAt: '2026-11-12 06:00', applyDeadline: '2026-11-15 20:00' }
+  assert.equal(roundStatusOf(r, '2026-11-14 10:00'), 'applying')
+  assert.equal(roundStatusOf(r, '2026-11-15 19:59'), 'applying')
+  assert.equal(roundStatusOf(r, '2026-11-15 20:00'), 'locked')
+  assert.equal(roundStatusOf(r, '2026-11-16 00:30'), 'running')
+  assert.equal(roundStatusOf(r, '2026-11-22 23:00'), 'running')
+  assert.equal(roundStatusOf(r, '2026-11-23 00:00'), 'ended')
 })
 
 test('翻轮后历史留痕：已结束轮留在列表里可回查', () => {
@@ -852,8 +865,9 @@ test('翻轮后历史留痕：已结束轮留在列表里可回查', () => {
   assert.ok(ended.some(r => r.span[0] === before.span[0]), '历史轮保留原来的覆盖区间')
 })
 
-test('轮的状态按今天跟覆盖区间比', () => {
-  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-16'] }, '2026-11-16'), 'running')
-  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-15'] }, '2026-11-16'), 'ended')
-  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'] }, '2026-11-16'), 'planned')
+test('班次期过了就是已结束，跟申领截止无关', () => {
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-16'], applyDeadline: '2026-11-09 20:00' }, '2026-11-16'), 'running')
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-15'], applyDeadline: '2026-11-09 20:00' }, '2026-11-16'), 'ended')
+  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-16 20:00' }, '2026-11-16'), 'applying')
+  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-15 20:00' }, '2026-11-16'), 'locked')
 })

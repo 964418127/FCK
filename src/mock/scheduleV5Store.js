@@ -9,7 +9,7 @@ import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
-  openAt5, slotFirstDate5, roundOf, datesOfRound5, roundListOf, roundStatusOf,
+  openAt5, slotFirstDate5, roundOf, datesOfRound5, roundListOf, roundStatusOf, nextPublishOf,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
   claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5
 } from './scheduleV5.js'
@@ -327,12 +327,15 @@ export function roundList(spaceId) { return roundListOf(state, spaceId) }
 export function pickRound(id) { pickedRoundId.value = id }
 export function viewRound(spaceId) {
   const list = roundList(spaceId)
+  /* 没手选就落在「正在选班次」的那轮：那才是打开结果页要处理的活 */
   return list.find(r => r.id === pickedRoundId.value)
+    || list.find(r => r.status === 'applying')
     || list.find(r => r.status === 'running')
-    /* 没有进行中的（还没到覆盖区间）就看最早一轮没结束的：也就是马上要跑的那轮 */
-    || list.find(r => r.status !== 'ended')
+    || list.find(r => r.status === 'locked')
     || list[list.length - 1]
 }
+/* 下一轮还没生成：只给预告，不给数据 */
+export function nextPublish(spaceId) { return nextPublishOf(state, spaceId) }
 export function viewRoundDates(spaceId) {
   const r = viewRound(spaceId)
   return r ? datesOfRound5(r) : []
