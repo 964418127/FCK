@@ -203,13 +203,6 @@ export function setDayQuota(slotId, date, n) {
 }
 export function dayCap(slotId, date) { return snapN5(state, slotId, date) }
 
-/* 算法服务登记：可枚举清单，只登记不实现 */
-export function addService(svc) {
-  const id = `AS-${String(state.services.length + 1).padStart(2, '0')}`
-  state.services.push({ id, ...svc })
-  return { ok: true, id }
-}
-
 /*
   保存前自检：这些错以前都能存成功，等员工端抢了才炸。
   返回问题清单，空数组=能存。
@@ -370,13 +363,16 @@ export function setSlotGapRule(slotId, id) {
   s.gapRule = id
   return { ok: true, text: `这个时段的缺口规则改成「${GAP_RULES5.find(r => r.id === id).name}」，立即生效` }
 }
-/* 缺口清单：时段、来路、还剩多久、按这个时段自己的规则会怎么判 */
+/* 缺口清单：时段、来路、还剩多久、按这个时段自己的规则会怎么判。
+   只出「排班确定后」的缺口（事件拿走一段 / 临时加位没人接）；
+   获取段没排满的空位不算缺口——结果层手动补人即可 */
 export function gapList5(spaceId, dates = null) {
   return gaps5(spaceId, dates).map(g => {
     const src = gapSrcOf5(state, g.slotId, g.date)
     const remain = gapRemain5(state, g.slotId, g.date)
     return { ...g, src, srcLabel: GAP_SRC5[src], quota: g.n - g.occ, remain, rule: gapRuleOfSlot5(state, g.slotId), verdict: evalGap5(state, g.slotId, g.date, gapRuleOfSlot5(state, g.slotId)) }
-  }).sort((a, b) => (a.date + a.slot.start).localeCompare(b.date + b.slot.start))
+  }).filter(g => g.src !== 'short')
+    .sort((a, b) => (a.date + a.slot.start).localeCompare(b.date + b.slot.start))
 }
 /* 试算：同一条缺口，三条规则各判一次（假定发生时刻与预测值可调） */
 export function trialGap(spaceId, slotId, date, opts = {}) {

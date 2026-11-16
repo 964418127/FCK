@@ -214,13 +214,6 @@
                     <span class="preview">{{ editing === 'new' ? '下一轮按算法给数' : `本轮快照 ${snapOf(editing)} 人` }}</span>
                   </template>
                 </div>
-                <div class="er">
-                  <label>缺口发生时</label>
-                  <el-select v-model="form.gapRule" size="small" style="width: 240px">
-                    <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
-                  </el-select>
-                  <span class="preview">{{ form.gapRule === 'G3' ? '用到算法服务里的实时经营需求' : '这条只影响缺口怎么判，不影响名额' }}</span>
-                </div>
                 <div class="list-editor">
                   <div class="le-head">
                     <span>档位</span><span>谁</span><span>方式</span><span>开放窗口</span><span>上限<em class="le-quota">名额 {{ quotaN || '?' }}</em></span><span />
@@ -268,6 +261,17 @@
                     <div class="way-row"><span class="way-name">申领审核</span><span class="way-desc">窗口内提交申领，截止后按综合分排序截断，人事不逐单审批。</span></div>
                   </div>
                   <div class="le-note">上限 = 这一档最多占掉多少个名额（不能超过名额 {{ quotaN || '?' }}）；留空 = 不封顶，能吃满全部名额。这一档吃剩的名额留给下一档。</div>
+                </div>
+
+                <div class="er er-gap">
+                  <label>排班确定后缺人时</label>
+                  <div class="gap-pick">
+                    <el-select v-model="form.gapRule" size="small" style="width: 240px">
+                      <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
+                    </el-select>
+                    <span class="preview">默认按名额补齐，不是每个班次都要改</span>
+                  </div>
+                  <span class="gap-declare">只管<b>排班确定之后因事件缺人</b>（请假、离职这类）怎么判补几个；轮里名额没人拿满不算缺口，结果层手动补人即可。</span>
                 </div>
 
                 <div v-if="formErrs.length" class="form-errs">
@@ -412,12 +416,15 @@
                   <label>名额</label>
                   <el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" />
                 </div>
-                <div class="er">
-                  <label>缺口发生时</label>
-                  <el-select v-model="tempForm.gapRule" size="small" style="width: 240px">
-                    <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
-                  </el-select>
-                  <span class="preview">临时加场默认剩余太短就不补</span>
+                <div class="er er-gap">
+                  <label>排班确定后缺人时</label>
+                  <div class="gap-pick">
+                    <el-select v-model="tempForm.gapRule" size="small" style="width: 240px">
+                      <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
+                    </el-select>
+                    <span class="preview">临时加场默认剩余太短就不补</span>
+                  </div>
+                  <span class="gap-declare">只管<b>排班确定之后因事件缺人</b>（请假、离职这类）怎么判补几个；加场名额没人抢不算缺口，结果层手动补人即可。</span>
                 </div>
                 <div class="ea">
                   <el-button size="small" @click="tempDrawer = false">取消</el-button>
@@ -626,8 +633,9 @@
             </div>
           </template>
 
-          <!-- 缺口：这一轮里每条缺口按它自己时段的规则判一遍；点一行看三条规则各判成什么 -->
+          <!-- 缺口：只看排班确定后的缺口（事件拿走一段 / 临时加位没人接）；点一行看三条规则各判成什么 -->
           <template v-else>
+            <p class="gap-view-note">这里只看<b>排班确定之后因事件缺人</b>的缺口，按这条时段自己选的规则判；轮里名额没人拿满不算缺口，直接在矩阵或时间轴上定人。</p>
             <table class="data-table">
               <thead>
                 <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 60px;">规则</th><th>结论</th></tr>
@@ -799,7 +807,7 @@
     <!-- 缺口规则：就是几条规则本身。可选性设在时段上（周期班次、临时班次各选一条） -->
     <section v-show="mainTab === 'gap'" class="svc-pane">
       <div class="svc-head">
-        <p>缺口发生时按哪条规则判，一共三条，不再多。三条都不问「要不要人」——名额一律是必要人数，缺了就得补；规则只回答「按什么算还需几个、来不来得及」。可选性设在时段上：周期班次、临时班次各有「缺口发生时」一项，改完立即生效，不进快照。</p>
+        <p>缺口发生时按哪条规则判，一共三条，不再多。三条都不问「要不要人」——名额一律是必要人数，缺了就得补；规则只回答「按什么算还需几个、来不来得及」。适用面只有一种缺口——<b>排班确定之后因事件缺人</b>；可选性设在时段上：编辑班次、新增临时班次的最后一步各有「排班确定后缺人时」，默认按名额补齐，改完立即生效、不进快照。</p>
       </div>
 
       <table class="data-table">
@@ -811,19 +819,18 @@
             <td><span class="gr-id">{{ r.id }}</span></td>
             <td><strong>{{ r.name }}</strong></td>
             <td class="muted">{{ r.note }}</td>
-            <td class="muted">{{ r.minGap ? `剩余不足 ${r.minGap} 分钟不补` : (r.kind === 'forecast' ? '读算法服务「实时经营需求」' : '不设门槛') }}</td>
+            <td class="muted">{{ r.minGap ? `剩余不足 ${r.minGap} 分钟不补` : (r.serviceId ? `引用算法服务「实时经营需求」（${r.serviceId}）` : '不设门槛') }}</td>
           </tr>
         </tbody>
       </table>
 
-      <div class="svc-note">可选性在时段上：排班 → 编辑班次、新增临时班次，各有「缺口发生时」一项；G3 有哪些时段在用，算法服务页的「被引用」里有。缺口本身在「轮与结果 → 缺口」里看，那里按每条时段选的规则判。</div>
+      <div class="svc-note">规则的适用面只有一种缺口：<b>排班确定之后、因事件缺人</b>（请假、离职这类）。轮里名额没人拿满不算缺口——结果层手动补人即可，不走规则。可选性在时段上：编辑班次、新增临时班次的最后一步各有「排班确定后缺人时」，默认按名额补齐，不是每个班次都要改。</div>
     </section>
 
-    <!-- 算法服务：登记在这里，不跟某个空间走 -->
+    <!-- 算法服务：系统固定提供，这里只登记使用（挂到名额来源 / 缺口规则），不提供自编 -->
     <section v-show="mainTab === 'algo'" class="svc-pane">
       <div class="svc-head">
-        <p>算法服务是公共的：登记的是「读什么数、怎么算、给谁算、版本号」。给谁算写死在登记里——同一条算法按不同人群算出来的不是一个数，所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条。名额来源能挂给名额的；缺口规则里的实时经营预测挂给缺口的。</p>
-        <el-button size="small" type="primary" @click="svcDlg = true">登记一项</el-button>
+        <p>下面的算法由系统写好固定提供，不在这里编写、也不能自建——这里只做<b>登记使用</b>：把哪条算法挂到哪个时段的名额来源，或者被缺口规则 G3 引用。同一条算法按不同人群算出来的不是一个数，所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条；人群写死在算法里，选用时不能改。</p>
       </div>
       <table class="data-table">
         <thead><tr><th style="width: 130px;">服务</th><th style="width: 140px;">给谁算</th><th style="width: 80px;">用在哪</th><th style="width: 170px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th><th style="width: 130px;">被引用</th></tr></thead>
@@ -863,64 +870,6 @@
       <template #footer>
         <el-button size="small" @click="copyDlg = false">取消</el-button>
         <el-button size="small" type="primary" @click="doDayCopy">覆盖应用</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 算法服务登记 -->
-    <el-dialog v-model="svcDlg" title="算法服务登记" width="660px">
-      <div class="svc-note">算法只登记不实现：登记的是「读什么数、怎么算、给谁算、版本号」。给谁算写死在登记里——「按业务量 · 全职推拿师」和「按业务量 · 全职客户经理」是两条，不是一个算法的两个参数。</div>
-      <table class="data-table">
-        <thead><tr><th style="width: 110px;">服务</th><th style="width: 130px;">给谁算</th><th style="width: 150px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th></tr></thead>
-        <tbody>
-          <tr v-for="v in v5.services" :key="v.id">
-            <td><strong>{{ v.name }}</strong></td>
-            <td>{{ v.kind }} · {{ v.job }}</td>
-            <td>{{ v.input }}</td>
-            <td>{{ v.calc }}</td>
-            <td class="mono">{{ v.version }}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="svc-form">
-        <div class="sf-title">登记一项新服务 <em>给谁算不能空着；读什么数、怎么算、能单独调、有版本号，五项都要填</em></div>
-        <div class="sf-grid">
-          <label>服务名称</label>
-          <el-input v-model="svcForm.name" size="small" placeholder="如：按预约量" style="width: 190px" />
-          <label>给谁算</label>
-          <span class="sf-inline">
-            <el-select v-model="svcForm.kind" size="small" style="width: 84px;">
-              <el-option v-for="k in ['全职', '非全', '不限']" :key="k" :label="k" :value="k" />
-            </el-select>
-            <el-select v-model="svcForm.job" size="small" style="width: 100px;">
-              <el-option v-for="j in ['推拿师', '客户经理', '不限']" :key="j" :label="j" :value="j" />
-            </el-select>
-          </span>
-          <label>读什么数</label>
-          <el-input v-model="svcForm.input" size="small" placeholder="如：业务系统预约量" style="width: 190px" />
-          <label>用在哪</label>
-          <el-select v-model="svcForm.use" size="small" style="width: 130px;">
-            <el-option label="名额来源" value="quota" />
-            <el-option label="缺口判定" value="gap" />
-          </el-select>
-          <label>版本号</label>
-          <el-input v-model="svcForm.version" size="small" placeholder="如：v1.0" style="width: 110px" />
-        </div>
-        <div class="sf-row">
-          <label>怎么算</label>
-          <el-input v-model="svcForm.calc" size="small" placeholder="用业务话写清算式，如：每 6 单 1 人，最少 1" />
-        </div>
-        <div class="sf-row">
-          <el-checkbox v-model="svcForm.idempotent">可以单独调用，同样的输入给同样的结果</el-checkbox>
-        </div>
-        <div v-if="svcErrs.length" class="form-errs">
-          <span v-for="(e, i) in svcErrs" :key="i">{{ e }}</span>
-        </div>
-      </div>
-
-      <template #footer>
-        <el-button size="small" @click="svcDlg = false">关闭</el-button>
-        <el-button size="small" type="primary" @click="doAddService">登记一项</el-button>
       </template>
     </el-dialog>
 
@@ -1066,7 +1015,7 @@ import TablePagination from '../components/TablePagination.vue'
 import { usePager } from '../composables/usePager.js'
 import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
-  addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
+  addSlot, copySlot, removeSlot, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
@@ -1815,29 +1764,6 @@ function initTrial() {
 }
 initTrial()
 
-/* 算法服务登记：四门槛必填，登记完时段的名额来源里就能选到 */
-const svcDlg = ref(false)
-const svcErrs = ref([])
-const svcForm = reactive({ name: '', kind: '全职', job: '推拿师', use: 'quota', input: '', calc: '', version: '', idempotent: false })
-function doAddService() {
-  const e = []
-  if (!svcForm.name.trim()) e.push('服务名称没填')
-  if (!svcForm.input.trim()) e.push('没写读什么数')
-  if (!svcForm.calc.trim()) e.push('没写怎么算')
-  if (!svcForm.kind || !svcForm.job) e.push('没写给谁算（合作形式 + 岗位）')
-  if (!/^v\d+(\.\d+)*$/.test(svcForm.version.trim())) e.push('版本号写成 v1.0 这样')
-  if (!svcForm.idempotent) e.push('要确认能单独调用、同样的输入给同样的结果')
-  svcErrs.value = e
-  if (e.length) return
-  addService({
-    name: svcForm.name.trim(), kind: svcForm.kind, job: svcForm.job, use: svcForm.use,
-    input: svcForm.input.trim(), calc: svcForm.calc.trim(), version: svcForm.version.trim()
-  })
-  Object.assign(svcForm, { name: '', kind: '全职', job: '推拿师', use: 'quota', input: '', calc: '', version: '', idempotent: false })
-  svcErrs.value = []
-  ElMessage.success('已登记：时段的名额来源或缺口规则里就能选到它了')
-}
-
 /* 演示：申领截止（按当前空间所有申领逐组截断） */
 function devResolveApply() {
   const keys = [...new Set(applicationRows5(selSpace.value).map(a => `${a.slotId}|${a.date}`))]
@@ -2266,6 +2192,24 @@ tr.hl td { background: #fdf3e6 !important; }
 
 /* 缺口规则 */
 .gp-intro { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 13px; max-width: 900px; }
+/* 抽屉最后一步：排班确定后缺人时 */
+.er-gap { display: block; border-top: 1px dashed #e8e2e0; padding-top: 12px; margin-top: 4px; }
+.er-gap > label { margin-bottom: 8px; }
+.gap-pick { display: flex; align-items: center; gap: 10px; }
+.gap-declare { display: block; font-size: 11.5px; color: #8a8a95; line-height: 1.6; margin-top: 8px; }
+.gap-declare b { color: #5a5a66; font-weight: 600; }
+/* 结果层缺口视图声明 */
+.gap-view-note { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 12px; }
+.gap-view-note b { color: #5a5a66; font-weight: 600; }
+/* 抽屉最后一步：排班确定后缺人时 */
+.er-gap { display: block; border-top: 1px dashed #e8e2e0; padding-top: 12px; margin-top: 4px; }
+.er-gap > label { margin-bottom: 8px; }
+.gap-pick { display: flex; align-items: center; gap: 10px; }
+.gap-declare { display: block; font-size: 11.5px; color: #8a8a95; line-height: 1.6; margin-top: 8px; }
+.gap-declare b { color: #5a5a66; font-weight: 600; }
+/* 结果层缺口视图声明 */
+.gap-view-note { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 12px; }
+.gap-view-note b { color: #5a5a66; font-weight: 600; }
 .gp-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .gp-sub { font-size: 12px; color: #9a9fa9; }
 .who-chip { display: inline-block; font-size: 11.5px; color: #5f5e5a; background: #f4f2f3; border-radius: 4px; padding: 1px 6px; margin-right: 4px; }

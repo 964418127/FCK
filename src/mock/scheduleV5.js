@@ -749,7 +749,8 @@ export function slotsOn5(state, date) {
 export const GAP_RULES5 = [
   { id: 'G1', name: '补齐名额', note: '名额缺几个就补几个，不看还剩多久', kind: 'quota', minGap: 0 },
   { id: 'G2', name: '补齐名额 · 剩余不足 1 小时不补', note: '还剩不到 1 小时，人叫不来也不值当，记成没补上', kind: 'quota', minGap: 60 },
-  { id: 'G3', name: '按当下经营预测', note: '按实时经营预测重算这段现在要几个人，现在的人够就不补', kind: 'forecast', minGap: 0 }
+  /* G3 不是独立算法：引用算法服务里注册的「实时经营需求」（AS-05），预测值从那来 */
+  { id: 'G3', name: '按当下经营预测', note: '按实时经营预测重算这段现在要几个人，现在的人够就不补', kind: 'forecast', serviceId: 'AS-05', minGap: 0 }
 ]
 export const GAP_SRC5 = {
   fact: '事件拿走一段',
