@@ -12,7 +12,7 @@ import {
   openAt5, slotFirstDate5, roundOf, datesOfRound5, roundListOf, roundStatusOf, nextPublishOf,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
   claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5,
-  GAP_RULES5, GAP_SRC5, gapSrcOf5, gapRemain5, evalGap5
+  GAP_RULES5, GAP_SRC5, gapSrcOf5, gapRemain5, evalGap5, gapRuleOfSlot5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -125,7 +125,7 @@ export function saveSlotEdit(slotId, form) {
   if (!slot) return { ok: false, reason: '时段不存在' }
   Object.assign(slot, {
     name: form.name, category: form.category || undefined, start: form.start, end: form.end, days: [...form.days],
-    quota: { ...form.quota }, list: normList(form)
+    quota: { ...form.quota }, gapRule: form.gapRule || 'G1', list: normList(form)
   })
   /* 人工给定的名额即时体现在模板上；服务供数要等下一轮快照 */
   if (slot.quota.source === 'manual') slot.snapN = slot.quota.value
@@ -140,7 +140,7 @@ export function addSlot(spaceId, form) {
   state.slots.push({
     id, spaceId, name: form.name || '新班次', category: form.category || undefined,
     start: form.start, end: form.end, days: [...form.days],
-    quota, clamp: [1, 6],
+    quota, clamp: [1, 6], gapRule: form.gapRule || 'G1',
     snapN: quota.source === 'manual' ? quota.value : 2,
     list: normList(form)
   })
@@ -358,25 +358,24 @@ export function gaps5(spaceId, dates = null) {
   })
   return out
 }
-/* ===== 缺口规则（变化段判断方法，不进快照，改了立即生效） ===== */
+/* ===== 缺口规则（挂在时段上；不进快照，改了立即生效） ===== */
 export const gapRules = GAP_RULES5
-export function gapRuleOf(spaceId) {
-  const id = state.gapRuleOf?.[spaceId]
-  return GAP_RULES5.find(r => r.id === id) || GAP_RULES5[0]
+export function gapRuleOf(slotId) {
+  return gapRuleOfSlot5(state, slotId)
 }
-export function setGapRule(spaceId, id) {
+export function setSlotGapRule(slotId, id) {
   if (!GAP_RULES5.some(r => r.id === id)) return { ok: false, reason: '没有这条规则' }
-  if (!state.gapRuleOf) state.gapRuleOf = {}
-  state.gapRuleOf[spaceId] = id
-  return { ok: true }
+  const s = slotById(state, slotId)
+  if (!s) return { ok: false, reason: '时段不存在' }
+  s.gapRule = id
+  return { ok: true, text: `这个时段的缺口规则改成「${GAP_RULES5.find(r => r.id === id).name}」，立即生效` }
 }
-/* 缺口清单：来路、还剩多久、按当前规则会怎么判 */
+/* 缺口清单：时段、来路、还剩多久、按这个时段自己的规则会怎么判 */
 export function gapList5(spaceId, dates = null) {
-  const rule = gapRuleOf(spaceId)
   return gaps5(spaceId, dates).map(g => {
     const src = gapSrcOf5(state, g.slotId, g.date)
     const remain = gapRemain5(state, g.slotId, g.date)
-    return { ...g, src, srcLabel: GAP_SRC5[src], quota: g.n - g.occ, remain, verdict: evalGap5(state, g.slotId, g.date, rule) }
+    return { ...g, src, srcLabel: GAP_SRC5[src], quota: g.n - g.occ, remain, rule: gapRuleOfSlot5(state, g.slotId), verdict: evalGap5(state, g.slotId, g.date, gapRuleOfSlot5(state, g.slotId)) }
   }).sort((a, b) => (a.date + a.slot.start).localeCompare(b.date + b.slot.start))
 }
 /* 试算：同一条缺口，三条规则各判一次（假定发生时刻与预测值可调） */

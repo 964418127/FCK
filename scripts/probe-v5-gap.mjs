@@ -1,4 +1,4 @@
-/* 临时探针：缺口规则页签（规则切换 + 缺口清单 + 试算） */
+/* 探针：缺口规则页（只有规则）+ 结果层的缺口视图 + 试算弹层 + 临时班次抽屉 */
 import puppeteer from 'puppeteer-core'
 
 const browser = await puppeteer.launch({
@@ -12,60 +12,55 @@ try {
   page.on('pageerror', e => errs.push('pageerror: ' + e.message))
   page.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()) })
   await page.setViewport({ width: 1500, height: 1100, deviceScaleFactor: 1 })
+
+  /* ① 缺口规则页：只应有一张规则表 */
+  await page.goto('http://localhost:5173/schedule-v5?space=S-201&main=gap', { waitUntil: 'networkidle2', timeout: 30000 })
+  await new Promise(r => setTimeout(r, 1000))
+  await page.screenshot({ path: '/tmp/v5-gaprule.png', fullPage: true })
+  const rulePage = await page.evaluate(() => ({
+    tables: document.querySelectorAll('.data-table').length,
+    rows: [...document.querySelectorAll('.data-table tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.replace(/\s+/g, ' ').trim()).join(' | ')),
+    hasGapList: !!document.body.textContent.includes('缺口清单'),
+    hasTrial: !!document.body.textContent.includes('试算')
+  }))
+
+  /* ② 结果层：切到「缺口」*/
   await page.goto('http://localhost:5173/schedule-v5?space=S-201', { waitUntil: 'networkidle2', timeout: 30000 })
-  await new Promise(r => setTimeout(r, 1200))
-  /* 切到缺口规则页签 */
+  await new Promise(r => setTimeout(r, 900))
   await page.evaluate(() => {
-    ;[...document.querySelectorAll('.tabs button')].find(b => b.textContent.includes('缺口规则'))?.click()
+    ;[...document.querySelectorAll('.tabs button')].find(b => b.textContent.includes('轮与结果'))?.click()
   })
   await new Promise(r => setTimeout(r, 700))
-  await page.screenshot({ path: '/tmp/v5-gap-1.png', fullPage: true })
-
-  const first = await page.evaluate(() => ({
-    rules: [...document.querySelectorAll('.gp-rule')].map(x => x.querySelector('.gr-top')?.textContent.replace(/\s+/g, ' ').trim()),
-    onRule: document.querySelector('.gp-rule.on .gr-top')?.textContent.replace(/\s+/g, ' ').trim(),
-    rows: [...document.querySelectorAll('.gp-trial')].length,
-    gaps: [...document.querySelectorAll('tbody tr')].slice(0, 6).map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.replace(/\s+/g, ' ').trim()).join(' | ')),
-    trial: [...document.querySelectorAll('.gt-card')].map(c => c.textContent.replace(/\s+/g, ' ').trim())
+  const switched = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('.run-switch button')].find(x => x.textContent.trim() === '缺口')
+    b?.click()
+    return !!b
+  })
+  await new Promise(r => setTimeout(r, 800))
+  await page.screenshot({ path: '/tmp/v5-gap-view.png', fullPage: true })
+  const gapView = await page.evaluate(() => ({
+    rows: [...document.querySelectorAll('.data-table tbody tr')].slice(0, 8).map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.replace(/\s+/g, ' ').trim()).join(' | ')),
+    hint: document.querySelector('.rs-hint')?.textContent.trim()
   }))
 
-  /* 切到 G2，并把假定此刻拨到「不足 1 小时」 */
-  await page.evaluate(() => {
-    ;[...document.querySelectorAll('.gp-rule')].find(x => x.textContent.includes('G2'))?.click()
-  })
-  await new Promise(r => setTimeout(r, 500))
-  await page.evaluate(() => {
-    ;[...document.querySelectorAll('.mini-pills button')].find(b => b.textContent.includes('不足 1 小时'))?.click()
-  })
-  await new Promise(r => setTimeout(r, 600))
-  await page.screenshot({ path: '/tmp/v5-gap-2.png', fullPage: true })
-  const second = await page.evaluate(() => ({
-    onRule: document.querySelector('.gp-rule.on .gr-top')?.textContent.replace(/\s+/g, ' ').trim(),
-    verdicts: [...document.querySelectorAll('tbody tr')].slice(0, 4).map(tr => tr.querySelector('.vd')?.textContent.trim() + ' / ' + tr.querySelector('.vd-why')?.textContent.trim()),
-    trial: [...document.querySelectorAll('.gt-card')].map(c => c.textContent.replace(/\s+/g, ' ').trim())
+  /* ③ 点第一行 → 试算弹层 */
+  await page.evaluate(() => document.querySelector('.data-table tbody tr.pointable')?.click())
+  await new Promise(r => setTimeout(r, 900))
+  await page.screenshot({ path: '/tmp/v5-trial.png' })
+  const trial = await page.evaluate(() => ({
+    title: document.querySelector('.el-dialog__title')?.textContent.trim(),
+    cards: [...document.querySelectorAll('.gt-card')].map(c => c.textContent.replace(/\s+/g, ' ').trim())
   }))
+  await page.keyboard.press('Escape')
+  await new Promise(r => setTimeout(r, 400))
 
-  /* 切到 G3，把预测值调低 */
-  await page.evaluate(() => {
-    ;[...document.querySelectorAll('.gp-rule')].find(x => x.textContent.includes('G3'))?.click()
-  })
-  await new Promise(r => setTimeout(r, 500))
-  await page.evaluate(() => {
-    const input = document.querySelector('.gt-left .el-input-number input')
-    if (input) {
-      input.focus()
-      input.value = '1'
-      input.dispatchEvent(new Event('input', { bubbles: true }))
-      input.blur()
-    }
-  })
-  await new Promise(r => setTimeout(r, 700))
-  await page.screenshot({ path: '/tmp/v5-gap-3.png', fullPage: true })
-  const third = await page.evaluate(() => ({
-    trial: [...document.querySelectorAll('.gt-card')].map(c => c.textContent.replace(/\s+/g, ' ').trim())
-  }))
+  /* ④ 临时班次抽屉 */
+  await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.includes('临时班次'))?.click())
+  await new Promise(r => setTimeout(r, 900))
+  const drawers = await page.evaluate(() => [...document.querySelectorAll('.el-drawer')].map(d => d.textContent.replace(/\s+/g, ' ').trim().slice(0, 200)))
+  await page.screenshot({ path: '/tmp/v5-temp-drawer.png' })
 
-  console.log(JSON.stringify({ first, second, third }, null, 2))
+  console.log(JSON.stringify({ rulePage, switched, gapView, trial, drawers }, null, 2))
   console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'NO_ERRORS')
 } finally {
   await browser.close()

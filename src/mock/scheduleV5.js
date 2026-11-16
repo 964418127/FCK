@@ -74,10 +74,17 @@ export const PEOPLE5 = [
 ]
 
 /* 算法服务：只登记不实现。登记四门槛：输入可声明 / 算式可解释 / 可单独调用幂等 / 有版本号 */
+/*
+  算法服务 = 登记「读什么数、怎么算、给谁算」。
+  给谁算写死在登记里（岗位 + 合作形式）：同一条算法按不同人群算，结果不是一个数，
+  所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条。这一阶段不参数化。
+*/
 export const SERVICES5 = [
-  { id: 'AS-01', name: '按在岗人数', input: '人事在册状态', calc: '全员到岗基数 2 人，缺勤 1 人减 1', version: 'v1.3' },
-  { id: 'AS-02', name: '按签约人数', input: '合作类型与签约数', calc: '签约非全 ÷ 2 向上取整', version: 'v1.0' },
-  { id: 'AS-03', name: '按业务量', input: '业务系统预约量', calc: '每 6 单 1 人，最少 1', version: 'v2.1' }
+  { id: 'AS-01', name: '按在岗人数', job: '不限', kind: '全职', use: 'quota', input: '人事在册状态', calc: '全员到岗基数 2 人，缺勤 1 人减 1', version: 'v1.3' },
+  { id: 'AS-02', name: '按签约人数', job: '推拿师', kind: '非全', use: 'quota', input: '合作类型与签约数', calc: '签约非全 ÷ 2 向上取整', version: 'v1.0' },
+  { id: 'AS-03', name: '按业务量', job: '推拿师', kind: '不限', use: 'quota', input: '业务系统预约量', calc: '每 6 单 1 人，最少 1', version: 'v2.1' },
+  { id: 'AS-04', name: '按业务量', job: '客户经理', kind: '全职', use: 'quota', input: '业务系统预约量', calc: '每 8 单 1 人，最少 1', version: 'v2.1' },
+  { id: 'AS-05', name: '实时经营需求', job: '不限', kind: '不限', use: 'gap', input: '实时客流 · 在店人数 · 待服务单量', calc: '按当下数据算这个时段要几个人，和现在在岗比', version: 'v0.9' }
 ]
 
 /* 定义段：周期时段（归空间，不归岗位）。清单行 = 谁（范围+合作性质+岗位三个条件） · 方式 · 窗口 · 上限
@@ -748,6 +755,11 @@ export const GAP_SRC5 = {
   fact: '事件拿走一段',
   short: '获取段没排满',
   temp: '临时加的名额没人接'
+}
+/* 规则挂在时段上：缺口发生时按这条时段自己的规则判（临时班次也算时段） */
+export function gapRuleOfSlot5(state, slotId) {
+  const s = slotById(state, slotId)
+  return GAP_RULES5.find(r => r.id === s?.gapRule) || GAP_RULES5[0]
 }
 /* 缺口是怎么来的：临时加位 / 被事实拿走了人 / 这一轮就没排满 */
 export function gapSrcOf5(state, slotId, date) {
@@ -1425,12 +1437,18 @@ export function buildV5State() {
     notices: JSON.parse(JSON.stringify(NOTICES5)),
     swapRequests: JSON.parse(JSON.stringify(SWAP_REQUESTS5)),
     dayQuota: {},
-    /* 每个空间用哪条缺口规则：默认补齐名额；规则不进快照，改了立即生效 */
-    gapRuleOf: {},
     configDirty: false,
     /* 种子里的直派（早班/晚班第 1 档，发布即开）在 11-12 06:00 已执行 */
     directDone: new Set()
   }
+  /* 缺口规则挂在时段上：缺口发生时按这条时段自己的规则判。
+     种子里不逐个写死，按「这个时段能不能按预测算」推一个合理的初值，业务上可改：
+     挂了业务量算法的时段有预测数据 → 按当下经营预测；临时班次时间最近 → 剩余不足 1 小时不补；其余补齐名额 */
+  const gapDefaultOf = s => (
+    ['AS-03', 'AS-04'].includes(s.quota?.serviceId) ? 'G3' : 'G1'
+  )
+  state.slots.forEach(s => { if (!s.gapRule) s.gapRule = gapDefaultOf(s) })
+  state.temps.forEach(t => { if (!t.gapRule) t.gapRule = 'G2' })
   /* 历史轮：两周前的已经跑完、上一周正在执行——业务上「上一轮已经排完」是常态，
      结果页要能回查，所以种子就带着，不靠翻轮才长出来 */
   const storeHist = [

@@ -34,10 +34,11 @@
       </div>
     </div>
 
-    <!-- 一级导航：排班跟着空间走；系统服务是公共资产，不挂在空间下 -->
+    <!-- 一级导航：排班跟着空间走；缺口规则和算法服务是横向配置，不挂在某个空间下 -->
     <div class="main-tabs">
       <button :class="{ on: mainTab === 'schedule' }" @click="mainTab = 'schedule'">排班</button>
-      <button :class="{ on: mainTab === 'svc' }" @click="mainTab = 'svc'">系统服务</button>
+      <button :class="{ on: mainTab === 'gap' }" @click="mainTab = 'gap'">缺口规则</button>
+      <button :class="{ on: mainTab === 'algo' }" @click="mainTab = 'algo'">算法服务</button>
     </div>
 
     <div class="v5-body" v-show="mainTab === 'schedule'">
@@ -66,7 +67,6 @@
           <button :class="{ on: tab === 'def' }" @click="tab = 'def'">时段与清单</button>
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
-          <button :class="{ on: tab === 'gap' }" @click="tab = 'gap'">缺口规则</button>
           <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.tag === '办公区' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
@@ -209,10 +209,17 @@
                   <el-input-number v-if="form.quota.source === 'manual'" v-model="form.quota.value" :min="1" :max="6" size="small" />
                   <template v-else>
                     <el-select v-model="form.quota.serviceId" size="small" style="width: 170px" placeholder="选一个已登记的服务">
-                      <el-option v-for="v in v5.services" :key="v.id" :label="v.name" :value="v.id" />
+                      <el-option v-for="v in v5.services.filter(x => x.use === 'quota')" :key="v.id" :label="`${v.name} · ${v.kind}${v.job}`" :value="v.id" />
                     </el-select>
                     <span class="preview">{{ editing === 'new' ? '下一轮按算法给数' : `本轮快照 ${snapOf(editing)} 人` }}</span>
                   </template>
+                </div>
+                <div class="er">
+                  <label>缺口发生时</label>
+                  <el-select v-model="form.gapRule" size="small" style="width: 240px">
+                    <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
+                  </el-select>
+                  <span class="preview">{{ form.gapRule === 'G3' ? '用到算法服务里的实时经营需求' : '这条只影响缺口怎么判，不影响名额' }}</span>
                 </div>
                 <div class="list-editor">
                   <div class="le-head">
@@ -405,6 +412,13 @@
                   <label>名额</label>
                   <el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" />
                 </div>
+                <div class="er">
+                  <label>缺口发生时</label>
+                  <el-select v-model="tempForm.gapRule" size="small" style="width: 240px">
+                    <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
+                  </el-select>
+                  <span class="preview">临时加场默认剩余太短就不补</span>
+                </div>
                 <div class="ea">
                   <el-button size="small" @click="tempDrawer = false">取消</el-button>
                   <el-button size="small" type="primary" @click="saveTemp">保存并开放</el-button>
@@ -552,7 +566,8 @@
           <div class="run-switch">
             <button :class="{ on: runView === 'grid' }" @click="runView = 'grid'">占用矩阵</button>
             <button :class="{ on: runView === 'axis' }" @click="runView = 'axis'">空间时间轴</button>
-            <span class="rs-hint">{{ runView === 'grid' ? '格子里是当前占位的人；点空格直接定人' : '这一天每个时段上是谁、几点到几点；空格缺口点开就是定人' }}</span>
+            <button :class="{ on: runView === 'gap' }" @click="runView = 'gap'">缺口</button>
+            <span class="rs-hint">{{ runViewHint }}</span>
           </div>
 
           <template v-if="runView === 'grid'">
@@ -580,7 +595,7 @@
           </template>
 
           <!-- 空间时间轴：这一天所有时段（周期 + 临时）画在钟点上，行内是占位的人 -->
-          <template v-else>
+          <template v-else-if="runView === 'axis'">
             <div class="ax-days">
               <button v-for="d in runDates" :key="d" :class="{ on: axisDay === d }" @click="axisDay = d">
                 {{ d.slice(5) }}<em>周{{ DAY_NAMES[new Date(d + 'T00:00:00').getDay()] }}</em>
@@ -609,6 +624,30 @@
               </div>
               <div v-if="!axSlots.length" class="ax-empty">这一天没有时段</div>
             </div>
+          </template>
+
+          <!-- 缺口：这一轮里每条缺口按它自己时段的规则判一遍；点一行看三条规则各判成什么 -->
+          <template v-else>
+            <table class="data-table">
+              <thead>
+                <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 60px;">规则</th><th>结论</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="g in gapRows" :key="g.slotId + g.date" :class="{ pointable: !runReadonly }" @click="!runReadonly && trialPick(g)">
+                  <td><span class="src-tag">{{ g.srcLabel }}</span></td>
+                  <td>
+                    {{ g.slot.name }}<em v-if="g.slot.tmp" class="tmp-tag">临时</em>
+                    <span class="muted">{{ g.slot.start }}–{{ g.slot.end }}</span>
+                  </td>
+                  <td class="mono">{{ g.date.slice(5) }}</td>
+                  <td>{{ fmtRemain(g.remain) }}</td>
+                  <td>{{ g.quota }} / {{ g.n }}</td>
+                  <td><span class="gr-id">{{ g.rule.id }}</span></td>
+                  <td><span class="vd" :class="g.verdict.action">{{ g.verdict.text }}</span><em class="vd-why">{{ g.verdict.why }}</em></td>
+                </tr>
+                <tr v-if="!gapRows.length"><td colspan="7" class="muted">这一轮没有缺口</td></tr>
+              </tbody>
+            </table>
           </template>
 
           <div class="table-title">申领登记 <em>提交只登记；{{ shortAt(round.applyDeadline) }} 截止后按综合分排序截断，人事不逐单审批</em></div>
@@ -754,93 +793,54 @@
             </div>
           </div>
         </section>
-
-        <!-- ④ 缺口规则：缺口发生时按什么判断补不补。改的是判断方法，不进快照 -->
-        <section v-else-if="tab === 'gap'" class="pane">
-          <p class="gp-intro">
-            名额一律是必要人数，所以规则不讨论「要不要人」，只决定「按什么算还需几个、来不来得及」。
-            规则改完立即生效——它改的是怎么判断，不是判断结果，所以不等下一轮。
-          </p>
-
-          <div class="gp-rules">
-            <button
-              v-for="r in gapRules" :key="r.id" class="gp-rule"
-              :class="{ on: curGapRule.id === r.id }" @click="chooseGapRule(r.id)"
-            >
-              <div class="gr-top">
-                <span class="gr-id">{{ r.id }}</span>
-                <strong>{{ r.name }}</strong>
-                <em v-if="curGapRule.id === r.id" class="gr-on">使用中</em>
-              </div>
-              <div class="gr-note">{{ r.note }}</div>
-            </button>
-          </div>
-
-          <div class="table-title">这个空间的缺口 <em>按当前规则判一遍；来路不同，用的是同一条规则</em></div>
-          <table class="data-table">
-            <thead>
-              <tr><th style="width: 130px;">来路</th><th style="width: 170px;">时段</th><th style="width: 80px;">日期</th><th style="width: 100px;">还剩</th><th style="width: 80px;">缺几个</th><th>按当前规则</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="g in gapRows" :key="g.slotId + g.date" class="pointable" @click="trialPick(g)">
-                <td><span class="src-tag">{{ g.srcLabel }}</span></td>
-                <td>{{ g.slot.name }} <span class="muted">{{ g.slot.start }}–{{ g.slot.end }}</span></td>
-                <td class="mono">{{ g.date.slice(5) }}</td>
-                <td>{{ fmtRemain(g.remain) }}</td>
-                <td>{{ g.quota }} / {{ g.n }}</td>
-                <td><span class="vd" :class="g.verdict.action">{{ g.verdict.text }}</span><em class="vd-why">{{ g.verdict.why }}</em></td>
-              </tr>
-              <tr v-if="!gapRows.length"><td colspan="6" class="muted">这一轮没有缺口</td></tr>
-            </tbody>
-          </table>
-
-          <div class="table-title">试算 <em>挑一条缺口，假定它发生在另一个时刻，看三条规则各判成什么</em></div>
-          <div class="gp-trial">
-            <div class="gt-left">
-              <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
-                <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />
-              </el-select>
-              <div class="gt-field">
-                <label>假定此刻</label>
-                <div class="mini-pills">
-                  <button :class="{ on: trialWhen === 'real' }" @click="trialWhen = 'real'">按实际剩余</button>
-                  <button :class="{ on: trialWhen === 'soon' }" @click="trialWhen = 'soon'">不足 1 小时</button>
-                  <button :class="{ on: trialWhen === 'now' }" @click="trialWhen = 'now'">已开始</button>
-                </div>
-              </div>
-              <div class="gt-field">
-                <label>预测这段要几人</label>
-                <el-input-number v-model="trialForecast" size="small" :min="0" :max="20" controls-position="right" style="width: 110px;" />
-                <span class="gt-hint">只有 G3 用</span>
-              </div>
-            </div>
-            <div class="gt-right">
-              <div v-for="t in trialOut" :key="t.rule.id" class="gt-card" :class="{ on: curGapRule.id === t.rule.id }">
-                <div class="gtc-h"><span class="gr-id">{{ t.rule.id }}</span>{{ t.rule.name }}</div>
-                <div class="vd" :class="t.out.action">{{ t.out.text }}</div>
-                <div class="vd-why">{{ t.out.why }}</div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
 
-    <!-- ② 系统服务：算法服务登记在这里，不跟某个空间走 -->
-    <section v-show="mainTab === 'svc'" class="svc-pane">
+    <!-- 缺口规则：就是几条规则本身。可选性设在时段上（周期班次、临时班次各选一条） -->
+    <section v-show="mainTab === 'gap'" class="svc-pane">
       <div class="svc-head">
-        <p>算法服务是公共的：登记的是「读什么数、怎么算、版本号」。登记完，各空间的时段在名额来源里就能挂它；一项服务可以被多个时段、多个空间同时引用。</p>
+        <p>缺口发生时按哪条规则判，一共三条，不再多。三条都不问「要不要人」——名额一律是必要人数，缺了就得补；规则只回答「按什么算还需几个、来不来得及」。可选性设在时段上：周期班次、临时班次各有「缺口发生时」一项，改完立即生效，不进快照。</p>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 70px;">编号</th><th style="width: 250px;">规则</th><th>怎么判</th><th style="width: 190px;">参数</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in gapRules" :key="r.id">
+            <td><span class="gr-id">{{ r.id }}</span></td>
+            <td><strong>{{ r.name }}</strong></td>
+            <td class="muted">{{ r.note }}</td>
+            <td class="muted">{{ r.minGap ? `剩余不足 ${r.minGap} 分钟不补` : (r.kind === 'forecast' ? '读算法服务「实时经营需求」' : '不设门槛') }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="svc-note">可选性在时段上：排班 → 编辑班次、新增临时班次，各有「缺口发生时」一项；G3 有哪些时段在用，算法服务页的「被引用」里有。缺口本身在「轮与结果 → 缺口」里看，那里按每条时段选的规则判。</div>
+    </section>
+
+    <!-- 算法服务：登记在这里，不跟某个空间走 -->
+    <section v-show="mainTab === 'algo'" class="svc-pane">
+      <div class="svc-head">
+        <p>算法服务是公共的：登记的是「读什么数、怎么算、给谁算、版本号」。给谁算写死在登记里——同一条算法按不同人群算出来的不是一个数，所以「按业务量」不是一个算法，是「按业务量 · 全职推拿师」这一条。名额来源能挂给名额的；缺口规则里的实时经营预测挂给缺口的。</p>
         <el-button size="small" type="primary" @click="svcDlg = true">登记一项</el-button>
       </div>
       <table class="data-table">
-        <thead><tr><th style="width: 140px;">服务</th><th style="width: 170px;">读什么数</th><th>怎么算</th><th style="width: 80px;">版本</th><th style="width: 150px;">被引用</th></tr></thead>
+        <thead><tr><th style="width: 130px;">服务</th><th style="width: 140px;">给谁算</th><th style="width: 80px;">用在哪</th><th style="width: 170px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th><th style="width: 130px;">被引用</th></tr></thead>
         <tbody>
           <tr v-for="v in v5.services" :key="v.id">
             <td><strong>{{ v.name }}</strong></td>
+            <td>
+              <span class="who-chip">{{ v.kind }}</span>
+              <span class="who-chip">{{ v.job }}</span>
+            </td>
+            <td>
+              <span class="use-tag" :class="v.use">{{ v.use === 'gap' ? '缺口判定' : '名额来源' }}</span>
+            </td>
             <td>{{ v.input }}</td>
             <td>{{ v.calc }}</td>
             <td class="mono">{{ v.version }}</td>
-            <td>{{ serviceUsage(v.id) ? `挂在 ${serviceUsage(v.id)} 个时段上` : '还没被引用' }}</td>
+            <td>{{ v.use === 'gap' ? gapRuleUses(v.id) : (serviceUsage(v.id) ? `挂在 ${serviceUsage(v.id)} 个时段上` : '还没被引用') }}</td>
           </tr>
         </tbody>
       </table>
@@ -868,12 +868,13 @@
 
     <!-- 算法服务登记 -->
     <el-dialog v-model="svcDlg" title="算法服务登记" width="660px">
-      <div class="svc-note">算法只登记不实现：登记的是「读什么数、怎么算、版本号」。供数统一到时段级，A 时段挂算法一、B 时段挂算法二是合法配置。</div>
+      <div class="svc-note">算法只登记不实现：登记的是「读什么数、怎么算、给谁算、版本号」。给谁算写死在登记里——「按业务量 · 全职推拿师」和「按业务量 · 全职客户经理」是两条，不是一个算法的两个参数。</div>
       <table class="data-table">
-        <thead><tr><th style="width: 130px;">服务</th><th style="width: 150px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th></tr></thead>
+        <thead><tr><th style="width: 110px;">服务</th><th style="width: 130px;">给谁算</th><th style="width: 150px;">读什么数</th><th>怎么算</th><th style="width: 70px;">版本</th></tr></thead>
         <tbody>
           <tr v-for="v in v5.services" :key="v.id">
             <td><strong>{{ v.name }}</strong></td>
+            <td>{{ v.kind }} · {{ v.job }}</td>
             <td>{{ v.input }}</td>
             <td>{{ v.calc }}</td>
             <td class="mono">{{ v.version }}</td>
@@ -882,12 +883,26 @@
       </table>
 
       <div class="svc-form">
-        <div class="sf-title">登记一项新服务 <em>四项都要填：读什么数、怎么算、能单独调、有版本号</em></div>
+        <div class="sf-title">登记一项新服务 <em>给谁算不能空着；读什么数、怎么算、能单独调、有版本号，五项都要填</em></div>
         <div class="sf-grid">
           <label>服务名称</label>
           <el-input v-model="svcForm.name" size="small" placeholder="如：按预约量" style="width: 190px" />
+          <label>给谁算</label>
+          <span class="sf-inline">
+            <el-select v-model="svcForm.kind" size="small" style="width: 84px;">
+              <el-option v-for="k in ['全职', '非全', '不限']" :key="k" :label="k" :value="k" />
+            </el-select>
+            <el-select v-model="svcForm.job" size="small" style="width: 100px;">
+              <el-option v-for="j in ['推拿师', '客户经理', '不限']" :key="j" :label="j" :value="j" />
+            </el-select>
+          </span>
           <label>读什么数</label>
           <el-input v-model="svcForm.input" size="small" placeholder="如：业务系统预约量" style="width: 190px" />
+          <label>用在哪</label>
+          <el-select v-model="svcForm.use" size="small" style="width: 130px;">
+            <el-option label="名额来源" value="quota" />
+            <el-option label="缺口判定" value="gap" />
+          </el-select>
           <label>版本号</label>
           <el-input v-model="svcForm.version" size="small" placeholder="如：v1.0" style="width: 110px" />
         </div>
@@ -1007,6 +1022,38 @@
       </template>
     </el-dialog>
 
+    <!-- 试算：同一条缺口，三条规则各判一次——不占页面，点缺口才出来 -->
+    <el-dialog v-model="trialDlg" title="这条缺口，三条规则各判一次" width="780px">
+      <div class="gt-left">
+        <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
+          <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />
+        </el-select>
+        <div class="gt-field">
+          <label>假定此刻</label>
+          <div class="mini-pills">
+            <button :class="{ on: trialWhen === 'real' }" @click="trialWhen = 'real'">按实际剩余</button>
+            <button :class="{ on: trialWhen === 'soon' }" @click="trialWhen = 'soon'">不足 1 小时</button>
+            <button :class="{ on: trialWhen === 'now' }" @click="trialWhen = 'now'">已开始</button>
+          </div>
+        </div>
+        <div class="gt-field">
+          <label>预测这段要几人</label>
+          <el-input-number v-model="trialForecast" size="small" :min="0" :max="20" controls-position="right" style="width: 110px;" />
+          <span class="gt-hint">只有 G3 用</span>
+        </div>
+      </div>
+      <div class="gt-right">
+        <div v-for="t in trialOut" :key="t.rule.id" class="gt-card" :class="{ on: trialSlotRule?.id === t.rule.id }">
+          <div class="gtc-h">
+            <span class="gr-id">{{ t.rule.id }}</span>{{ t.rule.name }}
+            <em v-if="trialSlotRule?.id === t.rule.id" class="gr-on">这条时段在用</em>
+          </div>
+          <div class="vd" :class="t.out.action">{{ t.out.text }}</div>
+          <div class="vd-why">{{ t.out.why }}</div>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- 登记离职已移除：离职入口在离职流程模块，它写事实，排班只承接结果 -->
   </div>
 </template>
@@ -1024,7 +1071,7 @@ import {
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage,
-  gapRules, gapRuleOf, setGapRule, gapList5, trialGap
+  gapRules, gapRuleOf, gapList5, trialGap
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -1039,7 +1086,7 @@ const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 const tab = ref('def')
 const sub = ref(['cyc', 'tmp', 'rule'].includes(route.query.sub) ? route.query.sub : 'cyc')
 /* 一级导航：排班 / 系统服务（算法服务是公共资产） */
-const mainTab = ref('schedule')
+const mainTab = ref(['gap', 'algo'].includes(route.query.main) ? route.query.main : 'schedule')
 const kw = ref('')
 const city = ref('')
 const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.query.sub === 'rule' ? 'S-205' : ''))) ? (route.query.space || (route.query.sub === 'rule' ? 'S-205' : '')) : v5.spaces[0].id)
@@ -1059,13 +1106,16 @@ function roundStatusLabel(st) {
 /* 下一轮还没生成：只说什么时候发，不给假数据 */
 const nextPub = computed(() => nextPublish(selSpace.value))
 
-/* ===== 缺口规则：变化段的判断方法，不进快照，改完立即生效 ===== */
-const curGapRule = computed(() => gapRuleOf(selSpace.value))
-const gapRows = computed(() => gapList5(selSpace.value))
-function chooseGapRule(id) {
-  const r = setGapRule(selSpace.value, id)
-  if (r.ok) ElMessage.success(`已切到「${gapRules.find(x => x.id === id).name}」，立即生效`)
+/* ===== 缺口规则：规则本身只有三条；可选性在时段上，缺口在结果层看 ===== */
+/* 缺口按这一轮的日期段取，判据用每条时段自己选的那条规则 */
+const gapRows = computed(() => gapList5(selSpace.value, runDates.value))
+/* 实时经营需求这条算法被哪些时段用着：时段缺口规则挂 G3 就是用了它 */
+function gapRuleUses(id) {
+  if (id !== 'AS-05') return '还没被引用'
+  const n = [...v5.slots, ...v5.temps].filter(s => s.gapRule === 'G3').length
+  return n ? `挂在 ${n} 个时段的缺口规则上` : '还没被引用'
 }
+const trialDlg = ref(false)
 const trialKey = ref('')
 const trialWhen = ref('real')
 const trialForecast = ref(0)
@@ -1079,6 +1129,10 @@ watch(trialKey, k => {
   const g = gapRows.value.find(x => `${x.slotId}|${x.date}` === k)
   trialForecast.value = g ? g.n : 0
 }, { immediate: true })
+const trialSlotRule = computed(() => {
+  const [slotId] = (trialKey.value || '').split('|')
+  return slotId ? gapRuleOf(slotId) : null
+})
 const trialOut = computed(() => {
   const [slotId, date] = (trialKey.value || '').split('|')
   if (!slotId) return []
@@ -1087,10 +1141,18 @@ const trialOut = computed(() => {
   if (trialWhen.value === 'now') opts.remainMin = 0
   return trialGap(selSpace.value, slotId, date, opts)
 })
-function trialPick(g) { trialKey.value = `${g.slotId}|${g.date}` }
+function trialPick(g) {
+  trialKey.value = `${g.slotId}|${g.date}`
+  trialDlg.value = true
+}
 
 /* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
 const runView = ref('grid')
+const runViewHint = computed(() => runView.value === 'grid'
+  ? '格子里是当前占位的人；点空格直接定人'
+  : runView.value === 'axis'
+    ? '这一天每个时段上是谁、几点到几点；空格缺口点开就是定人'
+    : '这一轮缺哪几段、还剩多久、按这条时段自己选的规则判成什么；点一行看三条规则各判一次')
 const axisDay = ref('')
 watch(() => [selSpace.value, shownRound.value?.id], () => {
   axisDay.value = runDates.value.includes(v5.today) ? v5.today : (runDates.value[0] || '')
@@ -1305,6 +1367,7 @@ const formErrs = ref([])
 const blankForm = () => ({
   name: '', category: '', start: '10:00', end: '14:00', days: [1, 2, 3, 4, 5],
   quota: { source: 'manual', value: 2 },
+  gapRule: 'G1',
   list: [{ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
 })
 const form = reactive(blankForm())
@@ -1336,6 +1399,7 @@ function openEdit(s) {
   form.end = s.end
   form.days = [...s.days]
   form.quota = { ...s.quota }
+  form.gapRule = s.gapRule || 'G1'
   form.list = s.list.map(r => ({ ...r }))
   formErrs.value = []
 }
@@ -1381,7 +1445,7 @@ function save() {
 function revert() { revertConfig(); ElMessage.success('已撤销，回到当前轮的配置') }
 
 /* 临时班次 */
-const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2 })
+const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2, gapRule: 'G2' })
 const tempDrawer = ref(false)
 function openTempDrawer() {
   tempForm.name = ''
@@ -1391,7 +1455,7 @@ function saveTemp() {
   if (!tempForm.name) { ElMessage.warning('给这个临时班次起个名'); return }
   const row = addTemp({
     spaceId: selSpace.value, date: tempForm.date, name: tempForm.name,
-    start: tempForm.start, end: tempForm.end, quota: { source: 'manual', value: tempForm.value }
+    start: tempForm.start, end: tempForm.end, quota: { source: 'manual', value: tempForm.value }, gapRule: tempForm.gapRule
   })
   tempForm.name = ''
   tempDrawer.value = false
@@ -1754,20 +1818,24 @@ initTrial()
 /* 算法服务登记：四门槛必填，登记完时段的名额来源里就能选到 */
 const svcDlg = ref(false)
 const svcErrs = ref([])
-const svcForm = reactive({ name: '', input: '', calc: '', version: '', idempotent: false })
+const svcForm = reactive({ name: '', kind: '全职', job: '推拿师', use: 'quota', input: '', calc: '', version: '', idempotent: false })
 function doAddService() {
   const e = []
   if (!svcForm.name.trim()) e.push('服务名称没填')
   if (!svcForm.input.trim()) e.push('没写读什么数')
   if (!svcForm.calc.trim()) e.push('没写怎么算')
+  if (!svcForm.kind || !svcForm.job) e.push('没写给谁算（合作形式 + 岗位）')
   if (!/^v\d+(\.\d+)*$/.test(svcForm.version.trim())) e.push('版本号写成 v1.0 这样')
   if (!svcForm.idempotent) e.push('要确认能单独调用、同样的输入给同样的结果')
   svcErrs.value = e
   if (e.length) return
-  addService({ name: svcForm.name.trim(), input: svcForm.input.trim(), calc: svcForm.calc.trim(), version: svcForm.version.trim() })
-  Object.assign(svcForm, { name: '', input: '', calc: '', version: '', idempotent: false })
+  addService({
+    name: svcForm.name.trim(), kind: svcForm.kind, job: svcForm.job, use: svcForm.use,
+    input: svcForm.input.trim(), calc: svcForm.calc.trim(), version: svcForm.version.trim()
+  })
+  Object.assign(svcForm, { name: '', kind: '全职', job: '推拿师', use: 'quota', input: '', calc: '', version: '', idempotent: false })
   svcErrs.value = []
-  ElMessage.success('已登记：时段的名额来源里就能选到它了')
+  ElMessage.success('已登记：时段的名额来源或缺口规则里就能选到它了')
 }
 
 /* 演示：申领截止（按当前空间所有申领逐组截断） */
@@ -2197,7 +2265,14 @@ tr.hl td { background: #fdf3e6 !important; }
 .tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
 
 /* 缺口规则 */
-.gp-intro { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 14px; max-width: 780px; }
+.gp-intro { font-size: 12.5px; color: #6a6a75; line-height: 1.65; margin: 0 0 13px; max-width: 900px; }
+.gp-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.gp-sub { font-size: 12px; color: #9a9fa9; }
+.who-chip { display: inline-block; font-size: 11.5px; color: #5f5e5a; background: #f4f2f3; border-radius: 4px; padding: 1px 6px; margin-right: 4px; }
+.use-tag { font-size: 11.5px; border-radius: 4px; padding: 2px 7px; }
+.use-tag.quota { color: #185FA5; background: #e8f0fa; }
+.use-tag.gap { color: #854F0B; background: #fdf3e3; }
+.sf-inline { display: inline-flex; gap: 6px; }
 .gp-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .gp-rule { text-align: left; border: 1px solid #eee6e8; background: #fff; border-radius: 10px; padding: 11px 13px; cursor: pointer; font-family: inherit; }
 .gp-rule:hover { border-color: #d9c6cc; }
