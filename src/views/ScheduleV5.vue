@@ -191,7 +191,7 @@
                     placeholder="不分类" style="width: 120px">
                     <el-option v-for="c in categoriesOf5(curSpace)" :key="c.id" :label="c.name" :value="c.id" />
                   </el-select>
-                  <el-button link size="small" @click="openCatDlg">{{ categoriesOf5(curSpace).length ? '管理' : '建类别' }}</el-button>
+                  <el-button link size="small" @click="openCatDlg">管理类别</el-button>
                 </div>
                 <div class="er">
                   <label>星期</label>
