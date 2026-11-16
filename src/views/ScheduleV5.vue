@@ -212,18 +212,12 @@
               <button :class="{ on: cycView === 'list' }" @click="cycView = 'list'">按班次</button>
             </div>
 
-            <!-- 编辑区：新建和编辑共用一份表单，两种视图都开在这里 -->
-            <article v-if="editing" class="slot-card edit-card">
-              <header>
-                <div class="sn">
-                  <strong>{{ editing === 'new' ? '新建班次' : `编辑：${form.name}` }}</strong>
-                  <span class="draft-tag">{{ editing === 'new' ? '尚未保存' : '保存后从下一轮起生效' }}</span>
-                </div>
-                <div class="sacts">
-                  <el-button link size="small" @click="editing = null">收起</el-button>
-                </div>
-              </header>
-              <div class="edit-box">
+            <!-- 编辑区：抽屉承载，不再往下挤页面 -->
+            <el-drawer :model-value="!!editing" size="840px"
+              :title="editing === 'new' ? '新建班次' : `编辑：${form.name}`"
+              @update:model-value="v => { if (!v) editing = null }">
+              <div class="drawer-tag">{{ editing === 'new' ? '尚未保存，新建后从下一轮起生效' : '保存后从下一轮起生效，当前轮按已生成快照跑' }}</div>
+              <div class="edit-box drawer-box">
                 <div class="er">
                   <label>名称</label><el-input v-model="form.name" size="small" placeholder="如：中班" style="width: 140px" />
                   <label>起</label><el-input v-model="form.start" size="small" placeholder="12:00" style="width: 80px" />
@@ -311,12 +305,11 @@
                 </div>
 
                 <div class="ea">
-                  <span class="ea-hint">{{ editing === 'new' ? '新建后从下一轮起生效，当前轮不受影响' : '保存后从下一轮起生效，当前轮按快照跑' }}</span>
                   <el-button size="small" @click="editing = null">取消</el-button>
                   <el-button size="small" type="primary" @click="save">{{ editing === 'new' ? '新建' : '保存' }}</el-button>
                 </div>
               </div>
-            </article>
+            </el-drawer>
 
             <template v-if="cycView === 'list'">
             <article v-for="s in spaceSlots" :key="s.id" class="slot-card" :class="{ 'being-edited': editing === s.id }">
@@ -850,18 +843,19 @@
     </el-dialog>
 
     <!-- 管理类别：空间的字典，业务自己起名；删除要挡「还有班次 / 规则在用」 -->
-    <el-dialog v-model="catDlg" title="管理类别" width="460px">
+    <el-dialog v-model="catDlg" title="管理类别" width="560px">
       <div class="cat-dlg-hint">类别只是把「同一句要求」套到一组班次上；类下任一条都算数，所以某条名额满了可以换同类的另一条。</div>
       <div v-for="c in categoriesOf5(curSpace)" :key="c.id" class="cat-dlg-row">
         <span class="cd-id">{{ c.id }}</span>
-        <el-input :model-value="c.name" size="small" style="width: 200px"
-          @change="val => doRenameCat(c, val)" />
-        <span class="cd-use">{{ catUseText(c.id) }}</span>
+        <div class="cd-main">
+          <el-input :model-value="c.name" size="small" @change="val => doRenameCat(c, val)" />
+          <span class="cd-use">{{ catUseText(c.id) }}</span>
+        </div>
         <el-button link size="small" type="danger" @click="doRemoveCat(c)">删除</el-button>
       </div>
       <div v-if="!categoriesOf5(curSpace).length" class="empty"><p>这家店还没有类别</p></div>
       <div class="cat-dlg-row add">
-        <el-input v-model="newCatName" size="small" placeholder="新类别名字，如 C 类 / 高峰班" style="width: 240px" />
+        <el-input v-model="newCatName" size="small" placeholder="新类别名字，如 C 类 / 高峰班" style="flex: 1" @keyup.enter="doAddCat" />
         <el-button size="small" type="primary" @click="doAddCat">添加</el-button>
       </div>
     </el-dialog>
@@ -1681,6 +1675,10 @@ function devResolveApply() {
 .dq-btn:disabled { color: #d8d8de; border-color: #f2f2f4; cursor: not-allowed; }
 .draft-tag { font-size: 11.5px; color: #a40035; background: #fdf2f5; border-radius: 4px; padding: 1px 6px; margin-left: 8px; }
 .edit-card { border-color: #e6c9d2; background: #fffcfd; box-shadow: 0 2px 10px rgba(164, 0, 53, 0.05); }
+.drawer-tag { font-size: 12px; color: #854F0B; background: #fdf6ec; border: 1px solid #f3e3c3; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
+.drawer-box { margin-top: 0; border-top: none; padding-top: 0; }
+.drawer-box .er label { flex: none; }
+.drawer-box .ea { margin-top: 6px; padding-top: 10px; border-top: 1px dashed #f0eaec; }
 .slot-card.being-edited { border-color: #e6c9d2; }
 .lr-cap { font-size: 11.5px; color: #9a9aa4; margin-left: 8px; }
 .le-ways { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f0eaec; }
@@ -1745,7 +1743,8 @@ function devResolveApply() {
 .cat-dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .cat-dlg-row.add { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
 .cd-id { width: 18px; font-size: 12px; color: #a40035; font-weight: 600; }
-.cd-use { font-size: 11.5px; color: #9a9fa9; flex: 1; }
+.cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cd-use { font-size: 11.5px; color: #9a9fa9; white-space: nowrap; }
 
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }
