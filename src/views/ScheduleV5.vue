@@ -20,20 +20,6 @@
       </div>
     </header>
 
-    <!-- 时间锚点：现在处在哪一轮、改动什么时候生效——轮跟着空间走，只在「排班」页签出现 -->
-    <div v-show="mainTab === 'schedule'" class="round-strip">
-      <div class="rs-main">
-        <span class="rs-tag">当前轮 {{ round.id }}</span>
-        <span>{{ shortAt(round.publishedAt) }} 发布 · 覆盖 {{ short(round.span[0]) }}–{{ short(round.span[1]) }}</span>
-        <span>清单开到第 {{ round.k }} 档</span>
-        <span class="rs-dl">{{ shortAt(round.applyDeadline) }} 申领截止</span>
-      </div>
-      <div class="rs-side">
-        <span class="rs-now">演示时刻 {{ v5.now }}</span>
-        <span class="rs-next">下一轮 {{ shortAt(round.nextAt) }} 生成 · 铺 {{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}；配置改动到那时生效</span>
-      </div>
-    </div>
-
     <!-- 一级导航：排班跟着空间走；缺口规则和算法服务是横向配置，不挂在某个空间下 -->
     <div class="main-tabs">
       <button :class="{ on: mainTab === 'schedule' }" @click="mainTab = 'schedule'">排班</button>
@@ -2250,15 +2236,6 @@ tr.covered td { color: #9a9fa9; }
 .dlg-row > label { width: 42px; flex: none; color: #8a8a95; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
 .muted { color: #9a9fa9; }
-
-/* 时间锚点条 */
-.round-strip { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fff; border: 1px solid #eee6e8; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; }
-.rs-main { display: flex; gap: 12px; align-items: center; font-size: 12px; color: #6a6a75; flex-wrap: wrap; }
-.rs-tag { font-weight: 600; color: #2c2c2a; }
-.rs-dl { color: #a35b00; }
-.rs-side { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
-.rs-now { font-size: 11.5px; color: #8a8a95; font-variant-numeric: tabular-nums; }
-.rs-next { font-size: 11.5px; color: #0f6e56; }
 
 /* 缺口格可点补人 */
 .occ-cell.pointable { cursor: pointer; }
