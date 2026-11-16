@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="五、需求范围"
     subtitle="现状四张考卷 + 通用设计三阶段：定义 / 获取 / 变化"
-    version="v3.7 追加三阶段总图"
-    date="2026-11-14"
+    version="v3.8 补三张业务图与缺口规则"
+    date="2026-11-16"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-scope" class="section">
@@ -309,6 +309,35 @@
         <text x="536" y="249" text-anchor="middle" font-size="11" fill="#888780">整轮不再变</text>
         <text x="40" y="284" font-size="12" fill="#6a6a75">新增一个算法 = 登记一项服务，不改结构；每个服务要说清读什么数、怎么算，带版本号</text>
       </svg>
+
+      <h4 class="h4sub">名额算两次：开轮时冻结一个数，缺口发生时按规则再算</h4>
+      <svg viewBox="0 0 680 232" class="doc-svg" role="img" aria-label="名额算两次：开轮时算出名额 N 冻结快照；缺口发生时只有缺口规则要用的数，才再算一次">
+        <title>名额算两次</title>
+        <defs>
+          <marker id="twArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <text x="40" y="26" font-size="13" font-weight="600" fill="#0c447c">第一次 · 开轮时：算出名额就冻结</text>
+        <rect x="40" y="38" width="170" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+        <text x="125" y="60" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">名额来源</text>
+        <text x="125" y="80" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0f6e56">人工给定 · 算法服务</text>
+        <line x1="212" y1="66" x2="230" y2="66" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#twArr)"/>
+        <rect x="236" y="38" width="180" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+        <text x="326" y="60" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#085041">算出这段要几个人</text>
+        <text x="326" y="80" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0f6e56">名额 N · 容量不是库存</text>
+        <line x1="418" y1="66" x2="436" y2="66" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#twArr)"/>
+        <rect x="442" y="38" width="198" height="56" rx="8" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.5"/>
+        <text x="541" y="60" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#27500a">冻结快照</text>
+        <text x="541" y="80" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3b6d11">抢 · 申领 · 兜底都用这一个数</text>
+
+        <text x="40" y="128" font-size="13" font-weight="600" fill="#633806">第二次 · 缺口发生时：缺口规则要用，才再算</text>
+        <rect x="40" y="140" width="600" height="56" rx="8" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+        <text x="340" y="162" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#633806">「按当下预测」这条缺口规则，用算法服务再算一次「现在这段要几个人」</text>
+        <text x="340" y="181" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">减去实际在位 = 现在的缺口；其余三条缺口规则直接用冻结的 N，不用再算</text>
+        <text x="40" y="222" font-size="12" fill="#6a6a75">两次算的都是同一段时间的容量；第二次只回答「缺几个」，不改第一次冻结的名额</text>
+      </svg>
+      <p class="arch-cap">名额算两次：开轮时冻结一个数管整轮；缺口发生时只有缺口规则要用的数，才再算一次。</p>
     </div>
 
     <div id="hs-scope-acquire" class="section">
@@ -360,6 +389,33 @@
       <div class="section-header">
         <h2>5.5 变化段要点：请假之后</h2>
       </div>
+
+      <h4 class="h4sub">变化段三步：写事实 → 重算 → 缺口规则</h4>
+      <svg viewBox="0 0 680 168" class="doc-svg" role="img" aria-label="变化段三步：写事实、按事实重算、按缺口规则决定补不补">
+        <title>变化段三步</title>
+        <defs>
+          <marker id="csArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect x="40" y="30" width="180" height="76" rx="10" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="130" y="52" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712b13">① 写事实</text>
+        <text x="130" y="76" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993c1d">请假 · 顶班 · 换班 · 离职</text>
+        <text x="130" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993c1d">只声明区间与发起方</text>
+        <line x1="222" y1="68" x2="240" y2="68" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#csArr)"/>
+        <rect x="246" y="30" width="180" height="76" rx="10" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+        <text x="336" y="52" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">② 重算</text>
+        <text x="336" y="76" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">事实落进结果，留一条记录</text>
+        <text x="336" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">被拿掉的那段少了人</text>
+        <line x1="428" y1="68" x2="446" y2="68" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#csArr)"/>
+        <rect x="452" y="30" width="188" height="76" rx="10" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+        <text x="546" y="52" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">③ 缺口规则</text>
+        <text x="546" y="76" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要不要补，缺口规则已答（G0–G3）</text>
+        <text x="546" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要补就摆出缺口，人事定人</text>
+        <text x="340" y="140" text-anchor="middle" font-size="12" fill="#6a6a75">关闸前缺席属获取段（不在候选、申请作废）· 关闸后才进这三步</text>
+      </svg>
+      <p class="arch-cap">变化段永远走这三步：事实只声明区间，重算后是缺口规则在答补不补，要补也由人事定人。</p>
+
       <table class="data-table">
         <thead>
           <tr>
@@ -369,7 +425,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td><strong>请假</strong></td><td>员工</td><td>找有空、没冲突的人顶</td></tr>
+          <tr><td><strong>请假</strong></td><td>员工</td><td>被拿掉的那段少了人，按班次声明的缺口规则处理；要补由人事定人</td></tr>
           <tr><td><strong>顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
           <tr><td><strong>换班</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
           <tr><td><strong>离职</strong>（含长期假 / 调岗这一类资格退出）</td><td>离职流程模块写入</td><td>不找人，这个人直接从结果里消失；排班不提供登记入口，只承接结果。员工可见可选的班次，兜底选人时只挑状态在线、可排班的人</td></tr>
@@ -378,7 +434,7 @@
       <div class="note">
         <strong>三条关键说明：</strong>① 结果跟着重算，每次变化留一条记录（能回答「那天当时排的是谁」），班次本身不做状态变更；
         ② 顶别人已经到手的班，要他点头；受益方向（顶班的、被补的）通知即可；
-        ③ 补人是求值里的一步，不是另外起的任务——写进请假事实的那次重算里，就按顺位找有空、没冲突的人顶；找不到就给门店人事发一条待处理通知，不会自动反复找人；人事「找人顶班」是再写一条顶班事实、又一次重算，顶上之后那条待处理自动销掉。
+        ③ 被拿掉的那段少了人，排班不自动找人：缺口规则判完要补时，系统把缺口摆出来（结果层缺口清单），人事在这里定人；人事直接安排的，是再写一条顶班事实、又一次重算。
       </div>
 
       <div class="note">
@@ -389,8 +445,58 @@
       </div>
 
       <div class="note">
-        <strong>待业务拍板：</strong>请假的粒度。现行原型按整班请假；如果只请一部分时间（如 1 小时），少的那段要不要补人、剩余时间算不算有效出勤、工时怎么记——原型只把「只占一段」画出来，规则不擅自定，归属业务。
+        <strong>缺口规则只管一件事：排班确定后，因事件缺了人。</strong>获取段没排满（名额 3 个只有 2 个人拿）不算缺口，结果层手动补人即可。
+        缺口发生时按班次上声明的规则处理，一共四条：不补充（缺人也不补，留给门店现场安排）/ 补齐名额 / 剩余不足 1 小时不补 / 按当下预测再算（走算法服务）。
+        「不补充」是显式的选项，不是没有配置。
       </div>
+
+      <h4 class="h4sub">一条班次被请假切开：只有被拿走的段是缺口</h4>
+      <svg viewBox="0 0 680 262" class="doc-svg" role="img" aria-label="一条 4 小时班次被请假切开的三种情况：整班请、只请 1 小时、上 1 小时后请 1 小时">
+        <title>结果时间切分：被事件拿走的段才是缺口</title>
+        <defs>
+          <pattern id="gtHatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="#fdf3e6"/>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#ef9f27" stroke-width="1.5"/>
+          </pattern>
+        </defs>
+        <text x="200" y="24" text-anchor="middle" font-size="11" fill="#888780">12:00</text>
+        <text x="300" y="24" text-anchor="middle" font-size="11" fill="#888780">13:00</text>
+        <text x="400" y="24" text-anchor="middle" font-size="11" fill="#888780">14:00</text>
+        <text x="500" y="24" text-anchor="middle" font-size="11" fill="#888780">15:00</text>
+        <text x="600" y="24" text-anchor="middle" font-size="11" fill="#888780">16:00</text>
+        <line x1="200" y1="30" x2="200" y2="188" stroke="#e8e4e1" stroke-width="0.5"/>
+        <line x1="300" y1="30" x2="300" y2="188" stroke="#e8e4e1" stroke-width="0.5"/>
+        <line x1="400" y1="30" x2="400" y2="188" stroke="#e8e4e1" stroke-width="0.5"/>
+        <line x1="500" y1="30" x2="500" y2="188" stroke="#e8e4e1" stroke-width="0.5"/>
+        <line x1="600" y1="30" x2="600" y2="188" stroke="#e8e4e1" stroke-width="0.5"/>
+
+        <text x="40" y="52" font-size="12" font-weight="500" fill="#2c2c2a">切法一</text>
+        <text x="40" y="68" font-size="11" fill="#888780">整班请</text>
+        <rect x="200" y="44" width="400" height="34" rx="5" fill="url(#gtHatch)" stroke="#c58a2e" stroke-width="0.8"/>
+        <text x="400" y="61" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#633806">4 小时全被事件拿走 · 整段缺口，按班次声明的缺口规则处理</text>
+
+        <text x="40" y="102" font-size="12" font-weight="500" fill="#2c2c2a">切法二</text>
+        <text x="40" y="118" font-size="11" fill="#888780">只请 1 小时</text>
+        <rect x="200" y="94" width="100" height="34" rx="5" fill="#f2f6fb" stroke="#9dbede" stroke-width="0.8"/>
+        <text x="250" y="111" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0c447c">归原人</text>
+        <rect x="300" y="94" width="100" height="34" rx="5" fill="url(#gtHatch)" stroke="#c58a2e" stroke-width="0.8"/>
+        <text x="350" y="111" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#633806">缺口</text>
+        <rect x="400" y="94" width="200" height="34" rx="5" fill="#f2f6fb" stroke="#9dbede" stroke-width="0.8"/>
+        <text x="500" y="111" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0c447c">没被事件碰到 · 归原人</text>
+
+        <text x="40" y="152" font-size="12" font-weight="500" fill="#2c2c2a">切法三</text>
+        <text x="40" y="168" font-size="11" fill="#888780">上 1 小时后请 1 小时</text>
+        <rect x="200" y="144" width="100" height="34" rx="5" fill="#eaf7f0" stroke="#9fd0bd" stroke-width="0.8"/>
+        <text x="250" y="161" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#04342c">已上 · 履约</text>
+        <rect x="300" y="144" width="100" height="34" rx="5" fill="url(#gtHatch)" stroke="#c58a2e" stroke-width="0.8"/>
+        <text x="350" y="161" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#633806">缺口</text>
+        <rect x="400" y="144" width="200" height="34" rx="5" fill="#f2f6fb" stroke="#9dbede" stroke-width="0.8"/>
+        <text x="500" y="161" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0c447c">剩 2 小时 · 仍归原人</text>
+
+        <text x="40" y="214" font-size="12" fill="#6a6a75">作业面 = 被事件拿走的那段；没被事件碰到的班次时间，仍归原来的人履约</text>
+        <text x="40" y="236" font-size="12" fill="#6a6a75">被拿走的段少人 → 要不要补、怎么补，缺口规则已答（G0–G3），排班不自动找人</text>
+      </svg>
+      <p class="arch-cap">三种切法共用同一条界线：事件只拿走声明的那一段，没被碰到的班次时间还是原来的人的。</p>
 
       <h4 class="h4sub">一个人的时间线：班次条、事实条、补位条各自是独立区间</h4>
       <svg class="v5-tl" viewBox="0 0 680 386" role="img" aria-label="A 的时间线：撤销休假没有改动任何一条班次">
