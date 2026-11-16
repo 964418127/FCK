@@ -405,7 +405,7 @@
               <div class="drawer-tag">保存即进当前窗口。这里只定「这一天要几个人」，谁来做在「轮与结果」里定。</div>
               <div class="edit-box drawer-box">
                 <div class="er">
-                  <label>日期</label><el-input v-model="tempForm.date" size="small" style="width: 130px" />
+                  <label>日期</label><el-date-picker v-model="tempForm.date" type="date" size="small" style="width: 140px" value-format="YYYY-MM-DD" format="YYYY-MM-DD" :clearable="false" :disabled-date="d => d.getTime() < Date.now() - 86400000" placeholder="选一天" />
                   <label>名称</label><el-input v-model="tempForm.name" size="small" placeholder="如：周六晚加场" style="width: 200px" />
                 </div>
                 <div class="er">
