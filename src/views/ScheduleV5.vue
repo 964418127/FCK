@@ -1094,7 +1094,7 @@ function trialPick(g) {
 }
 
 /* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
-const runView = ref('grid')
+const runView = ref('axis')
 const runViewHint = computed(() => runView.value === 'grid'
   ? '格子里是当前占位的人；点空格直接定人'
   : runView.value === 'axis'
