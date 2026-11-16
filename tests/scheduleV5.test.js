@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -608,6 +608,31 @@ test('每日时长线 360–540 分钟：4 小时不够，加常规班凑到 8 �
   assert.equal(m2.actual, '480 分钟')
   assert.equal(m2.ok, true)
   assert.equal(after.ok, true, 'A 类 1 条 + 480 分钟，全部满足')
+})
+
+test('集合提交：一条没选不算数；只选 B 类不给交，会写清还差什么', () => {
+  const s = mk()
+  s.placements = s.placements.filter(p => p.personId !== 'E-213')   // 这周还什么都没占
+  const empty = claimSet5(s, 'S-205', 'E-213', '2026-11-16', [])
+  assert.equal(empty.empty, true)
+  assert.equal(empty.ok, false, '空组不是合规的提交')
+  const onlyB = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-19'])
+  assert.equal(onlyB.ok, false)
+  assert.ok(onlyB.reasons.includes('A 类还差 1 条'), onlyB.reasons.join('|'))
+  assert.ok(onlyB.reasons.some(r => r.includes('当天合计还差 2 小时')), onlyB.reasons.join('|'))
+  /* 勾上 A 类早班 + B 类常规：4 + 4 = 8 小时，A 类 1 条，这组才合规 */
+  const okSet = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17', 'SL-19'])
+  assert.equal(okSet.ok, true)
+  assert.equal(okSet.dayUsed, 480)
+  assert.equal(okSet.items.every(i => i.ok), true)
+})
+
+test('集合提交：这组会把周额度撑破时，提交前就说清楚', () => {
+  const s = mk()
+  /* E-213 本周已 20 小时（5 天 × 4 小时）：再勾 8 小时 = 28 小时 > 24 */
+  const r = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17', 'SL-19'])
+  assert.equal(r.ok, false)
+  assert.ok(r.reasons.some(x => x.includes('本周额度不够')), r.reasons.join('|'))
 })
 
 test('自然周从周一起、自然月按日历', () => {

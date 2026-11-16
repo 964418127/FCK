@@ -11,7 +11,7 @@ import {
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
   openAt5, slotFirstDate5, roundOf, datesOfRound5,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
-  claimCheck5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
+  claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
 } from './scheduleV5.js'
 
 const state = reactive(buildV5State())
@@ -425,6 +425,28 @@ export function trialClaim(personId, spaceId, date) {
 /* 移动端按这一轮快照口径看规则与额度（配了才出现，没配=没有约束） */
 export function myClaimBoard(spaceId, personId, date) {
   return claimCheck5(state, spaceId, personId, date)
+}
+
+/* 集合提交：勾了几条就按这几条算「这天到手的样子」，不合规不给交。
+   items = [{ slotId, way }]：拿的方式跟班次走，抢的当场生效、申领的只登记。 */
+export function previewClaimSet(spaceId, personId, date, slotIds) {
+  return claimSet5(state, spaceId, personId, date, slotIds)
+}
+export function submitClaimSet(spaceId, personId, date, items = []) {
+  const ids = items.map(i => i.slotId)
+  const pre = claimSet5(state, spaceId, personId, date, ids)
+  if (pre.empty) return { ok: false, reason: '先选班次再提交', pre }
+  if (!pre.ok) return { ok: false, reason: pre.reasons[0] || '选的这组班不符合要求', pre }
+  const done = []
+  const failed = []
+  items.forEach(it => {
+    const r = it.way === 'grab'
+      ? grab5(state, it.slotId, date, personId, state.now)
+      : applyFor5(state, it.slotId, date, personId, state.now)
+    if (r.ok) done.push(it.slotId)
+    else failed.push({ slotId: it.slotId, reason: r.reason })
+  })
+  return { ok: failed.length === 0, done, failed, pre }
 }
 
 /* 演示辅具（仅 ?dev=1）：把时间推进到下一轮发布时刻，翻轮并把配置层刷进新快照 */

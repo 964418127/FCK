@@ -138,10 +138,10 @@
 
         <!-- 这家店对我的要求：额度常驻，规则按类给进度；没配规则 / 额度的店不出现 -->
         <div v-if="claimBoard && (claimBoard.hasRule || claimBoard.limits.length)" class="claim-meter">
-          <div v-for="i in claimBoard.items" :key="i.id" :class="['cm-line', { bad: !i.ok }]">
+          <div v-for="i in meterBoard.items" :key="i.id" :class="['cm-line', { bad: !i.ok }]">
             <span class="cm-dot" />{{ i.name }}：{{ i.actual }}（要求 {{ i.need }}）{{ i.ok ? '' : '，还差' }}
           </div>
-          <div v-for="l in claimBoard.limits" :key="l.name" :class="['cm-line', { bad: !l.ok }]">
+          <div v-for="l in meterBoard.limits" :key="l.name" :class="['cm-line', { bad: !l.ok }]">
             <span class="cm-dot" />{{ l.name }}：已用 {{ l.used }} / {{ l.cap }} 小时{{ l.ok ? `，还剩 ${Math.round((l.cap - l.used) * 10) / 10}h` : '，已满' }}
           </div>
         </div>
@@ -191,7 +191,13 @@
 
           <div class="oc-foot">
             <template v-if="o.gate.ok">
-              <button class="act-btn primary" @click="o.row.way === 'grab' ? openGrab(o) : openApply(o)">
+              <!-- 有要求的人：这一天的班是一组，勾好再一起交；能不能交先算给你看 -->
+              <button
+                v-if="basketMode"
+                :class="['act-btn', isSel(o) ? 'picked' : 'ghost']"
+                @click="toggleSel(o)"
+              >{{ isSel(o) ? '已选上' : '选这条' }}</button>
+              <button v-else class="act-btn primary" @click="o.row.way === 'grab' ? openGrab(o) : openApply(o)">
                 {{ o.row.way === 'grab' ? '抢' : '申领' }}
               </button>
             </template>
@@ -201,6 +207,17 @@
             </template>
           </div>
           </div>
+        </div>
+
+        <!-- 集合提交：一条没选就交不了；选不够要求也交不了，差什么直接写在这儿 -->
+        <div v-if="basketMode" class="basket-bar">
+          <div class="bb-info">
+            <b>{{ selItems.length ? `已选 ${selItems.length} 条 · 合计 ${selHours} 小时` : '这一天还没选班次' }}</b>
+            <span :class="{ bad: selItems.length && !setPreview?.ok }">{{ basketHint }}</span>
+          </div>
+          <button class="bb-submit" :disabled="!canSubmit" @click="doSubmitSet">
+            {{ selItems.length ? `提交（${selItems.length} 条）` : '提交' }}
+          </button>
         </div>
       </section>
     </div>
@@ -305,7 +322,7 @@ import MonthCalendar from '../components/v3/MonthCalendar.vue'
 import PersonaSwitch5 from '../components/v5/PersonaSwitch5.vue'
 import {
   v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice, myClaimBoard,
-  myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
+  myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf, previewClaimSet, submitClaimSet
 } from '../mock/scheduleV5Store.js'
 import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5 } from '../mock/scheduleV5.js'
 
@@ -403,9 +420,9 @@ watch(() => route.query.date, d => { if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pic
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
 const curSpaceObj = computed(() => spaceById(v5, pickStore.value))
 const spaceCats = computed(() => categoriesOf5(curSpaceObj.value))
-/* 类头上的进度：这条类有没有条数规则、今天占到几条 */
+/* 类头上的进度：这条类有没有条数规则、今天占到几条（勾选时跟着动） */
 function catRuleItem(catId) {
-  return (claimBoard.value?.items || []).find(i => i.unit === 'count' && i.scope?.type === 'category' && i.scope.id === catId) || null
+  return meterBoard.value.items.find(i => i.unit === 'count' && i.scope?.type === 'category' && i.scope.id === catId) || null
 }
 const dayGroups = computed(() => {
   if (!spaceCats.value.length) return [{ id: '', name: '', offers: dayOffers.value, item: null }]
@@ -426,6 +443,51 @@ const dayGroups = computed(() => {
 const claimBoard = computed(() => {
   try { return myClaimBoard(pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today) } catch { return null }
 })
+
+/* ---------- 集合提交 ----------
+   有要求的人，这一天的班是一组：先勾班次，再一起交。
+   没要求的店不搞这套，照旧点了就成。 */
+const basketMode = computed(() => !!claimBoard.value?.hasRule)
+const sel = ref([])
+const selKey = o => `${o.slotId}|${o.date}`
+const isSel = o => sel.value.includes(selKey(o))
+function toggleSel(o) {
+  const k = selKey(o)
+  sel.value = sel.value.includes(k) ? sel.value.filter(x => x !== k) : [...sel.value, k]
+}
+watch([pickSel, pickStore, () => meId.value], () => { sel.value = [] })
+const selItems = computed(() => dayOffers.value.filter(o => isSel(o)))
+const selHours = computed(() => Math.round(selItems.value.reduce((s, o) => s + hours5(o.slot.start, o.slot.end), 0) * 10) / 10)
+const setPreview = computed(() => {
+  if (!basketMode.value) return null
+  try {
+    return previewClaimSet(pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today, selItems.value.map(o => o.slotId))
+  } catch { return null }
+})
+/* 进度条在勾选时就要跟着动：看的是「勾上以后这天到手的样子」 */
+const meterBoard = computed(() => {
+  const src = basketMode.value ? setPreview.value : claimBoard.value
+  return { items: src?.items || [], limits: src?.limits || [] }
+})
+const basketHint = computed(() => {
+  if (!selItems.value.length) return '先选班次才能提交'
+  const p = setPreview.value
+  if (!p) return ''
+  return p.ok ? '要求已满足，可以提交' : p.reasons.join('；')
+})
+const canSubmit = computed(() => selItems.value.length > 0 && !!setPreview.value?.ok)
+function doSubmitSet() {
+  if (!selItems.value.length) { ElMessage.warning('先选班次再提交'); return }
+  const r = submitClaimSet(
+    pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today,
+    selItems.value.map(o => ({ slotId: o.slotId, way: o.row.way }))
+  )
+  if (!r.ok) { ElMessage.warning(r.reason || r.failed?.[0]?.reason || '没提交成功'); return }
+  const grabbed = selItems.value.filter(o => o.row.way === 'grab').length
+  const applied = r.done.length - grabbed
+  ElMessage.success([grabbed ? `${grabbed} 条已进你的排班` : '', applied ? `${applied} 条已登记` : ''].filter(Boolean).join(' · ') || '已提交')
+  sel.value = []
+}
 
 /* 日期条按这一天一天的铺：选中那天自动滑到视野中间，别让人自己找 */
 watch(pickSel, async () => {
@@ -739,6 +801,21 @@ function declineMakeup(row) {
 .act-btn.primary { background: #a40035; border-color: #a40035; color: #fff; }
 .act-btn.ghost { background: #fff; color: #6a6a75; }
 .act-btn.disabled { background: #f4f4f5; color: #b5b5bd; border-color: #f0f0f0; }
+.act-btn.picked { background: #fdeef2; border-color: #a40035; color: #a40035; font-weight: 600; }
+
+/* 集合提交：勾完在底部一起交；一条没选就没得交 */
+.basket-bar {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px -12px 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: #fff; border-top: 1px solid #f0eaec; box-shadow: 0 -2px 10px rgba(0, 0, 0, .04);
+}
+.bb-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bb-info b { font-size: 13px; color: #2c2c2a; font-weight: 600; }
+.bb-info span { font-size: 11px; color: #8a8a95; line-height: 1.45; }
+.bb-info span.bad { color: #a4441d; }
+.bb-submit { flex: none; height: 34px; padding: 0 18px; border: none; border-radius: 17px; background: #a40035; color: #fff; font-size: 13px; font-weight: 600; }
+.bb-submit:disabled { background: #ebe6e8; color: #aaa3a6; }
 
 /* 通知 */
 .notice-card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #f2eef0; }

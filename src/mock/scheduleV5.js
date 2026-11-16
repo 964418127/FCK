@@ -870,35 +870,68 @@ export function claimCheck5(state, spaceId, personId, date, opts = {}) {
   const pool = opts.config ? (state.claimRules || []) : (snap?.rules || state.claimRules || [])
   const limitPool = opts.config ? (state.hourLimits || []) : (snap?.hourLimits || state.hourLimits || [])
   const rules = pool.filter(r => r.spaceId === spaceId && matchWho5(state, person, { spaceId }, r.who))
-  const got = claimedSlots5(state, personId, spaceId, date)
+  const baseGot = claimedSlots5(state, personId, spaceId, date)
+  /* extraSlotIds：把「这次要提交的这组班」也算进来，好让人在提交前看到这组合不合规 */
+  const extra = (opts.extraSlotIds || []).map(id => slotById(state, id))
+    .filter(sl => sl && sl.spaceId === spaceId && !baseGot.some(g => g.id === sl.id))
+  const got = [...baseGot, ...extra]
+  const extraMin = extra.reduce((s, sl) => s + minutesOfSlot5(sl), 0)
   const dayUsed = got.reduce((s, sl) => s + minutesOfSlot5(sl), 0)
   const items = rules.map(r => {
     if (r.unit === 'count') {
       const hit = got.filter(sl => r.scope.type === 'all' || sl.category === r.scope.id)
       const ok = hit.length >= (r.min || 0) && (!r.max || hit.length <= r.max)
       const need = [r.min ? `至少 ${r.min} 条` : '', r.max ? `至多 ${r.max} 条` : ''].filter(Boolean).join(' · ')
-      return { id: r.id, name: r.name, actual: `${hit.length} 条`, need, ok, scope: r.scope, unit: 'count' }
+      return { id: r.id, name: r.name, actual: `${hit.length} 条`, num: hit.length, min: r.min || 0, max: r.max || null, need, ok, scope: r.scope, unit: 'count' }
     }
     const ok = dayUsed >= (r.min || 0) && (!r.max || dayUsed <= r.max)
     const need = r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
-    return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, need, ok, scope: r.scope, unit: 'minute' }
+    return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, num: dayUsed, min: r.min || 0, max: r.max || null, need, ok, scope: r.scope, unit: 'minute' }
   })
   const lim = limitPool.find(l => l.spaceId === spaceId && l.kind === person?.kind)
   let limits = []
   if (lim) {
     const [ws, we] = weekRange5(date)
     const [ms, me] = monthRange5(date)
-    const wUsed = usedMinutes5(state, personId, spaceId, ws, we)
-    const mUsed = usedMinutes5(state, personId, spaceId, ms, me)
+    const wUsed = usedMinutes5(state, personId, spaceId, ws, we) + extraMin
+    const mUsed = usedMinutes5(state, personId, spaceId, ms, me) + extraMin
     limits = [
       { name: '本周额度', used: Math.round(wUsed / 60 * 10) / 10, cap: lim.week, ok: wUsed <= lim.week * 60 },
       { name: '本月额度', used: Math.round(mUsed / 60 * 10) / 10, cap: lim.month, ok: mUsed <= lim.month * 60 }
     ]
   }
   return {
-    hasRule: rules.length > 0, rules, dayUsed, got,
+    hasRule: rules.length > 0, rules, dayUsed, got, extraMin,
     items, limits,
     ok: items.every(i => i.ok) && limits.every(l => l.ok)
+  }
+}
+
+/* 集合提交：一个人这一天要的是一组班，组要过要求才让交。
+   空组是最直接的一种不合规（一条都没选就不该有提交这个动作）。
+   返回 reasons 是给人看的话，不是字段名。 */
+export function claimSet5(state, spaceId, personId, date, slotIds = [], opts = {}) {
+  const ids = [...new Set(slotIds)]
+  const check = claimCheck5(state, spaceId, personId, date, { ...opts, extraSlotIds: ids })
+  const space = state.spaces.find(s => s.id === spaceId)
+  const reasons = []
+  check.items.filter(i => !i.ok).forEach(i => {
+    const what = i.unit === 'count'
+      ? (i.scope?.type === 'category' ? catName5(space, i.scope.id) : '班次')
+      : '时长'
+    if (i.unit === 'count') {
+      if (i.min && i.num < i.min) reasons.push(`${what}还差 ${i.min - i.num} 条`)
+      else if (i.max && i.num > i.max) reasons.push(`${what}多了 ${i.num - i.max} 条`)
+    } else {
+      const h = m => Math.round(m / 6) / 10
+      if (i.min && i.num < i.min) reasons.push(`当天合计还差 ${h(i.min - i.num)} 小时`)
+      else if (i.max && i.num > i.max) reasons.push(`当天合计超了 ${h(i.num - i.max)} 小时`)
+    }
+  })
+  check.limits.filter(l => !l.ok).forEach(l => reasons.push(`${l.name}不够（用到 ${l.used}，上限 ${l.cap} 小时）`))
+  return {
+    ...check, empty: ids.length === 0, count: ids.length,
+    reasons, ok: ids.length > 0 && check.ok
   }
 }
 
