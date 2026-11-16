@@ -465,6 +465,41 @@ export function recalcRound(state, spaceId = "") {
   return round
 }
 
+/* 把配置层的申领规则 / 工时额度刷进这个空间的快照——判定跑的是快照，不是配置层。
+   快照按空间各存一份（默认轮被多空间共用，快照不能挂在轮对象上）。 */
+function applyRoundSnapshots5(state, spaceId) {
+  state.ruleSnapshots = state.ruleSnapshots || {}
+  state.ruleSnapshots[spaceId] = {
+    rules: (state.claimRules || []).filter(r => r.spaceId === spaceId),
+    hourLimits: (state.hourLimits || []).filter(l => l.spaceId === spaceId)
+  }
+}
+
+/* 到点翻轮：过了 nextAt 就自动生成下一轮，新轮快照按当时的配置层刷——
+   「改动下一轮生效」由这条机制兑现；轮自动跑，不拆业务按钮。 */
+export function runDueRounds5(state, now = state.now) {
+  const ownSpaces = new Set(Object.keys(state.rounds || {}))
+  const allSpaces = new Set(['', ...state.slots.map(x => x.spaceId)])
+  /* 主轮被多空间共用：翻主轮时，所有没有自己轮的空间快照都要刷 */
+  const defaultSpaces = [...allSpaces].filter(id => !ownSpaces.has(id))
+  ;[['', state.round, defaultSpaces], ...Object.entries(state.rounds || {}).map(([id, r]) => [id, r, [id]])]
+    .forEach(([spaceId, round, refresh]) => {
+      let guard = 0
+      while (round.nextAt && String(now) >= round.nextAt && guard++ < 40) {
+        const cfg = round.config || ROUND5.config
+        const span = round.nextSpan
+        round.id = 'R-' + span[0].slice(5).replace('-', '')
+        round.k = (round.k || 1) + 1
+        round.publishedAt = round.nextAt
+        round.span = span
+        round.applyDeadline = applyDeadlineOf(cfg, span[0])
+        refresh.forEach(id => applyRoundSnapshots5(state, id))
+        recalcRound(state, spaceId)
+      }
+    })
+  return state
+}
+
 const P = (id, slotId, date, personId, way, extra = {}) => ({
   id, slotId, date, personId, way, status: 'active', at: '2026-11-12 06:00', history: [], ...extra
 })
@@ -786,9 +821,13 @@ export function claimRulesOf5(state, spaceId, person) {
   return (state.claimRules || []).filter(r => r.spaceId === spaceId && matchWho5(state, person, { spaceId }, r.who))
 }
 /* 判一次：规则逐条 + 周/月额度。items 里带「差什么」，好直接给人看 */
-export function claimCheck5(state, spaceId, personId, date) {
+export function claimCheck5(state, spaceId, personId, date, opts = {}) {
   const person = personById(state, personId)
-  const rules = claimRulesOf5(state, spaceId, person)
+  /* 正式判定按这一轮的快照（改动下一轮生效）；试算按刚改过的配置层 */
+  const snap = (state.ruleSnapshots || {})[spaceId]
+  const pool = opts.config ? (state.claimRules || []) : (snap?.rules || state.claimRules || [])
+  const limitPool = opts.config ? (state.hourLimits || []) : (snap?.hourLimits || state.hourLimits || [])
+  const rules = pool.filter(r => r.spaceId === spaceId && matchWho5(state, person, { spaceId }, r.who))
   const got = claimedSlots5(state, personId, spaceId, date)
   const dayUsed = got.reduce((s, sl) => s + minutesOfSlot5(sl), 0)
   const items = rules.map(r => {
@@ -802,7 +841,7 @@ export function claimCheck5(state, spaceId, personId, date) {
     const need = r.min && r.max ? `${r.min}–${r.max} 分钟` : r.min ? `至少 ${r.min} 分钟` : `至多 ${r.max} 分钟`
     return { id: r.id, name: r.name, actual: `${dayUsed} 分钟`, need, ok }
   })
-  const lim = (state.hourLimits || []).find(l => l.spaceId === spaceId && l.kind === person?.kind)
+  const lim = limitPool.find(l => l.spaceId === spaceId && l.kind === person?.kind)
   let limits = []
   if (lim) {
     const [ws, we] = weekRange5(date)
@@ -819,6 +858,37 @@ export function claimCheck5(state, spaceId, personId, date) {
     items, limits,
     ok: items.every(i => i.ok) && limits.every(l => l.ok)
   }
+}
+
+/* 单条动作前能预判的门：接了这条会不会超（上限可预判，下限不行——集合的事，见 6.2.3 文档）
+   只拦「超」，不拦「还差」；读的是这一轮的快照。 */
+export function claimGate5(state, slotId, date, personId) {
+  const slot = slotById(state, slotId)
+  const person = personById(state, personId)
+  const snap = (state.ruleSnapshots || {})[slot.spaceId]
+  const rules = (snap?.rules || state.claimRules || [])
+    .filter(r => matchWho5(state, person, { spaceId: slot.spaceId }, r.who))
+    .filter(r => r.scope.type === 'all' || r.scope.id === slot.category)
+  const own = minutesOfSlot5(slot)
+  for (const r of rules) {
+    if (r.unit !== 'minute' || !r.max) continue
+    const got = claimedSlots5(state, personId, slot.spaceId, date)
+      .filter(sl => r.scope.type === 'all' || sl.category === r.scope.id)
+    const total = got.reduce((sum, sl) => sum + minutesOfSlot5(sl), 0) + own
+    if (total > r.max) {
+      return { ok: false, reason: `接了这条今天合计 ${Math.round(total / 6) / 10} 小时，超过每天 ${Math.round(r.max / 60)} 小时上限` }
+    }
+  }
+  const lim = (snap?.hourLimits || state.hourLimits || []).find(l => l.kind === person?.kind)
+  if (lim) {
+    const [ws, we] = weekRange5(date)
+    const [ms, me] = monthRange5(date)
+    const wUsed = usedMinutes5(state, personId, slot.spaceId, ws, we) + own
+    if (wUsed > lim.week * 60) return { ok: false, reason: `本周非全工时上限 ${lim.week} 小时已满` }
+    const mUsed = usedMinutes5(state, personId, slot.spaceId, ms, me) + own
+    if (mUsed > lim.month * 60) return { ok: false, reason: `本月工时上限 ${lim.month} 小时已到` }
+  }
+  return { ok: true }
 }
 
 /* 可获取清单：窗口已开、关闸未到、人群匹配、还有空位 */
@@ -921,6 +991,8 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
 export function grab5(state, slotId, date, personId, now = NOW) {
   const chk = canTake5(state, slotId, date, personId, 'grab', now)
   if (!chk.ok) return chk
+  const gate = claimGate5(state, slotId, date, personId)
+  if (!gate.ok) return gate
   state.placements.push(P(`P-${state.seq++}`, slotId, date, personId, `抢 · 第${chk.row.k}档`, { at: now }))
   return { ok: true }
 }
@@ -929,6 +1001,8 @@ export function grab5(state, slotId, date, personId, now = NOW) {
 export function applyFor5(state, slotId, date, personId, now = NOW) {
   const chk = canTake5(state, slotId, date, personId, 'apply', now)
   if (!chk.ok) return chk
+  const gate = claimGate5(state, slotId, date, personId)
+  if (!gate.ok) return gate
   state.applications.push({ id: `A-${state.seq++}`, slotId, date, personId, at: now })
   return { ok: true }
 }
@@ -1086,5 +1160,8 @@ export function buildV5State() {
   })
   /* 直派到点执行：窗口已开的档现在分人（通班 11-14 09:00 开，NOW 之前已到点） */
   runDueDirect5(state, state.now)
+  /* 初始轮快照按种子配置刷：轮跑的是快照 */
+  const snapSpaces = new Set(['', ...Object.keys(state.rounds || {}), ...state.slots.map(x => x.spaceId)])
+  snapSpaces.forEach(id => applyRoundSnapshots5(state, id))
   return state
 }

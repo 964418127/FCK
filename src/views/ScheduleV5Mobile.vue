@@ -131,6 +131,16 @@
           <p v-else>这一轮的班都是系统按规则排的，结果在「我的排班」里看。</p>
         </div>
 
+        <!-- 这家店对我的要求：额度常驻，规则按类给进度；没配规则 / 额度的店不出现 -->
+        <div v-if="claimBoard && (claimBoard.hasRule || claimBoard.limits.length)" class="claim-meter">
+          <div v-for="i in claimBoard.items" :key="i.id" :class="['cm-line', { bad: !i.ok }]">
+            <span class="cm-dot" />{{ i.name }}：{{ i.actual }}（要求 {{ i.need }}）{{ i.ok ? '' : '，还差' }}
+          </div>
+          <div v-for="l in claimBoard.limits" :key="l.name" :class="['cm-line', { bad: !l.ok }]">
+            <span class="cm-dot" />{{ l.name }}：已用 {{ l.used }} / {{ l.cap }} 小时{{ l.ok ? `，还剩 ${Math.round((l.cap - l.used) * 10) / 10}h` : '，已满' }}
+          </div>
+        </div>
+
         <div class="date-strip">
           <button
             v-for="d in weekDays"
@@ -277,19 +287,22 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Clock, Location, User } from '@element-plus/icons-vue'
 import MonthCalendar from '../components/v3/MonthCalendar.vue'
 import PersonaSwitch5 from '../components/v5/PersonaSwitch5.vue'
 import {
-  v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice,
+  v5, me as meRef, setMe, grabV5, applyV5, submitLeave, proposeSwap, answerSwap, ackNotice, myClaimBoard,
   myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf
 } from '../mock/scheduleV5Store.js'
 import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5 } from '../mock/scheduleV5.js'
 
 const router = useRouter()
-const tab = ref('mine')
+const route = useRoute()
+/* 演示辅具：?as=<员工id> 直接落到那个人视角（与 MobileParttimeTasks ?as 同性质） */
+watch(() => route.query.as, id => { if (id && v5.people.some(p => p.id === id)) setMe(id) }, { immediate: true })
+const tab = ref(['mine', 'pick'].includes(route.query.tab) ? route.query.tab : 'mine')
 const sheet = ref(null)
 
 const meId = computed({
@@ -365,6 +378,10 @@ function pickDefaultPick() {
   return okDates[0] || roundDates.value.find(d => d >= v5.today) || roundDates.value[0] || WEEK_DATES[0]
 }
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
+/* 这家店对我的要求：按这一轮快照口径（配了才有内容） */
+const claimBoard = computed(() => {
+  try { return myClaimBoard(me.value.spaceId, me.value.id, pickSel.value || v5.today) } catch { return null }
+})
 
 /* 日期条按这一天一天的铺：选中那天自动滑到视野中间，别让人自己找 */
 watch(pickSel, async () => {
@@ -623,6 +640,10 @@ function declineMakeup(row) {
 .rc-acts.pending .act-line.strong { color: #a40035; font-weight: 500; }
 
 /* 可获取 */
+.claim-meter { background: #fff; border: 1px solid #f0eaec; border-radius: 10px; padding: 9px 12px; margin: 10px 0 8px; display: flex; flex-direction: column; gap: 5px; }
+.cm-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
+.cm-line.bad { color: #a4441d; }
+.cm-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; flex: none; }
 .pick-banner { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #f2eef0; }
 .pb-top { display: flex; align-items: center; gap: 6px; }
 .pb-top .el-icon { color: #a40035; }

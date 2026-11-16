@@ -451,6 +451,7 @@
                 <p>这个空间没有申领规则：所有人不受选择约束，直接放行</p>
               </div>
               <el-button size="small" type="primary" @click="openRule(null)">+ 新增规则</el-button>
+              <el-button v-if="isDev" size="small" @click="devAdvanceRound">发布下一轮（演示）</el-button>
             </div>
 
             <article v-if="ruleEditing" class="slot-card">
@@ -879,7 +880,7 @@ import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
-  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits
+  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -1458,6 +1459,11 @@ function syncLimits() {
 function openLimitEdit() {
   syncLimits()
   limitEditing.value = true
+}
+async function devAdvanceRound() {
+  const r = advanceRoundDemo()
+  if (r.ok) ElMessage.success(`已推进到下一轮发布：铺 ${r.span[0]} – ${r.span[1]}，规则按刚保存的配置生效`)
+  else ElMessage.warning(r.reason)
 }
 function applyLimits() {
   setHourLimits(selSpace.value, limitForm.week, limitForm.month)

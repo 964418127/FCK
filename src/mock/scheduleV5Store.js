@@ -8,7 +8,7 @@ import { reactive, ref, computed } from 'vue'
 import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
-  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5,
+  personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
   openAt5, slotFirstDate5, roundOf, datesOfRound5,
   claimCheck5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5
 } from './scheduleV5.js'
@@ -394,9 +394,26 @@ export function removeRule5(id) {
   state.claimRules = (state.claimRules || []).filter(r => r.id !== id)
   state.configDirty = true
 }
-/* 试算：看某人某天在这家店占到的班过不过规则、额度还剩多少 */
+/* 试算：看某人某天在这家店占到的班过不过规则、额度还剩多少。
+   试算按刚改过的配置层算；正式判定按这一轮的快照（改动下一轮生效）。 */
 export function trialClaim(personId, spaceId, date) {
+  return claimCheck5(state, spaceId, personId, date, { config: true })
+}
+
+/* 移动端按这一轮快照口径看规则与额度（配了才出现，没配=没有约束） */
+export function myClaimBoard(spaceId, personId, date) {
   return claimCheck5(state, spaceId, personId, date)
+}
+
+/* 演示辅具（仅 ?dev=1）：把时间推进到下一轮发布时刻，翻轮并把配置层刷进新快照 */
+export function advanceRoundDemo() {
+  const targets = [['', state.round], ...Object.entries(state.rounds || {})]
+  const due = targets.find(([, r]) => r.nextAt && state.now < r.nextAt)
+  if (!due) return { ok: false, reason: '没有待发布的下一轮' }
+  const [, r] = due
+  state.now = r.nextAt
+  runDueRounds5(state, state.now)
+  return { ok: true, span: r.span }
 }
 /* 额度：按门店配，只控周和月 */
 export function limitsOfSpace(spaceId, kind = 'parttime') {

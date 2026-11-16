@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, weekRange5, monthRange5, runDueRounds5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -641,4 +641,50 @@ test('额度按店各算一套：同一个人另一家店没有额度配置就�
   const other = claimCheck5(s, 'S-201', 'E-211', '2026-11-16')
   assert.equal(other.limits.length, 0)
   assert.equal(other.ok, true)
+})
+
+/* ===== 申领规则闭环：单条预判门 + 轮快照生效 ===== */
+test('超上限当场拦：接了这条今天合计超 9 小时，点了不成并说原因', () => {
+  const s = mk()
+  s.slots.find(x => x.id === 'SL-18').snapN = 4   /* 只测规则门，把「位已占满」让开 */
+  /* 何川 11-17 已占早班 4h，再抢常规（首尾相接 14–18）+ 晚班（18–22），合计 12h 超 540 分钟上限 */
+  const g0 = grab5(s, 'SL-19', '2026-11-17', 'E-211')
+  assert.equal(g0.ok, true, '首尾相接的常规班能抢')
+  const g = grab5(s, 'SL-18', '2026-11-17', 'E-211')
+  assert.equal(g.ok, false)
+  assert.ok(g.reason.includes('超过每天 9 小时上限'), g.reason)
+})
+
+test('超周/月额度当场拦：本周已 20h，再抢 5h 不成；下限不拦单条', () => {
+  const s = mk()
+  s.placements.push({ id: 'P-G3', slotId: 'SL-19', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const g = grab5(s, 'SL-18', '2026-11-22', 'E-211')   /* 再 +4h = 28h > 24h */
+  assert.equal(g.ok, false)
+  assert.ok(g.reason.includes('本周非全工时上限 24 小时已满'), g.reason)
+  const s2 = mk()
+  const g2 = grab5(s2, 'SL-19', '2026-11-22', 'E-213') /* A 类一条没占也放行（下限不拦单条） */
+  assert.equal(g2.ok, true)
+})
+
+test('规则快照按空间各存一份；没配的空间不受影响', () => {
+  const s = mk()
+  assert.equal(s.ruleSnapshots['S-205'].rules.length, 2)
+  assert.equal(s.ruleSnapshots['S-205'].hourLimits.length, 1)
+  assert.equal((s.ruleSnapshots['S-201'] || {}).rules?.length || 0, 0)
+  const s2 = mk()
+  assert.equal(grab5(s2, 'SL-01', '2026-11-23', 'E-121').ok, true, '没规则空间照常抢')
+})
+
+test('改配置不进当前轮快照；发布下一轮（演示翻轮）后才生效', () => {
+  const s = mk()
+  /* 配置层加一条：A 类至多 1 */
+  s.claimRules.push({ id: 'CR-T', spaceId: 'S-205', name: 'A 类至多 1', who: s.claimRules[0].who, scope: { type: 'category', id: 'A' }, unit: 'count', min: 0, max: 1 })
+  assert.equal(s.ruleSnapshots['S-205'].rules.length, 2, '当前轮快照没变')
+  /* 试算按配置层立即能看到新规则 */
+  const trial = claimCheck5(s, 'S-205', 'E-213', '2026-11-16', { config: true })
+  assert.equal(trial.items.length, 3)
+  /* 推进到 nextAt 翻轮：新快照带上新规则 */
+  runDueRounds5(s, s.round.nextAt)
+  assert.equal(s.ruleSnapshots['S-205'].rules.length, 3, '新一轮快照已刷新')
+  assert.equal(s.round.span[0], '2026-11-23')
 })
