@@ -169,44 +169,6 @@
 
             <div class="hint-line">周期时段是模板：保存后从下一轮起生效，当前轮按已生成快照跑，不重算。</div>
 
-            <!-- 这天的时间轴：一天的班次画在钟点上；空间的营业/作业时段只是尺子，不拦 -->
-            <div class="day-axis">
-              <div class="da-head">
-                <strong>这天的时间轴</strong>
-                <span class="da-tabs">
-                  <button v-for="(d, i) in DAY_NAMES" :key="i" :class="{ on: axisDow === i }" @click="axisDow = i">周{{ d }}</button>
-                </span>
-              </div>
-              <svg class="da-svg" :viewBox="`0 0 680 ${axisH}`" role="img"
-                aria-label="一天的时间轴：营业或作业时段作尺子，班次画条，时段外开班照常跑">
-                <!-- 整点刻度 -->
-                <text v-for="t in axisTicks" :key="'t' + t" :x="ax(t)" y="11" text-anchor="middle" font-size="10" fill="#9a9fa9">{{ String(t / 60).padStart(2, '0') }}</text>
-                <!-- 尺子：空间的营业/作业时段，只是参考，不拦 -->
-                <rect :x="ax(toMin(curSpace.bizStart))" y="15" :width="ax(toMin(curSpace.bizEnd)) - ax(toMin(curSpace.bizStart))" :height="axisH - 18"
-                  fill="#FDF3E3" stroke="#C99B4A" stroke-width="0.8" stroke-dasharray="4 3" rx="3" />
-                <text :x="(ax(toMin(curSpace.bizStart)) + ax(toMin(curSpace.bizEnd))) / 2" y="27" text-anchor="middle" font-size="10.5" fill="#854F0B">
-                  {{ curSpace.tag === '办公区' ? '作业时段' : '营业时段' }} {{ curSpace.bizStart }}–{{ curSpace.bizEnd }}
-                </text>
-                <!-- 班次条：一条时段一行，时段外那段单独画 -->
-                <g v-for="(s, i) in axisRows" :key="s.id">
-                  <rect v-for="(g, j) in rowSegs(s)" :key="j" :x="g.x1" :y="32 + i * 21" :width="g.x2 - g.x1" height="14" rx="3"
-                    :fill="s.tmp ? '#CFE0F5' : (g.kind === 'in' ? '#B7E5CF' : '#EDEFF2')"
-                    :stroke="s.tmp ? '#7FA6D9' : (g.kind === 'in' ? '#6FBF97' : '#B4B9C2')" stroke-width="0.8"
-                    :stroke-dasharray="g.kind === 'out' ? '4 3' : undefined">
-                    <title>{{ s.name }} {{ s.start }}–{{ s.end }} · {{ quotaLabel(s) }}{{ s.tmp ? ' · 临时班次' : '' }}</title>
-                  </rect>
-                  <text :x="rowLabelX(s)" :y="42 + i * 21" font-size="10.5" :fill="s.tmp ? '#2B5286' : '#1F5C3D'">{{ s.name }}</text>
-                </g>
-                <text v-if="!axisRows.length" :x="340" :y="55" text-anchor="middle" font-size="11" fill="#9a9fa9">周{{ DAY_NAMES[axisDow] }}没有班次</text>
-              </svg>
-              <div class="da-legend">
-                <span><i class="sw sw-ruler" />{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段（尺子，不拦）</span>
-                <span><i class="sw sw-band" />班次</span>
-                <span><i class="sw sw-tmp" />临时班次（当天加的）</span>
-                <span><i class="sw sw-out" />时段外开班（照常排，不拦）</span>
-              </div>
-            </div>
-
             <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天） -->
             <div class="cyc-switch">
               <button :class="{ on: cycView === 'cycle' }" @click="cycView = 'cycle'">按周期</button>
@@ -320,6 +282,12 @@
                   <span class="time">{{ s.start }}–{{ s.end }}</span>
                   <span class="days">{{ daysLabel(s.days) }}</span>
                   <span v-if="s.category" class="cat-tag">{{ catName5(curSpace, s.category) }}</span>
+                  <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
+                    含{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段外
+                  </span>
+                  <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
+                    含{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段外
+                  </span>
                 </div>
                 <div class="sacts">
                   <span class="quota-tag">{{ quotaLabel(s) }}</span>
@@ -411,7 +379,7 @@
                 </div>
                 <div class="tc-r">
                   <span class="tc-occ">{{ occupied(t.id, t.date) }}/{{ t.snapN }}</span>
-                  <el-button v-if="occupied(t.id, t.date) < t.snapN" link size="small" @click="openGap(t, t.date)">定人 →</el-button>
+                  <el-button v-if="occupied(t.id, t.date) < t.snapN && !runReadonly" link size="small" @click="goDefinePeople(t.date)">去结果里定人 →</el-button>
                   <el-button link size="small" type="danger" @click="removeTemp(t.id)">删除</el-button>
                 </div>
               </article>
@@ -422,7 +390,7 @@
 
             <el-drawer :model-value="tempDrawer" size="560px" title="新增临时班次"
               @update:model-value="v => { if (!v) tempDrawer = false }">
-              <div class="drawer-tag">保存即进当前窗口：这一天多出名额，能拿的人立刻可以拿。</div>
+              <div class="drawer-tag">保存即进当前窗口。这里只定「这一天要几个人」，谁来做在「轮与结果」里定。</div>
               <div class="edit-box drawer-box">
                 <div class="er">
                   <label>日期</label><el-input v-model="tempForm.date" size="small" style="width: 130px" />
@@ -435,24 +403,6 @@
                   <el-input v-model="tempForm.end" size="small" style="width: 80px" />
                   <label>名额</label>
                   <el-input-number v-model="tempForm.value" :min="1" :max="6" size="small" controls-position="right" style="width: 96px" />
-                </div>
-                <div class="pick-box">
-                  <div class="pb-head">
-                    <strong>直接定人</strong>
-                    <span>不选就留空位，开放后谁先拿谁得；要指定就一次选够（最多 {{ tempForm.value }} 人）</span>
-                  </div>
-                  <div class="pb-list">
-                    <label v-for="p in tempCands" :key="p.id" :class="['pb-item', { on: tempForm.personIds.includes(p.id), off: !tempForm.personIds.includes(p.id) && tempForm.personIds.length >= tempForm.value }]">
-                      <input type="checkbox" :value="p.id" :checked="tempForm.personIds.includes(p.id)"
-                        :disabled="!tempForm.personIds.includes(p.id) && tempForm.personIds.length >= tempForm.value"
-                        @change="toggleTempPerson(p.id)" />
-                      <span class="pb-code">{{ p.id }}</span>
-                      <span class="pb-name">{{ p.name }}</span>
-                      <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }}</span>
-                    </label>
-                    <span v-if="!tempCands.length" class="pb-none">这一天这个时段没有空着的人</span>
-                  </div>
-                  <div class="pb-sum">已选 {{ tempForm.personIds.length }} / {{ tempForm.value }} 人{{ tempForm.personIds.length ? `：${tempForm.personIds.map(id => personById(v5, id)?.name).join('、')}` : '' }}</div>
                 </div>
                 <div class="ea">
                   <el-button size="small" @click="tempDrawer = false">取消</el-button>
@@ -586,28 +536,78 @@
 
         <!-- ② 获取段：轮与结果 -->
         <section v-else-if="tab === 'run'" class="pane">
-          <div class="table-title">占用与缺口 <em>点缺人的格子直接补人；格子里的名字是当前占位的人</em></div>
+          <!-- 轮次：系统里同时有两轮（进行中 + 已排定待开放），切着看 -->
+          <div class="run-bar">
+            <div class="rb-tabs">
+              <button v-for="r in roundList(selSpace)" :key="r.id" :class="{ on: shownRound && shownRound.id === r.id }" @click="pickRound(r.id)">
+                <strong>{{ short(r.span[0]) }}–{{ short(r.span[1]) }}</strong>
+                <em :class="['rb-badge', r.status]">{{ roundStatusLabel(r.status) }}</em>
+              </button>
+            </div>
+            <span class="rb-note">{{ runNote }}</span>
+          </div>
+
+          <div class="run-switch">
+            <button :class="{ on: runView === 'grid' }" @click="runView = 'grid'">占用矩阵</button>
+            <button :class="{ on: runView === 'axis' }" @click="runView = 'axis'">空间时间轴</button>
+            <span class="rs-hint">{{ runView === 'grid' ? '格子里是当前占位的人；点空格直接定人' : '这一天每个时段上是谁、几点到几点；空格缺口点开就是定人' }}</span>
+          </div>
+
+          <template v-if="runView === 'grid'">
           <div class="occ-wrap">
             <div class="occ-head" :style="{ gridTemplateColumns: occCols }">
               <span class="occ-corner">时段</span>
-              <span v-for="d in roundDates" :key="d" class="occ-day">{{ d.slice(5) }}</span>
+              <span v-for="d in runDates" :key="d" class="occ-day">{{ d.slice(5) }}</span>
             </div>
             <div v-for="s in allSpaceSlots" :key="s.id" class="occ-row" :style="{ gridTemplateColumns: occCols }">
               <div class="occ-name">
-                <strong>{{ s.name }}</strong>
+                <strong>{{ s.name }}<em v-if="s.tmp" class="tmp-tag">临时</em></strong>
                 <em>{{ s.start }}–{{ s.end }} · 名额 {{ s.snapN }}</em>
               </div>
-              <div v-for="d in roundDates" :key="d" class="occ-cell"
-                :class="{ off: !onDay(s, d), gap: onDay(s, d) && occupied(s.id, d) < s.snapN, pointable: onDay(s, d) && occupied(s.id, d) < s.snapN }"
-                @click="onDay(s, d) && occupied(s.id, d) < s.snapN && openGap(s, d)">
+              <div v-for="d in runDates" :key="d" class="occ-cell"
+                :class="{ off: !onDay(s, d), gap: onDay(s, d) && occupied(s.id, d) < s.snapN, pointable: onDay(s, d) && occupied(s.id, d) < s.snapN && !runReadonly }"
+                @click="onDay(s, d) && occupied(s.id, d) < s.snapN && !runReadonly && openGap(s, d)">
                 <template v-if="onDay(s, d)">
                   <span class="oc-count">{{ occupied(s.id, d) }}/{{ s.snapN }}</span>
                   <span class="oc-names">{{ occupyNames(s.id, d) }}</span>
-                  <span v-if="occupied(s.id, d) < s.snapN" class="oc-fill">补人</span>
+                  <span v-if="occupied(s.id, d) < s.snapN && !runReadonly" class="oc-fill">定人</span>
                 </template>
               </div>
             </div>
           </div>
+          </template>
+
+          <!-- 空间时间轴：这一天所有时段（周期 + 临时）画在钟点上，行内是占位的人 -->
+          <template v-else>
+            <div class="ax-days">
+              <button v-for="d in runDates" :key="d" :class="{ on: axisDay === d }" @click="axisDay = d">
+                {{ d.slice(5) }}<em>周{{ DAY_NAMES[new Date(d + 'T00:00:00').getDay()] }}</em>
+              </button>
+            </div>
+            <div class="ax-box">
+              <div class="ax-row ax-head">
+                <div class="ax-label" />
+                <div class="ax-track">
+                  <b v-for="t in axTicks" :key="t" class="ax-tick-label" :style="{ left: axPct(t) + '%' }">{{ String(Math.floor(t / 60)).padStart(2, '0') }}:00</b>
+                </div>
+              </div>
+              <div v-for="s in axSlots" :key="s.id" class="ax-row">
+                <div class="ax-label">
+                  <strong>{{ s.name }}</strong>
+                  <span>{{ s.start }}–{{ s.end }}</span>
+                  <em :class="['ax-src', s.tmp ? 'tmp' : 'cyc']">{{ s.tmp ? '临时' : '周期' }}</em>
+                </div>
+                <div class="ax-track">
+                  <i v-for="t in axTicks" :key="'g' + t" class="ax-grid" :style="{ left: axPct(t) + '%' }" />
+                  <div :class="['ax-band', s.tmp ? 'tmp' : 'cyc']" :style="{ left: axPct(toMin(s.start)) + '%', width: (axPct(toMin(s.end)) - axPct(toMin(s.start))) + '%' }">
+                    <span v-for="p in occupantsOf(s.id, axisDay)" :key="p.id" class="ax-person">{{ p.id }} {{ p.name }}</span>
+                    <span v-if="axisGap(s) > 0" :class="['ax-gap', { pointable: !runReadonly }]" @click="!runReadonly && openGap(s, axisDay)">还缺 {{ axisGap(s) }} 人 · 定人</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="!axSlots.length" class="ax-empty">这一天没有时段</div>
+            </div>
+          </template>
 
           <div class="table-title">申领登记 <em>提交只登记；{{ shortAt(round.applyDeadline) }} 截止后按综合分排序截断，人事不逐单审批</em></div>
           <table class="data-table">
@@ -949,11 +949,12 @@ import {
   addSlot, copySlot, removeSlot, addService, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
+  roundList, pickRound, viewRound, viewRoundDates, roundOfDate,
   addCategory5, renameCategory5, removeCategory5, categoryUsage
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
-  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5, dutyPersonId5
+  dayCopyPlan5, datesOfRound5, categoriesOf5, catName5, claimRulesOf5, dutyPersonId5, snapN5
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
@@ -972,7 +973,40 @@ const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.q
 const round = computed(() => roundOf(v5, selSpace.value))
 /* 这一轮铺到了哪些天：门店七天、办公区整月——矩阵和逐日名额都按它走 */
 const roundDates = computed(() => datesOfRound5(round.value))
-const occCols = computed(() => `150px repeat(${roundDates.value.length}, minmax(78px, 1fr))`)
+/* 结果层看的是选中的那一轮：默认进行中，可切到已排定 / 已结束 */
+const shownRound = computed(() => viewRound(selSpace.value))
+const runDates = computed(() => viewRoundDates(selSpace.value))
+const runReadonly = computed(() => shownRound.value?.status === 'ended')
+const occCols = computed(() => `150px repeat(${runDates.value.length}, minmax(78px, 1fr))`)
+function roundStatusLabel(st) { return st === 'ended' ? '已结束' : st === 'planned' ? '已排定 · 待开放' : '进行中' }
+
+/* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
+const runView = ref('grid')
+const axisDay = ref('')
+watch(() => [selSpace.value, shownRound.value?.id], () => {
+  axisDay.value = runDates.value.includes(v5.today) ? v5.today : (runDates.value[0] || '')
+}, { immediate: true })
+const axSlots = computed(() => axisDay.value
+  ? slotsOn5(v5, axisDay.value).filter(s => s.spaceId === selSpace.value).sort((a, b) => a.start.localeCompare(b.start))
+  : [])
+const axRange = computed(() => {
+  let lo = toMin(curSpace.value.bizStart), hi = toMin(curSpace.value.bizEnd)
+  axSlots.value.forEach(s => { lo = Math.min(lo, toMin(s.start)); hi = Math.max(hi, toMin(s.end)) })
+  return [Math.floor(lo / 60) * 60, Math.ceil(hi / 60) * 60]
+})
+function axPct(min) {
+  const [lo, hi] = axRange.value
+  return Math.max(0, Math.min(100, (min - lo) / (hi - lo) * 100))
+}
+const axTicks = computed(() => { const [lo, hi] = axRange.value; const out = []; for (let m = lo; m <= hi; m += 60) out.push(m); return out })
+function axisGap(s) { return Math.max(0, snapN5(v5, s.id, axisDay.value) - activeCount5(v5, s.id, axisDay.value)) }
+const runNote = computed(() => {
+  const r = shownRound.value
+  if (!r) return ''
+  if (r.status === 'ended') return `这一轮 ${short(r.span[0])}–${short(r.span[1])} 已结束，只能查看，不能再改人`
+  if (r.status === 'planned') return `${shortAt(r.publishedAt)} 发布，${shortAt(r.applyDeadline)} 申领截止；现在就可以按缺口定人`
+  return `申领 ${shortAt(r.applyDeadline)} 截止；点空格直接定人`
+})
 
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
 const filteredSpaces = computed(() => v5.spaces.filter(s => {
@@ -987,35 +1021,6 @@ const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
 function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits(); initTrial() }
-
-/* ===== 这天的时间轴：把一天的班次画在钟点上 =====
-   尺子 = 空间的营业/作业时段（bizStart/bizEnd），只画出来作参考，不拦时段；
-   超出尺子的那截单独画成虚线灰块，叫「时段外开班」——加班是人的时间线上的判定，不在这张图上冒充。 */
-const DAY_AXIS_L = 44, DAY_AXIS_R = 660
-const axisDow = ref(new Date().getDay())
-function dowOf(date) { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay() }
-const axisRows = computed(() => [
-  ...spaceSlots.value.filter(s => s.days.includes(axisDow.value)).map(s => ({ ...s, tmp: false })),
-  ...spaceTemps.value.filter(t => dowOf(t.date) === axisDow.value).map(s => ({ ...s, tmp: true }))
-])
-const axisRange = computed(() => {
-  let lo = toMin(curSpace.value.bizStart), hi = toMin(curSpace.value.bizEnd)
-  axisRows.value.forEach(s => { lo = Math.min(lo, toMin(s.start)); hi = Math.max(hi, toMin(s.end)) })
-  return [Math.floor(lo / 60) * 60, Math.ceil(hi / 60) * 60]
-})
-function ax(min) { const [lo, hi] = axisRange.value; return DAY_AXIS_L + (min - lo) / (hi - lo) * (DAY_AXIS_R - DAY_AXIS_L) }
-const axisTicks = computed(() => { const [lo, hi] = axisRange.value; const out = []; for (let m = lo; m <= hi; m += 60) out.push(m); return out })
-const axisH = computed(() => 32 + Math.max(axisRows.value.length, 1) * 21 + 4)
-function rowSegs(s) {
-  const bs = toMin(curSpace.value.bizStart), be = toMin(curSpace.value.bizEnd)
-  const a = toMin(s.start), b = toMin(s.end), out = []
-  const push = (m1, m2, kind) => { if (m2 - m1 > 2) out.push({ x1: ax(m1), x2: ax(m2), kind }) }
-  if (a < bs) push(a, Math.min(b, bs), 'out')
-  push(Math.max(a, bs), Math.min(b, be), 'in')
-  if (b > be) push(Math.max(a, be), b, 'out')
-  return out
-}
-function rowLabelX(s) { const g = rowSegs(s)[0]; return Math.max(g ? g.x1 + 7 : DAY_AXIS_L, DAY_AXIS_L + 2) }
 
 /* 时间展示：日期只到日，时刻带上时分 */
 function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` }
@@ -1264,25 +1269,11 @@ function save() {
 function revert() { revertConfig(); ElMessage.success('已撤销，回到当前轮的配置') }
 
 /* 临时班次 */
-const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2, personIds: [] })
+const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2 })
 const tempDrawer = ref(false)
 function openTempDrawer() {
   tempForm.name = ''
-  tempForm.personIds = []
   tempDrawer.value = true
-}
-/* 能直接定的人：这家店的人、这个时段空着（首尾相接可以） */
-const tempCands = computed(() => {
-  const d = tempForm.date, s = tempForm.start, e = tempForm.end
-  if (!d || !s || !e) return []
-  return v5.people.filter(p =>
-    (p.spaceIds || [p.spaceId]).includes(selSpace.value)
-    && !personBusy5(v5, p.id, d, s, e)
-  )
-})
-function toggleTempPerson(id) {
-  if (tempForm.personIds.includes(id)) tempForm.personIds = tempForm.personIds.filter(x => x !== id)
-  else if (tempForm.personIds.length < tempForm.value) tempForm.personIds.push(id)
 }
 function saveTemp() {
   if (!tempForm.name) { ElMessage.warning('给这个临时班次起个名'); return }
@@ -1290,24 +1281,25 @@ function saveTemp() {
     spaceId: selSpace.value, date: tempForm.date, name: tempForm.name,
     start: tempForm.start, end: tempForm.end, quota: { source: 'manual', value: tempForm.value }
   })
-  /* 一次把选好的人落位，名额分配结果当场可查 */
-  const picks = tempForm.personIds.slice(0, tempForm.value)
-  let done = 0
-  picks.forEach(id => { if (appointV5(row.id, row.date, id).ok) done += 1 })
   tempForm.name = ''
-  tempForm.personIds = []
   tempDrawer.value = false
-  ElMessage.success(done
-    ? `已新增：名额 ${row.snapN} 个，已定 ${done} 人，还差 ${row.snapN - done} 个等开放后自己拿`
-    : '已新增：这一天多出名额，当前窗口就能拿')
+  ElMessage.success(`已新增：这一天多出 ${row.snapN} 个名额，去「轮与结果」里定人`)
+}
+/* 配置层不选人：跳到结果层对应轮次的那一天，由结果层定人 */
+function goDefinePeople(date) {
+  const r = roundOfDate(selSpace.value, date)
+  if (r) pickRound(r.id)
+  tab.value = 'run'
+  runView.value = 'axis'
+  nextTick(() => { axisDay.value = date })
 }
 
 /* 结果表分页 */
-const resultList = computed(() => resultRows5(selSpace.value))
+const resultList = computed(() => resultRows5(selSpace.value, runDates.value))
 const { page, pageSize, total, rows } = usePager(resultList)
 
 /* 申领登记（人事只看不审批） */
-const applies = computed(() => applicationRows5(selSpace.value))
+const applies = computed(() => applicationRows5(selSpace.value).filter(a => runDates.value.includes(a.date)))
 
 /* 事实与版本 */
 const facts = computed(() => factRows5())
@@ -2025,4 +2017,92 @@ tr.hl td { background: #fdf3e6 !important; }
 .gap-banner { display: flex; align-items: baseline; gap: 10px; background: #fdf6f8; border: 1px solid #f3d3db; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; color: #6a6a75; }
 .gap-banner strong { font-size: 13px; color: #a40035; }
 .dlg-hint { font-size: 11.5px; color: #9a9fa9; margin-top: -2px; }
+
+/* ===== 结果层：轮次切换 + 两个视图 ===== */
+.run-bar { display: flex; align-items: center; gap: 12px; border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; background: #fcfbfc; }
+.rb-tabs { display: flex; gap: 6px; }
+.rb-tabs button { display: flex; align-items: center; gap: 6px; border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #6a6a75; cursor: pointer; }
+.rb-tabs button strong { font-weight: 500; }
+.rb-tabs button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.rb-badge { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; background: #f2f2f4; color: #8a8a95; }
+.rb-badge.running { background: #eaf6f1; color: #0f6e56; }
+.rb-badge.planned { background: #fdf3e3; color: #854F0B; }
+.rb-badge.ended { background: #f4f4f5; color: #9a9fa9; }
+.rb-note { font-size: 11.5px; color: #9a9fa9; }
+.run-switch { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.run-switch button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; color: #6a6a75; cursor: pointer; }
+.run-switch button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.rs-hint { font-size: 11.5px; color: #9a9fa9; margin-left: 8px; }
+
+/* 空间时间轴 */
+.ax-days { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.ax-days button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #6a6a75; cursor: pointer; }
+.ax-days button em { font-style: normal; color: #a0a0aa; font-size: 11px; margin-left: 3px; }
+.ax-days button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.ax-days button.on em { color: #a40035; }
+.ax-box { border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 10px; }
+.ax-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; }
+.ax-label { width: 132px; flex: none; display: flex; flex-direction: column; gap: 1px; font-size: 12px; color: #2c2c2a; }
+.ax-label span { font-size: 11px; color: #9a9fa9; }
+.ax-src { font-style: normal; font-size: 10px; align-self: flex-start; padding: 0 4px; border-radius: 3px; }
+.ax-src.cyc { background: #eaf3de; color: #27500A; }
+.ax-src.tmp { background: #e8eef8; color: #2B5286; }
+.ax-track { position: relative; flex: 1; height: 30px; }
+.ax-head .ax-track { height: 18px; }
+.ax-tick-label { position: absolute; transform: translateX(-50%); font-size: 10px; color: #a0a0aa; font-weight: 400; }
+.ax-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: #f4f0f1; }
+.ax-band { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; font-size: 11.5px; }
+.ax-band.cyc { background: #eef7f2; border: 1px solid #b7e5cf; }
+.ax-band.tmp { background: #eef3fb; border: 1px dashed #7FA6D9; }
+.ax-person { background: #fff; border: 1px solid #e4e0e2; border-radius: 4px; padding: 1px 6px; color: #3d3d47; white-space: nowrap; }
+.ax-gap { color: #a40035; white-space: nowrap; }
+.ax-gap.pointable { cursor: pointer; text-decoration: underline; }
+.ax-empty { font-size: 12px; color: #9a9fa9; padding: 10px 0; }
+.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
+.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
+.tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
+
+/* ===== 结果层：轮次切换 + 两个视图 ===== */
+.run-bar { display: flex; align-items: center; gap: 12px; border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; background: #fcfbfc; }
+.rb-tabs { display: flex; gap: 6px; }
+.rb-tabs button { display: flex; align-items: center; gap: 6px; border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #6a6a75; cursor: pointer; }
+.rb-tabs button strong { font-weight: 500; }
+.rb-tabs button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.rb-badge { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; background: #f2f2f4; color: #8a8a95; }
+.rb-badge.running { background: #eaf6f1; color: #0f6e56; }
+.rb-badge.planned { background: #fdf3e3; color: #854F0B; }
+.rb-badge.ended { background: #f4f4f5; color: #9a9fa9; }
+.rb-note { font-size: 11.5px; color: #9a9fa9; }
+.run-switch { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.run-switch button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; color: #6a6a75; cursor: pointer; }
+.run-switch button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.rs-hint { font-size: 11.5px; color: #9a9fa9; margin-left: 8px; }
+
+/* 空间时间轴 */
+.ax-days { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.ax-days button { border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #6a6a75; cursor: pointer; }
+.ax-days button em { font-style: normal; color: #a0a0aa; font-size: 11px; margin-left: 3px; }
+.ax-days button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.ax-days button.on em { color: #a40035; }
+.ax-box { border: 1px solid #f0eaec; border-radius: 8px; padding: 8px 10px; }
+.ax-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; }
+.ax-label { width: 132px; flex: none; display: flex; flex-direction: column; gap: 1px; font-size: 12px; color: #2c2c2a; }
+.ax-label span { font-size: 11px; color: #9a9fa9; }
+.ax-src { font-style: normal; font-size: 10px; align-self: flex-start; padding: 0 4px; border-radius: 3px; }
+.ax-src.cyc { background: #eaf3de; color: #27500A; }
+.ax-src.tmp { background: #e8eef8; color: #2B5286; }
+.ax-track { position: relative; flex: 1; height: 30px; }
+.ax-head .ax-track { height: 18px; }
+.ax-tick-label { position: absolute; transform: translateX(-50%); font-size: 10px; color: #a0a0aa; font-weight: 400; }
+.ax-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: #f4f0f1; }
+.ax-band { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; font-size: 11.5px; }
+.ax-band.cyc { background: #eef7f2; border: 1px solid #b7e5cf; }
+.ax-band.tmp { background: #eef3fb; border: 1px dashed #7FA6D9; }
+.ax-person { background: #fff; border: 1px solid #e4e0e2; border-radius: 4px; padding: 1px 6px; color: #3d3d47; white-space: nowrap; }
+.ax-gap { color: #a40035; white-space: nowrap; }
+.ax-gap.pointable { cursor: pointer; text-decoration: underline; }
+.ax-empty { font-size: 12px; color: #9a9fa9; padding: 10px 0; }
+.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
+.out-tag { font-size: 10.5px; color: #854F0B; background: #fdf3e3; border-radius: 3px; padding: 0 5px; }
+.tmp-tag { font-style: normal; font-size: 10px; color: #2B5286; background: #e8eef8; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
 </style>

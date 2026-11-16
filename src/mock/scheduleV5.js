@@ -477,7 +477,39 @@ function applyRoundSnapshots5(state, spaceId) {
 
 /* 到点翻轮：过了 nextAt 就自动生成下一轮，新轮快照按当时的配置层刷——
    「改动下一轮生效」由这条机制兑现；轮自动跑，不拆业务按钮。 */
+/* 轮的状态：按今天跟这一轮的覆盖区间比 */
+export function roundStatusOf(round, today) {
+  if (!round?.span) return ''
+  if (round.span[1] < today) return 'ended'
+  if (round.span[0] > today) return 'planned'
+  return 'running'
+}
+
+/* 轮次表：翻轮留痕的已结束轮 + 进行中的这一轮 + 已生成的下一轮。
+   业务上排 n+1 周，所以任何时刻至少两轮在系统里：正在跑的、已排定待开放的。 */
+export function roundListOf(state, spaceId) {
+  const cur = roundOf(state, spaceId)
+  const cfg = cur.config || ROUND5.config
+  const today = (state.now || '').slice(0, 10)
+  const out = []
+  ;(state.roundHistory?.[spaceId] || []).forEach(r => out.push({ ...r, status: roundStatusOf(r, today) }))
+  out.push({
+    id: cur.id, k: cur.k, span: [...cur.span], publishedAt: cur.publishedAt,
+    applyDeadline: cur.applyDeadline, config: cfg, status: roundStatusOf(cur, today)
+  })
+  const plan = nextRoundPlan(cfg, state.now)
+  if (plan) {
+    out.push({
+      id: 'R-' + plan.nextSpan[0].slice(5).replace('-', ''),
+      k: (cur.k || 1) + 1, span: plan.nextSpan, publishedAt: plan.nextAt,
+      applyDeadline: applyDeadlineOf(cfg, plan.nextSpan[0]), config: cfg, status: 'planned'
+    })
+  }
+  return out.sort((a, b) => a.span[0].localeCompare(b.span[0]))
+}
+
 export function runDueRounds5(state, now = state.now) {
+  state.roundHistory = state.roundHistory || {}
   const ownSpaces = new Set(Object.keys(state.rounds || {}))
   const allSpaces = new Set(['', ...state.slots.map(x => x.spaceId)])
   /* 主轮被多空间共用：翻主轮时，所有没有自己轮的空间快照都要刷 */
@@ -488,6 +520,17 @@ export function runDueRounds5(state, now = state.now) {
       while (round.nextAt && String(now) >= round.nextAt && guard++ < 40) {
         const cfg = round.config || ROUND5.config
         const span = round.nextSpan
+        /* 翻轮前把这一轮留在历史里：结果页要能回查已结束的轮 */
+        const targets = spaceId === '' ? defaultSpaces : [spaceId]
+        targets.forEach(id => {
+          state.roundHistory[id] = state.roundHistory[id] || []
+          if (!state.roundHistory[id].some(r => r.id === round.id)) {
+            state.roundHistory[id].unshift({
+              id: round.id, k: round.k, span: [...round.span],
+              publishedAt: round.publishedAt, applyDeadline: round.applyDeadline
+            })
+          }
+        })
         round.id = 'R-' + span[0].slice(5).replace('-', '')
         round.k = (round.k || 1) + 1
         round.publishedAt = round.nextAt

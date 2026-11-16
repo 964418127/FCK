@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -824,4 +824,36 @@ test('撤销换班：两条事件同时失效，各自回到原样', () => {
   assert.equal(dutyPersonId5(b), 'E-213')
   assert.equal(s.facts.find(f => f.id === fact.id).revokedAt, '2026-11-16 09:00')
   assert.equal(personBusy5(s, 'E-213', '2026-11-16', '10:00', '14:00'), false, '撤销后对方不再忙这段')
+})
+
+
+/* ===== 轮次：系统里同时有进行中 + 已排定两轮 ===== */
+test('轮次表：已发布待开始的这一轮 + 已生成的下一轮并存', () => {
+  const s = mk()
+  const list = roundListOf(s, 'S-205')
+  assert.equal(list.length, 2, '至少两轮并存')
+  const [cur, next] = list
+  assert.equal(cur.id.startsWith('R-'), true)
+  assert.equal(next.status, 'planned')
+  assert.ok(next.span[0] > cur.span[1], '下一轮接在当前轮之后，日期不重叠')
+  /* 时间来到覆盖区间内，这一轮就是进行中 */
+  s.now = '2026-11-17 10:00'
+  assert.equal(roundListOf(s, 'S-205')[0].status, 'running')
+})
+
+test('翻轮后历史留痕：已结束轮留在列表里可回查', () => {
+  const s = mk()
+  const before = roundListOf(s, 'S-205')[0]
+  s.now = '2026-11-25 10:00'
+  runDueRounds5(s, '2026-11-25 10:00')
+  const list = roundListOf(s, 'S-205')
+  assert.ok(list.length >= 3, '历史 + 这一轮 + 下一轮')
+  const ended = list.filter(r => r.status === 'ended')
+  assert.ok(ended.some(r => r.span[0] === before.span[0]), '历史轮保留原来的覆盖区间')
+})
+
+test('轮的状态按今天跟覆盖区间比', () => {
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-16'] }, '2026-11-16'), 'running')
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-15'] }, '2026-11-16'), 'ended')
+  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'] }, '2026-11-16'), 'planned')
 })

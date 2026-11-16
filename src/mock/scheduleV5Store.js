@@ -9,7 +9,7 @@ import {
   buildV5State, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, canTake5,
   slotById, personById, spaceById, activeCount5, snapN5, slotsOn5, matchWho5, whoLabel5,
   personBusy5, windowOpen5, overlap5, recalcRound, WEEK_DATES, NOW, dayCopyPlan5, applyDayCopy5, runDueRounds5,
-  openAt5, slotFirstDate5, roundOf, datesOfRound5,
+  openAt5, slotFirstDate5, roundOf, datesOfRound5, roundListOf, roundStatusOf,
   addCategory5 as addCategory5Pure, renameCategory5 as renameCategory5Pure, removeCategory5 as removeCategory5Pure, categoryUsage5,
   claimCheck5, claimSet5, claimRulesOf5, categoriesOf5, catName5, weekRange5, monthRange5, usedMinutes5, dutyPersonId5
 } from './scheduleV5.js'
@@ -321,9 +321,31 @@ export function myNotices(pid = meId.value) {
 export function swapPendingFor(pid = meId.value) {
   return (state.swapRequests || []).filter(r => r.status === 'pending' && r.to === pid)
 }
-export function gaps5(spaceId) {
+/* 结果层看的是「某一轮」：默认选进行中的那一轮，也可以切到已结束 / 已排定的轮 */
+const pickedRoundId = ref('')
+export function roundList(spaceId) { return roundListOf(state, spaceId) }
+export function pickRound(id) { pickedRoundId.value = id }
+export function viewRound(spaceId) {
+  const list = roundList(spaceId)
+  return list.find(r => r.id === pickedRoundId.value)
+    || list.find(r => r.status === 'running')
+    /* 没有进行中的（还没到覆盖区间）就看最早一轮没结束的：也就是马上要跑的那轮 */
+    || list.find(r => r.status !== 'ended')
+    || list[list.length - 1]
+}
+export function viewRoundDates(spaceId) {
+  const r = viewRound(spaceId)
+  return r ? datesOfRound5(r) : []
+}
+/* 某个日期落在哪一轮：配置层建了那天的临时班次后，跳结果层要切到对应轮 */
+export function roundOfDate(spaceId, date) {
+  return roundList(spaceId).find(r => date >= r.span[0] && date <= r.span[1]) || viewRound(spaceId)
+}
+
+export function gaps5(spaceId, dates = null) {
   const out = []
-  WEEK_DATES.forEach(date => {
+  const days = dates && dates.length ? dates : viewRoundDates(spaceId)
+  days.forEach(date => {
     slotsOn5(state, date).forEach(s => {
       if (s.spaceId !== spaceId) return
       const occ = activeCount5(state, s.id, date)
@@ -332,9 +354,10 @@ export function gaps5(spaceId) {
   })
   return out
 }
-export function resultRows5(spaceId) {
+export function resultRows5(spaceId, dates = null) {
+  const days = dates && dates.length ? new Set(dates) : null
   return state.placements
-    .filter(p => slotById(state, p.slotId)?.spaceId === spaceId)
+    .filter(p => slotById(state, p.slotId)?.spaceId === spaceId && (!days || days.has(p.date)))
     .sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id))
     .map(p => {
       const s = slotById(state, p.slotId)
