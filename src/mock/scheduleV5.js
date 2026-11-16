@@ -8,7 +8,7 @@
 export const NOW = '2026-11-14 10:00'
 export const TODAY = '2026-11-14'
 export const WEEK_DATES = [
-  '2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22'
+  '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29'
 ]
 
 export const SPACES5 = [
@@ -272,7 +272,7 @@ export const SLOTS5 = [
 /* 临时班次 = 特殊情况下新增名额，不进周期安排，改的是那一天的容量 */
 export const TEMPS5 = [
   {
-    id: 'TL-01', spaceId: 'S-201', date: '2026-11-21', name: '周六晚加场', start: '18:00', end: '22:00',
+    id: 'TL-01', spaceId: 'S-201', date: '2026-11-28', name: '周六晚加场', start: '18:00', end: '22:00',
     quota: { source: 'manual', value: 2 }, snapN: 2,
     list: [{ k: 1, who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }]
   }
@@ -303,23 +303,26 @@ export const HOUR_LIMITS5 = [
 ]
 
 export const ROUND5 = {
-  id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
-  applyDeadline: '2026-11-15 20:00',
+  id: 'R-1123', publishedAt: '2026-11-12 06:00', span: ['2026-11-23', '2026-11-29'], k: 2,
+  applyDeadline: '2026-11-14 20:00',
   /* 下一轮：配置改动到这时才生效 */
-  nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
+  nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-30', '2026-12-06'],
   /*
-    排班节奏：通用抽象，三组参数，不写死周/月枚举
-    cycle  = 循环周期：锚点（自然周一起 / 自然月 1 号 / 业务自定义起点）+ 长度（n 天 / n 周 / n 月）
-    偏移   = 都相对「周期起点」：负数=提前，发布与申领截止各一条
-    每次触发都生成「下一周期」（N+1），一期接一期连续铺——没有「隔一期发」，业务上不存在跳期
-    现行口径：自然周 + 提前 4 天 06:00 发（周四）+ 提前 1 天 20:00 申领截止（周日）
+    排班节奏：两种周期类型——业务周 / 自然月（+ 业务自定义）
+    业务周 = 三个参数说完：每周几为起点、每周几什么时间发布、发布的是几个业务周之后的那期
+      leadWeeks=2 就是「发布下下周期的班」：当天发布、窗口内选择，到那一周才生效使用
+      换算成偏移恒等式：起点周一 + 周四发布 + 提前 2 周 = 起点 − 11 天（周四）发布、− 9 天截止
+    自然月 = 锚点（1 号）+ 相对起点的发布/截止偏移
   */
   config: {
-    cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
-    publishOffsetDays: -4,
-    publishHour: '06:00',
-    applyOffsetDays: -1,
-    applyHour: '20:00'
+    kind: 'bizweek',
+    cycle: { anchor: 'dow', dow: 1, unit: 'week', n: 1, start: '' },
+    startDow: 1,
+    publishDow: 4,
+    publishTime: '06:00',
+    leadWeeks: 2,
+    deadlineDays: 2,
+    deadlineTime: '20:00'
   }
 }
 
@@ -344,15 +347,18 @@ export const ROUND_OFFICE5 = {
 /* 观澜店周五就截止（周末不再收），比别家早两天。
    所以此刻这一轮已经排完：名单定了，等周一开工——「已截止 · 待开始」。 */
 export const ROUND_STORE_EARLY5 = {
-  id: 'R-1112', publishedAt: '2026-11-12 06:00', span: ['2026-11-16', '2026-11-22'], k: 2,
+  id: 'R-1123', publishedAt: '2026-11-12 06:00', span: ['2026-11-23', '2026-11-29'], k: 2,
   applyDeadline: '2026-11-13 20:00',
-  nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-23', '2026-11-29'],
+  nextAt: '2026-11-19 06:00', nextSpan: ['2026-11-30', '2026-12-06'],
   config: {
-    cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' },
-    publishOffsetDays: -4,
-    publishHour: '06:00',
-    applyOffsetDays: -3,
-    applyHour: '20:00'
+    kind: 'bizweek',
+    cycle: { anchor: 'dow', dow: 1, unit: 'week', n: 1, start: '' },
+    startDow: 1,
+    publishDow: 4,
+    publishTime: '06:00',
+    leadWeeks: 2,
+    deadlineDays: 1,
+    deadlineTime: '20:00'
   }
 }
 
@@ -394,9 +400,16 @@ const at0 = s => new Date(`${s}T00:00:00`)
 function blockDays(cycle) {
   return (cycle.unit === 'week' ? 7 : 1) * (cycle.n || 1)
 }
-/* 期号从哪一天起算：自然周从 2026-01-05（周一）、自然月从 2026-01、自定义从起点 */
+/* 期号从哪一天起算：自然周从 2026-01-05（周一）、业务周从对齐 startDow 的基日、自然月从 2026-01、自定义从起点 */
 function cycleBase(cycle) {
   if (cycle.anchor === 'monday') return '2026-01-05'
+  if (cycle.anchor === 'dow') {
+    /* 业务周任意起点：基日对齐到同一周几（2026-01-04 是周日） */
+    const b = at0('2026-01-04')
+    const off = (b.getDay() - (cycle.dow ?? 1) + 7) % 7
+    b.setDate(b.getDate() - off)
+    return fmtDate(b)
+  }
   if (cycle.anchor === 'monthStart') return '2026-01-01'
   return cycle.start
 }
@@ -412,13 +425,14 @@ export function cycleStartOf(cycle, dateStr) {
     if (cand > dt) { k -= n; cand = monthAnchor(base, k) }
     return fmtDate(cand)
   }
-  if (cycle.anchor === 'monday') {
-    const dow = (dt.getDay() + 6) % 7 // 周一=0
-    const mon = new Date(dt)
-    mon.setDate(mon.getDate() - dow)
-    if (n === 1) return fmtDate(mon)
+  if (cycle.anchor === 'monday' || cycle.anchor === 'dow') {
+    const target = cycle.anchor === 'dow' ? (cycle.dow ?? 1) : 1
+    const back = (dt.getDay() - target + 7) % 7
+    const anchor = new Date(dt)
+    anchor.setDate(anchor.getDate() - back)
+    if (n === 1) return fmtDate(anchor)
     const len = blockDays(cycle)
-    const k = Math.floor((mon - base) / (DAY_MS * len))
+    const k = Math.floor((anchor - base) / (DAY_MS * len))
     return fmtDate(new Date(base.getTime() + k * DAY_MS * len))
   }
   const len = blockDays(cycle)
@@ -454,18 +468,32 @@ function shiftCycle(cycle, startStr, k = 1) {
   if (cycle.unit === 'month') return fmtDate(monthAnchor(s, (cycle.n || 1) * k))
   return fmtDate(new Date(s.getTime() + blockDays(cycle) * k * DAY_MS))
 }
-/* 发布时刻相对周期起点算 */
+/* 业务周：把「每周几发布、发布几个业务周之后的那期」换算成相对周期起点的天数
+   恒等式校验：起点周一 + 周四发布 + leadWeeks=2 → 7 + ((1-4+7)%7=4) = 11 天（周四发布） */
+function bizOffsetDays(config) {
+  const inWeek = ((config.startDow - config.publishDow + 7) % 7) || 7
+  return 7 * ((config.leadWeeks || 1) - 1) + inWeek
+}
+/* 发布时刻相对周期起点算；业务周按「每周几发布 + 发布几个业务周之后的那期」换算（恒为提前，用减法） */
 export function publishAtOf(config, cycleStart) {
   const d = at0(cycleStart)
+  if (config.kind === 'bizweek') {
+    d.setDate(d.getDate() - bizOffsetDays(config))
+    return `${fmtDate(d)} ${config.publishTime ?? '06:00'}`
+  }
   d.setDate(d.getDate() + (config.publishOffsetDays || 0))
   return `${fmtDate(d)} ${config.publishHour ?? '06:00'}`
 }
 export function applyDeadlineOf(config, cycleStart) {
   const d = at0(cycleStart)
+  if (config.kind === 'bizweek') {
+    d.setDate(d.getDate() - bizOffsetDays(config) + (config.deadlineDays || 0))
+    return `${fmtDate(d)} ${config.deadlineTime ?? '20:00'}`
+  }
   d.setDate(d.getDate() + (config.applyOffsetDays || 0))
   return `${fmtDate(d)} ${config.applyHour ?? '20:00'}`
 }
-/* 下一个发布时刻：每次触发都生成「下一周期」，一期接一期连续铺，不跳期 */
+/* 下一个发布时刻：每次触发生成的是「下一个还没排的周期」（N+1）——当天发布、窗口内选择，到那一周才生效 */
 export function nextRoundPlan(config, now = NOW) {
   let start = cycleStartOf(config.cycle, now.slice(0, 10))
   for (let i = 0; i < 400; i++) {
@@ -583,31 +611,31 @@ const P = (id, slotId, date, personId, way, extra = {}) => ({
 
 /* 获取段结果（解的基线，v1 于发布时生成） */
 export const PLACEMENTS5 = [
-  P('P-01', 'SL-01', '2026-11-16', 'E-113', '直派 · 第1档'),
-  P('P-03', 'SL-01', '2026-11-16', 'E-133', '抢 · 第3档'),
-  P('P-04', 'SL-01', '2026-11-17', 'E-113', '直派 · 第1档'),
-  P('P-05', 'SL-01', '2026-11-17', 'E-107', '直派 · 第1档', {
+  P('P-01', 'SL-01', '2026-11-23', 'E-113', '直派 · 第1档'),
+  P('P-03', 'SL-01', '2026-11-23', 'E-133', '抢 · 第3档'),
+  P('P-04', 'SL-01', '2026-11-24', 'E-113', '直派 · 第1档'),
+  P('P-05', 'SL-01', '2026-11-24', 'E-107', '直派 · 第1档', {
     status: 'covered', coveredAt: '2026-11-13 09:12',
     history: [{ note: '2026-11-13 09:12 蓝田提交请假，11-17 早班由陈晚顶上' }]
   }),
-  P('P-06', 'SL-01', '2026-11-17', 'E-133', '顶班 · 补位', { fromFact: 'F-01' }),
-  P('P-07', 'SL-01', '2026-11-17', 'E-126', '抢 · 第2档'),
-  P('P-08', 'SL-01', '2026-11-18', 'E-113', '直派 · 第1档'),
-  P('P-09', 'SL-01', '2026-11-18', 'E-107', '直派 · 第1档'),
-  P('P-10', 'SL-01', '2026-11-19', 'E-107', '直派 · 第1档'),
-  P('P-11', 'SL-01', '2026-11-19', 'E-126', '抢 · 第2档'),
-  P('P-12', 'SL-01', '2026-11-20', 'E-113', '直派 · 第1档'),
-  P('P-13', 'SL-01', '2026-11-20', 'E-107', '直派 · 第1档'),
-  P('P-14', 'SL-02', '2026-11-16', 'E-107', '直派 · 第1档'),
-  P('P-15', 'SL-02', '2026-11-16', 'E-121', '抢 · 第2档'),
-  P('P-16', 'SL-02', '2026-11-17', 'E-107', '直派 · 第1档'),
-  P('P-17', 'SL-02', '2026-11-17', 'E-121', '抢 · 第2档'),
-  P('P-18', 'SL-02', '2026-11-18', 'E-107', '直派 · 第1档'),
-  P('P-19', 'SL-02', '2026-11-18', 'E-121', '抢 · 第2档'),
-  P('P-20', 'SL-02', '2026-11-19', 'E-107', '直派 · 第1档'),
-  P('P-21', 'SL-02', '2026-11-19', 'E-121', '抢 · 第2档'),
-  P('P-22', 'SL-02', '2026-11-20', 'E-107', '直派 · 第1档'),
-  P('P-23', 'SL-02', '2026-11-20', 'E-121', '抢 · 第2档')
+  P('P-06', 'SL-01', '2026-11-24', 'E-133', '顶班 · 补位', { fromFact: 'F-01' }),
+  P('P-07', 'SL-01', '2026-11-24', 'E-126', '抢 · 第2档'),
+  P('P-08', 'SL-01', '2026-11-25', 'E-113', '直派 · 第1档'),
+  P('P-09', 'SL-01', '2026-11-25', 'E-107', '直派 · 第1档'),
+  P('P-10', 'SL-01', '2026-11-26', 'E-107', '直派 · 第1档'),
+  P('P-11', 'SL-01', '2026-11-26', 'E-126', '抢 · 第2档'),
+  P('P-12', 'SL-01', '2026-11-27', 'E-113', '直派 · 第1档'),
+  P('P-13', 'SL-01', '2026-11-27', 'E-107', '直派 · 第1档'),
+  P('P-14', 'SL-02', '2026-11-23', 'E-107', '直派 · 第1档'),
+  P('P-15', 'SL-02', '2026-11-23', 'E-121', '抢 · 第2档'),
+  P('P-16', 'SL-02', '2026-11-24', 'E-107', '直派 · 第1档'),
+  P('P-17', 'SL-02', '2026-11-24', 'E-121', '抢 · 第2档'),
+  P('P-18', 'SL-02', '2026-11-25', 'E-107', '直派 · 第1档'),
+  P('P-19', 'SL-02', '2026-11-25', 'E-121', '抢 · 第2档'),
+  P('P-20', 'SL-02', '2026-11-26', 'E-107', '直派 · 第1档'),
+  P('P-21', 'SL-02', '2026-11-26', 'E-121', '抢 · 第2档'),
+  P('P-22', 'SL-02', '2026-11-27', 'E-107', '直派 · 第1档'),
+  P('P-23', 'SL-02', '2026-11-27', 'E-121', '抢 · 第2档')
 ]
 
 /*
@@ -633,7 +661,7 @@ WEEK_DATES.slice(0, 5).forEach((d, i) => {
 })
 
 /*
-  前两周的留档：结果页要回查「已经跑完的轮」，上一周（11-09–11-15）还在执行。
+  前几期的留档：结果页要回查「已经跑完的轮」，11-16–11-22 已截止待开始、11-23–11-29 正在申领（发布下下周期，多期并存）。
   只放全职的常态位——非全的周/月额度按门店各算，塞进去会把额度演示数据弄脏。
 */
 const HIST_SLOTS = [
@@ -652,7 +680,7 @@ const HIST_SLOTS = [
 })
 /* 观澜店：晚市班工作日晚市两人、周末午市两人（午市名额 3，正好留一口缺，用来看「定人」）。
    前两周同样铺，历史轮回查时不是空的。 */
-;['2026-11-02', '2026-11-09', '2026-11-16'].forEach(ws => {
+;['2026-11-02', '2026-11-09', '2026-11-23'].forEach(ws => {
   for (let i = 0; i < 7; i++) {
     const d = addDays(ws, i)
     const dow = new Date(`${d}T00:00:00`).getDay()
@@ -678,35 +706,35 @@ for (let i = 0; i < 31; i++) {
 
 /* 申领登记：提交只登记，截止后按综合分排序截断 */
 export const APPLICATIONS5 = [
-  { id: 'A-01', slotId: 'SL-03', date: '2026-11-21', personId: 'E-107', at: '2026-11-12 08:10' },
-  { id: 'A-02', slotId: 'SL-03', date: '2026-11-21', personId: 'E-121', at: '2026-11-12 09:02' },
-  { id: 'A-03', slotId: 'SL-03', date: '2026-11-21', personId: 'E-126', at: '2026-11-12 11:40' }
+  { id: 'A-01', slotId: 'SL-03', date: '2026-11-28', personId: 'E-107', at: '2026-11-12 08:10' },
+  { id: 'A-02', slotId: 'SL-03', date: '2026-11-28', personId: 'E-121', at: '2026-11-12 09:02' },
+  { id: 'A-03', slotId: 'SL-03', date: '2026-11-28', personId: 'E-126', at: '2026-11-12 11:40' }
 ]
 
 /* 变化段：事实清单 */
 export const FACTS5 = [
-  { id: 'F-01', type: '请假', at: '2026-11-13 09:12', by: 'E-107', slotId: 'SL-01', date: '2026-11-17',
+  { id: 'F-01', type: '请假', at: '2026-11-13 09:12', by: 'E-107', slotId: 'SL-01', date: '2026-11-24',
     result: '班次由陈晚顶上（补位）', placements: ['P-05', 'P-06'] },
-  { id: 'F-02', type: '请假', at: '2026-11-14 09:30', by: 'E-107', slotId: 'SL-01', date: '2026-11-19', start: '10:00', end: '11:00',
+  { id: 'F-02', type: '请假', at: '2026-11-13 09:30', by: 'E-107', slotId: 'SL-01', date: '2026-11-26', start: '10:00', end: '11:00',
     result: '只占 10:00–11:00，剩余时间不动；少的时间要不要补人待业务拍板', placements: [] }
 ]
 
 export const VERSIONS5 = [
   { v: 1, at: '2026-11-12 06:00', note: '第 R-1112 轮发布，生成基线解', facts: [] },
   { v: 2, at: '2026-11-13 09:12', note: '事实 F-01（请假）重算：11-17 早班由陈晚顶上', facts: ['F-01'] },
-  { v: 3, at: '2026-11-14 09:30', note: '事实 F-02（请假 1 小时）重算：只占一段，剩余时间不动', facts: ['F-02'] }
+  { v: 3, at: '2026-11-13 09:30', note: '事实 F-02（请假 1 小时）重算：只占一段，剩余时间不动', facts: ['F-02'] }
 ]
 
 export const NOTICES5 = [
-  { id: 'N-01', to: 'E-133', kind: 'makeup', acked: false, date: '2026-11-17', at: '2026-11-13 09:12',
-    text: '补位通知：11-17 早班 10:00-14:00（蓝田店）需要你顶上',
+  { id: 'N-01', to: 'E-133', kind: 'makeup', acked: false, date: '2026-11-24', at: '2026-11-13 09:12',
+    text: '补位通知：11-24 早班 10:00-14:00（蓝田店）需要你顶上',
     detail: '蓝田 11-13 09:12 提交请假；你是附近 5km 推拿师档里当时有空、没冲突的人' }
 ]
 
-/* 演示用：一条还没答复的换班请求（罗盘拿 11-16 早班换谷雨 11-17 晚班） */
+/* 演示用：一条还没答复的换班请求（罗盘拿 11-23 早班换谷雨 11-24 晚班） */
 export const SWAP_REQUESTS5 = [
   { id: 'SR-01', from: 'E-205', to: 'E-206', placementId: 'P-XL0-0', partnerPlacementId: 'P-XL1-1',
-    at: '2026-11-14 21:10', status: 'pending' }
+    at: '2026-11-13 21:10', status: 'pending' }
 ]
 
 /* ===== 纯逻辑 ===== */
@@ -1492,29 +1520,31 @@ export function buildV5State() {
   )
   state.slots.forEach(s => { if (!s.gapRule) s.gapRule = gapDefaultOf(s) })
   state.temps.forEach(t => { if (!t.gapRule) t.gapRule = 'G2' })
-  /* 历史轮：两周前的已经跑完、上一周正在执行——业务上「上一轮已经排完」是常态，
-     结果页要能回查，所以种子就带着，不靠翻轮才长出来 */
+  /* 历史轮：业务周节奏下任意时刻多期并存——跑完的、在执行的、已截止待开始的都在种子里，
+     结果页要能回查，不靠翻轮才长出来 */
   const storeHist = [
-    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-11-01 20:00' },
-    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-08 20:00' }
+    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-22 06:00', applyDeadline: '2026-10-24 20:00' },
+    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-10-31 20:00' },
+    { id: 'R-1116', k: 2, span: ['2026-11-23', '2026-11-29'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-07 20:00' }
   ]
   const officeHist = [
     { id: 'R-2610', k: 0, span: ['2026-10-01', '2026-10-31'], publishedAt: '2026-09-27 06:00', applyDeadline: '2026-09-30 20:00' }
   ]
   const earlyHist = [
-    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-10-30 20:00' },
-    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-06 20:00' }
+    { id: 'R-1102', k: 1, span: ['2026-11-02', '2026-11-08'], publishedAt: '2026-10-22 06:00', applyDeadline: '2026-10-23 20:00' },
+    { id: 'R-1109', k: 2, span: ['2026-11-09', '2026-11-15'], publishedAt: '2026-10-29 06:00', applyDeadline: '2026-10-30 20:00' },
+    { id: 'R-1116', k: 2, span: ['2026-11-23', '2026-11-29'], publishedAt: '2026-11-05 06:00', applyDeadline: '2026-11-06 20:00' }
   ]
   state.roundHistory = {}
   state.spaces.forEach(sp => {
     const hist = sp.id === 'S-206' ? officeHist : sp.id === 'S-203' ? earlyHist : storeHist
     state.roundHistory[sp.id] = JSON.parse(JSON.stringify(hist))
   })
-  ;['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'].forEach(d => {
+  ;['2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27'].forEach(d => {
     state.directDone.add(`SL-01|${d}|1`)
     state.directDone.add(`SL-02|${d}|1`)
   })
-  /* 直派到点执行：窗口已开的档现在分人（通班 11-14 09:00 开，NOW 之前已到点） */
+  /* 直派到点执行：窗口已开的档现在分人（通班 11-21 09:00 开，NOW 之前已到点） */
   runDueDirect5(state, state.now)
   /* 初始轮快照按种子配置刷：轮跑的是快照 */
   const snapSpaces = new Set(['', ...Object.keys(state.rounds || {}), ...state.slots.map(x => x.spaceId)])

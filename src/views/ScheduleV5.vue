@@ -93,12 +93,21 @@
               <div v-if="rhythmOpen" class="rh-body">
                 <div class="rh-row">
                   <label>循环周期</label>
-                  <el-radio-group v-model="rhythm.cycle.anchor" size="small" @change="onAnchor">
-                    <el-radio-button value="monday">自然周</el-radio-button>
-                    <el-radio-button value="monthStart">自然月</el-radio-button>
+                  <el-radio-group v-model="rhythm.kind" size="small" @change="onRhythmKind">
+                    <el-radio-button value="bizweek">业务周</el-radio-button>
+                    <el-radio-button value="week">自然周</el-radio-button>
+                    <el-radio-button value="month">自然月</el-radio-button>
                     <el-radio-button value="custom">业务自定义</el-radio-button>
                   </el-radio-group>
-                  <template v-if="rhythm.cycle.anchor === 'custom'">
+                  <!-- 业务周：每周几为起点、每周几什么时间发布、发布的是几个业务周之后的那期 -->
+                  <template v-if="rhythm.kind === 'bizweek'">
+                    <span class="rh-unit">每周</span>
+                    <el-select v-model="rhythm.startDow" size="small" style="width: 76px" @change="applyRhythm">
+                      <el-option v-for="(n, i) in DOW_NAMES" :key="i" :label="n" :value="i" />
+                    </el-select>
+                    <span class="rh-unit">为起点</span>
+                  </template>
+                  <template v-else-if="rhythm.kind === 'custom'">
                     <span class="rh-unit">起点</span>
                     <el-date-picker v-model="rhythm.cycle.start" type="date" size="small" value-format="YYYY-MM-DD"
                       style="width: 140px" @change="applyRhythm" />
@@ -115,28 +124,56 @@
                     <span class="rh-unit">每</span>
                     <el-input-number v-model="rhythm.cycle.n" :min="1" :max="4" size="small" controls-position="right"
                       style="width: 84px" @change="applyRhythm" />
-                    <span class="rh-unit">{{ rhythm.cycle.anchor === 'monthStart' ? '个月' : '周' }}</span>
+                    <span class="rh-unit">{{ rhythm.kind === 'month' ? '个月' : '周' }}</span>
                   </template>
                 </div>
-                <div class="rh-row">
-                  <label>发布</label>
-                  <span class="rh-unit">周期开始前</span>
-                  <el-input-number v-model="publishAhead" :min="0" :max="15" size="small" controls-position="right"
-                    style="width: 84px" @change="applyRhythm" />
-                  <span class="rh-unit">天</span>
-                  <el-time-select v-model="rhythm.publishHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
-                    size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
-                  <span class="rh-unit">每次触发生成的是「下一个还没排的周期」（N+1）：当天发布、窗口内选择，到那一周才生效使用</span>
-                </div>
-                <div class="rh-row">
-                  <label>申领截止</label>
-                  <span class="rh-unit">周期开始前</span>
-                  <el-input-number v-model="applyAhead" :min="0" :max="15" size="small" controls-position="right"
-                    style="width: 84px" @change="applyRhythm" />
-                  <span class="rh-unit">天</span>
-                  <el-time-select v-model="rhythm.applyHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
-                    size="small" style="width: 104px" placeholder="截止时刻" @change="applyRhythm" />
-                </div>
+                <!-- 业务周的发布与截止：每周几发布 + 发布几个业务周之后的那期 + 发布后几天截止 -->
+                <template v-if="rhythm.kind === 'bizweek'">
+                  <div class="rh-row">
+                    <label>发布</label>
+                    <span class="rh-unit">每周</span>
+                    <el-select v-model="rhythm.publishDow" size="small" style="width: 76px" @change="applyRhythm">
+                      <el-option v-for="(n, i) in DOW_NAMES" :key="i" :label="n" :value="i" />
+                    </el-select>
+                    <el-time-select v-model="rhythm.publishTime" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                      size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
+                    <span class="rh-unit">发布的是</span>
+                    <el-input-number v-model="rhythm.leadWeeks" :min="1" :max="4" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <span class="rh-unit">个业务周之后的那期</span>
+                  </div>
+                  <div class="rh-row">
+                    <label>申领截止</label>
+                    <span class="rh-unit">发布后</span>
+                    <el-input-number v-model="rhythm.deadlineDays" :min="0" :max="10" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <span class="rh-unit">天</span>
+                    <el-time-select v-model="rhythm.deadlineTime" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                      size="small" style="width: 104px" placeholder="截止时刻" @change="applyRhythm" />
+                    <span class="rh-unit">发布≠生效：当天发布、窗口内选择，到那一周才生效使用</span>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="rh-row">
+                    <label>发布</label>
+                    <span class="rh-unit">周期开始前</span>
+                    <el-input-number v-model="publishAhead" :min="0" :max="15" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <span class="rh-unit">天</span>
+                    <el-time-select v-model="rhythm.publishHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                      size="small" style="width: 104px" placeholder="发布时刻" @change="applyRhythm" />
+                    <span class="rh-unit">每次触发生成的是「下一个还没排的周期」（N+1）：当天发布、窗口内选择，到那一周才生效使用</span>
+                  </div>
+                  <div class="rh-row">
+                    <label>申领截止</label>
+                    <span class="rh-unit">周期开始前</span>
+                    <el-input-number v-model="applyAhead" :min="0" :max="15" size="small" controls-position="right"
+                      style="width: 84px" @change="applyRhythm" />
+                    <span class="rh-unit">天</span>
+                    <el-time-select v-model="rhythm.applyHour" start="00:00" step="00:10" end="23:50" format="HH:mm"
+                      size="small" style="width: 104px" placeholder="截止时刻" @change="applyRhythm" />
+                  </div>
+                </template>
 
                 <!-- 节奏长什么样：一条时间轴，发布旗标 / 覆盖区间 / 申领截止 / 今天 -->
                 <svg class="rh-timeline" viewBox="0 0 680 132" role="img"
@@ -1239,11 +1276,19 @@ function bumpDay(s, d, delta) {
   else ElMessage.success(r.text)
 }
 
-/* 排班节奏：周期（锚点+长度）、多久发一次、发布与截止相对周期起点的偏移
+/* 排班节奏：业务周（每周几为起点/每周几发布/发布几个业务周之后的那期）或周期（锚点+长度+偏移）
    节奏跟着空间走：切了空间就换成那个空间自己的节奏 */
+const DOW_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 const rhythmOpen = ref(false)
 const rhythm = reactive({
+  kind: round.value.config.kind || (round.value.config.cycle?.anchor === 'monday' ? 'bizweek' : 'week'),
   cycle: { ...round.value.config.cycle },
+  startDow: round.value.config.startDow ?? 1,
+  publishDow: round.value.config.publishDow ?? 4,
+  publishTime: round.value.config.publishTime ?? '06:00',
+  leadWeeks: round.value.config.leadWeeks ?? 2,
+  deadlineDays: round.value.config.deadlineDays ?? 2,
+  deadlineTime: round.value.config.deadlineTime ?? '20:00',
   publishOffsetDays: round.value.config.publishOffsetDays ?? -4,
   publishHour: round.value.config.publishHour ?? '06:00',
   applyOffsetDays: round.value.config.applyOffsetDays ?? -1,
@@ -1253,6 +1298,13 @@ function syncRhythm() {
   const c = round.value.config
   Object.assign(rhythm.cycle, c.cycle)
   Object.assign(rhythm, {
+    kind: c.kind || (c.cycle?.anchor === 'monday' ? 'bizweek' : 'week'),
+    startDow: c.startDow ?? 1,
+    publishDow: c.publishDow ?? 4,
+    publishTime: c.publishTime ?? '06:00',
+    leadWeeks: c.leadWeeks ?? 2,
+    deadlineDays: c.deadlineDays ?? 2,
+    deadlineTime: c.deadlineTime ?? '20:00',
     publishOffsetDays: c.publishOffsetDays ?? -4,
     publishHour: c.publishHour ?? '06:00',
     applyOffsetDays: c.applyOffsetDays ?? -1,
@@ -1274,8 +1326,22 @@ function onAnchor(a) {
   else Object.assign(rhythm.cycle, { unit: 'day', n: 7, start: rhythm.cycle.start || round.value.nextSpan[0] })
   applyRhythm()
 }
+/* 周期类型切换：业务周 / 自然周 / 自然月 / 业务自定义，各自落到自己的 config 形态 */
+function onRhythmKind(kind) {
+  if (kind === 'bizweek') {
+    Object.assign(rhythm.cycle, { anchor: 'dow', dow: rhythm.startDow, unit: 'week', n: 1 })
+  } else if (kind === 'week') {
+    Object.assign(rhythm.cycle, { anchor: 'monday', unit: 'week', n: 1 })
+  } else if (kind === 'month') {
+    Object.assign(rhythm.cycle, { anchor: 'monthStart', unit: 'month', n: 1 })
+  } else {
+    Object.assign(rhythm.cycle, { anchor: 'custom', unit: 'day', n: 7, start: rhythm.cycle.start || round.value.nextSpan[0] })
+  }
+  applyRhythm()
+}
 const cycleText = computed(() => {
   const c = round.value.config.cycle
+  if (round.value.config.kind === 'bizweek') return `业务周（每周${DOW_NAMES[rhythm.startDow]?.slice(1) || '一'}为起点）`
   if (c.anchor === 'monday') return c.n > 1 ? `每 ${c.n} 周` : '自然周'
   if (c.anchor === 'monthStart') return c.n > 1 ? `每 ${c.n} 个月` : '自然月'
   const unit = c.unit === 'week' ? '周' : c.unit === 'month' ? '个月' : '天'
@@ -1283,6 +1349,10 @@ const cycleText = computed(() => {
 })
 const rhythmLabel = computed(() => {
   const c = round.value.config
+  if (c.kind === 'bizweek') {
+    const lead = c.leadWeeks === 1 ? '下一个业务周' : c.leadWeeks === 2 ? '下下个业务周' : `${c.leadWeeks} 个业务周之后`
+    return `业务周 · 每周${(DOW_NAMES[c.publishDow] || '周四').slice(1)} ${c.publishTime ?? '06:00'} 发布 · 发布的是${lead}那期 · 发布后 ${c.deadlineDays ?? 2} 天 ${(c.deadlineTime ?? '20:00')} 截止`
+  }
   return `${cycleText.value} · 提前 ${Math.abs(c.publishOffsetDays)} 天 ${c.publishHour ?? '06:00'} 发 · 申领截止提前 ${Math.abs(c.applyOffsetDays)} 天 ${c.applyHour ?? '20:00'}`
 })
 /* 时间轴预览：发布 / 覆盖区间 / 申领截止 / 今天 */
@@ -1304,13 +1374,27 @@ const rp = computed(() => {
   }
 })
 function applyRhythm() {
-  setRoundConfig({
-    cycle: { ...rhythm.cycle },
-    publishOffsetDays: rhythm.publishOffsetDays,
-    publishHour: rhythm.publishHour,
-    applyOffsetDays: rhythm.applyOffsetDays,
-    applyHour: rhythm.applyHour
-  }, selSpace.value)
+  if (rhythm.kind === 'bizweek') {
+    setRoundConfig({
+      kind: 'bizweek',
+      cycle: { anchor: 'dow', dow: rhythm.startDow, unit: 'week', n: 1, start: '' },
+      startDow: rhythm.startDow,
+      publishDow: rhythm.publishDow,
+      publishTime: rhythm.publishTime,
+      leadWeeks: rhythm.leadWeeks,
+      deadlineDays: rhythm.deadlineDays,
+      deadlineTime: rhythm.deadlineTime
+    }, selSpace.value)
+  } else {
+    setRoundConfig({
+      kind: '',
+      cycle: { ...rhythm.cycle },
+      publishOffsetDays: rhythm.publishOffsetDays,
+      publishHour: rhythm.publishHour,
+      applyOffsetDays: rhythm.applyOffsetDays,
+      applyHour: rhythm.applyHour
+    }, selSpace.value)
+  }
   ElMessage.success('节奏已改：下一轮按新节奏生成')
 }
 
@@ -1398,7 +1482,7 @@ function save() {
 function revert() { revertConfig(); ElMessage.success('已撤销，回到当前轮的配置') }
 
 /* 临时班次 */
-const tempForm = reactive({ date: '2026-11-21', name: '', start: '18:00', end: '22:00', value: 2, gapRule: 'G2' })
+const tempForm = reactive({ date: '2026-11-28', name: '', start: '18:00', end: '22:00', value: 2, gapRule: 'G2' })
 const tempDrawer = ref(false)
 function openTempDrawer() {
   tempForm.name = ''

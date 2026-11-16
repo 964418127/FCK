@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5, gapRuleOfSlot5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5, gapRuleOfSlot5, publishAtOf, applyDeadlineOf } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -10,7 +10,7 @@ test('定义段：周期时段铺星期，临时班次只落指定日期', () =>
   const s = mk()
   assert.ok(s.slots.some(x => x.id === 'SL-01'))
   assert.equal(WEEK_DATES.length, 7)
-  assert.equal(s.temps.filter(t => t.date === '2026-11-21').length, 1)
+  assert.equal(s.temps.filter(t => t.date === '2026-11-28').length, 1)
 })
 
 test('「谁」三条件匹配：范围（本店/附近 km）+ 合作性质 + 岗位', () => {
@@ -53,9 +53,9 @@ test('whoLabel5：条件组合成人话，全不限=全员', () => {
 test('窗口：发布即开、周五 06:00 已开、开班前一天 20:00 未开', () => {
   const s = mk()
   const sl01 = s.slots.find(x => x.id === 'SL-01')
-  assert.equal(windowOpen5(sl01.list[0], '2026-11-16'), true)
-  assert.equal(windowOpen5(sl01.list[1], '2026-11-16'), true)
-  assert.equal(windowOpen5(sl01.list[2], '2026-11-16'), false)
+  assert.equal(windowOpen5(sl01.list[0], '2026-11-23'), true)
+  assert.equal(windowOpen5(sl01.list[1], '2026-11-23'), true)
+  assert.equal(windowOpen5(sl01.list[2], '2026-11-23'), false)
 })
 
 test('开放窗口抽象：锚点+偏移落成具体日期时间，旧字符串写法兼容', () => {
@@ -68,15 +68,15 @@ test('开放窗口抽象：锚点+偏移落成具体日期时间，旧字符串�
   assert.equal(openAt5(sl01.list[1], s.round), '2026-11-13 06:00')
   assert.ok(windowLabel5(sl01.list[1], sl01).includes('11-13 06:00 开（发布后的周五）'), '窗口展示要落成用户可读的日期时间')
   /* 开班日相对：开班前一天 20:00 */
-  assert.equal(openAt5(sl01.list[2], s.round, '2026-11-16'), '2026-11-15 20:00')
-  assert.ok(windowLabel5(sl01.list[2], null, '2026-11-16').includes('11-15 20:00 开（开班前 1 天）'))
+  assert.equal(openAt5(sl01.list[2], s.round, '2026-11-23'), '2026-11-22 20:00')
+  assert.ok(windowLabel5(sl01.list[2], null, '2026-11-23').includes('11-22 20:00 开（开班前 1 天）'))
   /* 发布后推 N 天 */
   const off = { win: { base: 'publish', d: 2, t: '09:00' } }
   assert.equal(openAt5(off, s.round), '2026-11-14 09:00')
   assert.ok(windowLabel5(off).includes('发布后 2 天'))
   /* 旧字符串写法照常工作（normWin5 兼容） */
   assert.equal(openAt5({ win: 'fri0600' }, s.round), '2026-11-13 06:00')
-  assert.equal(openAt5({ win: 'day1' }, s.round, '2026-11-16'), '2026-11-15 20:00')
+  assert.equal(openAt5({ win: 'day1' }, s.round, '2026-11-23'), '2026-11-22 20:00')
   assert.equal(openAt5({ win: 'publish' }, s.round), '2026-11-12 06:00')
   /* 没给日期的开班日相对窗口：算不出具体时刻 */
   assert.equal(openAt5({ win: { base: 'date', d: -1, t: '20:00' } }, s.round, null), null)
@@ -105,27 +105,27 @@ test('档位自检：上限不能超过名额', () => {
 
 test('通班=收尾班次：直派到点执行，收落空的人，已排到班的跳过', () => {
   const s = mk()
-  const mon = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-16' && p.status === 'active')
+  const mon = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-23' && p.status === 'active')
   assert.ok(mon.length >= 1, '通班窗口（11-14 09:00）已到，直派应已分人')
   assert.equal(mon[0].at, '2026-11-14 09:00', '分人时刻 = 窗口开放时刻，不是发布时刻')
   assert.ok(mon.every(p => p.personId === 'E-137'), '已排到早/晚班的全职被冲突检查挡外，只有落空的石全进来')
   assert.equal(mon.length, 1, '名额 2，只有 1 个落空的人，剩的位待人事安排')
   /* 11-19 沈书（E-113）没排到班：通班把他收进去，位满 2/2 */
-  const thu = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-19' && p.status === 'active')
+  const thu = s.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-26' && p.status === 'active')
   assert.deepEqual(thu.map(p => p.personId).sort(), ['E-113', 'E-137'], '落空的沈书和石全都被收进通班')
   /* 还没到点：不执行 */
   const s2 = mk()
   s2.placements = s2.placements.filter(p => p.slotId !== 'SL-06')
-  s2.directDone.delete('SL-06|2026-11-16|1')
+  s2.directDone.delete('SL-06|2026-11-23|1')
   runDueDirect5(s2, '2026-11-13 10:00')
-  assert.equal(s2.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-16').length, 0, '窗口没开不分人')
+  assert.equal(s2.placements.filter(p => p.slotId === 'SL-06' && p.date === '2026-11-23').length, 0, '窗口没开不分人')
 })
 
 test('抢：占位成功；位满当场说原因', () => {
   const s = mk()
-  assert.equal(grab5(s, 'TL-01', '2026-11-21', 'E-107').ok, true)
-  assert.equal(grab5(s, 'TL-01', '2026-11-21', 'E-121').ok, true)
-  const r3 = grab5(s, 'TL-01', '2026-11-21', 'E-126')
+  assert.equal(grab5(s, 'TL-01', '2026-11-28', 'E-107').ok, true)
+  assert.equal(grab5(s, 'TL-01', '2026-11-28', 'E-121').ok, true)
+  const r3 = grab5(s, 'TL-01', '2026-11-28', 'E-126')
   assert.equal(r3.ok, false)
   assert.equal(r3.reason, '位已占满')
 })
@@ -133,13 +133,13 @@ test('抢：占位成功；位满当场说原因', () => {
 test('抢：与已有班次重叠不行（首尾相接可以）', () => {
   const s = mk()
   s.temps.push(
-    { id: 'TL-03', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '下午短班', start: '14:00', end: '18:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] },
-    { id: 'TL-04', spaceId: 'S-201', pos: '推拿师', date: '2026-11-17', name: '重叠试探班', start: '13:00', end: '15:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] }
+    { id: 'TL-03', spaceId: 'S-201', pos: '推拿师', date: '2026-11-24', name: '下午短班', start: '14:00', end: '18:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] },
+    { id: 'TL-04', spaceId: 'S-201', pos: '推拿师', date: '2026-11-24', name: '重叠试探班', start: '13:00', end: '15:00', quota: { source: 'manual', value: 1 }, snapN: 1, list: [{ k: 1, who: { scope: 'store', kind: 'parttime', pos: 'all' }, way: 'grab', win: 'publish' }] }
   )
   // E-126 11-17 有早班 10:00-14:00（P-07），抢 14:00-18:00 首尾相接可以（当日合计 8 小时内）
-  assert.equal(grab5(s, 'TL-03', '2026-11-17', 'E-126').ok, true)
+  assert.equal(grab5(s, 'TL-03', '2026-11-24', 'E-126').ok, true)
   // 再抢 13:00-15:00 与早班重叠，当场说原因
-  const r = grab5(s, 'TL-04', '2026-11-17', 'E-126')
+  const r = grab5(s, 'TL-04', '2026-11-24', 'E-126')
   assert.equal(r.ok, false)
   assert.equal(r.reason, '和已有班次时间撞了')
 })
@@ -151,17 +151,17 @@ test('抢：未开窗当场说开窗时刻', () => {
     quota: { source: 'manual', value: 1 }, snapN: 1,
     list: [{ k: 1, who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: 'day1' }]
   })
-  const r = grab5(s, 'SL-X', '2026-11-16', 'E-107')
+  const r = grab5(s, 'SL-X', '2026-11-23', 'E-107')
   assert.equal(r.ok, false)
-  assert.equal(r.reason, '还没开：11-15 20:00 开（开班前 1 天）')
+  assert.equal(r.reason, '还没开：11-22 20:00 开（开班前 1 天）')
 })
 
 test('申领：提交只登记；截止按综合分排序截断（工时不由排班判断）', () => {
   const s = mk()
-  assert.equal(applyFor5(s, 'SL-03', '2026-11-22', 'E-121').ok, true)
+  assert.equal(applyFor5(s, 'SL-03', '2026-11-29', 'E-121').ok, true)
   // 预置 3 条申领（11-21），N=2：综合分 E-107(86) E-126(81) E-121(78)
   // 工时不在排班判断——排班只记这个班几点到几点，接不接得起由获取端背后的服务算
-  const res = resolveApplications5(s, '2026-11-21', 'SL-03')
+  const res = resolveApplications5(s, '2026-11-28', 'SL-03')
   assert.deepEqual(res.picked, ['E-107', 'E-126'])
   assert.deepEqual(res.rejected, ['E-121'])
   const ways = s.placements.filter(p => p.slotId === 'SL-03').map(p => p.way)
@@ -172,7 +172,7 @@ test('请假：班次释放 + 找有空没冲突的人顶，解版本 +1', () =>
   const s = mk()
   const target = s.placements.find(p => p.id === 'P-09')
   const before = s.versions[s.versions.length - 1].v
-  const fact = { id: 'F-X', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  const fact = { id: 'F-X', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-25', placementId: 'P-09', result: '' }
   addFact5(s, fact)
   assert.equal(target.status, 'covered')
   assert.ok(target.history[0].note.includes('请假'))
@@ -187,26 +187,26 @@ test('请假：班次释放 + 找有空没冲突的人顶，解版本 +1', () =>
 test('请假：无人可顶时段留空，发通知给人事处理；人事顶上后待办自动销掉', () => {
   const s = mk()
   s.people.forEach(p => {
-    if (p.id !== 'E-107') s.placements.push({ id: `PB-${p.id}`, slotId: 'SL-01', date: '2026-11-18', personId: p.id, way: '直派', status: 'active', history: [] })
+    if (p.id !== 'E-107') s.placements.push({ id: `PB-${p.id}`, slotId: 'SL-01', date: '2026-11-25', personId: p.id, way: '直派', status: 'active', history: [] })
   })
-  const fact = { id: 'F-Y', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  const fact = { id: 'F-Y', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-25', placementId: 'P-09', result: '' }
   addFact5(s, fact)
   assert.ok(fact.result.includes('通知人事'))
   const hn = s.notices.find(n => n.kind === 'hr')
   assert.ok(hn, '没人顶要发一条给人事的待处理通知')
   assert.equal(hn.to, 'HR')
   assert.equal(hn.slotId, 'SL-01')
-  assert.equal(hn.date, '2026-11-18')
+  assert.equal(hn.date, '2026-11-25')
   assert.equal(hn.acked, false)
   /* 人事写顶班事实后，这条待处理自动销掉 */
-  addFact5(s, { id: 'F-Y2', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' })
+  addFact5(s, { id: 'F-Y2', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-25', personId: 'E-133', result: '' })
   assert.equal(s.notices.find(n => n.kind === 'hr').acked, true)
 })
 
 test('请假只占一部分时间：班次不动，被拿走的那段按缺口规则找人顶（占位带段）', () => {
   const s = mk()
   const target = s.placements.find(p => p.id === 'P-10')
-  const fact = { id: 'F-P', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-19', placementId: 'P-10', start: '10:00', end: '11:00', result: '' }
+  const fact = { id: 'F-P', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-26', placementId: 'P-10', start: '10:00', end: '11:00', result: '' }
   addFact5(s, fact)
   assert.equal(target.status, 'active', '只请 1 小时，班次还在这人身上，不整班释放')
   assert.ok(fact.result.includes('10:00–11:00'))
@@ -214,7 +214,7 @@ test('请假只占一部分时间：班次不动，被拿走的那段按缺口�
   const rep = s.placements.find(p => p.fromFact === 'F-P')
   assert.ok(rep, '要补的段找到了顶班人')
   assert.deepEqual(rep.seg, { start: '10:00', end: '11:00' }, '补位占位带段：只顶 10:00–11:00')
-  const mkNotice = s.notices.find(n => n.kind === 'makeup' && n.date === '2026-11-19')
+  const mkNotice = s.notices.find(n => n.kind === 'makeup' && n.date === '2026-11-26')
   assert.ok(mkNotice && mkNotice.text.includes('10:00–11:00'), '补位通知写明只顶哪一段')
 })
 
@@ -222,7 +222,7 @@ test('请假只占一部分时间且班次设了「不补充」：不找人顶�
   const s = mk()
   s.slots.find(x => x.id === 'SL-01').gapRule = 'G0'
   const makeupBefore = s.notices.filter(n => n.kind === 'makeup').length
-  const fact = { id: 'F-P0', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-19', placementId: 'P-10', start: '10:00', end: '11:00', result: '' }
+  const fact = { id: 'F-P0', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-26', placementId: 'P-10', start: '10:00', end: '11:00', result: '' }
   addFact5(s, fact)
   assert.ok(fact.result.includes('不补充'))
   const gn = s.notices.find(n => n.kind === 'hr')
@@ -233,7 +233,7 @@ test('请假只占一部分时间且班次设了「不补充」：不找人顶�
 
 test('顶班：人事安排，通知即可，不需同意', () => {
   const s = mk()
-  const fact = { id: 'F-Z', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-18', personId: 'E-133', result: '' }
+  const fact = { id: 'F-Z', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-25', personId: 'E-133', result: '' }
   addFact5(s, fact)
   const np = s.placements.find(p => p.fromFact === 'F-Z')
   assert.equal(np.personId, 'E-133')
@@ -249,7 +249,7 @@ test('换班：不搬占位行——两条互相指向的事件把履约换过�
   const b = s.placements.find(p => p.id === 'P-14')
   const pa = a.personId
   const pb = b.personId
-  const fact = { id: 'F-S', type: '换班', at: '2026-11-14 12:00', by: 'E-107', slotId: 'SL-02', date: '2026-11-16', placementId: 'P-14', partnerPlacementId: 'P-01', result: '' }
+  const fact = { id: 'F-S', type: '换班', at: '2026-11-14 12:00', by: 'E-107', slotId: 'SL-02', date: '2026-11-23', placementId: 'P-14', partnerPlacementId: 'P-01', result: '' }
   addFact5(s, fact)
   assert.equal(a.personId, pa, '原计划人不动')
   assert.equal(b.personId, pb, '原计划人不动')
@@ -261,9 +261,9 @@ test('换班：不搬占位行——两条互相指向的事件把履约换过�
 
 test('离职：人直接出结果，不找人顶', () => {
   const s = mk()
-  const fact = { id: 'F-Q', type: '离职', at: '2026-11-14 12:00', by: 'E-107', subtype: '离职', date: '2026-11-16', result: '' }
+  const fact = { id: 'F-Q', type: '离职', at: '2026-11-14 12:00', by: 'E-107', subtype: '离职', date: '2026-11-23', result: '' }
   addFact5(s, fact)
-  const mine = s.placements.filter(p => p.personId === 'E-107' && p.date >= '2026-11-16')
+  const mine = s.placements.filter(p => p.personId === 'E-107' && p.date >= '2026-11-23')
   assert.ok(mine.every(p => p.status === 'covered'))
   assert.equal(s.placements.filter(p => p.fromFact === 'F-Q').length, 0)
 })
@@ -272,8 +272,8 @@ test('可获取清单：按身份过滤、窗口已开、不重复出现已申�
   const s = mk()
   const offers = openOffers5(s, 'E-107')
   assert.ok(offers.some(o => o.slotId === 'TL-01'))
-  assert.ok(offers.some(o => o.slotId === 'SL-03' && o.date === '2026-11-22'))
-  assert.equal(offers.some(o => o.slotId === 'SL-03' && o.date === '2026-11-21'), false)
+  assert.ok(offers.some(o => o.slotId === 'SL-03' && o.date === '2026-11-29'))
+  assert.equal(offers.some(o => o.slotId === 'SL-03' && o.date === '2026-11-28'), false)
 })
 
 test('行上限：这一档给几个就几个，多出来的留给下一档', () => {
@@ -281,13 +281,27 @@ test('行上限：这一档给几个就几个，多出来的留给下一档', ()
   const sl = slotById(s, 'SL-02')
   sl.list[1].cap = 1
   /* 11-16 晚班第 2 档（本店非全）已经有阿禾 1 个，再来一个小满就超了 */
-  const r = grab5(s, 'SL-02', '2026-11-16', 'E-126')
+  const r = grab5(s, 'SL-02', '2026-11-23', 'E-126')
   assert.equal(r.ok, false)
   assert.equal(r.reason, '这一档只留 1 个，已经满了')
 })
 
-test('节奏：自然周，提前 4 天 06:00 发，铺一周', () => {
+test('节奏：业务周——周四 06:00 发布，发布的是下下周期那期（leadWeeks=2）', () => {
   const s = mk()
+  assert.equal(s.round.nextAt, '2026-11-19 06:00')
+  assert.deepEqual(s.round.nextSpan, ['2026-11-30', '2026-12-06'], '11-19 发布的是 11-30 那期；11-23 那期 11-12 已发布（多期并存）')
+  /* 恒等式：起点周一 + 每周四发布 + 提前 2 个业务周 = 起点 − 11 天发布、发布后 2 天截止 */
+  assert.equal(publishAtOf(s.round.config, '2026-11-30'), '2026-11-19 06:00')
+  assert.equal(applyDeadlineOf(s.round.config, '2026-11-30'), '2026-11-21 20:00')
+  /* leadWeeks=1 退化为「发布下一周期」：起点 − 4 天 */
+  const c1 = { ...s.round.config, leadWeeks: 1 }
+  assert.equal(publishAtOf(c1, '2026-11-30'), '2026-11-26 06:00')
+})
+
+test('节奏：自然周（旧偏移口径仍支持），提前 4 天 06:00 发，铺一周', () => {
+  const s = mk()
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
+  recalcRound(s)
   assert.equal(s.round.nextAt, '2026-11-19 06:00')
   assert.equal(s.round.nextSpan[0], '2026-11-23')
   assert.equal(s.round.nextSpan[1], '2026-11-29')
@@ -295,7 +309,7 @@ test('节奏：自然周，提前 4 天 06:00 发，铺一周', () => {
 
 test('节奏：改发布偏移（提前 5 天）→ 预告跟着重算', () => {
   const s = mk()
-  s.round.config.publishOffsetDays = -5
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
   recalcRound(s)
   assert.equal(s.round.nextAt, '2026-11-18 06:00')
   assert.equal(s.round.nextSpan[0], '2026-11-23')
@@ -303,9 +317,7 @@ test('节奏：改发布偏移（提前 5 天）→ 预告跟着重算', () => {
 
 test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
   const s = mk()
-  s.round.config.cycle = { anchor: 'monthStart', unit: 'month', n: 1, start: '' }
-  s.round.config.publishOffsetDays = -5
-  s.round.config.publishHour = '09:00'
+  s.round.config = { cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '09:00', applyOffsetDays: -1, applyHour: '20:00' }
   recalcRound(s)
   /* now=11-14，12 月周期起点 12-01，提前 5 天 = 11-26 09:00 发布，铺 12-01~12-31 */
   assert.equal(s.round.nextAt, '2026-11-26 09:00')
@@ -314,19 +326,16 @@ test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
 
 test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => {
   const s = mk()
-  s.round.config.cycle = { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }
-  s.round.config.publishOffsetDays = -6
-  s.round.config.publishHour = '08:00'
+  s.round.config = { cycle: { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }, publishOffsetDays: -6, publishHour: '08:00', applyOffsetDays: -1, applyHour: '20:00' }
   recalcRound(s)
   /* now=11-14 落在 10-26~11-25 期；发布 10-20 已过 → 下一期 11-26~12-25，提前 6 天 = 11-20 08:00 */
   assert.equal(s.round.nextAt, '2026-11-20 08:00')
   assert.deepEqual(s.round.nextSpan, ['2026-11-26', '2026-12-25'])
 })
 
-test('节奏：每次触发都生成下一周期，一期接一期连续（没有隔期）', () => {
+test('节奏：每次触发生成的是下一个还没排的周期（N+1），一期接一期连续', () => {
   const s = mk()
-  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 1, start: '' }
-  s.round.config.publishOffsetDays = -4
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
   recalcRound(s)
   /* 逐次推演：nextAt 发布 → 铺下一周 → 移到发布之后再看下一轮，两次覆盖区间首尾相接 */
   const first = { at: s.round.nextAt, span: [...s.round.nextSpan] }
@@ -340,7 +349,7 @@ test('节奏：每次触发都生成下一周期，一期接一期连续（没�
 
 test('节奏：改周期长度立即体现在预告区间', () => {
   const s = mk()
-  s.round.config.cycle = { anchor: 'monday', unit: 'week', n: 3, start: '' }
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 3, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
   recalcRound(s)
   const span = (new Date(s.round.nextSpan[1]) - new Date(s.round.nextSpan[0])) / 86400000 + 1
   assert.equal(span, 21, '铺三周')
@@ -424,11 +433,11 @@ test('兴隆湖店：全职客户经理按人数组合出早/晚/中各 1 人，
   assert.equal(mid.snapN, 1)
   assert.equal(late.snapN, 2)
   const on = (slotId, date) => s.placements.filter(p => p.slotId === slotId && p.date === date && p.status === 'active')
-  assert.equal(on('SL-11', '2026-11-16').length, 2, '早班客经 + 推拿各 1')
-  assert.equal(on('SL-12', '2026-11-16').length, 1)
-  assert.equal(on('SL-13', '2026-11-16').length, 2)
+  assert.equal(on('SL-11', '2026-11-23').length, 2, '早班客经 + 推拿各 1')
+  assert.equal(on('SL-12', '2026-11-23').length, 1)
+  assert.equal(on('SL-13', '2026-11-23').length, 2)
   /* 直派的分人时刻 = 窗口开放时刻（发布即开 = 发布那一刻），不是交付时临时编的 */
-  const direct = on('SL-11', '2026-11-16').find(p => p.way.startsWith('直派'))
+  const direct = on('SL-11', '2026-11-23').find(p => p.way.startsWith('直派'))
   assert.equal(direct.at, s.round.publishedAt)
 })
 
@@ -437,8 +446,8 @@ test('兴隆湖店：直派轮转——相邻两天同一班次换成不同的�
   const who = (slotId, date) => s.placements
     .filter(p => p.slotId === slotId && p.date === date && p.status === 'active' && p.way.startsWith('直派'))
     .map(p => p.personId)
-  const d1 = who('SL-11', '2026-11-16')
-  const d2 = who('SL-11', '2026-11-17')
+  const d1 = who('SL-11', '2026-11-23')
+  const d2 = who('SL-11', '2026-11-24')
   assert.equal(d1.length, 1)
   assert.equal(d2.length, 1)
   assert.notEqual(d1[0], d2[0], '周一和周二排早班的不该是同一个人')
@@ -451,7 +460,7 @@ test('兴隆湖店：通班是最后开放的收尾班次，落空的人被它�
   /* 通班的窗口晚于早/中/晚三班（发布后推 2 天 09:00 > 发布即开） */
   assert.ok(openAt5(row, s.round) > s.round.publishedAt)
   assert.ok(openAt5(row, s.round) > openAt5(s.slots.find(x => x.id === 'SL-11').list[0], s.round))
-  const got = s.placements.filter(p => p.slotId === 'SL-14' && p.date === '2026-11-16' && p.status === 'active')
+  const got = s.placements.filter(p => p.slotId === 'SL-14' && p.date === '2026-11-23' && p.status === 'active')
   /* 档位统一写「在职」挡储备：储备只在有缺时补，不参与获取段——通班兜底也收不到储备，只有落空的全职推拿 */
   assert.equal(got.length, 1, '在职落空 1 人（储备岑岭被挡，名额装不满留给人事）')
   const names = got.map(p => s.people.find(x => x.id === p.personId).name).sort()
@@ -467,7 +476,7 @@ test('兴隆湖店：非全推拿名额 = 签约 4 人 ÷ 2 向上 = 2，仅本�
   assert.equal(must.list.length, 1)
   assert.equal(must.list[0].way, 'grab')
   assert.deepEqual(must.list[0].who, { tag: 'regular', scope: 'store', kind: 'parttime', pos: '推拿师' })
-  const got = s.placements.filter(p => p.slotId === 'SL-17' && p.date === '2026-11-16')
+  const got = s.placements.filter(p => p.slotId === 'SL-17' && p.date === '2026-11-23')
   assert.equal(got.length, 2)
 })
 
@@ -478,7 +487,7 @@ test('兴隆湖店：非全客经三档错峰——非全客经 → 非全推拿
   assert.equal(whoLabel5(cyc.list[0].who), '本店 · 非全 · 在职 · 客户经理')
   assert.equal(whoLabel5(cyc.list[1].who), '本店 · 非全 · 在职 · 推拿师')
   assert.equal(whoLabel5(cyc.list[2].who), '本店 · 全职 · 在职 · 推拿师')
-  const t = cyc.list.map(r => openAt5(r, s.round, '2026-11-16'))
+  const t = cyc.list.map(r => openAt5(r, s.round, '2026-11-23'))
   assert.ok(t[0] < t[1], '非全客经先开')
   assert.ok(t[1] < t[2], '非全推拿次之，全职推拿最后')
 })
@@ -486,9 +495,9 @@ test('兴隆湖店：非全客经三档错峰——非全客经 → 非全推拿
 test('工时不由排班判断：排班只记班次起止，全天排满也放行', () => {
   const s = mk()
   /* 非全推拿 桃夭 同一天连拿必选·早 + 常规（10–14 + 14–18，共 8 小时），排班不再拦 */
-  const extra = grab5(s, 'SL-19', '2026-11-16', 'E-211')
+  const extra = grab5(s, 'SL-19', '2026-11-23', 'E-211')
   assert.equal(extra.ok, true)
-  assert.equal(s.placements.filter(p => p.personId === 'E-211' && p.date === '2026-11-16').length, 2)
+  assert.equal(s.placements.filter(p => p.personId === 'E-211' && p.date === '2026-11-23').length, 2)
 })
 
 /* ===== 总部办公区：按月排、按岗位人数 1:1 定名额、排完直接分 ===== */
@@ -500,8 +509,8 @@ test('办公区：轮按月，门店轮仍按周——节奏跟着空间走', ()
   assert.equal(off.nextAt, '2026-11-27 06:00', '提前 4 天发下个月')
   assert.deepEqual(off.nextSpan, ['2026-12-01', '2026-12-31'])
   const shop = roundOf(s, 'S-201')
-  assert.equal(shop.id, 'R-1112')
-  assert.deepEqual(shop.span, ['2026-11-16', '2026-11-22'], '门店还是按周')
+  assert.equal(shop.id, 'R-1123')
+  assert.deepEqual(shop.span, ['2026-11-23', '2026-11-29'], '门店还是按周')
 })
 
 test('办公区：白班 3 晚班 2，只有直派一档，人群是本店全职在职产品经理', () => {
@@ -511,8 +520,8 @@ test('办公区：白班 3 晚班 2，只有直派一档，人群是本店全职
   assert.equal(bai.name, '白班')
   assert.equal(bai.start, '09:30')
   assert.equal(bai.end, '18:30')
-  assert.equal(snapN5(s, 'SL-20', '2026-11-16'), 3, '名额按岗位人数 1:1：白班 3')
-  assert.equal(snapN5(s, 'SL-21', '2026-11-16'), 2, '晚班 2')
+  assert.equal(snapN5(s, 'SL-20', '2026-11-23'), 3, '名额按岗位人数 1:1：白班 3')
+  assert.equal(snapN5(s, 'SL-21', '2026-11-23'), 2, '晚班 2')
   assert.equal(bai.list.length, 1)
   assert.equal(bai.list[0].way, 'direct', '排完直接分，没有抢单入口')
   assert.equal(whoLabel5(bai.list[0].who), '本店 · 全职 · 在职 · 产品经理')
@@ -534,8 +543,8 @@ test('办公区：直派按轮换次序走，相邻两天的白晚班换人', ()
     bai: s.placements.filter(p => p.date === date && p.slotId === 'SL-20').map(p => p.personId),
     wan: s.placements.filter(p => p.date === date && p.slotId === 'SL-21').map(p => p.personId)
   })
-  const d1 = of('2026-11-16')
-  const d2 = of('2026-11-17')
+  const d1 = of('2026-11-23')
+  const d2 = of('2026-11-24')
   assert.notDeepEqual(d1.bai, d2.bai, '第二天白班换人')
   assert.ok(d2.wan.includes(d1.bai[0]), '昨天上白班的人今天轮到晚班')
 })
@@ -571,7 +580,7 @@ test('办公区非全：周末晚班整月开放，非全领得到、全职不�
   assert.equal(snapN5(s, 'SL-22', '2026-11-14'), 1, '名额 1')
   assert.equal(datesOfRound5(roundOf(s, 'S-206')).length, 30, '这一期是整月，挑班范围就是 30 天')
   assert.ok(slotsOn5(s, '2026-11-14').some(x => x.id === 'SL-22'), '周六有')
-  assert.ok(!slotsOn5(s, '2026-11-17').some(x => x.id === 'SL-22'), '周二没有')
+  assert.ok(!slotsOn5(s, '2026-11-24').some(x => x.id === 'SL-22'), '周二没有')
   assert.equal(canTake5(s, 'SL-22', '2026-11-14', 'E-306', 'grab', s.now).ok, true, '非全产品经理能领')
   const full = canTake5(s, 'SL-22', '2026-11-14', 'E-301', 'grab', s.now)
   assert.equal(full.ok, false, '全职走直派，不在这档')
@@ -595,7 +604,7 @@ test('规则按人群命中：非全推拿 2 条，别人 0 条（空规则放�
   assert.equal(claimRulesOf5(s, 'S-205', p('E-211')).length, 2)
   assert.equal(claimRulesOf5(s, 'S-205', p('E-208')).length, 0, '非全客经没配规则')
   assert.equal(claimRulesOf5(s, 'S-205', p('E-205')).length, 0, '全职推拿没配规则')
-  const empty = claimCheck5(s, 'S-201', 'E-121', '2026-11-16')
+  const empty = claimCheck5(s, 'S-201', 'E-121', '2026-11-23')
   assert.equal(empty.hasRule, false)
   assert.equal(empty.ok, true, '没配规则直接放行')
   assert.equal(empty.limits.length, 0, '蓝田店没配额度')
@@ -603,7 +612,7 @@ test('规则按人群命中：非全推拿 2 条，别人 0 条（空规则放�
 
 test('A 类是「或」：只占晚班不占早班，A 类照样满足', () => {
   const s = mk()
-  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-16')   // 只有 SL-18 晚班（A 类 18–22）
+  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-23')   // 只有 SL-18 晚班（A 类 18–22）
   assert.equal(r.hasRule, true)
   const a = r.items.find(i => i.id === 'CR-01')
   assert.equal(a.ok, true, '类下任一条都算数')
@@ -612,8 +621,8 @@ test('A 类是「或」：只占晚班不占早班，A 类照样满足', () => {
 
 test('A 类一条都没占到 → 差 1 条', () => {
   const s = mk()
-  s.placements = s.placements.filter(p => !(p.personId === 'E-213' && p.date === '2026-11-16'))
-  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-16')
+  s.placements = s.placements.filter(p => !(p.personId === 'E-213' && p.date === '2026-11-23'))
+  const r = claimCheck5(s, 'S-205', 'E-213', '2026-11-23')
   const a = r.items.find(i => i.id === 'CR-01')
   assert.equal(a.ok, false)
   assert.equal(a.actual, '0 条')
@@ -621,12 +630,12 @@ test('A 类一条都没占到 → 差 1 条', () => {
 
 test('每日时长线 360–540 分钟：4 小时不够，加常规班凑到 8 小时满足', () => {
   const s = mk()
-  const before = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const before = claimCheck5(s, 'S-205', 'E-211', '2026-11-23')
   const m1 = before.items.find(i => i.id === 'CR-02')
   assert.equal(m1.ok, false, '只有早班 240 分钟，少于 360')
   assert.equal(m1.actual, '240 分钟')
-  assert.equal(grab5(s, 'SL-19', '2026-11-16', 'E-211').ok, true)
-  const after = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  assert.equal(grab5(s, 'SL-19', '2026-11-23', 'E-211').ok, true)
+  const after = claimCheck5(s, 'S-205', 'E-211', '2026-11-23')
   const m2 = after.items.find(i => i.id === 'CR-02')
   assert.equal(m2.actual, '480 分钟')
   assert.equal(m2.ok, true)
@@ -636,19 +645,19 @@ test('每日时长线 360–540 分钟：4 小时不够，加常规班凑到 8 �
 test('集合提交只看「类型 + 数量」：一条没选不许交，A 类没勾够不许交', () => {
   const s = mk()
   s.placements = s.placements.filter(p => p.personId !== 'E-213')   // 这周还什么都没占
-  const empty = claimSet5(s, 'S-205', 'E-213', '2026-11-16', [])
+  const empty = claimSet5(s, 'S-205', 'E-213', '2026-11-23', [])
   assert.equal(empty.empty, true)
   assert.equal(empty.ok, false, '空组不是合规的提交')
   /* 只勾 B 类常规：A 类还是一条没有 */
-  const onlyB = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-19'])
+  const onlyB = claimSet5(s, 'S-205', 'E-213', '2026-11-23', ['SL-19'])
   assert.equal(onlyB.ok, false)
   assert.deepEqual(onlyB.reasons, ['A 类还差 1 条'])
   /* 勾上 A 类早班：类的要求够了就能交；当天时长只有 4 小时——那是整天合计，不卡提交 */
-  const onlyA = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17'])
+  const onlyA = claimSet5(s, 'S-205', 'E-213', '2026-11-23', ['SL-17'])
   assert.equal(onlyA.ok, true, '时长下限不在提交门槛上')
   assert.equal(onlyA.items.find(i => i.id === 'CR-02').ok, false, '但进度条上仍标着时长没够')
   /* 两条一起勾：8 小时，全部满足 */
-  const okSet = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17', 'SL-19'])
+  const okSet = claimSet5(s, 'S-205', 'E-213', '2026-11-23', ['SL-17', 'SL-19'])
   assert.equal(okSet.ok, true)
   assert.equal(okSet.dayUsed, 480)
   assert.equal(okSet.items.every(i => i.ok), true)
@@ -657,40 +666,40 @@ test('集合提交只看「类型 + 数量」：一条没选不许交，A 类没
 test('集合提交：这组会把周额度撑破时，提交前就说清楚', () => {
   const s = mk()
   /* E-213 本周已 20 小时（5 天 × 4 小时）：再勾 8 小时 = 28 小时 > 24 */
-  const r = claimSet5(s, 'S-205', 'E-213', '2026-11-16', ['SL-17', 'SL-19'])
+  const r = claimSet5(s, 'S-205', 'E-213', '2026-11-23', ['SL-17', 'SL-19'])
   assert.equal(r.ok, false)
   assert.ok(r.reasons.some(x => x.includes('本周额度不够')), r.reasons.join('|'))
 })
 
 test('自然周从周一起、自然月按日历', () => {
-  assert.deepEqual(weekRange5('2026-11-16'), ['2026-11-16', '2026-11-22'])
-  assert.deepEqual(weekRange5('2026-11-22'), ['2026-11-16', '2026-11-22'], '周日仍属本周')
-  assert.deepEqual(monthRange5('2026-11-16'), ['2026-11-01', '2026-11-30'])
+  assert.deepEqual(weekRange5('2026-11-23'), ['2026-11-23', '2026-11-29'])
+  assert.deepEqual(weekRange5('2026-11-29'), ['2026-11-23', '2026-11-29'], '周日仍属本周')
+  assert.deepEqual(monthRange5('2026-11-23'), ['2026-11-01', '2026-11-30'])
   assert.deepEqual(monthRange5('2026-02-10'), ['2026-02-01', '2026-02-28'])
 })
 
 test('周/月额度按门店算：本周 20 小时合规；凑到 28 小时超周上限', () => {
   const s = mk()
-  const r1 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const r1 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23')
   const w1 = r1.limits.find(l => l.name === '本周额度')
   assert.equal(w1.used, 20)
   assert.equal(w1.cap, 24)
   assert.equal(w1.ok, true, '5 天 × 4 小时 = 20 小时，没超')
   /* 再多占一天晚班（4 小时）→ 24 小时，正好压线仍合规 */
-  s.placements.push({ id: 'P-T1', slotId: 'SL-18', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
-  const w2 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16').limits.find(l => l.name === '本周额度')
+  s.placements.push({ id: 'P-T1', slotId: 'SL-18', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const w2 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23').limits.find(l => l.name === '本周额度')
   assert.equal(w2.used, 24)
   assert.equal(w2.ok, true, '正好 24 小时不超')
-  s.placements.push({ id: 'P-T2', slotId: 'SL-19', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
-  const w3 = claimCheck5(s, 'S-205', 'E-211', '2026-11-16').limits.find(l => l.name === '本周额度')
+  s.placements.push({ id: 'P-T2', slotId: 'SL-19', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const w3 = claimCheck5(s, 'S-205', 'E-211', '2026-11-23').limits.find(l => l.name === '本周额度')
   assert.equal(w3.used, 28)
   assert.equal(w3.ok, false, '28 小时超了周 24')
 })
 
 test('额度按店各算一套：同一个人另一家店没有额度配置就不受管', () => {
   const s = mk()
-  s.placements.push({ id: 'P-T3', slotId: 'SL-18', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
-  const other = claimCheck5(s, 'S-201', 'E-211', '2026-11-16')
+  s.placements.push({ id: 'P-T3', slotId: 'SL-18', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const other = claimCheck5(s, 'S-201', 'E-211', '2026-11-23')
   assert.equal(other.limits.length, 0)
   assert.equal(other.ok, true)
 })
@@ -700,21 +709,21 @@ test('超上限当场拦：接了这条今天合计超 9 小时，点了不成�
   const s = mk()
   s.slots.find(x => x.id === 'SL-18').snapN = 4   /* 只测规则门，把「位已占满」让开 */
   /* 何川 11-17 已占早班 4h，再抢常规（首尾相接 14–18）+ 晚班（18–22），合计 12h 超 540 分钟上限 */
-  const g0 = grab5(s, 'SL-19', '2026-11-17', 'E-211')
+  const g0 = grab5(s, 'SL-19', '2026-11-24', 'E-211')
   assert.equal(g0.ok, true, '首尾相接的常规班能抢')
-  const g = grab5(s, 'SL-18', '2026-11-17', 'E-211')
+  const g = grab5(s, 'SL-18', '2026-11-24', 'E-211')
   assert.equal(g.ok, false)
   assert.ok(g.reason.includes('超过每天 9 小时上限'), g.reason)
 })
 
 test('超周/月额度当场拦：本周已 20h，再抢 5h 不成；下限不拦单条', () => {
   const s = mk()
-  s.placements.push({ id: 'P-G3', slotId: 'SL-19', date: '2026-11-21', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
-  const g = grab5(s, 'SL-18', '2026-11-22', 'E-211')   /* 再 +4h = 28h > 24h */
+  s.placements.push({ id: 'P-G3', slotId: 'SL-19', date: '2026-11-28', personId: 'E-211', status: 'active', way: '抢 · 第1档' })
+  const g = grab5(s, 'SL-18', '2026-11-29', 'E-211')   /* 再 +4h = 28h > 24h */
   assert.equal(g.ok, false)
   assert.ok(g.reason.includes('本周非全工时上限 24 小时已满'), g.reason)
   const s2 = mk()
-  const g2 = grab5(s2, 'SL-19', '2026-11-22', 'E-213') /* A 类一条没占也放行（下限不拦单条） */
+  const g2 = grab5(s2, 'SL-19', '2026-11-29', 'E-213') /* A 类一条没占也放行（下限不拦单条） */
   assert.equal(g2.ok, true)
 })
 
@@ -733,12 +742,12 @@ test('改配置不进当前轮快照；发布下一轮（演示翻轮）后才�
   s.claimRules.push({ id: 'CR-T', spaceId: 'S-205', name: 'A 类至多 1', who: s.claimRules[0].who, scope: { type: 'category', id: 'A' }, unit: 'count', min: 0, max: 1 })
   assert.equal(s.ruleSnapshots['S-205'].rules.length, 2, '当前轮快照没变')
   /* 试算按配置层立即能看到新规则 */
-  const trial = claimCheck5(s, 'S-205', 'E-213', '2026-11-16', { config: true })
+  const trial = claimCheck5(s, 'S-205', 'E-213', '2026-11-23', { config: true })
   assert.equal(trial.items.length, 3)
   /* 推进到 nextAt 翻轮：新快照带上新规则 */
   runDueRounds5(s, s.round.nextAt)
   assert.equal(s.ruleSnapshots['S-205'].rules.length, 3, '新一轮快照已刷新')
-  assert.equal(s.round.span[0], '2026-11-23')
+  assert.equal(s.round.span[0], '2026-11-30')
 })
 
 test('非全签约多店：兼签店的名额看得到、matchWho 按签约集合判', () => {
@@ -784,7 +793,7 @@ test('类别占用统计：班次与规则分别计数', () => {
 
 test('规则进度项带 scope/unit，移动端才能按类给进度', () => {
   const s = mk()
-  const r = claimCheck5(s, 'S-205', 'E-211', '2026-11-16')
+  const r = claimCheck5(s, 'S-205', 'E-211', '2026-11-23')
   const count = r.items.find(i => i.unit === 'count')
   const mins = r.items.find(i => i.unit === 'minute')
   assert.deepEqual(count.scope, { type: 'category', id: 'A' })
@@ -793,8 +802,8 @@ test('规则进度项带 scope/unit，移动端才能按类给进度', () => {
 
 /* ===== 换班 = 两条互相指向的事件占住时段，不搬占位行 ===== */
 function swapSet(s) {
-  const a = s.placements.find(p => p.personId === 'E-211' && p.slotId === 'SL-17' && p.date === '2026-11-16')
-  const b = s.placements.find(p => p.personId === 'E-213' && p.slotId === 'SL-18' && p.date === '2026-11-16')
+  const a = s.placements.find(p => p.personId === 'E-211' && p.slotId === 'SL-17' && p.date === '2026-11-23')
+  const b = s.placements.find(p => p.personId === 'E-213' && p.slotId === 'SL-18' && p.date === '2026-11-23')
   const fact = addFact5(s, {
     id: 'F-SWAP', type: '换班', at: '2026-11-15 21:00', by: 'E-211',
     slotId: 'SL-17', date: '', placementId: a.id, partnerPlacementId: b.id
@@ -819,30 +828,30 @@ test('换班：占位行不搬人，两条互相指向的换班事件把履约�
 test('换班后判定按履约人：换出的那段我不忙、对方忙；工时算履约的', () => {
   const s = mk()
   const { a, b } = swapSet(s)
-  assert.equal(personBusy5(s, 'E-211', '2026-11-16', '10:00', '14:00'), false, '换出去后我不再占这段时间')
-  assert.equal(personBusy5(s, 'E-213', '2026-11-16', '10:00', '14:00'), true, '对方要去上这一段')
-  assert.equal(personBusy5(s, 'E-211', '2026-11-16', '18:00', '22:00'), true, '我要去上对方那条')
-  const tao = claimedSlots5(s, 'E-211', 'S-205', '2026-11-16').map(x => x.id)
-  const mu = claimedSlots5(s, 'E-213', 'S-205', '2026-11-16').map(x => x.id)
+  assert.equal(personBusy5(s, 'E-211', '2026-11-23', '10:00', '14:00'), false, '换出去后我不再占这段时间')
+  assert.equal(personBusy5(s, 'E-213', '2026-11-23', '10:00', '14:00'), true, '对方要去上这一段')
+  assert.equal(personBusy5(s, 'E-211', '2026-11-23', '18:00', '22:00'), true, '我要去上对方那条')
+  const tao = claimedSlots5(s, 'E-211', 'S-205', '2026-11-23').map(x => x.id)
+  const mu = claimedSlots5(s, 'E-213', 'S-205', '2026-11-23').map(x => x.id)
   assert.deepEqual(tao, ['SL-18'], '我换出的早班不算我的，换入的晚班算我的')
   assert.deepEqual(mu, ['SL-17'], '她的晚班换出去给别人了，接了我的早班')
   /* 名额不回池：两条占位还在，容量口径不变 */
-  assert.equal(activeCount5(s, 'SL-17', '2026-11-16'), 2)
-  assert.equal(activeCount5(s, 'SL-18', '2026-11-16'), 2)
+  assert.equal(activeCount5(s, 'SL-17', '2026-11-23'), 2)
+  assert.equal(activeCount5(s, 'SL-18', '2026-11-23'), 2)
 })
 
 test('撤销换班：两条事件同时失效，各自回到原样', () => {
   const s = mk()
   const { a, b, fact } = swapSet(s)
-  const r = undoSwap5(s, fact.id, '2026-11-16 09:00')
+  const r = undoSwap5(s, fact.id, '2026-11-23 09:00')
   assert.equal(r.ok, true)
   assert.equal(r.count, 2)
   assert.equal(a.swap, undefined)
   assert.equal(b.swap, undefined)
   assert.equal(dutyPersonId5(a), 'E-211')
   assert.equal(dutyPersonId5(b), 'E-213')
-  assert.equal(s.facts.find(f => f.id === fact.id).revokedAt, '2026-11-16 09:00')
-  assert.equal(personBusy5(s, 'E-213', '2026-11-16', '10:00', '14:00'), false, '撤销后对方不再忙这段')
+  assert.equal(s.facts.find(f => f.id === fact.id).revokedAt, '2026-11-23 09:00')
+  assert.equal(personBusy5(s, 'E-213', '2026-11-23', '10:00', '14:00'), false, '撤销后对方不再忙这段')
 })
 
 
@@ -850,27 +859,28 @@ test('撤销换班：两条事件同时失效，各自回到原样', () => {
 test('轮次表：只列已经生成的轮，没到发布时刻的下一轮不冒充数据', () => {
   const s = mk()
   const list = roundListOf(s, 'S-205')
-  /* 11-14 的实况：前两周已生成（一个跑完、一个正在上）+ 这一轮正在选班次 */
-  assert.equal(list.length, 3, list.map(r => `${r.id}:${r.status}`).join(' | '))
-  assert.deepEqual(list.map(r => r.status), ['ended', 'running', 'applying'])
+  /* 11-14 的实况（业务周节奏，发布下下周期 → 任意时刻多期并存）：
+     跑完的 + 在执行的 + 已截止待开始的 + 正在选的（今晚 20:00 截） */
+  assert.equal(list.length, 4, list.map(r => `${r.id}:${r.status}`).join(' | '))
+  assert.deepEqual(list.map(r => r.status), ['ended', 'running', 'locked', 'applying'])
   const cur = list[list.length - 1]
-  assert.equal(cur.id, 'R-1112')
+  assert.equal(cur.id, 'R-1123')
   assert.ok(list.every(r => r.publishedAt <= s.now), '列出来的都必须是已发布的')
-  /* 11-23 那轮 11-19 才发：现在还不存在 */
-  assert.equal(list.some(r => r.span[0] === '2026-11-23'), false)
+  /* 11-30 那轮 11-19 才发：现在还不存在 */
+  assert.equal(list.some(r => r.span[0] === '2026-11-30'), false)
   const nx = nextPublishOf(s, 'S-205')
   assert.equal(nx.at, '2026-11-19 06:00')
-  assert.deepEqual(nx.span, ['2026-11-23', '2026-11-29'])
+  assert.deepEqual(nx.span, ['2026-11-30', '2026-12-06'])
 })
 
 test('同一轮随时刻换状态：申领中 → 已截止待开始 → 执行中 → 已结束', () => {
-  const r = { span: ['2026-11-16', '2026-11-22'], publishedAt: '2026-11-12 06:00', applyDeadline: '2026-11-15 20:00' }
+  const r = { span: ['2026-11-23', '2026-11-29'], publishedAt: '2026-11-12 06:00', applyDeadline: '2026-11-15 20:00' }
   assert.equal(roundStatusOf(r, '2026-11-14 10:00'), 'applying')
   assert.equal(roundStatusOf(r, '2026-11-15 19:59'), 'applying')
   assert.equal(roundStatusOf(r, '2026-11-15 20:00'), 'locked')
-  assert.equal(roundStatusOf(r, '2026-11-16 00:30'), 'running')
-  assert.equal(roundStatusOf(r, '2026-11-22 23:00'), 'running')
-  assert.equal(roundStatusOf(r, '2026-11-23 00:00'), 'ended')
+  assert.equal(roundStatusOf(r, '2026-11-23 00:30'), 'running')
+  assert.equal(roundStatusOf(r, '2026-11-29 23:00'), 'running')
+  assert.equal(roundStatusOf(r, '2026-11-30 00:00'), 'ended')
 })
 
 test('翻轮后历史留痕：已结束轮留在列表里可回查', () => {
@@ -885,16 +895,16 @@ test('翻轮后历史留痕：已结束轮留在列表里可回查', () => {
 })
 
 test('班次期过了就是已结束，跟申领截止无关', () => {
-  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-16'], applyDeadline: '2026-11-09 20:00' }, '2026-11-16'), 'running')
-  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-15'], applyDeadline: '2026-11-09 20:00' }, '2026-11-16'), 'ended')
-  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-16 20:00' }, '2026-11-16'), 'applying')
-  assert.equal(roundStatusOf({ span: ['2026-11-17', '2026-11-23'], applyDeadline: '2026-11-15 20:00' }, '2026-11-16'), 'locked')
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-23'], applyDeadline: '2026-11-09 20:00' }, '2026-11-23'), 'running')
+  assert.equal(roundStatusOf({ span: ['2026-11-10', '2026-11-15'], applyDeadline: '2026-11-09 20:00' }, '2026-11-23'), 'ended')
+  assert.equal(roundStatusOf({ span: ['2026-11-24', '2026-11-23'], applyDeadline: '2026-11-23 20:00' }, '2026-11-23'), 'applying')
+  assert.equal(roundStatusOf({ span: ['2026-11-24', '2026-11-23'], applyDeadline: '2026-11-15 20:00' }, '2026-11-23'), 'locked')
 })
 
 /* ===== 结果层的两类来源：周期时段 / 临时班次 ===== */
 test('临时班次在结果层带标记，周期时段没有', () => {
   const s = mk()
-  const day = slotsOn5(s, '2026-11-21')       // 周六：蓝田的临时班次就落在这天
+  const day = slotsOn5(s, '2026-11-28')       // 周六：蓝田的临时班次就落在这天
   const tmp = day.filter(x => x.tmp)
   assert.equal(tmp.length, 1)
   assert.equal(tmp[0].id, 'TL-01', '临时班次要一眼分得出来')
@@ -904,35 +914,35 @@ test('临时班次在结果层带标记，周期时段没有', () => {
 test('补人不分来源：周期时段缺人、临时班次缺人，都能定人', () => {
   const s = mk()
   /* 周期时段：蓝田早班名额 3，11-16 只到 2 人 → 补一个 */
-  assert.ok(activeCount5(s, 'SL-01', '2026-11-16') < snapN5(s, 'SL-01', '2026-11-16'))
-  const cand = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-16', '10:00', '14:00'))
+  assert.ok(activeCount5(s, 'SL-01', '2026-11-23') < snapN5(s, 'SL-01', '2026-11-23'))
+  const cand = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-23', '10:00', '14:00'))
   assert.ok(cand, '有一个当时空着的人')
   addFact5(s, {
     id: 'F-AP1', type: '顶班', at: '2026-11-14 10:00', by: 'HR',
-    slotId: 'SL-01', date: '2026-11-16', personId: cand.id, result: ''
+    slotId: 'SL-01', date: '2026-11-23', personId: cand.id, result: ''
   })
-  assert.equal(activeCount5(s, 'SL-01', '2026-11-16'), snapN5(s, 'SL-01', '2026-11-16'))
+  assert.equal(activeCount5(s, 'SL-01', '2026-11-23'), snapN5(s, 'SL-01', '2026-11-23'))
   /* 临时班次：周六晚加场 2 个名额一个都没定，同样补得进 */
-  assert.equal(activeCount5(s, 'TL-01', '2026-11-21'), 0)
-  const cand2 = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-21', '18:00', '22:00'))
+  assert.equal(activeCount5(s, 'TL-01', '2026-11-28'), 0)
+  const cand2 = s.people.find(p => p.spaceId === 'S-201' && !personBusy5(s, p.id, '2026-11-28', '18:00', '22:00'))
   addFact5(s, {
     id: 'F-AP2', type: '顶班', at: '2026-11-14 10:10', by: 'HR',
-    slotId: 'TL-01', date: '2026-11-21', personId: cand2.id, result: ''
+    slotId: 'TL-01', date: '2026-11-28', personId: cand2.id, result: ''
   })
-  assert.equal(activeCount5(s, 'TL-01', '2026-11-21'), 1, '临时班次同样能定人')
+  assert.equal(activeCount5(s, 'TL-01', '2026-11-28'), 1, '临时班次同样能定人')
 })
 
 test('观澜店周五截止：此刻这一轮已经排完、等开工', () => {
   const s = mk()
   const list = roundListOf(s, 'S-203')
   const cur = list[list.length - 1]
-  assert.equal(cur.id, 'R-1112')
+  assert.equal(cur.id, 'R-1123')
   assert.equal(cur.applyDeadline, '2026-11-13 20:00')
   assert.equal(cur.status, 'locked', '申领已截止、班次期还没到')
   /* 同一时刻别家还在选班次：状态是按空间各自那条时间线判的 */
   assert.equal(roundListOf(s, 'S-205').slice(-1)[0].status, 'applying')
   /* 已截止的轮仍然能定人补缺口（名单定了但缺人） */
-  assert.equal(s.placements.some(p => p.slotId === 'SL-05' && p.date === '2026-11-21'), true)
+  assert.equal(s.placements.some(p => p.slotId === 'SL-05' && p.date === '2026-11-28'), true)
 })
 
 /* 缺口规则：名额是必要人数，规则只决定「按什么算还需几个、来不来得及」 */
@@ -941,44 +951,44 @@ test('缺口规则：G1 补齐名额、G2 剩余不足 1 小时不补', () => {
   const g1 = GAP_RULES5.find(r => r.id === 'G1')
   const g2 = GAP_RULES5.find(r => r.id === 'G2')
   /* 11-16 早班只有一个缺口，明天发生，剩余按整天算 */
-  const out1 = evalGap5(s, 'SL-01', '2026-11-16', g1)
+  const out1 = evalGap5(s, 'SL-01', '2026-11-23', g1)
   assert.equal(out1.action, 'supplement')
-  assert.equal(out1.need, snapN5(s, 'SL-01', '2026-11-16') - activeCount5(s, 'SL-01', '2026-11-16'))
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2).action, 'supplement', '还剩一整天，叫得来人')
+  assert.equal(out1.need, snapN5(s, 'SL-01', '2026-11-23') - activeCount5(s, 'SL-01', '2026-11-23'))
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2).action, 'supplement', '还剩一整天，叫得来人')
   /* 同一条缺口假定只剩 30 分钟：G2 判成补不上，G1 照补 */
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2, { remainMin: 30 }).action, 'missed')
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g1, { remainMin: 30 }).action, 'supplement')
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g2, { remainMin: 0 }).action, 'missed', '已经开始的补不上')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 30 }).action, 'missed')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g1, { remainMin: 30 }).action, 'supplement')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 0 }).action, 'missed', '已经开始的补不上')
 })
 
 test('缺口规则：G3 按当下预测算，够人就不补', () => {
   const s = mk()
   const g3 = GAP_RULES5.find(r => r.id === 'G3')
-  const n = snapN5(s, 'SL-01', '2026-11-16')
-  const occ = activeCount5(s, 'SL-01', '2026-11-16')
+  const n = snapN5(s, 'SL-01', '2026-11-23')
+  const occ = activeCount5(s, 'SL-01', '2026-11-23')
   assert.ok(n > occ)
   /* 预测就等于名额：缺几个补几个 */
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: n }).need, n - occ)
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g3, { forecast: n }).need, n - occ)
   /* 预测说现在这些人够：不补——不需要另立「剩余够不够长」的规则 */
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: occ }).action, 'none')
-  assert.equal(evalGap5(s, 'SL-01', '2026-11-16', g3, { forecast: occ }).text, '按预测不用补')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g3, { forecast: occ }).action, 'none')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g3, { forecast: occ }).text, '按预测不用补')
 })
 
 test('缺口来路：事实拿走 / 排班没排满 / 临时加位，三种分开', () => {
   const s = mk()
   /* 蓝田 11-17 早班有请假事实覆盖了一段 */
-  assert.equal(gapSrcOf5(s, 'SL-01', '2026-11-17'), 'fact')
+  assert.equal(gapSrcOf5(s, 'SL-01', '2026-11-24'), 'fact')
   /* 没人请假的空位就是获取段没排满 */
-  const bare = slotsOn5(s, '2026-11-20').find(x => !x.tmp && activeCount5(s, x.id, '2026-11-20') < snapN5(s, x.id, '2026-11-20'))
+  const bare = slotsOn5(s, '2026-11-27').find(x => !x.tmp && activeCount5(s, x.id, '2026-11-27') < snapN5(s, x.id, '2026-11-27'))
   assert.ok(bare)
-  assert.equal(gapSrcOf5(s, bare.id, '2026-11-20'), 'short')
+  assert.equal(gapSrcOf5(s, bare.id, '2026-11-27'), 'short')
   /* 临时班次加的位没人接 */
-  assert.equal(gapSrcOf5(s, 'TL-01', '2026-11-21'), 'temp')
+  assert.equal(gapSrcOf5(s, 'TL-01', '2026-11-28'), 'temp')
 })
 
 test('缺口剩余时长：未来算全天、当天按此刻往后截、过去算 0', () => {
   const s = mk()
-  assert.equal(gapRemain5(s, 'SL-01', '2026-11-16'), 240, '早班 10:00–14:00 四小时')
+  assert.equal(gapRemain5(s, 'SL-01', '2026-11-23'), 240, '早班 10:00–14:00 四小时')
   assert.equal(gapRemain5(s, 'SL-01', '2026-11-10'), 0, '已经过去')
   assert.equal(fmtRemain5(0), '已开始 / 已过')
   assert.equal(fmtRemain5(45), '45 分钟')
@@ -988,7 +998,7 @@ test('缺口剩余时长：未来算全天、当天按此刻往后截、过去�
 test('缺口规则：G0 不补充——设了的班次缺人也不产生补人待办', () => {
   const s = mk()
   const g0 = GAP_RULES5.find(r => r.id === 'G0')
-  const out = evalGap5(s, 'SL-01', '2026-11-16', g0)
+  const out = evalGap5(s, 'SL-01', '2026-11-23', g0)
   assert.equal(out.action, 'skip')
   assert.equal(out.need, 0)
   assert.equal(out.text, '不补充')
@@ -1002,7 +1012,7 @@ test('缺口通知：设了「不补充」的班次缺人，发缺口通知给�
   const s = mk()
   s.slots.find(x => x.id === 'SL-01').gapRule = 'G0'
   const makeupBefore = s.notices.filter(n => n.kind === 'makeup').length
-  const fact = { id: 'F-G0', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  const fact = { id: 'F-G0', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-25', placementId: 'P-09', result: '' }
   addFact5(s, fact)
   const gn = s.notices.find(n => n.kind === 'hr')
   assert.ok(gn, '设了不补充也要发一条给人事经理的缺口通知')
@@ -1011,7 +1021,7 @@ test('缺口通知：设了「不补充」的班次缺人，发缺口通知给�
   assert.ok(fact.result.includes('不补充'))
   /* 不产生补位占位、不发新的补位通知 */
   assert.equal(s.notices.filter(n => n.kind === 'makeup').length, makeupBefore, '不补充的班次不发补位通知')
-  assert.ok(!s.placements.some(p => p.way === '顶班 · 补位' && p.date === '2026-11-18'), '不补充的班次不找人顶')
+  assert.ok(!s.placements.some(p => p.way === '顶班 · 补位' && p.date === '2026-11-25'), '不补充的班次不找人顶')
 })
 
 test('班次编排不拦时间撞人：重叠+人群写重是合法配置，冲突由获取段判', () => {
