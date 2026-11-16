@@ -66,7 +66,7 @@
           <button :class="{ on: tab === 'def' }" @click="tab = 'def'">时段与清单</button>
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
-          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · 营业 {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
+          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.tag === '办公区' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
         <!-- ① 定义段 -->
@@ -166,6 +166,44 @@
             </div>
 
             <div class="hint-line">周期时段是模板：保存后从下一轮起生效，当前轮按已生成快照跑，不重算。</div>
+
+            <!-- 这天的时间轴：一天的班次画在钟点上；空间的营业/作业时段只是尺子，不拦 -->
+            <div class="day-axis">
+              <div class="da-head">
+                <strong>这天的时间轴</strong>
+                <span class="da-tabs">
+                  <button v-for="(d, i) in DAY_NAMES" :key="i" :class="{ on: axisDow === i }" @click="axisDow = i">周{{ d }}</button>
+                </span>
+              </div>
+              <svg class="da-svg" :viewBox="`0 0 680 ${axisH}`" role="img"
+                aria-label="一天的时间轴：营业或作业时段作尺子，班次画条，时段外开班照常跑">
+                <!-- 整点刻度 -->
+                <text v-for="t in axisTicks" :key="'t' + t" :x="ax(t)" y="11" text-anchor="middle" font-size="10" fill="#9a9fa9">{{ String(t / 60).padStart(2, '0') }}</text>
+                <!-- 尺子：空间的营业/作业时段，只是参考，不拦 -->
+                <rect :x="ax(toMin(curSpace.bizStart))" y="15" :width="ax(toMin(curSpace.bizEnd)) - ax(toMin(curSpace.bizStart))" :height="axisH - 18"
+                  fill="#FDF3E3" stroke="#C99B4A" stroke-width="0.8" stroke-dasharray="4 3" rx="3" />
+                <text :x="(ax(toMin(curSpace.bizStart)) + ax(toMin(curSpace.bizEnd))) / 2" y="27" text-anchor="middle" font-size="10.5" fill="#854F0B">
+                  {{ curSpace.tag === '办公区' ? '作业时段' : '营业时段' }} {{ curSpace.bizStart }}–{{ curSpace.bizEnd }}
+                </text>
+                <!-- 班次条：一条时段一行，时段外那段单独画 -->
+                <g v-for="(s, i) in axisRows" :key="s.id">
+                  <rect v-for="(g, j) in rowSegs(s)" :key="j" :x="g.x1" :y="32 + i * 21" :width="g.x2 - g.x1" height="14" rx="3"
+                    :fill="s.tmp ? '#CFE0F5' : (g.kind === 'in' ? '#B7E5CF' : '#EDEFF2')"
+                    :stroke="s.tmp ? '#7FA6D9' : (g.kind === 'in' ? '#6FBF97' : '#B4B9C2')" stroke-width="0.8"
+                    :stroke-dasharray="g.kind === 'out' ? '4 3' : undefined">
+                    <title>{{ s.name }} {{ s.start }}–{{ s.end }} · {{ quotaLabel(s) }}{{ s.tmp ? ' · 临时班次' : '' }}</title>
+                  </rect>
+                  <text :x="rowLabelX(s)" :y="42 + i * 21" font-size="10.5" :fill="s.tmp ? '#2B5286' : '#1F5C3D'">{{ s.name }}</text>
+                </g>
+                <text v-if="!axisRows.length" :x="340" :y="55" text-anchor="middle" font-size="11" fill="#9a9fa9">周{{ DAY_NAMES[axisDow] }}没有班次</text>
+              </svg>
+              <div class="da-legend">
+                <span><i class="sw sw-ruler" />{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段（尺子，不拦）</span>
+                <span><i class="sw sw-band" />班次</span>
+                <span><i class="sw sw-tmp" />临时班次（当天加的）</span>
+                <span><i class="sw sw-out" />时段外开班（照常排，不拦）</span>
+              </div>
+            </div>
 
             <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天） -->
             <div class="cyc-switch">
@@ -742,7 +780,7 @@ const sub = ref('cyc')
 const mainTab = ref('schedule')
 const kw = ref('')
 const city = ref('')
-const selSpace = ref(v5.spaces[0].id)
+const selSpace = ref(v5.spaces.some(s => s.id === route.query.space) ? route.query.space : v5.spaces[0].id)
 /* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
 const round = computed(() => roundOf(v5, selSpace.value))
 /* 这一轮铺到了哪些天：门店七天、办公区整月——矩阵和逐日名额都按它走 */
@@ -762,6 +800,36 @@ const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
 function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm() }
+
+/* ===== 这天的时间轴：把一天的班次画在钟点上 =====
+   尺子 = 空间的营业/作业时段（bizStart/bizEnd），只画出来作参考，不拦时段；
+   超出尺子的那截单独画成虚线灰块，叫「时段外开班」——加班是人的时间线上的判定，不在这张图上冒充。 */
+const DAY_AXIS_L = 44, DAY_AXIS_R = 660
+const axisDow = ref(new Date().getDay())
+function dowOf(date) { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay() }
+const axisRows = computed(() => [
+  ...spaceSlots.value.filter(s => s.days.includes(axisDow.value)).map(s => ({ ...s, tmp: false })),
+  ...spaceTemps.value.filter(t => dowOf(t.date) === axisDow.value).map(s => ({ ...s, tmp: true }))
+])
+const axisRange = computed(() => {
+  let lo = toMin(curSpace.value.bizStart), hi = toMin(curSpace.value.bizEnd)
+  axisRows.value.forEach(s => { lo = Math.min(lo, toMin(s.start)); hi = Math.max(hi, toMin(s.end)) })
+  return [Math.floor(lo / 60) * 60, Math.ceil(hi / 60) * 60]
+})
+function ax(min) { const [lo, hi] = axisRange.value; return DAY_AXIS_L + (min - lo) / (hi - lo) * (DAY_AXIS_R - DAY_AXIS_L) }
+const axisTicks = computed(() => { const [lo, hi] = axisRange.value; const out = []; for (let m = lo; m <= hi; m += 60) out.push(m); return out })
+const axisH = computed(() => 32 + Math.max(axisRows.value.length, 1) * 21 + 4)
+function rowSegs(s) {
+  const bs = toMin(curSpace.value.bizStart), be = toMin(curSpace.value.bizEnd)
+  const a = toMin(s.start), b = toMin(s.end), out = []
+  const push = (m1, m2, kind) => { if (m2 - m1 > 2) out.push({ x1: ax(m1), x2: ax(m2), kind }) }
+  if (a < bs) push(a, Math.min(b, bs), 'out')
+  push(Math.max(a, bs), Math.min(b, be), 'in')
+  if (b > be) push(Math.max(a, be), b, 'out')
+  return out
+}
+function rowLabelX(s) { const g = rowSegs(s)[0]; return Math.max(g ? g.x1 + 7 : DAY_AXIS_L, DAY_AXIS_L + 2) }
+
 /* 时间展示：日期只到日，时刻带上时分 */
 function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` }
 function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}` }
@@ -1356,6 +1424,23 @@ function devResolveApply() {
 .sf-row .el-input { flex: 1; }
 .svc-link { margin-left: auto; }
 .hint-line { font-size: 12px; color: #8a8a95; margin: 8px 0 10px; }
+
+/* 这天的时间轴 */
+.day-axis { border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 8px 10px 7px; margin-bottom: 12px; }
+.da-head { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+.da-head strong { font-size: 12.5px; color: #2C2C2A; }
+.da-tabs { display: inline-flex; border: 1px solid #eee6e8; border-radius: 6px; overflow: hidden; }
+.da-tabs button { border: none; background: #fff; padding: 2px 8px; font-size: 11.5px; color: #6a6a75; cursor: pointer; }
+.da-tabs button + button { border-left: 1px solid #eee6e8; }
+.da-tabs button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
+.da-svg { width: 100%; display: block; }
+.da-legend { display: flex; gap: 16px; font-size: 11px; color: #8a8a95; margin-top: 3px; flex-wrap: wrap; }
+.da-legend .sw { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.sw-ruler { background: #FDF3E3; border: 1px dashed #C99B4A; }
+.sw-band { background: #B7E5CF; border: 1px solid #6FBF97; }
+.sw-tmp { background: #CFE0F5; border: 1px solid #7FA6D9; }
+.sw-out { background: #EDEFF2; border: 1px dashed #B4B9C2; }
+
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }
 .sn { display: flex; align-items: baseline; gap: 8px; }
