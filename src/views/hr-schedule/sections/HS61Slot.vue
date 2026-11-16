@@ -28,6 +28,32 @@
           { src: slotListShot, label: '按班次：一条班次一张卡，清单档位的关键信息直接摆在卡面上' }
         ]"
       />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 130px;">视图</th><th style="width: 300px;">是什么</th><th>什么时候用</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>按周期</strong></td><td>节奏铺出的每一天一列：当天会跑的班次（周期班次按星期几 + 临时班次按日期）、名额数；点班次照常进编辑抽屉</td><td>配置人员按「一天怎么干活」的视角配班</td></tr>
+          <tr><td><strong>按班次</strong></td><td>一条班次一张卡，清单档位、工时制度直接摆在卡面上，带编辑 / 复制 / 删除</td><td>按班次对象逐条配置、批量看后果</td></tr>
+        </tbody>
+      </table>
+      <DocScreens
+        :height="300"
+        :images="[
+          { src: copyDayShot, label: '复制到…：源天覆盖式复制，勾选目标星期，先看「将加上 / 将移出」预览再覆盖应用' }
+        ]"
+      />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 170px;">复制到…</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>用法</strong></td><td>先配好一天，再把这一天复制 / 覆盖到其他天——按周期视图每天列右上角「复制到…」</td></tr>
+          <tr><td><strong>覆盖式</strong></td><td>目标天会变得和源天一样；班次按星期几定义，复制落在每周的同一天</td></tr>
+          <tr><td><strong>加减预览</strong></td><td>确认前先列「将加上：早班 → 周二…」「将移出：…」，看清增减再「覆盖应用」</td></tr>
+          <tr><td><strong>空天</strong></td><td>没有班次的天显示「这天没有班次」，同样可以作为源天或目标天参与复制</td></tr>
+        </tbody>
+      </table>
       <div class="note">
         <strong>决议：一条班次只装一份名额需求。</strong>名额归属于岗位需求，不归属于门店的钟点——
         两个岗位同一钟点各要 1 人，就配两条班次（现状业务本来就是在两个排班模块里各配各的），不合并后用档位切份额。
@@ -163,6 +189,7 @@
           <tr><td><strong>挂谁</strong></td><td>规则挂「人群」，不挂时段；没配规则的人直接放行</td></tr>
           <tr><td><strong>计量</strong></td><td>条数 / 分钟两种，配下限与上限；按这一天合计，不跨天累加</td></tr>
           <tr><td><strong>类别</strong></td><td>类别是空间的字典（如 A 类 / B 类）；规则可管某一类或全部，<strong>类下任一条都算数</strong>（名额满了可换同类另一条）</td></tr>
+          <tr><td><strong>工时制度</strong></td><td>每空间一份非全周 / 月工时上限，行内编辑；没配的空间非全不受额度限制——试算里的「本周 / 本月额度」就读它</td></tr>
           <tr><td><strong>试算</strong></td><td>选一个人 + 一天，页面直接出判定：每条规则满足 / 不满足、周 / 月额度余量</td></tr>
           <tr><td><strong>生效</strong></td><td>改了立即用于试算，正式生效下一轮</td></tr>
         </tbody>
@@ -177,6 +204,7 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import slotCycleShot from '../../../docs/assets/pages/v5-slots.png'
 import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
+import copyDayShot from '../../../docs/assets/pages/v5-copy-day.png'
 import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'
 import slotDiscardShot from '../../../docs/assets/pages/v5-slot-discard.png'
 import algoShot from '../../../docs/assets/pages/v5-algo.png'

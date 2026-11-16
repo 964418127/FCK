@@ -1015,7 +1015,7 @@
     </el-dialog>
 
     <!-- 试算：同一条缺口，三条规则各判一次——不占页面，点缺口才出来 -->
-    <el-dialog v-model="trialDlg" title="这条缺口，三条规则各判一次" width="780px">
+    <el-dialog v-model="trialDlg" title="这条缺口，缺口规则逐条各判一次" width="780px">
       <div class="gt-left">
         <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
           <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />

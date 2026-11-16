@@ -30,7 +30,8 @@
         :height="420"
         :images="[
           { src: axisShot, label: '空间时间轴（默认）：横轴时间、纵轴班次，每格显示谁在、哪个班还缺人' },
-          { src: tableShot, label: '排班结果表：唯一记录口，下方申领登记按综合分排序并标出截止后会排上的名次' }
+          { src: gridShot, label: '占用矩阵：行=班次、列=这一轮每一天，每格「已占 x / N」+ 在班的人；点空格直接定人' },
+          { src: gapViewShot, label: '缺口：只看排班确定后因事件缺人的缺口，一行一条带规则与结论；点一行看缺口规则逐条各判一次' }
         ]"
       />
       <table class="data-table">
@@ -52,6 +53,12 @@
       <div class="section-header">
         <h3>6.3.2 排班结果表：唯一记录口</h3>
       </div>
+      <DocScreens
+        :height="300"
+        :images="[
+          { src: tableShot, label: '排班结果表：一条记录=一个人占一条班次的一天，「怎么排上的」跟着动作走；下方申领登记标出截止后会排上的名次' }
+        ]"
+      />
       <table class="data-table">
         <thead>
           <tr><th style="width: 130px;">字段</th><th style="width: 300px;">取值</th><th>说明</th></tr>
@@ -131,6 +138,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import axisShot from '../../../docs/assets/pages/v5-round.png'
+import gridShot from '../../../docs/assets/pages/v5-grid.png'
+import gapViewShot from '../../../docs/assets/pages/v5-gapview.png'
 import tableShot from '../../../docs/assets/pages/v5-run-table.png'
 import appointShot from '../../../docs/assets/pages/v5-appoint.png'
 
