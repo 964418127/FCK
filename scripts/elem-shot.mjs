@@ -1,35 +1,71 @@
-/** 临时：按 h4 标题定位其后的 SVG，或按 aria-label 匹配 SVG。node elem-shot.mjs <url> <匹配文本> <out.png> */
+/**
+ * 元素级截图：点出弹层后只截那个元素（抽屉/对话框/面板），看清设置项不被页面裁掉。
+ * 用法：node elem-shot.mjs <url> <out.png> '<actions-json>' '<selector>'
+ *   actions 同 pt-shot.mjs：[{click},{clickSel},{wait},{type}]
+ */
 import puppeteer from 'puppeteer-core'
-
-const [, , url, titleText, out] = process.argv
+const [, , url, out, rawActions = '[]', selector = '.el-drawer', clipH] = process.argv
+const actions = JSON.parse(rawActions)
+const sleep = ms => new Promise(r => setTimeout(r, ms))
 const browser = await puppeteer.launch({
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  headless: 'new',
-  args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--window-size=1560,940']
+  headless: 'new', args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--window-size=1560,1100']
 })
 try {
   const page = await browser.newPage()
-  await page.setViewport({ width: 1240, height: 900, deviceScaleFactor: 2 })
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 })
-  await new Promise(r => setTimeout(r, 1500))
-  const rect = await page.evaluate((t) => {
-    let svg = null
-    const direct = [...document.querySelectorAll('svg')].find(x => (x.getAttribute('aria-label') || '').includes(t))
-    if (direct) { svg = direct }
-    else {
-      const hs = [...document.querySelectorAll('h4')]
-      const h = hs.find(x => x.textContent.includes(t))
-      if (!h) return null
-      let el = h.nextElementSibling
-      while (el && el.tagName.toLowerCase() !== 'svg' && !el.querySelector('svg')) el = el.nextElementSibling
-      if (!el) return null
-      svg = el.tagName.toLowerCase() === 'svg' ? el : el.querySelector('svg')
+  await page.setViewport({ width: 1560, height: 1100, deviceScaleFactor: 2 })
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {})
+  await sleep(1500)
+  for (const act of actions) {
+    if (act.wait) { await sleep(act.wait); continue }
+    if (act.click) {
+      const ok = await page.evaluate(({ text, idx }) => {
+        const nodes = [...document.querySelectorAll('button, .el-button, a, span, div')]
+          .filter(n => n.offsetParent !== null && n.textContent.trim() === text)
+        const btns = nodes.filter(n => n.tagName === 'BUTTON' || n.classList.contains('el-button'))
+        const hit = btns[idx ?? 0] || nodes[nodes.length - 1]
+        if (!hit) return false
+        hit.click()
+        return true
+      }, { text: act.click, idx: act.idx })
+      console.log('[click]', act.click, ok)
+      await sleep(act.after ?? 800)
+      continue
     }
-    svg.scrollIntoView({ block: 'center', behavior: 'instant' })
-    const r = svg.getBoundingClientRect()
-    return { x: r.x, y: r.y, width: r.width, height: r.height }
-  }, titleText)
-  if (!rect) { console.error('未找到标题或 SVG:', titleText); process.exit(1) }
-  await page.screenshot({ path: out, clip: rect })
-  console.log('[elem-shot] 已输出', out)
+    if (act.clickSel) {
+      const ok = await page.evaluate(sel => {
+        const el = [...document.querySelectorAll(sel)].find(n => n.offsetParent !== null)
+        if (!el) return false
+        el.click()
+        return true
+      }, act.clickSel)
+      console.log('[clickSel]', act.clickSel, ok)
+      await sleep(act.after ?? 800)
+    }
+  }
+  await sleep(1200)
+  const box = await page.evaluate((sel, clipH) => {
+    const list = [...document.querySelectorAll(sel)]
+    const best = list.find(n => n.classList.contains('open') || n.classList.contains('is-open'))
+      || list.find(n => {
+        const r = n.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && getComputedStyle(n).display !== 'none'
+      })
+    if (!best) return null
+    const r = best.getBoundingClientRect()
+    const box = { x: r.x, y: r.y, width: r.width, height: r.height }
+    /* 收紧底部空白：取可见子孙元素的最大底边 */
+    let bottom = r.top
+    for (const d of best.querySelectorAll('*')) {
+      const dr = d.getBoundingClientRect()
+      if (dr.width > 0 && dr.height > 0 && dr.bottom > bottom && dr.bottom <= r.bottom) bottom = dr.bottom
+    }
+    if (bottom > r.top + 60) box.height = Math.min(bottom - r.top + 24, r.height)
+    /* 显式高度覆盖：容器撑满全高时按内容实际高度截 */
+    if (clipH) box.height = Math.min(+clipH, r.height)
+    return box
+  }, selector, clipH || 0)
+  if (!box || !box.width) { console.error('[elem-shot] 找不到可见元素', selector); process.exit(1) }
+  await page.screenshot({ path: out, clip: box })
+  console.log('[elem-shot] 已输出', out, Math.round(box.width), 'x', Math.round(box.height))
 } finally { await browser.close() }

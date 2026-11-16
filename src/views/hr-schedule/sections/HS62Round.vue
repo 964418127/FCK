@@ -27,9 +27,9 @@
         <h3>6.2.1 排班节奏：业务周</h3>
       </div>
       <DocScreens
-        :height="420"
+        :height="320"
         :images="[
-          { src: rhythmShot, label: '节奏折叠条：周期类型四选，业务周三行参数配完直接落成下一轮的具体日期时间' }
+          { src: rhythmShot, label: '排班节奏（展开）：业务周三行参数 + 落成下一轮的具体日期时间与时间轴' }
         ]"
       />
       <table class="data-table">

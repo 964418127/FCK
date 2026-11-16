@@ -408,7 +408,7 @@
                 <div class="tc-r">
                   <span class="tc-occ">{{ occupied(t.id, t.date) }}/{{ t.snapN }}</span>
                   <el-button v-if="occupied(t.id, t.date) < t.snapN && !runReadonly" link size="small" @click="goDefinePeople(t.date)">去结果里定人 →</el-button>
-                  <el-button link size="small" type="danger" @click="removeTemp(t.id)">删除</el-button>
+                  <el-button link size="small" type="danger" @click="doRemoveTemp(t)">删除</el-button>
                 </div>
               </article>
               <div v-if="!spaceTemps.length" class="empty">还没有临时班次</div>
@@ -1809,9 +1809,16 @@ function doRenameCat(c, val) {
   ElMessage.success('改名已保存')
 }
 function doRemoveCat(c) {
-  const r = removeCategory5(selSpace.value, c.id)
-  if (!r.ok) { ElMessage.warning(r.reason); return }
-  ElMessage.success('类别已删除')
+  const used = categoryUsage(selSpace.value, c.id)
+  ElMessageBox.confirm(
+    used ? `「${c.name}」还被规则引用着（${used} 条），删掉后那些规则改成管全部时段。` : `删掉类别「${c.name}」？`,
+    '删除类别',
+    { type: 'warning', confirmButtonText: '删掉', cancelButtonText: '再想想' }
+  ).then(() => {
+    const r = removeCategory5(selSpace.value, c.id)
+    if (!r.ok) { ElMessage.warning(r.reason); return }
+    ElMessage.success('类别已删除')
+  }).catch(() => {})
 }
 
 function saveRule() {
@@ -1833,9 +1840,25 @@ function saveRule() {
   ruleEditing.value = false
   ElMessage.success('规则已保存：立即用于试算，正式生效下一轮')
 }
+function doRemoveTemp(t) {
+  ElMessageBox.confirm(
+    `删掉临时班次「${t.name}」？这一天的加场名额一起消失。`,
+    '删除临时班次',
+    { type: 'warning', confirmButtonText: '删掉', cancelButtonText: '再想想' }
+  ).then(() => {
+    removeTemp(t.id)
+    ElMessage.success('临时班次已删除')
+  }).catch(() => {})
+}
 function doRemoveRule(r) {
-  removeRule5(r.id)
-  ElMessage.success('规则已删除，这些人恢复直接放行')
+  ElMessageBox.confirm(
+    `删掉「${r.name}」？这些人恢复不受选择约束、直接放行。`,
+    '删除规则',
+    { type: 'warning', confirmButtonText: '删掉', cancelButtonText: '再想想' }
+  ).then(() => {
+    removeRule5(r.id)
+    ElMessage.success('规则已删除，这些人恢复直接放行')
+  }).catch(() => {})
 }
 const limitForm = reactive({ week: 24, month: 96 })
 const limitEditing = ref(false)

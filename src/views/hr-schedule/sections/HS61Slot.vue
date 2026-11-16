@@ -88,6 +88,13 @@
       <div class="note warn-note">
         <strong>可见 ≠ 可拿：</strong>档位开着只是「看得到」，能不能领由系统当场判定并给出原因（见 6.2.3）。
       </div>
+      <div class="note">
+        <strong>保存校验：</strong>① 窗口顺序——后面的档不能比前面的档先开放；② 档位上限相加不超过该班名额数；
+        ③ 两个入口——同空间时间重叠且人群写重的两条班次，只查「先到先得 / 申领审核」类（直派不算入口，系统分人时自己挡时间冲突）。
+      </div>
+      <div class="note">
+        <strong>删除一律二次确认：</strong>班次（挂着生效中的班次会一起消失）、临时班次、申领规则（删了恢复直接放行）、类别（被规则引用的删了规则改管全部时段）——弹确认写明后果，确认才执行。
+      </div>
     </div>
 
     <div id="hs-61-service" class="section">
@@ -123,9 +130,10 @@
         <h3>6.1.4 临时班次：当天新增，立即生效</h3>
       </div>
       <DocScreens
-        :height="340"
+        :height="300"
         :images="[
-          { src: slotTmpShot, label: '临时班次：不进周期配置、只改那一天，保存并开放立即生效' }
+          { src: slotTmpShot, label: '临时班次列表：不进周期配置、只改那一天，删除有二次确认' },
+          { src: slotTmpEditShot, label: '新增临时班次抽屉：日期 / 起止 / 名额 / 缺口规则，保存并开放立即生效' }
         ]"
       />
       <p class="doc-p">
@@ -139,9 +147,11 @@
         <h3>6.1.5 申领规则：挂人群的门槛</h3>
       </div>
       <DocScreens
-        :height="360"
+        :height="320"
         :images="[
-          { src: slotRuleShot, label: '申领规则（兴隆湖）：类别 A / B，规则挂人群不挂时段，底部试算选人 + 选日期直接出判定' }
+          { src: slotRuleShot, label: '申领规则（兴隆湖）：类别 A / B，规则挂人群不挂时段，底部试算选人 + 选日期直接出判定' },
+          { src: ruleEditShot, label: '编辑规则抽屉：名称 / 管谁 / 管哪一类 / 计量（条数、分钟）+ 下限上限' },
+          { src: catDlgShot, label: '管理类别：空间的字典，增 / 改名 / 删（被引用的类别删除要过确认）' }
         ]"
       />
       <table class="data-table">
@@ -169,7 +179,10 @@ import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
 import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'
 import algoShot from '../../../docs/assets/pages/v5-algo.png'
 import slotTmpShot from '../../../docs/assets/pages/v5-slot-tmp.png'
+import slotTmpEditShot from '../../../docs/assets/pages/v5-temp-edit.png'
 import slotRuleShot from '../../../docs/assets/pages/v5-slot-rule.png'
+import ruleEditShot from '../../../docs/assets/pages/v5-rule-edit.png'
+import catDlgShot from '../../../docs/assets/pages/v5-cat-dlg.png'
 
 const tocItems = [
   { id: 'hs-61', label: '6.1 时段与清单' },
