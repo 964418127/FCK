@@ -504,11 +504,21 @@
             <div class="limit-card">
               <strong>非全工时额度</strong>
               <span class="lc-note">按门店各算一套，只控周和月；日的要求在上面规则里配</span>
-              <span class="lc-line">
-                本周 <el-input-number v-model="limitForm.week" :min="0" :max="80" size="small" controls-position="right" style="width: 90px" /> 小时
-                · 本月 <el-input-number v-model="limitForm.month" :min="0" :max="400" size="small" controls-position="right" style="width: 90px" /> 小时
-              </span>
-              <el-button link size="small" type="primary" @click="applyLimits">保存额度</el-button>
+              <template v-if="limitEditing">
+                <span class="lc-line">
+                  本周 <el-input-number v-model="limitForm.week" :min="0" :max="80" size="small" controls-position="right" style="width: 90px" /> 小时
+                  · 本月 <el-input-number v-model="limitForm.month" :min="0" :max="400" size="small" controls-position="right" style="width: 90px" /> 小时
+                </span>
+                <el-button size="small" type="primary" @click="applyLimits">保存</el-button>
+                <el-button size="small" @click="limitEditing = false">取消</el-button>
+              </template>
+              <template v-else>
+                <span class="lc-line">
+                  <template v-if="curLimit">本周 {{ curLimit.week }} 小时 · 本月 {{ curLimit.month }} 小时</template>
+                  <template v-else><em class="lc-none">这家店还没配额度：非全不受周/月限制</em></template>
+                </span>
+                <el-button link size="small" @click="openLimitEdit">编辑</el-button>
+              </template>
             </div>
 
             <div class="trial-card">
@@ -1437,13 +1447,21 @@ function doRemoveRule(r) {
   ElMessage.success('规则已删除，这些人恢复直接放行')
 }
 const limitForm = reactive({ week: 24, month: 96 })
+const limitEditing = ref(false)
+const curLimit = computed(() => limitsOfSpace(selSpace.value))
 function syncLimits() {
   const l = limitsOfSpace(selSpace.value)
   limitForm.week = l ? l.week : 24
   limitForm.month = l ? l.month : 96
+  limitEditing.value = false
+}
+function openLimitEdit() {
+  syncLimits()
+  limitEditing.value = true
 }
 function applyLimits() {
   setHourLimits(selSpace.value, limitForm.week, limitForm.month)
+  limitEditing.value = false
   ElMessage.success('额度已保存：按门店各算一套，只控周和月')
 }
 const trialPerson = ref('')
@@ -1647,6 +1665,7 @@ function devResolveApply() {
 .limit-card strong, .trial-card strong { font-size: 13px; color: #2C2C2A; }
 .lc-note { font-size: 11.5px; color: #9a9fa9; }
 .lc-line { display: inline-flex; align-items: center; gap: 6px; }
+.lc-none { font-size: 12px; color: #9a9fa9; font-style: normal; }
 .trial-body { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
 .trial-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
 .trial-line.bad { color: #a4441d; }
