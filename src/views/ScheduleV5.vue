@@ -559,7 +559,7 @@
               <span class="occ-corner">时段</span>
               <span v-for="d in runDates" :key="d" class="occ-day">{{ d.slice(5) }}</span>
             </div>
-            <div v-for="s in allSpaceSlots" :key="s.id" class="occ-row" :style="{ gridTemplateColumns: occCols }">
+            <div v-for="s in runSlots" :key="s.id" class="occ-row" :style="{ gridTemplateColumns: occCols }">
               <div class="occ-name">
                 <strong>{{ s.name }}<em v-if="s.tmp" class="tmp-tag">临时</em></strong>
                 <em>{{ s.start }}–{{ s.end }} · 名额 {{ s.snapN }}</em>
@@ -1018,6 +1018,8 @@ const curSpace = computed(() => v5.spaces.find(s => s.id === selSpace.value))
 const spaceSlots = computed(() => v5.slots.filter(s => s.spaceId === selSpace.value))
 const spaceTemps = computed(() => v5.temps.filter(t => t.spaceId === selSpace.value))
 const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value])
+/* 结果层只列落在这一轮里的临时班次：别的轮次的临时班次不该出现 */
+const runSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.filter(t => runDates.value.includes(t.date))])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
 function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits(); initTrial() }
