@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="五、需求范围"
     subtitle="现状四张考卷 + 通用设计三阶段：定义 / 获取 / 变化"
-    version="v3.8 补三张业务图与缺口规则"
+    version="v3.9 补三张业务图与缺口规则"
     date="2026-11-16"
     :breadcrumbs="breadcrumbs"
   >
@@ -263,7 +263,7 @@
           兜底永远指向某个已有班次，通班只是个班次名。</li>
         <li><strong>排班节奏是通用抽象，不是周/月枚举：</strong>循环周期（锚点：自然周一起 / 自然月 1 号 / 业务自定义起点；长度：N 天 / N 周 / N 月）+ 多久发一次（每期 / 隔期）+ 发布与申领截止各一条偏移（相对周期起点，提前几天几点）。现行「周四 06:00 发、铺下周一到周日」只是其中一种取值——自然周 + 提前 4 天。</li>
         <li><strong>配置人员按天干活，不是按班次：</strong>时段与清单提供「按班次 / 按周期」两个视图。按周期展示节奏铺下来的每一天——先配好一天，再把这一天复制 / 覆盖到其他天；覆盖式应用前先看加减预览（源天没有的班次会从目标天移出）。班次按星期几定义，复制落在每周的同一天。</li>
-        <li><strong>算法服务是公共的：</strong>登记在配置台顶部「系统服务」页，不挂在某个空间下；登记的是「读什么数、怎么算、版本号」。各空间的时段在名额来源里挂它，一项服务可以被多个时段、多个空间同时引用。</li>
+        <li><strong>算法服务是公共的：</strong>登记在配置台顶部「算法服务」页，不挂在某个空间下；算法系统固定提供、只登记使用，登记的是「读什么数、怎么算、版本号」，人群（合作形式 × 岗位）写死在算法里。各空间的时段在名额来源里挂它，一项服务可以被多个时段、多个空间同时引用。</li>
       </ul>
       <svg viewBox="0 0 680 302" class="doc-svg" role="img" aria-label="名额来源：人工给定是一个值，算法服务是可枚举清单">
         <title>名额来源：一个人工值，一张可枚举的服务清单</title>
@@ -277,7 +277,7 @@
         <text x="56" y="76" font-size="12" fill="#854F0B">店长 / 人事直接填数</text>
         <text x="56" y="94" font-size="12" fill="#854F0B">清单第一项 · 无输入</text>
         <rect x="248" y="32" width="392" height="84" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-        <text x="264" y="54" font-size="13" font-weight="500" fill="#0C447C">算法服务清单 · 当前登记 3 项</text>
+        <text x="264" y="54" font-size="13" font-weight="500" fill="#0C447C">算法服务清单 · 当前登记 5 项</text>
         <rect x="260" y="62" width="88" height="42" rx="6" fill="#F3F8FD" stroke="#85B7EB" stroke-width="0.5"/>
         <text x="304" y="80" text-anchor="middle" font-size="12" fill="#0C447C">按在岗人数</text>
         <text x="304" y="96" text-anchor="middle" font-size="11" fill="#185FA5">读人事状态</text>
@@ -287,9 +287,9 @@
         <rect x="448" y="62" width="88" height="42" rx="6" fill="#F3F8FD" stroke="#85B7EB" stroke-width="0.5"/>
         <text x="492" y="80" text-anchor="middle" font-size="12" fill="#0C447C">按业务量</text>
         <text x="492" y="96" text-anchor="middle" font-size="11" fill="#185FA5">读业务系统</text>
-        <rect x="542" y="62" width="86" height="42" rx="6" fill="none" stroke="#B4B2A9" stroke-width="0.8" stroke-dasharray="4 3"/>
-        <text x="585" y="86" text-anchor="middle" font-size="12" fill="#888780">＋ 新增</text>
-        <text x="585" y="100" text-anchor="middle" font-size="11" fill="#9a9fa9">登记即可</text>
+        <rect x="542" y="62" width="92" height="42" rx="6" fill="#FAEEDA" stroke="#C58A2E" stroke-width="0.5"/>
+        <text x="588" y="78" text-anchor="middle" font-size="11" fill="#633806">实时经营需求</text>
+        <text x="588" y="94" text-anchor="middle" font-size="10" fill="#854F0B">缺口规则在用</text>
         <line x1="130" y1="116" x2="130" y2="140" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
         <line x1="444" y1="116" x2="444" y2="140" stroke="#b4b2a9" stroke-width="1" fill="none" marker-end="url(#nsArr)"/>
         <rect x="40" y="144" width="600" height="46" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
@@ -438,15 +438,14 @@
       </div>
 
       <div class="note">
-        <strong>缺口响应不在排班做——需业务事件系统同步改造：</strong>现行按缺口类型做的四类处理（班次变形、人群补位、重开自选窗口、转临时时段），
-        排班侧不实现、也不在排班里配置。这些动作由对应的业务事件系统按 v5 的事实记录方式写进来：
-        一条事实只声明区间与发起方，排班按事实重算、留痕、通知，不自己起动作。
-        要落这条边界，业务事件系统必须同步改造，支持以事实方式记录并写入。
+        <strong>现行「按缺口类型自动处理」的动作不带入 v5：</strong>班次变形、人群补位、重开自选窗口、转临时时段这四类动作，
+        v5 不再按缺口类型自动触发——要不要补由缺口规则答（见下），要补就摆出缺口由人事定人；特殊情况的加位走临时时段（定义段能力）。
+        事实的写入需要业务事件系统同步改造：一条事实只声明区间与发起方，排班按事实重算、留痕、通知，不自己起动作。
       </div>
 
       <div class="note">
         <strong>缺口规则只管一件事：排班确定后，因事件缺了人。</strong>获取段没排满（名额 3 个只有 2 个人拿）不算缺口，结果层手动补人即可。
-        缺口发生时按班次上声明的规则处理，一共四条：不补充（缺人也不补，留给门店现场安排）/ 补齐名额 / 剩余不足 1 小时不补 / 按当下预测再算（走算法服务）。
+        缺口发生时按班次上声明的规则处理，一共四条：不补充（缺人也不补，留给门店现场安排）/ 补齐名额 / 剩余不足 1 小时不补 / 按当下预测再算（引用算法服务里登记的「实时经营需求」）。
         「不补充」是显式的选项，不是没有配置。
       </div>
 
@@ -580,7 +579,7 @@
             <td><strong>全职客户经理</strong></td>
             <td>人数组合算名额，通班是一个班次</td>
             <td>单轮直派 + 两档抢</td>
-            <td>缺口按档补位，补不到走通班</td>
+            <td>缺口按班次声明的规则处理，要补摆出缺口、人事定人；补不到的走通班兜底</td>
           </tr>
           <tr>
             <td><strong>全职推拿师</strong></td>
@@ -592,7 +591,7 @@
             <td><strong>非全客户经理</strong></td>
             <td>时段固定名额</td>
             <td>三轮逐档开放接单</td>
-            <td>没人接 → 转临时时段</td>
+            <td>没人接 → 转临时时段补容量（获取段没排满不算缺口）</td>
           </tr>
           <tr>
             <td><strong>非全推拿师</strong></td>

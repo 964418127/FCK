@@ -2,7 +2,7 @@
   <DocShell
     :toc-items="tocItems"
     title="七、附录：已拍板与待决"
-    subtitle="六条已拍板口径（不再重议）+ 六条挂起事项（归属方 + 卡在哪）"
+    subtitle="六条已拍板口径（不再重议）+ 八条挂起事项（归属方 + 卡在哪）"
     version="v3.0 基线"
     date="2026-11-12"
     :breadcrumbs="breadcrumbs"
@@ -32,7 +32,7 @@
         <h2>7.2 待决事项</h2>
       </div>
       <p class="doc-p">
-        以下六条本版<strong>不擅自拍板</strong>：正文按现状写、原型按演示口径跑，等对应归属方给结论后再改。
+        以下八条本版<strong>不擅自拍板</strong>：正文按现状写、原型按演示口径跑，等对应归属方给结论后再改。
       </p>
       <table class="data-table">
         <thead>
@@ -74,6 +74,18 @@
             <td><strong>承办资格以哪一刻为准</strong></td>
             <td>申领时的岗位资格、还是结算时的岗位资格；人中途调店怎么算</td>
             <td>产品 + 研发</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><strong>抢的窗口最短多久</strong></td>
+            <td>先到先得的档窗口能开多短：过短等于没有机会看，过长占着名额等人挑</td>
+            <td>运营</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><strong>顶别人到手的班怎么谈</strong></td>
+            <td>顶别人已到手的班要提前多久说；要顶的段能不能嵌进顶班人自己的班（一人同段只支持一个占用）</td>
+            <td>运营 + 排班负责人</td>
           </tr>
         </tbody>
       </table>

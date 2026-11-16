@@ -64,7 +64,7 @@
           <tr><td><strong>名称</strong></td><td>早班 / 中班 / 晚班 / 通班</td><td>沿用业务现行班次名，不造新名</td></tr>
           <tr><td><strong>起止时间</strong></td><td>当天时刻，止晚于起</td><td>只记这一班是多少时间；超时记加班、上限校验在获取端背后算（见 6.1.5 不做）</td></tr>
           <tr><td><strong>出勤日</strong></td><td>全周或指定几天</td><td>同一店同名的班可以只排部分天（如周末晚班只排周六日）</td></tr>
-          <tr><td><strong>名额来源</strong></td><td>人工给定 / 算法服务</td><td>算法服务在「系统服务」登记，见 6.1.4</td></tr>
+          <tr><td><strong>名额来源</strong></td><td>人工给定 / 算法服务</td><td>算法服务在配置台顶部「算法服务」页登记，见 6.1.4</td></tr>
           <tr><td><strong>名额上限</strong></td><td>整数区间</td><td>算法服务算出的名额不会超出这个区间；人工给定的名额就在区间内取值</td></tr>
           <tr><td><strong>逐日名额</strong></td><td>单日加减</td><td>只改那一天的数，不动班次配置（临时加名额用临时班次，见 6.1.4）</td></tr>
         </tbody>

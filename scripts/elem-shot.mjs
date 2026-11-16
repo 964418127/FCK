@@ -1,4 +1,4 @@
-/** 临时：按 h4 标题定位，截取其后的 SVG 元素。node elem-shot.js <url> <匹配标题> <out.png> */
+/** 临时：按 h4 标题定位其后的 SVG，或按 aria-label 匹配 SVG。node elem-shot.mjs <url> <匹配文本> <out.png> */
 import puppeteer from 'puppeteer-core'
 
 const [, , url, titleText, out] = process.argv
@@ -13,13 +13,18 @@ try {
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 })
   await new Promise(r => setTimeout(r, 1500))
   const rect = await page.evaluate((t) => {
-    const hs = [...document.querySelectorAll('h4')]
-    const h = hs.find(x => x.textContent.includes(t))
-    if (!h) return null
-    let el = h.nextElementSibling
-    while (el && el.tagName.toLowerCase() !== 'svg' && !el.querySelector('svg')) el = el.nextElementSibling
-    if (!el) return null
-    const svg = el.tagName.toLowerCase() === 'svg' ? el : el.querySelector('svg')
+    let svg = null
+    const direct = [...document.querySelectorAll('svg')].find(x => (x.getAttribute('aria-label') || '').includes(t))
+    if (direct) { svg = direct }
+    else {
+      const hs = [...document.querySelectorAll('h4')]
+      const h = hs.find(x => x.textContent.includes(t))
+      if (!h) return null
+      let el = h.nextElementSibling
+      while (el && el.tagName.toLowerCase() !== 'svg' && !el.querySelector('svg')) el = el.nextElementSibling
+      if (!el) return null
+      svg = el.tagName.toLowerCase() === 'svg' ? el : el.querySelector('svg')
+    }
     svg.scrollIntoView({ block: 'center', behavior: 'instant' })
     const r = svg.getBoundingClientRect()
     return { x: r.x, y: r.y, width: r.width, height: r.height }
