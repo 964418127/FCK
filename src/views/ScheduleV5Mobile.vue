@@ -112,12 +112,12 @@
 
           <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
             <span class="rc-pending">人事安排你顶上这个班，确认一下</span>
-            <button class="act-line" @click="declineMakeup(r)">我去不了</button>
-            <button class="act-line strong" @click="ackMakeup(r)">收到，我来</button>
+            <button class="act-btn ghost" @click="declineMakeup(r)">我去不了</button>
+            <button class="act-btn primary" @click="ackMakeup(r)">收到，我来</button>
           </div>
           <div v-else-if="r.status === 'active' && !outTo(r) && canAct(r)" class="rc-acts">
-            <button class="act-line" @click="openLeave(r)">这天我来不了</button>
-            <button class="act-line" @click="openSwap(r)">找人换班</button>
+            <button class="act-btn primary" @click="openLeave(r)">这天我来不了</button>
+            <button class="act-btn ghost" @click="openSwap(r)">找人换班</button>
           </div>
         </div>
       </section>
@@ -204,7 +204,8 @@
               </button>
             </template>
             <template v-else>
-              <span class="oc-hint bad">{{ o.gate.reason }}</span>
+              <!-- quiet 的原因（档位内部判定）不给员工看，名额条已说明满员 -->
+              <span v-if="o.gate.reason && !o.gate.quiet" class="oc-hint bad">{{ o.gate.reason }}</span>
               <button class="act-btn disabled" disabled>拿不了</button>
             </template>
           </div>
@@ -489,7 +490,7 @@ function doSubmitSet() {
     pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today,
     selItems.value.map(o => ({ slotId: o.slotId, way: o.row.way }))
   )
-  if (!r.ok) { ElMessage.warning(r.reason || r.failed?.[0]?.reason || '没提交成功'); return }
+  if (!r.ok) { ElMessage.warning(r.reason || r.failed?.map(f => f.reason).find(Boolean) || '没提交成功'); return }
   const grabbed = selItems.value.filter(o => o.row.way === 'grab').length
   const applied = r.done.length - grabbed
   ElMessage.success([grabbed ? `${grabbed} 条已进你的排班` : '', applied ? `${applied} 条已登记` : ''].filter(Boolean).join(' · ') || '已提交')
@@ -570,11 +571,8 @@ function noteOf(r) {
   }
   if (r.history?.length) return r.history[r.history.length - 1].note
   if (r.fromFact) return '有人请假，系统按顺位找到你顶上；这条不是你自己抢的'
-  const w = r.way || ''
-  if (w.startsWith('直派')) return '系统按规则直接排给你的，不用抢'
-  if (w.startsWith('抢')) return '你在可获取里自己抢的'
-  if (w.startsWith('申领')) return '你申领后，截止时按综合分排上的'
-  return '已排定'
+  /* 章标已经说了这条班怎么来的，这里不再重复一句 */
+  return ''
 }
 function overtimeOf(r) {
   if (me.value?.kind !== 'fulltime') return ''
@@ -654,14 +652,14 @@ function doGrab() {
     ElMessage.success('抢到了，已经进你的排班')
     mineSel.value = o.date
     mineState.value = { year: Number(o.date.slice(0, 4)), month: Number(o.date.slice(5, 7)) }
-  } else ElMessage.error(r.reason)
+  } else ElMessage.error(r.reason || '名额已满')
 }
 function openApply(o) { sheet.value = { type: 'apply', o, rank: applyRankOf(o.slotId, o.date) } }
 function doApply() {
   const o = sheet.value.o
   const r = applyV5(o.slotId, o.date)
   sheet.value = null
-  r.ok ? ElMessage.success('已登记，截止后按综合分排序') : ElMessage.error(r.reason)
+  r.ok ? ElMessage.success('已登记，截止后按综合分排序') : ElMessage.error(r.reason || '现在拿不了')
 }
 function openLeave(r) { sheet.value = { type: 'leave', row: r } }
 function doLeave() {
@@ -752,13 +750,10 @@ function declineMakeup(row) {
 .strike { text-decoration: line-through; color: #b5b5bd !important; }
 .rc-note { margin: 9px 0 0; font-size: 11.5px; color: #8a8a95; line-height: 1.65; }
 .rc-overtime { margin: 6px 0 0; font-size: 11.5px; color: #a86a12; line-height: 1.6; }
-.rc-acts { display: flex; gap: 16px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #f0eaec; }
-.act-line { border: none; background: none; padding: 0; font-size: 12px; color: #6a6a75; cursor: pointer; }
-.act-line:first-child { color: #a40035; }
+.rc-acts { display: flex; gap: 10px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #f0eaec; }
+.rc-acts .act-btn { height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12px; }
 .rc-acts.pending { align-items: center; }
-.rc-pending { flex: 1; font-size: 11.5px; color: #8a8a95; }
-.rc-acts.pending .act-line { color: #6a6a75; white-space: nowrap; }
-.rc-acts.pending .act-line.strong { color: #a40035; font-weight: 500; }
+.rc-acts.pending .rc-pending { margin-right: auto; }
 
 /* 可获取 */
 .store-switch { display: flex; gap: 8px; margin: 2px 0 10px; }

@@ -1276,9 +1276,10 @@ export function canTake5(state, slotId, date, personId, way = 'grab', now = NOW)
   const row = rows.find(r => matchWho5(state, person, slot, r.who))
   if (!row) return { ok: false, reason: '这一档不是你的档' }
   if (!windowOpen5(row, date, now, roundOf(state, slot.spaceId))) return { ok: false, reason: `还没开：${windowLabel5(row, null, date, roundOf(state, slot.spaceId))}` }
-  /* 行上限：这一档给几个就几个，多的留给下一档 */
+  /* 行上限：这一档给几个就几个，多的留给下一档。
+     满了这个原因员工不用知道（名额条已说明），quiet 让员工侧不显示，内部兜底文案另给 */
   if (row.cap && rowUsed5(state, slotId, date, slot, row) >= row.cap) {
-    return { ok: false, reason: `这一档只留 ${row.cap} 个，已经满了` }
+    return { ok: false, reason: `这一档只留 ${row.cap} 个，已经满了`, quiet: true }
   }
   if (way === 'grab') {
     if (now >= `${date}T${slot.start}:00`.replace('T', ' ')) return { ok: false, reason: '已开班，闸关了' }
