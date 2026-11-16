@@ -1342,24 +1342,34 @@ export function addFact5(state, fact) {
     } else if (target) {
       target.status = 'covered'
       target.history.push({ note: `${fact.at} ${personById(state, fact.by)?.name || ''} 提交请假，这段时间被请假占用` })
-      const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
-      if (rep) {
-        const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id, at: fact.at })
-        state.placements.push(np)
-        touched.push(target, np)
-        fact.result = `班次由 ${rep.person.name} 顶上（补位）`
-        state.notices.unshift({
-          id: `N-${state.seq++}`, to: rep.person.id, kind: 'makeup', acked: false, date: target.date,
-          text: `补位通知：${target.date} ${slotById(state, target.slotId).name} ${slotById(state, target.slotId).start}-${slotById(state, target.slotId).end} 需要你顶上`,
-          detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；你是清单里当时有空、没冲突的人`
-        })
-      } else {
-        fact.result = '时段留空，已通知人事处理'
+      /* 缺口规则在重算这一步答「要不要补」。设了「不补充」的：不找人顶，缺口留给门店现场，发缺口通知让人事知情 */
+      if (gapRuleOfSlot5(state, target.slotId).kind === 'none') {
+        fact.result = '缺口按班次规则不补充，已通知人事'
         state.notices.unshift({
           id: `N-${state.seq++}`, to: 'HR', kind: 'hr', acked: false, date: target.date, slotId: target.slotId,
-          text: `待处理：${target.date} ${slotById(state, target.slotId).name} 没人能顶`,
-          detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；顺位里没有有空、没冲突的人，时段留空，请人事找人顶班`
+          text: `缺口：${target.date} ${slotById(state, target.slotId).name} 设了「不补充」`,
+          detail: `${personById(state, fact.by)?.name || ''} ${fact.at.slice(11)} 提交请假；这条班次的缺口规则是「不补充」，缺的人不找人顶，请留意门店现场`
         })
+      } else {
+        const rep = pickReplacement5(state, target.slotId, target.date, fact.by)
+        if (rep) {
+          const np = P(`P-${state.seq++}`, target.slotId, target.date, rep.person.id, '顶班 · 补位', { fromFact: fact.id, at: fact.at })
+          state.placements.push(np)
+          touched.push(target, np)
+          fact.result = `班次由 ${rep.person.name} 顶上（补位）`
+          state.notices.unshift({
+            id: `N-${state.seq++}`, to: rep.person.id, kind: 'makeup', acked: false, date: target.date,
+            text: `补位通知：${target.date} ${slotById(state, target.slotId).name} ${slotById(state, target.slotId).start}-${slotById(state, target.slotId).end} 需要你顶上`,
+            detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；你是清单里当时有空、没冲突的人`
+          })
+        } else {
+          fact.result = '时段留空，已通知人事处理'
+          state.notices.unshift({
+            id: `N-${state.seq++}`, to: 'HR', kind: 'hr', acked: false, date: target.date, slotId: target.slotId,
+            text: `待处理：${target.date} ${slotById(state, target.slotId).name} 没人能顶`,
+            detail: `${personById(state, fact.by).name} ${fact.at.slice(11)} 提交请假；顺位里没有有空、没冲突的人，时段留空，请人事找人顶班`
+          })
+        }
       }
     }
   } else if (fact.type === '顶班') {

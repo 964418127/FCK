@@ -143,5 +143,15 @@ export const hrScheduleFeatureChapters = [
     routeName: 'doc-hr-schedule-6-5',
     path: '/docs/hr-schedule/6-5',
     file: 'sections/HS65Mobile.vue'
+  },
+  {
+    id: '6-6',
+    no: '6.6',
+    title: '通知',
+    nav: '通知',
+    subtitle: '排班会发出哪些系统通知：发给员工的（已上线）、发给人事经理的（缺口通知）',
+    routeName: 'doc-hr-schedule-6-6',
+    path: '/docs/hr-schedule/6-6',
+    file: 'sections/HS66Notice.vue'
   }
 ]

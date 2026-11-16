@@ -72,7 +72,7 @@
           <tr><th style="width: 220px;">事项</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>通知</strong></td><td>排班类通知是通用通知页里的示例，不在排班页自带通知段；通知只负责告诉你，处理动作都在业务页</td></tr>
+          <tr><td><strong>通知</strong></td><td>排班类通知是通用通知页里的示例，不在排班页自带通知段；通知只负责告诉你，处理动作都在业务页；<strong>全部通知清单见 <router-link to="/docs/hr-schedule/6-6">6.6 通知</router-link></strong></td></tr>
           <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天</td></tr>
           <tr><td><strong>补位确认</strong></td><td>落在当天班次卡上：待你确认 + 我去不了 / 收到，我来</td></tr>
           <tr><td><strong>明确不做</strong></td><td>不做「浏览别的岗位班次自己挑」的入口；关闸之后个人不挑班，只能看到人事的安排</td></tr>

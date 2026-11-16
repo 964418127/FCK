@@ -391,7 +391,7 @@
       </div>
 
       <h4 class="h4sub">变化段三步：写事实 → 重算 → 缺口规则</h4>
-      <svg viewBox="0 0 680 168" class="doc-svg" role="img" aria-label="变化段三步：写事实、按事实重算、按缺口规则决定补不补">
+      <svg viewBox="0 0 680 192" class="doc-svg" role="img" aria-label="变化段三步：写事实、按事实重算、按缺口规则决定补不补；缺口发生即发人事通知">
         <title>变化段三步</title>
         <defs>
           <marker id="csArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -413,8 +413,10 @@
         <text x="546" y="76" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要不要补，缺口规则已答（G0–G3）</text>
         <text x="546" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要补就摆出缺口，人事定人</text>
         <text x="340" y="140" text-anchor="middle" font-size="12" fill="#6a6a75">关闸前缺席属获取段（不在候选、申请作废）· 关闸后才进这三步</text>
+        <line x1="40" y1="154" x2="640" y2="154" stroke="#d9d5d0" stroke-width="0.5" stroke-dasharray="4 3"/>
+        <text x="340" y="176" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">缺口发生就是异常：设了「不补充」的、要补还没补上的，都给对应的人事经理发一条缺口通知</text>
       </svg>
-      <p class="arch-cap">变化段永远走这三步：事实只声明区间，重算后是缺口规则在答补不补，要补也由人事定人。</p>
+      <p class="arch-cap">变化段永远走这三步：事实只声明区间，重算后是缺口规则在答补不补；两种异常都发人事经理缺口通知。</p>
 
       <table class="data-table">
         <thead>
@@ -446,7 +448,8 @@
       <div class="note">
         <strong>缺口规则只管一件事：排班确定后，因事件缺了人。</strong>获取段没排满（名额 3 个只有 2 个人拿）不算缺口，结果层手动补人即可。
         缺口发生时按班次上声明的规则处理，一共四条：不补充（缺人也不补，留给门店现场安排）/ 补齐名额 / 剩余不足 1 小时不补 / 按当下预测再算（引用算法服务里登记的「实时经营需求」）。
-        「不补充」是显式的选项，不是没有配置。
+        「不补充」是显式的选项，不是没有配置。缺口发生就是异常：无论规则答的是补还是不补，系统都给对应的人事经理发一条缺口通知——
+        设了不补充的让人事知情（缺的人留门店现场安排），要补还没补上的等人事来定（人事写顶班事实后，待处理通知自动销掉）。
       </div>
 
       <h4 class="h4sub">一条班次被请假切开：只有被拿走的段是缺口</h4>

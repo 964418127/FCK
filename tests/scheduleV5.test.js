@@ -979,13 +979,20 @@ test('缺口规则：G0 不补充——设了的班次缺人也不产生补人�
   assert.equal(GAP_RULES5.length, 4)
 })
 
-test('班次编排不拦时间撞人：重叠+人群写重是合法配置，冲突由获取段判', () => {
+test('缺口通知：设了「不补充」的班次缺人，发缺口通知给人事经理，不找人顶', () => {
   const s = mk()
-  /* 早班 10-14 已存在（客经抢档），再配一条同人群重叠的通班 10-19：配置期不许报错 */
-  const form = { name: '通班', start: '10:00', end: '19:00', days: [1], quota: { source: 'manual', value: 2 },
-    list: [{ who: { scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } }] }
-  const errs = checkSlotForm('S-201', form)
-  assert.ok(!errs.some(e => e.includes('时间撞了')), '重叠+人群写重在编排阶段合法：' + errs.join('；'))
+  s.slots.find(x => x.id === 'SL-01').gapRule = 'G0'
+  const makeupBefore = s.notices.filter(n => n.kind === 'makeup').length
+  const fact = { id: 'F-G0', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-18', placementId: 'P-09', result: '' }
+  addFact5(s, fact)
+  const gn = s.notices.find(n => n.kind === 'hr')
+  assert.ok(gn, '设了不补充也要发一条给人事经理的缺口通知')
+  assert.equal(gn.to, 'HR')
+  assert.ok(gn.text.includes('不补充'), '通知里写明这条班次设了「不补充」')
+  assert.ok(fact.result.includes('不补充'))
+  /* 不产生补位占位、不发新的补位通知 */
+  assert.equal(s.notices.filter(n => n.kind === 'makeup').length, makeupBefore, '不补充的班次不发补位通知')
+  assert.ok(!s.placements.some(p => p.way === '顶班 · 补位' && p.date === '2026-11-18'), '不补充的班次不找人顶')
 })
 
 test('班次编排不拦时间撞人：重叠+人群写重是合法配置，冲突由获取段判', () => {
