@@ -59,7 +59,7 @@ export const PEOPLE5 = [
   { id: 'E-208', name: '叶青', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 80, tag: 'regular' },
   { id: 'E-209', name: '米朵', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 78, tag: 'regular' },
   { id: 'E-210', name: '简宁', spaceId: 'S-205', kind: 'parttime', position: '客户经理', score: 76, tag: 'regular' },
-  { id: 'E-211', name: '桃夭', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 82, tag: 'regular' },
+  { id: 'E-211', name: '桃夭', spaceId: 'S-205', spaceIds: ['S-205', 'S-201'], kind: 'parttime', position: '推拿师', score: 82, tag: 'regular' },
   { id: 'E-212', name: '半夏', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 79, tag: 'regular' },
   { id: 'E-213', name: '木木', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 77, tag: 'regular' },
   { id: 'E-214', name: '星野', spaceId: 'S-205', kind: 'parttime', position: '推拿师', score: 75, tag: 'regular' },
@@ -672,7 +672,9 @@ export function matchWho5(state, person, slot, who) {
   const space = spaceById(state, slot.spaceId)
   const personSpace = spaceById(state, person.spaceId)
   if (who.scope === 'store') {
-    if (person.spaceId !== slot.spaceId) return false
+    /* 本店 = 签约集合里有这家店（非全可签多店；spaceId 是主店，spaceIds 是全部签约店） */
+    const signed = person.spaceIds && person.spaceIds.length ? person.spaceIds : [person.spaceId]
+    if (!signed.includes(slot.spaceId)) return false
   } else {
     const dist = Math.hypot(space.xy[0] - personSpace.xy[0], space.xy[1] - personSpace.xy[1])
     if (dist > (who.km || 0)) return false

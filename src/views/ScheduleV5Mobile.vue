@@ -127,7 +127,7 @@
             <el-icon><Clock /></el-icon>
             <strong>{{ okCount ? `本轮还有 ${okCount} 个名额你能拿` : (board.length ? '现在没有你能拿的名额' : '这里的班排完直接分给你，没有要你领的名额') }}</strong>
           </div>
-          <p v-if="board.length">能拿的直接拿：抢的点一下就成；申领的先登记，{{ shortAt(roundDeadline) }} 截止后按综合分排序。拿不了的下面直接写了原因。</p>
+          <p v-if="board.length">申领 {{ shortAt(roundDeadline) }} 截止</p>
           <p v-else>这一轮的班都是系统按规则排的，结果在「我的排班」里看。</p>
         </div>
 
@@ -139,6 +139,11 @@
           <div v-for="l in claimBoard.limits" :key="l.name" :class="['cm-line', { bad: !l.ok }]">
             <span class="cm-dot" />{{ l.name }}：已用 {{ l.used }} / {{ l.cap }} 小时{{ l.ok ? `，还剩 ${Math.round((l.cap - l.used) * 10) / 10}h` : '，已满' }}
           </div>
+        </div>
+
+        <!-- 签了多家门店的人：选班时切换门店，各店名额 / 规则 / 额度各算各 -->
+        <div v-if="myStores.length > 1" class="store-switch">
+          <button v-for="id in myStores" :key="id" :class="{ on: pickStore === id }" @click="switchStore(id)">{{ spaceName(id) }}</button>
         </div>
 
         <div class="date-strip">
@@ -180,7 +185,6 @@
 
           <div class="oc-foot">
             <template v-if="o.gate.ok">
-              <span class="oc-hint ok">{{ o.row.way === 'grab' ? '点了就成，成不了当场说原因' : '提交只登记，不占位' }}</span>
               <button class="act-btn primary" @click="o.row.way === 'grab' ? openGrab(o) : openApply(o)">
                 {{ o.row.way === 'grab' ? '抢' : '申领' }}
               </button>
@@ -315,7 +319,11 @@ const meId = computed({
   }
 })
 const me = computed(() => meRef.value)
-const myRound = computed(() => roundOf(v5, me.value.spaceId))
+/* 签约门店集合：多店的人选班时可切换，默认主店 */
+const myStores = computed(() => (me.value.spaceIds?.length ? me.value.spaceIds : [me.value.spaceId]))
+const pickStore = ref('')
+watch(myStores, ids => { if (!ids.includes(pickStore.value)) pickStore.value = ids[0] }, { immediate: true })
+const myRound = computed(() => roundOf(v5, pickStore.value || me.value.spaceId))
 const roundDeadline = computed(() => myRound.value.applyDeadline)
 
 /* ---------- 我的排班 ---------- */
@@ -357,7 +365,7 @@ function moveMine(delta) {
 }
 
 /* ---------- 可获取 ---------- */
-const board = computed(() => myOfferBoard())
+const board = computed(() => myOfferBoard().filter(o => o.slot.spaceId === pickStore.value))
 const okCount = computed(() => board.value.filter(o => o.gate.ok).length)
 /* 可获取的日期条 = 这一轮铺了几天就几天：门店七天、办公区整月 */
 const roundDates = computed(() => datesOfRound5(myRound.value))
@@ -373,6 +381,10 @@ const weekDays = computed(() => roundDates.value.map(date => {
   }
 }))
 const pickSel = ref(pickDefaultPick())
+function switchStore(id) {
+  pickStore.value = id
+  pickSel.value = pickDefaultPick()
+}
 function pickDefaultPick() {
   const okDates = board.value.filter(o => o.gate.ok).map(o => o.date).sort()
   return okDates[0] || roundDates.value.find(d => d >= v5.today) || roundDates.value[0] || WEEK_DATES[0]
@@ -380,7 +392,7 @@ function pickDefaultPick() {
 const dayOffers = computed(() => board.value.filter(o => o.date === pickSel.value))
 /* 这家店对我的要求：按这一轮快照口径（配了才有内容） */
 const claimBoard = computed(() => {
-  try { return myClaimBoard(me.value.spaceId, me.value.id, pickSel.value || v5.today) } catch { return null }
+  try { return myClaimBoard(pickStore.value || me.value.spaceId, me.value.id, pickSel.value || v5.today) } catch { return null }
 })
 
 /* 日期条按这一天一天的铺：选中那天自动滑到视野中间，别让人自己找 */
@@ -640,6 +652,9 @@ function declineMakeup(row) {
 .rc-acts.pending .act-line.strong { color: #a40035; font-weight: 500; }
 
 /* 可获取 */
+.store-switch { display: flex; gap: 8px; margin: 10px 0 8px; }
+.store-switch button { border: 1px solid #e8e2e4; background: #fff; color: #6a6a75; border-radius: 16px; padding: 5px 14px; font-size: 13px; }
+.store-switch button.on { background: #a40035; border-color: #a40035; color: #fff; font-weight: 500; }
 .claim-meter { background: #fff; border: 1px solid #f0eaec; border-radius: 10px; padding: 9px 12px; margin: 10px 0 8px; display: flex; flex-direction: column; gap: 5px; }
 .cm-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
 .cm-line.bad { color: #a4441d; }

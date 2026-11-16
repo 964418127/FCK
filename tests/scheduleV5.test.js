@@ -688,3 +688,16 @@ test('改配置不进当前轮快照；发布下一轮（演示翻轮）后才�
   assert.equal(s.ruleSnapshots['S-205'].rules.length, 3, '新一轮快照已刷新')
   assert.equal(s.round.span[0], '2026-11-23')
 })
+
+test('非全签约多店：兼签店的名额看得到、matchWho 按签约集合判', () => {
+  const s = mk()
+  const tao = s.people.find(p => p.id === 'E-211')
+  assert.deepEqual(tao.spaceIds, ['S-205', 'S-201'])
+  /* 桃夭兼签蓝田：蓝田非全推拿班（本店档位）对她开放 */
+  const lantian = s.slots.find(x => x.id === 'SL-01')   /* 蓝田早班，含本店非全推拿抢档 */
+  const hit = lantian.list.some(r => matchWho5(s, tao, lantian, r.who))
+  assert.equal(hit, true, '兼签店的本店档位命中')
+  /* 没签的店照旧挡住 */
+  const guanlan = { spaceId: 'S-203' }
+  assert.equal(matchWho5(s, tao, guanlan, { scope: 'store', kind: 'parttime', pos: '推拿师' }), false)
+})
