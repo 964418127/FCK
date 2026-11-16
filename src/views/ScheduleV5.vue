@@ -918,8 +918,8 @@
     </el-dialog>
 
     <!-- 管理类别：空间的字典，业务自己起名；删除要挡「还有班次 / 规则在用」 -->
-    <el-dialog v-model="catDlg" title="管理类别" width="560px">
-      <div class="cat-dlg-hint">类别只是把「同一句要求」套到一组班次上；类下任一条都算数，所以某条名额满了可以换同类的另一条。</div>
+    <el-dialog v-model="catDlg" :title="`管理类别 · ${curSpace?.name}`" width="560px">
+      <div class="cat-dlg-hint">类别挂在门店上：这里加的是「{{ curSpace?.name }}」的类别，别的店看不到。类别只是把「同一句要求」套到一组班次上；类下任一条都算数，所以某条名额满了可以换同类的另一条。</div>
       <div v-for="c in categoriesOf5(curSpace)" :key="c.id" class="cat-dlg-row">
         <span class="cd-id">{{ c.id }}</span>
         <div class="cd-main">
