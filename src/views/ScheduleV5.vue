@@ -708,21 +708,32 @@
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
           </div>
 
-          <!-- 个人时间线：横轴是这个人当天的时间，纵向是班次条/事实条/补位条——请假可能只占一小时 -->
+          <!-- 全员一周：行是人、列是这一轮的日子，格子放班次/占用/顶班的时段 chip；点格子展开当天单轴 -->
           <div class="tl-box">
             <div class="tl-head">
-              <strong>个人时间线</strong>
-              <span>横轴是这个人当天的时间，往下看这段时间怎么被占住又被占据：班次条、事实条（请假可能只占一小时）、补位条；班次记录本身不动。</span>
-              <el-select :model-value="tlPid" size="small" style="width: 130px" @change="tlPidRaw = $event; tlDayRaw = ''">
-                <el-option v-for="p in tlPeople" :key="p.id" :label="p.name" :value="p.id" />
-              </el-select>
-              <el-select :model-value="tlDay" size="small" style="width: 128px" @change="tlDayRaw = $event">
-                <el-option v-for="d in tlDayOpts" :key="d" :label="`${d.slice(5)} 周${DAY_NAMES[new Date(d + 'T00:00:00').getDay()]}`" :value="d" />
-              </el-select>
+              <strong>全员一周</strong>
+              <span>行是人、列是这一轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；点格子展开这个人当天的单轴细节。</span>
             </div>
-            <template v-if="tlDay">
+            <div class="tl-scroll">
+              <div class="tl-grid" :style="{ gridTemplateColumns: `88px repeat(${tlDates.length}, minmax(64px, 1fr))` }">
+                <div class="tl-corner">人 \ 日期</div>
+                <div v-for="d in tlDates" :key="d.date" class="tl-colhead" :class="{ today: d.date === v5.today }">
+                  {{ d.date.slice(5) }}<em>周{{ DAY_NAMES[d.dow] }}</em>
+                </div>
+                <template v-for="row in tlGrid" :key="row.person.id">
+                  <div class="tl-rowhead">{{ row.person.name }}<em>{{ row.person.id }}</em></div>
+                  <div v-for="c in row.cells" :key="row.person.id + c.date" class="tl-cell"
+                    :class="{ has: c.chips.length, on: cellOpen && tlPid === row.person.id && tlDay === c.date }"
+                    @click="c.chips.length && toggleCell(row.person.id, c.date)">
+                    <span v-for="(ch, i) in c.chips" :key="i" :class="['tl-chip', ch.cls]" :title="ch.tip">{{ ch.text }}</span>
+                    <span v-if="!c.chips.length" class="tl-none">·</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <template v-if="cellOpen && tlDay">
               <div class="tl-row tl-axis-row">
-                <div class="tl-rowlabel" />
+                <div class="tl-rowlabel">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
                 <div class="tl-track">
                   <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
                 </div>
@@ -738,12 +749,12 @@
                   </div>
                 </div>
               </div>
+              <div v-if="tlRelated.length" class="tl-rel">
+                相关的人：
+                <button v-for="r in tlRelated" :key="r.id" @click="toggleCell(r.id, tlDay)">{{ r.name }}</button>
+              </div>
             </template>
-            <div v-else class="tl-empty">这个人这一轮还没有班，也没有事实</div>
-            <div v-if="tlRelated.length" class="tl-rel">
-              相关的人：
-              <button v-for="r in tlRelated" :key="r.id" @click="tlPidRaw = r.id">{{ r.name }}</button>
-            </div>
+            <div v-if="!gridHasAny" class="tl-empty">这一轮还没有班，也没有事实</div>
           </div>
 
           <!-- 待人事处理：求值没人顶时发给人事的待办，顶上后自动销掉 -->
@@ -1448,15 +1459,44 @@ const tlPeople = computed(() => {
 /* 选哪一天：这个人有班或有事实的日子 */
 const tlDayRaw = ref('')
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
-const tlDayOpts = computed(() => {
-  const pid = tlPid.value
-  if (!pid) return []
-  const ds = new Set()
-  v5.placements.filter(p => p.personId === pid || dutyPersonId5(p) === pid).forEach(p => ds.add(p.date))
-  v5.facts.filter(f => f.by === pid && f.date).forEach(f => ds.add(f.date))
-  return [...ds].filter(d => tlDates.value.some(x => x.date === d)).sort()
-})
-const tlDay = computed(() => tlDayRaw.value || tlDayOpts.value[0] || '')
+const tlDay = computed(() => tlDayRaw.value || '')
+/* chip 时间短写：整点不带 :00 */
+const tShort = t => { const [h, m] = t.split(':'); return m === '00' ? h : `${h}:${m}` }
+/* 一个人某一天的格子内容：蓝=班次、橙=被事件占用、绿=顶上、黄=换班 */
+function cellChips(pid, day) {
+  const out = []
+  v5.placements.filter(p => (p.personId === pid || dutyPersonId5(p) === pid) && p.date === day).forEach(p => {
+    const s = slotById(v5, p.slotId)
+    if (!s) return
+    const nm = personById(v5, p.personId)?.name || ''
+    if (p.status === 'covered') return /* 被占用的段由事实行出，避免重复 */
+    if (p.seg) { out.push({ cls: 'mk', text: `顶 ${tShort(p.seg.start)}–${tShort(p.seg.end)}`, tip: `只顶 ${s.name} 的一段` }); return }
+    if (p.swap) { out.push({ cls: 'sw', text: `换出 ${tShort(s.start)}–${tShort(s.end)}`, tip: `换给 ${personById(v5, p.swap.personId)?.name || ''}` }); return }
+    if (p.fromFact && p.personId === pid) { out.push({ cls: 'mk', text: `顶 ${tShort(s.start)}–${tShort(s.end)}`, tip: `${s.name} · 顶 ${nm} 的班` }); return }
+    out.push({ cls: 'sh', text: `${tShort(s.start)}–${tShort(s.end)}`, tip: `${s.name} ${s.start}–${s.end} · ${p.way}` })
+  })
+  v5.facts.filter(f => f.by === pid && f.date === day).forEach(f => {
+    const s = f.slotId ? slotById(v5, f.slotId) : null
+    const st = f.start || s?.start
+    const en = f.end || s?.end
+    if (!st || !en) return
+    out.push({ cls: 'ft', text: `${f.type} ${tShort(st)}–${tShort(en)}`, tip: s ? `${s.name}${st === s.start && en === s.end ? '整班被占用' : `只占 ${st}–${en}`}` : `占用 ${st}–${en}` })
+  })
+  return out
+}
+const tlGrid = computed(() => tlPeople.value.map(person => ({
+  person,
+  cells: tlDates.value.map(d => ({ date: d.date, chips: cellChips(person.id, d.date) }))
+})))
+const gridHasAny = computed(() => tlGrid.value.some(r => r.cells.some(c => c.chips.length)))
+const cellOpen = ref(false)
+function toggleCell(pid, day) {
+  if (cellOpen.value && tlPid.value === pid && tlDay.value === day) { cellOpen.value = false; return }
+  tlPidRaw.value = pid
+  tlDayRaw.value = day
+  cellOpen.value = true
+}
+const tlPersonName = computed(() => personById(v5, tlPid.value)?.name || '')
 /* 三条带：班次条 / 事实条（可能只占一小时，没写时段=占整班）/ 补位条（另一个人的新区间） */
 function tlBandsFor(day) {
   const pid = tlPid.value
@@ -2063,6 +2103,25 @@ tr.covered td { color: #9a9fa9; }
 .fa-hint { font-size: 12px; color: #8a8a95; margin-right: auto; }
 /* 个人时间线 */
 .tl-box { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 10px 12px 8px; margin-bottom: 14px; }
+/* 全员一周网格 */
+.tl-scroll { overflow-x: auto; margin-bottom: 6px; }
+.tl-grid { display: grid; gap: 2px; min-width: 100%; }
+.tl-corner { font-size: 10.5px; color: #b0b0b8; display: flex; align-items: flex-end; padding: 2px 4px 4px 0; }
+.tl-colhead { font-size: 11px; color: #5f5e5a; text-align: center; padding: 4px 0; border-bottom: 1px solid #ececea; }
+.tl-colhead em { font-style: normal; margin-left: 3px; color: #b0b0b8; }
+.tl-colhead.today { color: #a40035; font-weight: 500; }
+.tl-rowhead { font-size: 12px; color: #2c2c2a; display: flex; flex-direction: column; justify-content: center; padding: 4px 6px 4px 0; }
+.tl-rowhead em { font-style: normal; font-size: 10px; color: #b0b0b8; }
+.tl-cell { min-height: 34px; padding: 3px; display: flex; flex-direction: column; gap: 2px; justify-content: center; border-radius: 6px; background: #fbfbf9; }
+.tl-cell.has { cursor: pointer; }
+.tl-cell.has:hover { background: #f4f1f2; }
+.tl-cell.on { outline: 1px solid #a40035; background: #fdf7f8; }
+.tl-none { text-align: center; color: #d8d8d2; font-size: 11px; line-height: 26px; }
+.tl-chip { font-size: 10.5px; line-height: 1.4; border-radius: 4px; padding: 1px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-chip.sh { background: #eef3fb; color: #24587f; }
+.tl-chip.ft { background: repeating-linear-gradient(45deg, #fdf3e7, #fdf3e7 4px, #fbe9d2 4px, #fbe9d2 8px); color: #8a4d0b; }
+.tl-chip.mk { background: #eaf6f1; color: #0f6e56; }
+.tl-chip.sw { background: #faf3dd; color: #854f0b; }
 /* 待人事处理：求值没人顶时发给人事的待办 */
 .hr-todo { background: #faeeda; border: 1px solid #ecd9b0; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
 .hr-todo > strong { font-size: 12.5px; color: #854F0B; }
@@ -2073,6 +2132,8 @@ tr.covered td { color: #9a9fa9; }
 .tl-head strong { font-size: 13px; color: #2c2c2a; }
 .tl-head > span { font-size: 12px; color: #8a8a95; margin-right: auto; }
 .tl-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; align-items: stretch; margin-bottom: 5px; }
+.tl-axis-row { grid-template-columns: 110px 1fr; }
+.tl-axis-row .tl-rowlabel { justify-content: flex-start; white-space: nowrap; font-size: 12px; color: #2c2c2a; }
 .tl-rowlabel { font-size: 11.5px; color: #8a8a95; display: flex; align-items: center; justify-content: flex-end; }
 .tl-track { position: relative; height: 36px; background: #fbfbf9; border-radius: 6px; }
 .tl-axis-row .tl-track { height: 16px; background: none; }
