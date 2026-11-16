@@ -1433,7 +1433,7 @@ function devResolveApply() {
 .da-tabs button { border: none; background: #fff; padding: 2px 8px; font-size: 11.5px; color: #6a6a75; cursor: pointer; }
 .da-tabs button + button { border-left: 1px solid #eee6e8; }
 .da-tabs button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
-.da-svg { width: 100%; display: block; }
+.da-svg { width: 100%; max-width: 680px; display: block; margin: 0 auto; }
 .da-legend { display: flex; gap: 16px; font-size: 11px; color: #8a8a95; margin-top: 3px; flex-wrap: wrap; }
 .da-legend .sw { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .sw-ruler { background: #FDF3E3; border: 1px dashed #C99B4A; }
