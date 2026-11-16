@@ -747,6 +747,8 @@ export function slotsOn5(state, date) {
    三条锁死，不给自由条件编辑器：G1 补齐名额 / G2 剩余不足 1 小时不补 / G3 按当下经营预测。
    规则改的是「怎么判断」，不改名额、不改归属，也不需要快照。 */
 export const GAP_RULES5 = [
+  /* G0 是显式的「不补」：缺了也不动，留给门店现场，不产生补人待办 */
+  { id: 'G0', name: '不补充', note: '这条班次缺人也不补，留给门店现场处理', kind: 'none', minGap: 0 },
   { id: 'G1', name: '补齐名额', note: '名额缺几个就补几个，不看还剩多久', kind: 'quota', minGap: 0 },
   { id: 'G2', name: '补齐名额 · 剩余不足 1 小时不补', note: '还剩不到 1 小时，人叫不来也不值当，记成没补上', kind: 'quota', minGap: 60 },
   /* G3 不是独立算法：引用算法服务里注册的「实时经营需求」（AS-05），预测值从那来 */
@@ -760,7 +762,7 @@ export const GAP_SRC5 = {
 /* 规则挂在时段上：缺口发生时按这条时段自己的规则判（临时班次也算时段） */
 export function gapRuleOfSlot5(state, slotId) {
   const s = slotById(state, slotId)
-  return GAP_RULES5.find(r => r.id === s?.gapRule) || GAP_RULES5[0]
+  return GAP_RULES5.find(r => r.id === s?.gapRule) || GAP_RULES5.find(r => r.id === 'G1')
 }
 /* 缺口是怎么来的：临时加位 / 被事实拿走了人 / 这一轮就没排满 */
 export function gapSrcOf5(state, slotId, date) {
@@ -801,6 +803,7 @@ export function evalGap5(state, slotId, date, rule, opts = {}) {
   const quota = Math.max(0, n - occ)
   const remain = opts.remainMin != null ? opts.remainMin : gapRemain5(state, slotId, date)
   const forecast = opts.forecast != null ? opts.forecast : n
+  if (rule.kind === 'none') return { need: 0, action: 'skip', text: '不补充', why: '这条班次设了不补充，缺人留给门店现场' }
   if (quota === 0) return { need: 0, action: 'none', text: '人够了，不用动', why: `名额 ${n} 人，现在 ${occ} 人` }
   if (rule.kind === 'forecast') {
     const need = Math.max(0, forecast - occ)

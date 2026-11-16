@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5 } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5, gapRuleOfSlot5 } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -964,4 +964,17 @@ test('缺口剩余时长：未来算全天、当天按此刻往后截、过去�
   assert.equal(fmtRemain5(0), '已开始 / 已过')
   assert.equal(fmtRemain5(45), '45 分钟')
   assert.equal(fmtRemain5(180), '3 小时')
+})
+
+test('缺口规则：G0 不补充——设了的班次缺人也不产生补人待办', () => {
+  const s = mk()
+  const g0 = GAP_RULES5.find(r => r.id === 'G0')
+  const out = evalGap5(s, 'SL-01', '2026-11-16', g0)
+  assert.equal(out.action, 'skip')
+  assert.equal(out.need, 0)
+  assert.equal(out.text, '不补充')
+  /* 默认规则仍是 G1，不能因为 G0 排在数组首位而变 */
+  assert.equal(gapRuleOfSlot5(s, 'SL-01').id, 'G1')
+  /* 试算里四条规则各判一次，G0 恒为不补充 */
+  assert.equal(GAP_RULES5.length, 4)
 })

@@ -269,7 +269,7 @@
                     <el-select v-model="form.gapRule" size="small" style="width: 240px">
                       <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
                     </el-select>
-                    <span class="preview">默认按名额补齐，不是每个班次都要改</span>
+                    <span class="preview">{{ form.gapRule === 'G0' ? '缺人也不补，留给门店现场' : '默认按名额补齐，不是每个班次都要改' }}</span>
                   </div>
                   <span class="gap-declare">只管<b>排班确定之后因事件缺人</b>（请假、离职这类）怎么判补几个；轮里名额没人拿满不算缺口，结果层手动补人即可。</span>
                 </div>
@@ -422,7 +422,7 @@
                     <el-select v-model="tempForm.gapRule" size="small" style="width: 240px">
                       <el-option v-for="r in gapRules" :key="r.id" :label="`${r.id} ${r.name}`" :value="r.id" />
                     </el-select>
-                    <span class="preview">临时加场默认剩余太短就不补</span>
+                    <span class="preview">{{ tempForm.gapRule === 'G0' ? '缺人也不补，留给门店现场' : '临时加场默认剩余太短就不补' }}</span>
                   </div>
                   <span class="gap-declare">只管<b>排班确定之后因事件缺人</b>（请假、离职这类）怎么判补几个；加场名额没人抢不算缺口，结果层手动补人即可。</span>
                 </div>
@@ -807,7 +807,7 @@
     <!-- 缺口规则：就是几条规则本身。可选性设在时段上（周期班次、临时班次各选一条） -->
     <section v-show="mainTab === 'gap'" class="svc-pane">
       <div class="svc-head">
-        <p>缺口发生时按哪条规则判，一共三条，不再多。三条都不问「要不要人」——名额一律是必要人数，缺了就得补；规则只回答「按什么算还需几个、来不来得及」。适用面只有一种缺口——<b>排班确定之后因事件缺人</b>；可选性设在时段上：编辑班次、新增临时班次的最后一步各有「排班确定后缺人时」，默认按名额补齐，改完立即生效、不进快照。</p>
+        <p>缺口发生时按哪条规则判，一共四条，不再多。后三条回答「按什么算还需几个、来不来得及」——名额一律是必要人数，缺了就得补；「不补充」是显式的例外：这条班次缺人也不补，留给门店现场。适用面只有一种缺口——<b>排班确定之后因事件缺人</b>；可选性设在时段上：编辑班次、新增临时班次的最后一步各有「排班确定后缺人时」，默认按名额补齐，改完立即生效、不进快照。</p>
       </div>
 
       <table class="data-table">
@@ -2230,6 +2230,7 @@ tr.hl td { background: #fdf3e6 !important; }
 .vd.supplement { color: #a40035; }
 .vd.missed { color: #8a8a95; }
 .vd.none { color: #2f7d5c; }
+.vd.skip { color: #a8a8b2; font-weight: 400; }
 .vd-why { font-style: normal; font-size: 11.5px; color: #a8a8b2; margin-left: 8px; }
 .gp-trial { display: grid; grid-template-columns: 300px 1fr; gap: 18px; background: #fff; border: 1px solid #f0eaec; border-radius: 12px; padding: 14px; }
 .gt-field { margin-top: 14px; }
