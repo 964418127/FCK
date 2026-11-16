@@ -23,7 +23,7 @@ try {
         const nodes = [...document.querySelectorAll('button, .el-button, a, span, div')]
           .filter(n => n.offsetParent !== null && n.textContent.trim() === text)
         const btns = nodes.filter(n => n.tagName === 'BUTTON' || n.classList.contains('el-button'))
-        const hit = btns[idx ?? 0] || nodes[nodes.length - 1]
+        const hit = (idx != null ? (btns[idx] ?? nodes[idx]) : (btns[0] ?? nodes[nodes.length - 1]))
         if (!hit) return false
         hit.click()
         return true

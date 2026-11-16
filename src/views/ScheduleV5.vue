@@ -1003,7 +1003,7 @@
             <span class="pb-name">{{ p.name }}</span>
             <span class="pb-meta">{{ p.position }} · {{ p.kind === 'fulltime' ? '全职' : '非全' }} · {{ p.rowLabel }}</span>
           </label>
-          <span v-if="!appointCands.length" class="pb-none">这个人这时候没班、时间不撞的人</span>
+          <span v-if="!appointCands.length" class="pb-none">现在没有能顶的人：符合这一档的都已有班或时间撞了</span>
         </div>
       </div>
       <div class="dlg-hint">候选只列符合这一档、当时没班、时间不撞的人；一次最多选 {{ gapRemain }} 个（还缺几个名额就选几个）。</div>

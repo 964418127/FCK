@@ -38,7 +38,7 @@
           <tr><th style="width: 140px;">视图</th><th style="width: 300px;">看什么</th><th>什么时候用</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>空间时间轴</strong></td><td>横轴这一轮每一天的时刻，纵轴班次；格子放人名条，缺人的班红字点名「还缺 1 人·没有人」</td><td>看一天现场怎么运转</td></tr>
+          <tr><td><strong>空间时间轴</strong></td><td>横轴这一轮每一天的时刻，纵轴班次；格子放人名条，缺人的班红字「还缺 n 人 · 定人」（点开定人，见 6.3.4）</td><td>看一天现场怎么运转</td></tr>
           <tr><td><strong>占用矩阵</strong></td><td>行 = 班次，列 = 这一轮每一天；每格「已占 x / N」</td><td>核对名额占用进度</td></tr>
           <tr><td><strong>缺口</strong></td><td>有效名额没占满的班次 + 日期，附缺口规则名</td><td>找异常：哪些班缺人、要不要处理</td></tr>
         </tbody>
@@ -86,6 +86,43 @@
         <strong>明确不做：</strong>不在结果表上直接改人或删人；个人时间线与被占用历史在 6.4 的事实记录页看，结果表只负责「现在谁在哪个班」。
       </div>
     </div>
+
+    <div id="hs-63-appoint" class="section">
+      <div class="section-header">
+        <h3>6.3.4 定人：结果层补人</h3>
+      </div>
+      <DocScreens
+        :height="320"
+        :images="[
+          { src: appointShot, label: '定人弹层：缺口横幅带来源与余量，候选只列符合这一档、当时没班、时间不撞的人；还缺几个选几个' }
+        ]"
+      />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 170px;">入口</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>空间时间轴 / 占用矩阵</strong></td><td>缺口格红字「还缺 n 人 · 定人」，点开就是定人弹层（时段和日期已带好）</td></tr>
+          <tr><td><strong>缺口视图</strong></td><td>轮里名额没人拿满不算缺口规则管的事，直接在这里定人</td></tr>
+          <tr><td><strong>临时班次（配置台）</strong></td><td>「这一天要几个人」保存后不选人，提示「去结果里定人」</td></tr>
+          <tr><td><strong>人事通知</strong></td><td>缺口通知卡上「处理：定人」，点开同一个弹层，时段日期已带好</td></tr>
+        </tbody>
+      </table>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 170px;">弹层内容</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>缺口横幅</strong></td><td>日期 · 班次 · 时间 + 来源（周期时段 / 临时班次）+ 名额 n、已定 x、还缺 y</td></tr>
+          <tr><td><strong>为什么缺</strong></td><td>这一轮还在选班次（缺的位一般等截止后补）/ 获取段排完还缺人 / 临时加的名额还没人占</td></tr>
+          <tr><td><strong>候选</strong></td><td>只列<strong>符合这一档人群、当时没班、时间不撞</strong>的人，带岗位与合作性质标签；还缺几个名额就选几个，没有候选写明原因</td></tr>
+          <tr><td><strong>确认安排</strong></td><td>逐个落占位进结果表（来源标人事定人）；定满后名额封口，别人进不来</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>边界：</strong>定人是结果层动作，不走缺口规则——缺口规则只管「排班确定之后因事件缺人」（6.4）；轮里名额没人拿满、临时班次还没定人，都在这里手动定。
+      </div>
+    </div>
   </DocShell>
 </template>
 
@@ -95,12 +132,14 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import axisShot from '../../../docs/assets/pages/v5-round.png'
 import tableShot from '../../../docs/assets/pages/v5-run-table.png'
+import appointShot from '../../../docs/assets/pages/v5-appoint.png'
 
 const tocItems = [
   { id: 'hs-63', label: '6.3 排班结果' },
   { id: 'hs-63-views', label: '6.3.1 三个视图' },
   { id: 'hs-63-rows', label: '6.3.2 唯一记录口' },
-  { id: 'hs-63-apply', label: '6.3.3 申领登记' }
+  { id: 'hs-63-apply', label: '6.3.3 申领登记' },
+  { id: 'hs-63-appoint', label: '6.3.4 定人' }
 ]
 
 const breadcrumbs = [
