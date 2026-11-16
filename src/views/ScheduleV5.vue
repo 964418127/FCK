@@ -636,7 +636,7 @@
             <p class="gap-view-note">这里只看<b>排班确定之后因事件缺人</b>的缺口，按这条时段自己选的规则判；轮里名额没人拿满不算缺口，直接在矩阵或时间轴上定人。</p>
             <table class="data-table">
               <thead>
-                <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 60px;">规则</th><th>结论</th></tr>
+                <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 150px;">规则</th><th>结论</th></tr>
               </thead>
               <tbody>
                 <tr v-for="g in gapRows" :key="g.slotId + g.date" :class="{ pointable: !runReadonly }" @click="!runReadonly && trialPick(g)">
@@ -648,7 +648,7 @@
                   <td class="mono">{{ g.date.slice(5) }}</td>
                   <td>{{ fmtRemain(g.remain) }}</td>
                   <td>{{ g.quota }} / {{ g.n }}</td>
-                  <td><span class="gr-id">{{ g.rule.id }}</span></td>
+                  <td><span class="gr-id">{{ g.rule.id }}</span><em class="gr-name">{{ g.rule.name }}</em></td>
                   <td><span class="vd" :class="g.verdict.action">{{ g.verdict.text }}</span><em class="vd-why">{{ g.verdict.why }}</em></td>
                 </tr>
                 <tr v-if="!gapRows.length"><td colspan="7" class="muted">这一轮没有缺口</td></tr>
@@ -2227,6 +2227,7 @@ tr.hl td { background: #fdf3e6 !important; }
 .gp-rule.on { border-color: #a40035; background: #fdf6f8; }
 .gr-top { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2c2c2a; }
 .gr-id { font-size: 10.5px; color: #a40035; background: #fdf1f4; border-radius: 4px; padding: 1px 5px; letter-spacing: .3px; }
+.gr-name { display: block; margin-top: 2px; font-size: 11.5px; font-style: normal; color: #43434d; line-height: 1.35; }
 .gr-on { margin-left: auto; font-style: normal; font-size: 10.5px; color: #fff; background: #a40035; border-radius: 4px; padding: 1px 6px; }
 .gr-note { font-size: 12px; color: #8a8a95; line-height: 1.55; margin-top: 7px; }
 .src-tag { font-size: 11.5px; color: #6a6a75; background: #f6f4f5; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
