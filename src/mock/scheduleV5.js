@@ -11,18 +11,26 @@ export const WEEK_DATES = [
   '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29'
 ]
 
+/* 品牌字典：空间的外层先按品牌店分类（直营品牌商场店 / 直营品牌小店）；品牌分类在页面上可增 / 改名 / 删 */
+export const BRANDS5 = [
+  { id: 'B-01', name: '青禾' },
+  { id: 'B-02', name: '岚庭' },
+  { id: 'B-03', name: '云间' }
+]
+
+/* 空间：storeType = 外层 tab（商mall=直营品牌商场店 / small=直营品牌小店 / office=总部办公区），brandId 挂品牌 */
 export const SPACES5 = [
-  { id: 'S-201', name: '蓝田店', city: '杭州', tag: '旗舰店', bizStart: '10:00', bizEnd: '22:00', xy: [0, 0] },
-  { id: 'S-202', name: '滨江店', city: '杭州', tag: '社区店', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] },
+  { id: 'S-201', name: '蓝田店', city: '杭州', brandId: 'B-01', storeType: 'mall', bizStart: '10:00', bizEnd: '22:00', xy: [0, 0] },
+  { id: 'S-202', name: '滨江店', city: '杭州', brandId: 'B-02', storeType: 'small', bizStart: '10:00', bizEnd: '22:00', xy: [4.2, 1.8] },
   /* 坐标按城市分区（成都组整体 +50），否则「附近 N 公里」会把另一座城市的店也圈进来 */
-  { id: 'S-203', name: '观澜店', city: '成都', tag: '标准店', bizStart: '11:00', bizEnd: '21:00', xy: [50, 50] },
-  { id: 'S-204', name: '金牛店', city: '成都', tag: '社区店', bizStart: '11:00', bizEnd: '21:00', xy: [53.5, 52.2] },
+  { id: 'S-203', name: '观澜店', city: '成都', brandId: 'B-03', storeType: 'mall', bizStart: '11:00', bizEnd: '21:00', xy: [50, 50] },
+  { id: 'S-204', name: '金牛店', city: '成都', brandId: 'B-02', storeType: 'small', bizStart: '11:00', bizEnd: '21:00', xy: [53.5, 52.2] },
   /* 兴隆湖店：把业务现行的四套策略原样配进同一个店（客经人数组合 / 推拿业务量 / 非全客经错峰 / 非全推拿签约÷2） */
-  { id: 'S-205', name: '兴隆湖店', city: '成都', tag: '标准店', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4],
+  { id: 'S-205', name: '兴隆湖店', city: '成都', brandId: 'B-01', storeType: 'mall', bizStart: '10:00', bizEnd: '22:00', xy: [51.6, 54.4],
     /* 类别 = 这一组时段共享同一条申领要求；规则里的「类」是「或」：类下任一条都算数 */
     categories: [{ id: 'A', name: 'A 类' }, { id: 'B', name: 'B 类' }] },
   /* 总部办公区：不是门店，是办公区——只有岗位和班次，没有营业高峰、没有抢单 */
-  { id: 'S-206', name: '总部办公区', city: '杭州', tag: '办公区', bizStart: '09:30', bizEnd: '22:30', xy: [7.6, 5.4] }
+  { id: 'S-206', name: '总部办公区', city: '杭州', brandId: '', storeType: 'office', bizStart: '09:30', bizEnd: '22:30', xy: [7.6, 5.4] }
 ]
 
 /* 岗位字典：通用排班系统不写死某几个岗位，弹窗里从这里出 */
@@ -1497,6 +1505,7 @@ export function buildV5State() {
     now: NOW,
     today: TODAY,
     spaces: JSON.parse(JSON.stringify(SPACES5)),
+    brands: JSON.parse(JSON.stringify(BRANDS5)),
     people: JSON.parse(JSON.stringify(PEOPLE5)),
     services: JSON.parse(JSON.stringify(SERVICES5)),
     slots: JSON.parse(JSON.stringify(SLOTS5)),

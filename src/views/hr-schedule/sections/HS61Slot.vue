@@ -17,9 +17,34 @@
         再在班次下面挂一份获取清单（每一档开放给谁、用什么方式、什么时候开放）。不解决怎么分给人（见 6.2），也不解决分完之后的变化（见 6.4）。
       </p>
       <div class="func-entry">
-        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ 左侧选空间 → <strong>时段与清单</strong>；
+        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ 顶部外层选品牌店分类 → 左侧选空间 → <strong>时段与清单</strong>；
         页签三块：周期时段 / 临时班次 / 申领规则；横向配置（缺口规则、算法服务）在顶部一级导航
       </div>
+
+      <h4 class="h4sub">空间的外层：品牌店分类</h4>
+      <p class="doc-p">
+        空间最外层按<strong>店型</strong>分三类 tab：<strong>直营品牌商场店 / 直营品牌小店 / 总部办公区</strong>——
+        切的是「这一层看哪类空间」，tab 上带各类型的门店数，切过去空间列表和右侧页面跟着换。
+        <strong>品牌</strong>是全公司共用的一份清单，门店挂品牌、随时可换；品牌分类就在外层右侧维护：
+        增 / 改名 / 删——还有门店挂着的品牌删不掉，要先把门店改到别的品牌（删除有确认）。
+      </p>
+      <DocScreens
+        :height="420"
+        :images="[
+          { src: outerShot, label: '最外层 tab：直营品牌商场店（3）/ 直营品牌小店（2）/ 总部办公区；左侧空间列表跟着 tab 过滤，店卡上挂品牌名' },
+          { src: brandShot, label: '品牌分类维护：品牌增 / 改名 / 删（在用中的不让删）+ 门店挂品牌逐店下拉' }
+        ]"
+      />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 170px;">外层</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>直营品牌商场店 / 直营品牌小店</strong></td><td>现有门店全部进这两类；店型是空间自己的属性，tab 就是按它切</td></tr>
+          <tr><td><strong>总部办公区</strong></td><td>不是门店，单独一类——没有营业高峰、没有抢单，只有岗位和班次</td></tr>
+          <tr><td><strong>品牌分类</strong></td><td>全公司共用一份清单（不是每店自己的）；空间挂品牌，品牌删不了只要还有门店在用；搜索空间时按品牌名也能搜到</td></tr>
+        </tbody>
+      </table>
 
       <DocScreens
         :height="360"
@@ -202,6 +227,8 @@ import DocShell from '../../../docs/components/DocShell.vue'
 import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import slotCycleShot from '../../../docs/assets/pages/v5-slots.png'
+import outerShot from '../../../docs/assets/pages/v5-outer.png'
+import brandShot from '../../../docs/assets/pages/v5-brand.png'
 import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
 import copyDayShot from '../../../docs/assets/pages/v5-copy-day.png'
 import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'

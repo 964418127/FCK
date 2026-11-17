@@ -27,9 +27,18 @@
       <button :class="{ on: mainTab === 'algo' }" @click="mainTab = 'algo'">算法服务</button>
     </div>
 
+    <!-- 最外层：品牌店分类（直营品牌商场店 / 直营品牌小店）+ 总部办公区，切的是这一层看哪类空间 -->
+    <div class="outer-tabs" v-show="mainTab === 'schedule'">
+      <button v-for="t in SPACE_TYPES" :key="t.key" :class="{ on: spaceType === t.key }" @click="pickSpaceType(t.key)">
+        {{ t.label }}<em>{{ v5.spaces.filter(s => s.storeType === t.key).length }}</em>
+      </button>
+      <span class="ot-spacer" />
+      <el-button size="small" @click="brandDlg = true">品牌分类</el-button>
+    </div>
+
     <div class="v5-body" v-show="mainTab === 'schedule'">
       <aside class="space-rail">
-        <el-input v-model="kw" placeholder="搜名称 / 城市 / 标签" clearable size="small" />
+        <el-input v-model="kw" placeholder="搜名称 / 城市 / 品牌" clearable size="small" />
         <div class="chips">
           <button v-for="c in cities" :key="c" :class="{ on: city === c }" @click="city = city === c ? '' : c">{{ c }}</button>
         </div>
@@ -40,7 +49,7 @@
               <i v-if="gapsOf(s.id)" class="gap-dot" />
             </div>
             <div class="ri-meta">
-              <span class="mini-tag">{{ s.tag }}</span>
+              <span v-if="s.brandId" class="mini-tag">{{ brandNameOf(s.brandId) }}</span>
               <span>{{ s.city }}</span>
               <em>{{ peopleOf(s.id) }}人 · {{ slotCount(s.id) }}时段</em>
             </div>
@@ -54,7 +63,7 @@
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
           <button :class="{ on: tab === 'me' }" @click="tab = 'me'">个人查询</button>
-          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.tag === '办公区' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
+          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }}<template v-if="curSpace?.brandId"> · {{ brandNameOf(curSpace.brandId) }}</template> · {{ curSpace?.storeType === 'office' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
         <!-- ① 定义段 -->
@@ -324,10 +333,10 @@
                   <span class="days">{{ daysLabel(s.days) }}</span>
                   <span v-if="s.category" class="cat-tag">{{ catName5(curSpace, s.category) }}</span>
                   <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
-                    含{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段外
+                    含{{ curSpace.storeType === 'office' ? '作业' : '营业' }}时段外
                   </span>
                   <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
-                    含{{ curSpace.tag === '办公区' ? '作业' : '营业' }}时段外
+                    含{{ curSpace.storeType === 'office' ? '作业' : '营业' }}时段外
                   </span>
                 </div>
                 <div class="sacts">
@@ -997,6 +1006,31 @@
       </div>
     </el-dialog>
 
+    <!-- 品牌分类：全公司共用的品牌清单，增 / 改名 / 删；门店挂哪个品牌在下面改 -->
+    <el-dialog v-model="brandDlg" title="品牌分类" width="580px">
+      <div class="cat-dlg-hint">品牌是全公司共用的一份清单：这里加的品牌所有空间都能挂；还有门店挂着的品牌删不掉，要先把门店改到别的品牌。</div>
+      <div v-for="b in brands" :key="b.id" class="cat-dlg-row">
+        <span class="cd-id">{{ b.id }}</span>
+        <div class="cd-main">
+          <el-input :model-value="b.name" size="small" @change="val => doRenameBrand(b, val)" />
+          <span class="cd-use">{{ brandUseText(b.id) }}</span>
+        </div>
+        <el-button link size="small" type="danger" @click="doRemoveBrand(b)">删除</el-button>
+      </div>
+      <div class="cat-dlg-row add">
+        <el-input v-model="newBrandName" size="small" placeholder="新品牌名字，如 青禾" style="flex: 1" @keyup.enter="doAddBrand" />
+        <el-button size="small" type="primary" @click="doAddBrand">添加</el-button>
+      </div>
+      <div class="brand-assign-h">门店挂品牌</div>
+      <div v-for="s in v5.spaces.filter(x => x.storeType !== 'office')" :key="s.id" class="brand-assign-row">
+        <span class="ba-name">{{ s.name }}</span>
+        <span class="ba-type">{{ SPACE_TYPES.find(t => t.key === s.storeType)?.label }}</span>
+        <el-select :model-value="s.brandId" size="small" style="width: 140px" @change="val => setSpaceBrand(s.id, val)">
+          <el-option v-for="b in brands" :key="b.id" :label="b.name" :value="b.id" />
+        </el-select>
+      </div>
+    </el-dialog>
+
     <!-- 定人：一次把空着的名额选够 -->
     <el-dialog v-model="appointDlg" title="定人" width="600px">
       <div v-if="gapInfo" class="gap-banner">
@@ -1050,6 +1084,7 @@ import {
   roundOf, rulesOfSpace, saveRule5, removeRule5, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage,
+  brands, brandNameOf, brandUsage, addBrand, renameBrand, removeBrand, setSpaceBrand,
   gapRules, gapList5
 } from '../mock/scheduleV5Store.js'
 import {
@@ -1068,6 +1103,44 @@ const sub = ref(['cyc', 'tmp', 'rule'].includes(route.query.sub) ? route.query.s
 const mainTab = ref(['gap', 'algo'].includes(route.query.main) ? route.query.main : 'schedule')
 const kw = ref('')
 const city = ref('')
+/* 外层空间：按店型分 tab——直营品牌商场店 / 直营品牌小店，办公区单独一类 */
+const SPACE_TYPES = [
+  { key: 'mall', label: '直营品牌商场店' },
+  { key: 'small', label: '直营品牌小店' },
+  { key: 'office', label: '总部办公区' }
+]
+const spaceType = ref(SPACE_TYPES.find(t => v5.spaces.some(s => s.storeType === t.key && s.id === (route.query.space || '')))?.key || 'mall')
+const brandDlg = ref(false)
+const newBrandName = ref('')
+function pickSpaceType(key) {
+  spaceType.value = key
+  const list = v5.spaces.filter(s => s.storeType === key)
+  if (!list.some(s => s.id === selSpace.value) && list[0]) pickSpace(list[0].id)
+}
+function doAddBrand() {
+  const r = addBrand(newBrandName.value)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  newBrandName.value = ''
+  ElMessage.success('品牌已添加')
+}
+function doRenameBrand(b, name) {
+  const r = renameBrand(b.id, name)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  ElMessage.success('品牌名已改')
+}
+function brandUseText(id) {
+  const used = brandUsage(id)
+  return used.length ? `在用：${used.map(s => s.name).join('、')}` : '还没有门店挂这个品牌'
+}
+async function doRemoveBrand(b) {
+  const used = brandUsage(b.id)
+  if (used.length) { ElMessage.warning(`还有 ${used.length} 家门店挂「${b.name}」，先把门店改到别的品牌`); return }
+  try {
+    await ElMessageBox.confirm(`删除品牌「${b.name}」？现在没有门店挂它，删了不影响任何空间。`, '删除品牌', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+    const r = removeBrand(b.id)
+    if (!r.ok) ElMessage.warning(r.reason)
+  } catch { /* 取消 */ }
+}
 const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.query.sub === 'rule' ? 'S-205' : ''))) ? (route.query.space || (route.query.sub === 'rule' ? 'S-205' : '')) : v5.spaces[0].id)
 /* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
 const round = computed(() => roundOf(v5, selSpace.value))
@@ -1132,8 +1205,9 @@ const runNote = computed(() => {
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
 const filteredSpaces = computed(() => v5.spaces.filter(s => {
   const k = kw.value.trim()
-  const hit = !k || s.name.includes(k) || s.city.includes(k) || (s.tag && s.tag.includes(k))
-  return (!city.value || s.city === city.value) && hit
+  const brand = brandNameOf(s.brandId)
+  const hit = !k || s.name.includes(k) || s.city.includes(k) || brand.includes(k)
+  return s.storeType === spaceType.value && (!city.value || s.city === city.value) && hit
 }))
 const curSpace = computed(() => v5.spaces.find(s => s.id === selSpace.value))
 const spaceSlots = computed(() => v5.slots.filter(s => s.spaceId === selSpace.value))
@@ -2052,6 +2126,17 @@ function devResolveApply() {
 .ri-meta em { font-style: normal; margin-left: auto; }
 .v5-main { background: #fff; border: 1px solid #eee6e8; border-radius: 10px; padding: 12px 14px 18px; min-width: 0; }
 .tabs { display: flex; gap: 4px; align-items: center; border-bottom: 1px solid #f0eaec; padding-bottom: 8px; }
+/* 最外层：品牌店分类 tab */
+.outer-tabs { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #eee6e8; border-radius: 10px; padding: 7px 10px; margin-bottom: 10px; }
+.outer-tabs button { border: 1px solid transparent; background: none; padding: 5px 12px; border-radius: 6px; font-size: 13px; color: #6a6a75; cursor: pointer; font-family: inherit; }
+.outer-tabs button em { font-style: normal; font-size: 11px; color: #b0b0b8; margin-left: 4px; }
+.outer-tabs button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
+.outer-tabs button.on em { color: #c98ba0; }
+.ot-spacer { flex: 1; }
+.brand-assign-h { font-size: 12.5px; color: #2c2c2a; font-weight: 500; margin: 14px 0 8px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
+.brand-assign-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 12.5px; color: #4a4a52; }
+.brand-assign-row .ba-name { width: 100px; }
+.brand-assign-row .ba-type { font-size: 11px; color: #9a9fa9; flex: 1; }
 /* 一级导航：排班 / 系统服务 */
 .main-tabs { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; }
 .main-tabs button { border: 1px solid #eee6e8; background: #fff; padding: 6px 16px; border-radius: 18px; font-size: 13px; color: #6a6a75; cursor: pointer; }
@@ -2206,7 +2291,7 @@ function devResolveApply() {
 .cat-dlg-hint { font-size: 12px; color: #8a8a95; margin-bottom: 10px; line-height: 1.6; }
 .cat-dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .cat-dlg-row.add { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
-.cd-id { width: 18px; font-size: 12px; color: #a40035; font-weight: 600; line-height: 24px; }
+.cd-id { width: 34px; min-width: 34px; font-size: 12px; color: #a40035; font-weight: 600; line-height: 24px; white-space: nowrap; }
 .cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .cd-use { font-size: 11.5px; color: #9a9fa9; white-space: nowrap; line-height: 18px; }
 .cat-dlg-row { align-items: flex-start; }

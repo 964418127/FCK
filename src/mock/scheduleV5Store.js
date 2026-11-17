@@ -244,6 +244,7 @@ export function revertConfig() {
   state.claimRules = seed.claimRules
   state.hourLimits = seed.hourLimits
   state.spaces = seed.spaces
+  state.brands = seed.brands
   /* 节奏也是配置的一部分：全局轮 + 各空间自己的轮，config 一并回到种子 */
   state.round.config = seed.round.config
   if (state.rounds) {
@@ -458,6 +459,45 @@ export function saveRule5(rule) {
 export function removeRule5(id) {
   state.claimRules = (state.claimRules || []).filter(r => r.id !== id)
   state.configDirty = true
+}
+
+/* ===== 外层空间：品牌分类（增 / 改名 / 删；还有门店在用的不让删） ===== */
+export const brands = computed(() => state.brands || [])
+export function brandNameOf(brandId) {
+  return (state.brands || []).find(b => b.id === brandId)?.name || '未归品牌'
+}
+export function brandUsage(brandId) {
+  return state.spaces.filter(s => s.brandId === brandId)
+}
+export function addBrand(name) {
+  const n = (name || '').trim()
+  if (!n) return { ok: false, reason: '品牌名不能为空' }
+  if ((state.brands || []).some(b => b.name === n)) return { ok: false, reason: '这个品牌已经在了' }
+  const row = { id: `B-${state.seq++}`, name: n }
+  state.brands.push(row)
+  return { ok: true, brand: row }
+}
+export function renameBrand(id, name) {
+  const n = (name || '').trim()
+  const b = (state.brands || []).find(x => x.id === id)
+  if (!b) return { ok: false, reason: '品牌不存在' }
+  if (!n) return { ok: false, reason: '品牌名不能为空' }
+  if ((state.brands || []).some(x => x.id !== id && x.name === n)) return { ok: false, reason: '这个品牌名已经在了' }
+  b.name = n
+  return { ok: true }
+}
+export function removeBrand(id) {
+  const used = brandUsage(id)
+  if (used.length) return { ok: false, reason: `还有 ${used.length} 家门店挂这个品牌，先把门店改到别的品牌` }
+  state.brands = state.brands.filter(b => b.id !== id)
+  return { ok: true }
+}
+/* 门店挂品牌：外层 tab 按店型分，品牌随时可换 */
+export function setSpaceBrand(spaceId, brandId) {
+  const s = state.spaces.find(x => x.id === spaceId)
+  if (!s) return { ok: false, reason: '空间不存在' }
+  s.brandId = brandId
+  return { ok: true }
 }
 
 /* 类别维护：动作落在纯逻辑（mock）上，这里只负责改完标脏 */
