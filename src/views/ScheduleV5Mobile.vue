@@ -54,7 +54,7 @@
               <span class="nc-date">{{ dayShort(swapText(req).date) }}</span>
             </div>
             <p>{{ swapText(req).text }}</p>
-            <p class="nc-detail">双方同意才生效；等待期超时两边都不动</p>
+            <p class="nc-detail">双方同意才生效；{{ swapDeadline(req) }} 前没答复自动失效，两边都不动</p>
             <div class="nc-act">
               <button class="act-btn ghost" @click="answer(req, false)">拒绝</button>
               <button class="act-btn primary" @click="answer(req, true)">同意换班</button>
@@ -272,7 +272,7 @@
         <div class="sheet-title">找人换班</div>
         <div class="sheet-body">
           <div class="sheet-shift">你给出：{{ dayLabel(sheet.row.date) }} {{ slotOf(sheet.row.slotId).name }} {{ slotOf(sheet.row.slotId).start }}–{{ slotOf(sheet.row.slotId).end }}</div>
-          <p class="sheet-note">换班是双向的：你给出这一条，对方给出一条。对方同意才真正对调，拒绝或超时两边都不动。</p>
+          <p class="sheet-note">换班是双向的：你给出这一条，对方给出一条。对方同意才真正对调；等待期 30 分钟，没答复到点自动失效。</p>
           <div v-if="!swapCands.length" class="empty-box small">
             <p class="empty-main">没有能换的班</p>
             <p class="empty-sub">时间会撞的、对方那天没班的都不列出来</p>
@@ -616,6 +616,14 @@ function swapText(req) {
     date: mine.date,
     text: `${personById(v5, req.from)?.name || '对方'} 想用他 ${dayShort(theirs.date)} ${ts.name}（${ts.start}–${ts.end}）换你 ${dayShort(mine.date)} ${ms.name}（${ms.start}–${ms.end}）`
   }
+}
+
+/* 等待期 30 分钟：卡上写明截止时刻，对方知道要多久内答复 */
+function swapDeadline(req) {
+  const [d, t] = (req.at || '').split(' ')
+  const [h, m] = (t || '00:00').split(':').map(Number)
+  const end = h * 60 + m + 30
+  return `${dayShort(d)} ${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
 }
 function goBack() { router.push('/mobile-menu') }
 

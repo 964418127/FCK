@@ -737,7 +737,7 @@ export const NOTICES5 = [
 /* 演示用：一条还没答复的换班请求（罗盘拿 11-23 早班换谷雨 11-24 晚班） */
 export const SWAP_REQUESTS5 = [
   { id: 'SR-01', from: 'E-205', to: 'E-206', placementId: 'P-XL0-0', partnerPlacementId: 'P-XL1-1',
-    at: '2026-11-13 21:10', status: 'pending' }
+    at: '2026-11-14 09:40', status: 'pending' }
 ]
 
 /* ===== 纯逻辑 ===== */

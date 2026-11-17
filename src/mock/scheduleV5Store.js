@@ -62,9 +62,9 @@ export function proposeSwap(placementId, partnerPlacementId) {
   state.notices.unshift({
     id: seq(), to: theirs.personId, kind: 'swap', acked: false, date: mine.date,
     text: `换班请求：用你的 ${theirs.date} ${slotById(state, theirs.slotId).name} 换 ${mine.date} ${s.name}`,
-    detail: '双方同意才生效；等待期超时两边都不动'
+    detail: '双方同意才生效；等待期 30 分钟，没答复到点自动失效，两边都不动'
   })
-  return { ok: true, text: '换班请求已发出，等对方同意' }
+  return { ok: true, text: '换班请求已发出，对方 30 分钟内没答复自动失效' }
 }
 
 export function answerSwap(reqId, accept) {

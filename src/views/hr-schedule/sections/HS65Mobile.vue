@@ -74,7 +74,7 @@
         </thead>
         <tbody>
           <tr><td><strong>通知</strong></td><td>排班类通知是通用通知页里的示例，不在排班页自带通知段；通知只负责告诉你，处理动作都在业务页；<strong>全部通知清单见 <router-link to="/docs/hr-schedule/6-6">6.6 通知</router-link></strong></td></tr>
-          <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天</td></tr>
+          <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天；<strong>等待期 30 分钟</strong>，没答复到点自动失效</td></tr>
           <tr><td><strong>补位确认</strong></td><td>落在当天班次卡上：待你确认 + 收到，我来；确认后的变化由事实与通知走（见 6.4 / 6.6）</td></tr>
           <tr><td><strong>明确不做</strong></td><td>不做「浏览别的岗位班次自己挑」的入口；关闸之后个人不挑班，只能看到人事的安排</td></tr>
         </tbody>
@@ -131,7 +131,7 @@
 
       <h4 class="h4sub">被发起换班的人——换班请求落在「我的排班」顶部</h4>
       <DocScreens mode="phone" :images="[
-        { src: mSwapRequest, label: '换班请求：谁、拿哪天的哪个班换你哪天的哪个班；双方同意才生效，拒绝或超时两边都不动' }
+        { src: mSwapRequest, label: '换班请求：谁、拿哪天的哪个班换你哪天的哪个班；等待期 30 分钟，没答复到点自动失效' }
       ]" />
 
       <h4 class="h4sub">办公区·全职产品经理——按月直派，人只收通知</h4>
