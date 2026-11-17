@@ -838,7 +838,24 @@
                 <em>周{{ DAY_NAMES[new Date(d.date + 'T00:00:00').getDay()] }}</em>
               </div>
               <div class="me-main">
-                <div class="tl-track me-track">
+                <!-- 只有一行（班次）就单行画；有事实/补位时按悬浮卡的行结构分行，行标签在左 -->
+                <template v-if="d.rows.length > 1">
+                  <div v-for="(r, ri) in d.rows" :key="d.date + r.label" class="me-line">
+                    <div class="me-rowlabel">{{ r.label }}</div>
+                    <div class="tl-track me-track">
+                      <i v-for="h in meAxis.ticks" :key="d.date + r.label + h" class="tl-tick" :style="{ left: mePct(h) }" />
+                      <template v-if="di === 0 && ri === 0">
+                        <b v-for="h in meAxis.labels" :key="'l' + h" class="tl-ticklabel" :style="{ left: mePct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
+                      </template>
+                      <div v-for="b in r.bands" :key="d.date + r.label + b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: mePct(b.s), width: meW(b) }">
+                        <i v-for="(m, mi) in b.marks || []" :key="'m' + mi" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
+                        <strong>{{ b.text }}</strong>
+                        <span v-if="b.sub">{{ b.sub }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="tl-track me-track">
                   <i v-for="h in meAxis.ticks" :key="d.date + 't' + h" class="tl-tick" :style="{ left: mePct(h) }" />
                   <template v-if="di === 0">
                     <b v-for="h in meAxis.labels" :key="'l' + h" class="tl-ticklabel" :style="{ left: mePct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
@@ -1727,6 +1744,7 @@ const meDateList = computed(() => {
 const meDays = computed(() => {
   if (!mePid.value) return []
   return meDateList.value.map(date => {
+    /* 整天完整画：班次 / 事实 / 补位，与事实记录悬浮卡同一画法同一口径 */
     const rows = bandsForPersonDay(mePid.value, date)
     const bands = rows.find(r => r.label === '班次')?.bands || []
     /* 无法履约的明细：整条被占用 / 换出去的班写红字；只占一段的写明其余照常 */
@@ -1735,7 +1753,7 @@ const meDays = computed(() => {
       if (b.cls === 'covered' && !b.sub?.includes('换入')) blocked.push(`${b.text}：${b.sub}`)
       else if (b.marks?.length) blocked.push(`${b.text}：其中 ${b.marks.map(m => m.label).join('、')} 被占用，其余照常`)
     })
-    return { date, bands, blocked }
+    return { date, rows, bands, blocked }
   })
 })
 const meStats = computed(() => {
@@ -1749,7 +1767,7 @@ const meStats = computed(() => {
 })
 const meAxis = computed(() => {
   let t0 = 24 * 60, t1 = 0
-  meDays.value.forEach(d => d.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) }))
+  meDays.value.forEach(d => d.rows.forEach(r => r.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) })))
   if (t1 <= t0) return { t0: 480, t1: 1320, ticks: [], labels: [] }
   t0 = Math.max(0, Math.floor((t0 - 60) / 60) * 60)
   t1 = Math.min(24 * 60, Math.ceil((t1 + 60) / 60) * 60)
@@ -2363,6 +2381,9 @@ tr.covered td { color: #9a9fa9; }
 .me-day { font-size: 12.5px; color: #2c2c2a; padding-top: 6px; }
 .me-day em { display: block; font-style: normal; color: #9a9fa9; font-size: 11px; }
 .me-track { height: 32px; }
+.me-line { display: grid; grid-template-columns: 34px 1fr; gap: 6px; align-items: center; margin-bottom: 3px; }
+.me-line .me-track { height: 30px; }
+.me-rowlabel { font-size: 11px; color: #8a8a95; text-align: right; }
 .me-none { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #c0c0c8; }
 .me-blocked { margin: 5px 0 0; padding: 6px 9px; background: #fdf6f8; border-radius: 6px; }
 .me-blocked p { margin: 0; font-size: 12px; color: #a4441d; line-height: 1.55; }
