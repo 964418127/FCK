@@ -109,8 +109,8 @@
 
       <h4 class="h4sub">非全推拿师（门店）——先到先得 + 申领混合</h4>
       <DocScreens mode="phone" :images="[
-        { src: mTuinaPtPick, label: '可获取：早/晚班先到先得 + 通班申领 + 临时加场，一张卡一种拿法' },
-        { src: mGrabSheet, label: '抢确认：当场生效的三条检查（不撞车 / 剩余名额），先到先得点了就成' }
+        { src: mTuinaPtPick, label: '可获取：早/晚班先到先得——能抢的给按钮，满员当场说原因；通班申领、临时加场在周末那几天' },
+        { src: mGrabSheet, label: '抢确认：当场检查两条（和你已有班次不撞车 / 名额在你的档位），先到先得点了就成' }
       ]" />
 
       <h4 class="h4sub">非全推拿师（兴隆湖）——分类必选数量：A 类每天至少 1 条</h4>
@@ -121,7 +121,7 @@
 
       <h4 class="h4sub">非全客户经理（兴隆湖）——三档错峰累计开放</h4>
       <DocScreens mode="phone" :images="[
-        { src: mKejingPtPick, label: '可获取：周期时段三档——本店非全客经先开，后面的档还没到窗口；额度进度按兴隆湖自己的算' }
+        { src: mKejingPtPick, label: '可获取：周期时段按档位窗口开放——本店非全客经这档已开；一条能抢、一条和自己班次撞了当场说原因' }
       ]" />
 
       <h4 class="h4sub">被安排顶班的人——补位确认落在班次卡上</h4>
