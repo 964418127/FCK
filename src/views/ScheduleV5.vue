@@ -750,33 +750,6 @@
             <div v-if="!gridHasAny" class="tl-empty">这一轮还没有班，也没有事实</div>
           </div>
 
-          <!-- 悬浮卡：贴着格子出当天的单轴细节，不往下撑页面 -->
-          <div v-if="popShow && tlDay" class="tl-pop" :style="{ left: popPos.left + 'px', top: popPos.top + 'px' }"
-            @mouseenter="keepCell" @mouseleave="hideCellSoon">
-            <div class="tl-pop-head">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
-            <div class="tl-row tl-axis-row">
-              <div class="tl-rowlabel">时段</div>
-              <div class="tl-track">
-                <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
-              </div>
-            </div>
-            <div v-for="row in tlBands" :key="row.label" class="tl-row">
-              <div class="tl-rowlabel">{{ row.label }}</div>
-              <div class="tl-track">
-                <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
-                <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
-                  <i v-for="(m, i) in b.marks || []" :key="'m' + i" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
-                  <strong>{{ b.text }}</strong>
-                  <span v-if="b.sub">{{ b.sub }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-if="tlRelated.length" class="tl-rel">
-              相关的人：
-              <button v-for="r in tlRelated" :key="r.id" @click="setCell(r.id, tlDay)">{{ r.name }}</button>
-            </div>
-          </div>
-
           <!-- 待人事处理：求值没人顶时发给人事的待办，顶上后自动销掉 -->
           <div v-if="hrTodos.length" class="hr-todo">
             <strong>待人事处理（{{ hrTodos.length }}）</strong>
@@ -828,7 +801,7 @@
               <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name}`" :value="p.id" />
             </el-select>
             <span v-if="mePid" class="me-stats">共 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
-            <span class="fa-hint">以人看班：这个人在这里已有的全部排班（已过期的不用看）；被事件占用的段与事实记录悬浮卡同一画法</span>
+            <span class="fa-hint">以人看班：这个人在这里已有的全部排班（已过期的不用看）；悬浮某一天，出这天的班次 / 事实 / 补位明细卡（与事实记录悬浮卡同一画法）</span>
           </div>
           <div v-if="!mePid || !meDays.length" class="me-empty">{{ !mePid ? '选一个人，看TA的全部排班' : '这个人在这里已经没有未过期的班' }}</div>
           <div v-else class="tl-box me-box">
@@ -838,24 +811,7 @@
                 <em>周{{ DAY_NAMES[new Date(d.date + 'T00:00:00').getDay()] }}</em>
               </div>
               <div class="me-main">
-                <!-- 只有一行（班次）就单行画；有事实/补位时按悬浮卡的行结构分行，行标签在左 -->
-                <template v-if="d.rows.length > 1">
-                  <div v-for="(r, ri) in d.rows" :key="d.date + r.label" class="me-line">
-                    <div class="me-rowlabel">{{ r.label }}</div>
-                    <div class="tl-track me-track">
-                      <i v-for="h in meAxis.ticks" :key="d.date + r.label + h" class="tl-tick" :style="{ left: mePct(h) }" />
-                      <template v-if="di === 0 && ri === 0">
-                        <b v-for="h in meAxis.labels" :key="'l' + h" class="tl-ticklabel" :style="{ left: mePct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
-                      </template>
-                      <div v-for="b in r.bands" :key="d.date + r.label + b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: mePct(b.s), width: meW(b) }">
-                        <i v-for="(m, mi) in b.marks || []" :key="'m' + mi" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
-                        <strong>{{ b.text }}</strong>
-                        <span v-if="b.sub">{{ b.sub }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-                <div v-else class="tl-track me-track">
+                <div class="tl-track me-track" @mouseenter="hoverMeDay(d.date, $event)" @mouseleave="hideCellSoon">
                   <i v-for="h in meAxis.ticks" :key="d.date + 't' + h" class="tl-tick" :style="{ left: mePct(h) }" />
                   <template v-if="di === 0">
                     <b v-for="h in meAxis.labels" :key="'l' + h" class="tl-ticklabel" :style="{ left: mePct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
@@ -875,6 +831,33 @@
           </div>
         </section>
       </main>
+
+      <!-- 悬浮卡：贴着格子/日子出的当天单轴细节（事实记录全员一周 与 个人查询 共用），不往下撑页面 -->
+      <div v-if="popShow && tlDay" class="tl-pop" :style="{ left: popPos.left + 'px', top: popPos.top + 'px' }"
+        @mouseenter="keepCell" @mouseleave="hideCellSoon">
+        <div class="tl-pop-head">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
+        <div class="tl-row tl-axis-row">
+          <div class="tl-rowlabel">时段</div>
+          <div class="tl-track">
+            <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
+          </div>
+        </div>
+        <div v-for="row in tlBands" :key="row.label" class="tl-row">
+          <div class="tl-rowlabel">{{ row.label }}</div>
+          <div class="tl-track">
+            <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
+            <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
+              <i v-for="(m, i) in b.marks || []" :key="'m' + i" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
+              <strong>{{ b.text }}</strong>
+              <span v-if="b.sub">{{ b.sub }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="tlRelated.length" class="tl-rel">
+          相关的人：
+          <button v-for="r in tlRelated" :key="r.id" @click="setCell(r.id, tlDay)">{{ r.name }}</button>
+        </div>
+      </div>
     </div>
 
     <!-- 缺口规则：就是几条规则本身。可选性设在时段上（周期班次、临时班次各选一条） -->
@@ -1639,6 +1622,18 @@ function hideCellSoon() {
 }
 function keepCell() { clearTimeout(popHideTimer) }
 function hideCellNow() { clearTimeout(popHideTimer); popShow.value = false }
+/* 个人查询：悬浮某一天，同一张悬浮卡贴着光标出（内容 = 这个人这一天的 班次/事实/补位） */
+function hoverMeDay(date, evt) {
+  clearTimeout(popHideTimer)
+  tlPidRaw.value = mePid.value
+  tlDayRaw.value = date
+  const W = 480, M = 10
+  let left = evt.clientX + 14
+  if (left + W > window.innerWidth - M) left = evt.clientX - W - 14
+  const top = Math.max(M, Math.min(evt.clientY - 10, window.innerHeight - 300))
+  popPos.value = { left, top }
+  popShow.value = true
+}
 const tlPersonName = computed(() => personById(v5, tlPid.value)?.name || '')
 /* 三条带：班次条 / 事实条（可能只占一小时，没写时段=占整班）/ 补位条（另一个人的新区间） */
 /* 单人单日的带子：悬浮卡（事实记录）与个人查询共用同一套画法 */
@@ -1744,7 +1739,6 @@ const meDateList = computed(() => {
 const meDays = computed(() => {
   if (!mePid.value) return []
   return meDateList.value.map(date => {
-    /* 整天完整画：班次 / 事实 / 补位，与事实记录悬浮卡同一画法同一口径 */
     const rows = bandsForPersonDay(mePid.value, date)
     const bands = rows.find(r => r.label === '班次')?.bands || []
     /* 无法履约的明细：整条被占用 / 换出去的班写红字；只占一段的写明其余照常 */
@@ -1753,7 +1747,7 @@ const meDays = computed(() => {
       if (b.cls === 'covered' && !b.sub?.includes('换入')) blocked.push(`${b.text}：${b.sub}`)
       else if (b.marks?.length) blocked.push(`${b.text}：其中 ${b.marks.map(m => m.label).join('、')} 被占用，其余照常`)
     })
-    return { date, rows, bands, blocked }
+    return { date, bands, blocked }
   })
 })
 const meStats = computed(() => {
@@ -1767,7 +1761,7 @@ const meStats = computed(() => {
 })
 const meAxis = computed(() => {
   let t0 = 24 * 60, t1 = 0
-  meDays.value.forEach(d => d.rows.forEach(r => r.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) })))
+  meDays.value.forEach(d => d.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) }))
   if (t1 <= t0) return { t0: 480, t1: 1320, ticks: [], labels: [] }
   t0 = Math.max(0, Math.floor((t0 - 60) / 60) * 60)
   t1 = Math.min(24 * 60, Math.ceil((t1 + 60) / 60) * 60)
@@ -2381,9 +2375,6 @@ tr.covered td { color: #9a9fa9; }
 .me-day { font-size: 12.5px; color: #2c2c2a; padding-top: 6px; }
 .me-day em { display: block; font-style: normal; color: #9a9fa9; font-size: 11px; }
 .me-track { height: 32px; }
-.me-line { display: grid; grid-template-columns: 34px 1fr; gap: 6px; align-items: center; margin-bottom: 3px; }
-.me-line .me-track { height: 30px; }
-.me-rowlabel { font-size: 11px; color: #8a8a95; text-align: right; }
 .me-none { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #c0c0c8; }
 .me-blocked { margin: 5px 0 0; padding: 6px 9px; background: #fdf6f8; border-radius: 6px; }
 .me-blocked p { margin: 0; font-size: 12px; color: #a4441d; line-height: 1.55; }
