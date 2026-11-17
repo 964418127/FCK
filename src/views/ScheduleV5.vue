@@ -827,10 +827,10 @@
             <el-select v-model="mePid" size="small" filterable style="width: 190px">
               <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name}`" :value="p.id" />
             </el-select>
-            <span v-if="mePid" class="me-stats">本期 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
-            <span class="fa-hint">以人看班：这个人这一轮身上有哪些时段；被事件占用的段与事实记录悬浮卡同一画法</span>
+            <span v-if="mePid" class="me-stats">共 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
+            <span class="fa-hint">以人看班：这个人在这里已有的全部排班（已过期的不用看）；被事件占用的段与事实记录悬浮卡同一画法</span>
           </div>
-          <div v-if="!mePid" class="me-empty">选一个人，看TA这一轮的全部排班</div>
+          <div v-if="!mePid || !meDays.length" class="me-empty">{{ !mePid ? '选一个人，看TA的全部排班' : '这个人在这里已经没有未过期的班' }}</div>
           <div v-else class="tl-box me-box">
             <div v-for="(d, di) in meDays" :key="d.date" class="me-row">
               <div class="me-day">
@@ -1712,9 +1712,21 @@ const mePid = ref('')
 watch(() => curSpacePeople.value, list => {
   if (!list.some(p => p.id === mePid.value)) mePid.value = list[0]?.id || ''
 }, { immediate: true })
+/* 这个人在当前空间已有的全部班的日子：不圈某一期，已过期的不用看 */
+const meDateList = computed(() => {
+  if (!mePid.value) return []
+  const dates = new Set()
+  v5.placements.forEach(p => {
+    if (slotById(v5, p.slotId)?.spaceId !== selSpace.value) return
+    if (p.personId !== mePid.value && dutyPersonId5(p) !== mePid.value) return
+    if (p.date < v5.today) return
+    dates.add(p.date)
+  })
+  return [...dates].sort()
+})
 const meDays = computed(() => {
   if (!mePid.value) return []
-  return runDates.value.map(date => {
+  return meDateList.value.map(date => {
     const rows = bandsForPersonDay(mePid.value, date)
     const bands = rows.find(r => r.label === '班次')?.bands || []
     /* 无法履约的明细：整条被占用 / 换出去的班写红字；只占一段的写明其余照常 */
