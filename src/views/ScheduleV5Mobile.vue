@@ -108,6 +108,7 @@
           </div>
 
           <p v-if="noteOf(r)" class="rc-note">{{ noteOf(r) }}</p>
+          <p v-else-if="swapPendingInfo(r)" class="rc-note">已发给 {{ swapPendingInfo(r).to }}，{{ swapPendingInfo(r).deadline }} 前没答复自动失效</p>
           <p v-if="r.status === 'active' && !outTo(r) && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
 
           <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
@@ -562,6 +563,12 @@ function pendingNoticeOf(r) {
 }
 function swapPendingOf(r) {
   return (v5.swapRequests || []).some(x => x.status === 'pending' && x.from === meId.value && x.placementId === r.id)
+}
+/* 发起方等答复：卡上写明发给谁、多久失效（等待期 30 分钟） */
+function swapPendingInfo(r) {
+  const x = (v5.swapRequests || []).find(s => s.status === 'pending' && s.from === meId.value && s.placementId === r.id)
+  if (!x) return null
+  return { to: personById(v5, x.to)?.name || '对方', deadline: swapDeadline(x) }
 }
 function canAct(r) {
   if (r.date < v5.today) return false

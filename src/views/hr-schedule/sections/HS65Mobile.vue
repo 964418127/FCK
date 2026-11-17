@@ -74,7 +74,7 @@
         </thead>
         <tbody>
           <tr><td><strong>通知</strong></td><td>排班类通知是通用通知页里的示例，不在排班页自带通知段；通知只负责告诉你，处理动作都在业务页；<strong>全部通知清单见 <router-link to="/docs/hr-schedule/6-6">6.6 通知</router-link></strong></td></tr>
-          <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天；<strong>等待期 30 分钟</strong>，没答复到点自动失效</td></tr>
+          <tr><td><strong>换班请求</strong></td><td>落在「我的排班」顶部：有人想跟你换班 + 拒绝 / 同意换班——换班是关于某一天的，处理也在这一天；<strong>等待期 30 分钟</strong>，没答复到点自动失效；发起方那边班次卡标「换班等对方」，等待中不能再发起</td></tr>
           <tr><td><strong>补位确认</strong></td><td>落在当天班次卡上：待你确认 + 收到，我来；确认后的变化由事实与通知走（见 6.4 / 6.6）</td></tr>
           <tr><td><strong>明确不做</strong></td><td>不做「浏览别的岗位班次自己挑」的入口；关闸之后个人不挑班，只能看到人事的安排</td></tr>
         </tbody>
@@ -129,9 +129,10 @@
         { src: mMakeupConfirm, label: '系统补位 + 待你确认：有人请假系统按顺位找到你；「收到，我来」记回执，去不了走专门的请假模块' }
       ]" />
 
-      <h4 class="h4sub">被发起换班的人——换班请求落在「我的排班」顶部</h4>
+      <h4 class="h4sub">换班的双方——等待期里各自看到什么</h4>
       <DocScreens mode="phone" :images="[
-        { src: mSwapRequest, label: '换班请求：谁、拿哪天的哪个班换你哪天的哪个班；等待期 30 分钟，没答复到点自动失效' }
+        { src: mSwapWaiting, label: '发起方：班次卡标「换班等对方」+ 写明已发给谁、什么时候失效；等待中不能再发起' },
+        { src: mSwapRequest, label: '接收方：顶部换班请求卡 + 等待期截止时刻，拒绝 / 同意换班二选一' }
       ]" />
 
       <h4 class="h4sub">办公区·全职产品经理——按月直派，人只收通知</h4>
@@ -165,6 +166,7 @@ import mCatRequireSelected from '../../../docs/assets/pages/v5-m-cat-require-sel
 import mKejingPtPick from '../../../docs/assets/pages/v5-m-kejing-pt-pick.png'
 import mMakeupConfirm from '../../../docs/assets/pages/v5-m-makeup-confirm.png'
 import mSwapRequest from '../../../docs/assets/pages/v5-m-swap-request.png'
+import mSwapWaiting from '../../../docs/assets/pages/v5-m-swap-waiting.png'
 import mOfficeDirectMine from '../../../docs/assets/pages/v5-m-office-direct-mine.png'
 import mOfficePtPick from '../../../docs/assets/pages/v5-m-office-pt-pick.png'
 
