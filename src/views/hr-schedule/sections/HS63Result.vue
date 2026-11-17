@@ -130,6 +130,42 @@
         <strong>边界：</strong>定人是结果层动作，不走缺口规则——缺口规则只管「排班确定之后因事件缺人」（6.4）；轮里名额没人拿满、临时班次还没定人，都在这里手动定。
       </div>
     </div>
+
+    <div id="hs-63-me" class="section">
+      <div class="section-header">
+        <h3>6.3.5 个人查询：以人看班</h3>
+      </div>
+      <p class="doc-p">
+        6.3.1 的三个视图都是<strong>空间维度</strong>——这家店、这条时段上有哪几个人。人事另一种问法是
+        「<strong>这个人这一轮都排了什么</strong>」「给TA加的班跟已有的撞不撞」：个人查询把方向反过来，
+        以一个人为主语，按天铺出TA身上所有的时段。
+      </p>
+      <div class="func-entry">
+        <strong>功能入口：</strong>排班策略 v5 → 主页签 <strong>个人查询</strong>（事实记录之后）→ 选一个人
+      </div>
+
+      <DocScreens
+        :height="420"
+        :images="[
+          { src: meShot, label: '个人查询：蓝田这一轮按天的班次时间轴；11-24 整条被请假占用（红字明细写明陈晚顶上）、11-26 只占 10:00–11:00 其余照常' }
+        ]"
+      />
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 170px;">区域</th><th style="width: 320px;">展示</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>人选择</strong></td><td>本空间人员下拉（工号 + 姓名），选人后按天出TA这一轮的班</td><td>数据来自排班结果表（唯一记录口）按人过滤，不新造口径</td></tr>
+          <tr><td><strong>按天时间轴</strong><br>（无法履约的明细）</td><td>每行一天：钟点轴上班次带（蓝 = 自己的班 / 顶上班，橙斜纹 = 被事件占用的段，换出的班标换给谁）</td><td>被占用段的画法与 6.4.1 悬浮卡一致；整条占用的班直接标「时间被请假占用」</td></tr>
+          <tr><td><strong>明细行</strong></td><td>有占用的日子，行下红字写清楚：被哪条事实占用、谁来顶（整条 / 只顶某段、其余照常）</td><td>这是「无法履约」的明细表达——班还挂在名字上，但哪段不能去、谁在履约，一目了然</td></tr>
+          <tr><td><strong>统计</strong></td><td>本期 n 条班 · 合计 x 小时 · 无法履约 y 条</td><td>工时按班次带实际区间算（只顶一段按段算）</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>边界：</strong>个人查询只读——看与解释，不在这里改班；补人走 6.3.4 定人，变化走 6.4 事实。
+        员工在自己手机上看到的「我的排班」（6.5.1）与这里是同一份数据的两个视角。
+      </div>
+    </div>
   </DocShell>
 </template>
 
@@ -142,13 +178,15 @@ import gridShot from '../../../docs/assets/pages/v5-grid.png'
 import gapViewShot from '../../../docs/assets/pages/v5-gapview.png'
 import tableShot from '../../../docs/assets/pages/v5-run-table.png'
 import appointShot from '../../../docs/assets/pages/v5-appoint.png'
+import meShot from '../../../docs/assets/pages/v5-me.png'
 
 const tocItems = [
   { id: 'hs-63', label: '6.3 排班结果' },
   { id: 'hs-63-views', label: '6.3.1 三个视图' },
   { id: 'hs-63-rows', label: '6.3.2 唯一记录口' },
   { id: 'hs-63-apply', label: '6.3.3 申领登记' },
-  { id: 'hs-63-appoint', label: '6.3.4 定人' }
+  { id: 'hs-63-appoint', label: '6.3.4 定人' },
+  { id: 'hs-63-me', label: '6.3.5 个人查询' }
 ]
 
 const breadcrumbs = [

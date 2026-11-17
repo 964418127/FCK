@@ -53,6 +53,7 @@
           <button :class="{ on: tab === 'def' }" @click="tab = 'def'">时段与清单</button>
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
+          <button :class="{ on: tab === 'me' }" @click="tab = 'me'">个人查询</button>
           <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.tag === '办公区' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
@@ -818,6 +819,43 @@
             </tbody>
           </table>
           <TablePagination v-model:page="factPage" v-model:page-size="factPageSize" :total="factTotal" />
+        </section>
+
+        <!-- 个人查询：以人看班。空间维度（这条时段上有谁）之外的个人维度——这个人这一轮身上有哪些时段；无法履约的明细写清楚，画法与事实记录悬浮卡一致 -->
+        <section v-else-if="tab === 'me'" class="pane">
+          <div class="me-head">
+            <el-select v-model="mePid" size="small" filterable style="width: 190px">
+              <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name}`" :value="p.id" />
+            </el-select>
+            <span v-if="mePid" class="me-stats">本期 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
+            <span class="fa-hint">以人看班：这个人这一轮身上有哪些时段；被事件占用的段与事实记录悬浮卡同一画法</span>
+          </div>
+          <div v-if="!mePid" class="me-empty">选一个人，看TA这一轮的全部排班</div>
+          <div v-else class="tl-box me-box">
+            <div v-for="(d, di) in meDays" :key="d.date" class="me-row">
+              <div class="me-day">
+                <strong>{{ d.date.slice(5) }}</strong>
+                <em>周{{ DAY_NAMES[new Date(d.date + 'T00:00:00').getDay()] }}</em>
+              </div>
+              <div class="me-main">
+                <div class="tl-track me-track">
+                  <i v-for="h in meAxis.ticks" :key="d.date + 't' + h" class="tl-tick" :style="{ left: mePct(h) }" />
+                  <template v-if="di === 0">
+                    <b v-for="h in meAxis.labels" :key="'l' + h" class="tl-ticklabel" :style="{ left: mePct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
+                  </template>
+                  <div v-for="b in d.bands" :key="d.date + b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: mePct(b.s), width: meW(b) }">
+                    <i v-for="(m, mi) in b.marks || []" :key="'m' + mi" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
+                    <strong>{{ b.text }}</strong>
+                    <span v-if="b.sub">{{ b.sub }}</span>
+                  </div>
+                  <span v-if="!d.bands.length" class="me-none">没班</span>
+                </div>
+                <div v-if="d.blocked.length" class="me-blocked">
+                  <p v-for="(line, i) in d.blocked" :key="i">{{ line }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
@@ -1586,8 +1624,8 @@ function keepCell() { clearTimeout(popHideTimer) }
 function hideCellNow() { clearTimeout(popHideTimer); popShow.value = false }
 const tlPersonName = computed(() => personById(v5, tlPid.value)?.name || '')
 /* 三条带：班次条 / 事实条（可能只占一小时，没写时段=占整班）/ 补位条（另一个人的新区间） */
-function tlBandsFor(day) {
-  const pid = tlPid.value
+/* 单人单日的带子：悬浮卡（事实记录）与个人查询共用同一套画法 */
+function bandsForPersonDay(pid, day) {
   if (!pid || !day) return []
   const rows = []
   const shifts = v5.placements.filter(p => (p.personId === pid || dutyPersonId5(p) === pid) && p.date === day).map(p => {
@@ -1639,7 +1677,7 @@ function tlBandsFor(day) {
   if (makes.length) rows.push({ label: '补位', bands: makes })
   return rows
 }
-const tlBands = computed(() => tlBandsFor(tlDay.value))
+const tlBands = computed(() => bandsForPersonDay(tlPid.value, tlDay.value))
 /* 时间轴：包住当天所有区间，前后各留 1 小时 */
 const tlAxis = computed(() => {
   let t0 = 24 * 60
@@ -1668,6 +1706,48 @@ const tlRelated = computed(() => {
   })
   return [...ids].filter(id => id !== pid).map(id => personById(v5, id)).filter(Boolean)
 })
+
+/* ===== 个人查询：以人看班——这个人这一轮身上有哪些时段；无法履约的明细写清楚 ===== */
+const mePid = ref('')
+watch(() => curSpacePeople.value, list => {
+  if (!list.some(p => p.id === mePid.value)) mePid.value = list[0]?.id || ''
+}, { immediate: true })
+const meDays = computed(() => {
+  if (!mePid.value) return []
+  return runDates.value.map(date => {
+    const rows = bandsForPersonDay(mePid.value, date)
+    const bands = rows.find(r => r.label === '班次')?.bands || []
+    /* 无法履约的明细：整条被占用 / 换出去的班写红字；只占一段的写明其余照常 */
+    const blocked = []
+    bands.forEach(b => {
+      if (b.cls === 'covered' && !b.sub?.includes('换入')) blocked.push(`${b.text}：${b.sub}`)
+      else if (b.marks?.length) blocked.push(`${b.text}：其中 ${b.marks.map(m => m.label).join('、')} 被占用，其余照常`)
+    })
+    return { date, bands, blocked }
+  })
+})
+const meStats = computed(() => {
+  let count = 0, mins = 0, blocked = 0
+  meDays.value.forEach(d => d.bands.forEach(b => {
+    count++
+    mins += b.e - b.s
+    if (b.cls === 'covered' && !b.sub?.includes('换入')) blocked++
+  }))
+  return { count, hours: Math.round(mins / 60 * 10) / 10, blocked }
+})
+const meAxis = computed(() => {
+  let t0 = 24 * 60, t1 = 0
+  meDays.value.forEach(d => d.bands.forEach(b => { t0 = Math.min(t0, b.s); t1 = Math.max(t1, b.e) }))
+  if (t1 <= t0) return { t0: 480, t1: 1320, ticks: [], labels: [] }
+  t0 = Math.max(0, Math.floor((t0 - 60) / 60) * 60)
+  t1 = Math.min(24 * 60, Math.ceil((t1 + 60) / 60) * 60)
+  const ticks = []
+  for (let m = t0; m <= t1; m += 60) ticks.push(m)
+  return { t0, t1, ticks, labels: ticks.filter(m => m % 120 === 0 && m < t1 - 30) }
+})
+const mePct = m => { const a = meAxis.value; return (((m - a.t0) / (a.t1 - a.t0)) * 100).toFixed(2) + '%' }
+const meW = b => { const a = meAxis.value; return (((b.e - b.s) / (a.t1 - a.t0)) * 100).toFixed(2) + '%' }
+
 const openFact = ref('')
 const hlFact = ref('')
 function jumpFact(id) {
@@ -2260,6 +2340,20 @@ tr.covered td { color: #9a9fa9; }
 .tl-rel { margin-top: 6px; font-size: 12px; color: #8a8a95; }
 .tl-rel button { border: 1px solid #eee6e8; background: #fcfbfc; border-radius: 12px; padding: 1px 10px; font-size: 11.5px; color: #a40035; cursor: pointer; margin-left: 4px; }
 .tl-rel button:hover { border-color: #a40035; }
+
+/* 个人查询：以人看班 */
+.me-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.me-stats { font-size: 12.5px; color: #6a6a75; }
+.me-bad { color: #a4441d; font-style: normal; }
+.me-empty { font-size: 12.5px; color: #9a9fa9; padding: 20px 0; }
+.me-box { padding: 14px; display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow: auto; }
+.me-row { display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: start; }
+.me-day { font-size: 12.5px; color: #2c2c2a; padding-top: 6px; }
+.me-day em { display: block; font-style: normal; color: #9a9fa9; font-size: 11px; }
+.me-track { height: 32px; }
+.me-none { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #c0c0c8; }
+.me-blocked { margin: 5px 0 0; padding: 6px 9px; background: #fdf6f8; border-radius: 6px; }
+.me-blocked p { margin: 0; font-size: 12px; color: #a4441d; line-height: 1.55; }
 /* 悬浮卡：贴着格子出的当天单轴，不往下撑页面 */
 .tl-pop { position: fixed; z-index: 90; width: 480px; background: #fff; border: 1px solid #eee0e4; border-radius: 10px; box-shadow: 0 8px 28px rgba(60, 20, 30, 0.16); padding: 10px 12px 8px; }
 .tl-pop-head { font-size: 12.5px; color: #2c2c2a; font-weight: 600; margin-bottom: 6px; }

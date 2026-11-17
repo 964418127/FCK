@@ -36,7 +36,7 @@
         <tbody>
           <tr><td><strong>6.1 时段与清单</strong></td><td>排班策略 v5 → 时段与清单（<code>/schedule-v5</code>）</td><td>班次时间与名额 + 清单逐档配「谁 / 方式 / 窗口 / 上限」</td></tr>
           <tr><td><strong>6.2 轮与获取</strong></td><td>排班策略 v5 → 轮与结果；页头排班节奏</td><td>轮的三个时刻、三种获取方式、余额三条去向</td></tr>
-          <tr><td><strong>6.3 排班结果</strong></td><td>排班策略 v5 → 轮与结果</td><td>唯一记录口 + 占用矩阵 + 申领登记</td></tr>
+          <tr><td><strong>6.3 排班结果</strong></td><td>排班策略 v5 → 轮与结果 / 个人查询</td><td>唯一记录口 + 占用矩阵 + 申领登记；个人查询按天看一个人这一轮的班与无法履约明细</td></tr>
           <tr><td><strong>6.4 变化与求值</strong></td><td>排班策略 v5 → 事实记录</td><td>四类事实、全员一周矩阵、事实表（搜索 + 分页）</td></tr>
           <tr><td><strong>6.5 移动端</strong></td><td>移动端菜单 → 人事组「我的排班」（<code>/v5/m</code>）</td><td>我的排班 + 可获取两页签，右上角切演示视角</td></tr>
         </tbody>
