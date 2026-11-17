@@ -669,7 +669,7 @@
                 <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 150px;">规则</th><th>结论</th></tr>
               </thead>
               <tbody>
-                <tr v-for="g in gapRows" :key="g.slotId + g.date" :class="{ pointable: !runReadonly }" @click="!runReadonly && trialPick(g)">
+                <tr v-for="g in gapRows" :key="g.slotId + g.date">
                   <td><span class="src-tag">{{ g.srcLabel }}</span></td>
                   <td>
                     {{ g.slot.name }}<em v-if="g.slot.tmp" class="tmp-tag">临时</em>
@@ -1013,40 +1013,6 @@
       </template>
     </el-dialog>
 
-    <!-- 试算：同一条缺口，三条规则各判一次——不占页面，点缺口才出来 -->
-    <el-dialog v-model="trialDlg" title="这条缺口，缺口规则逐条各判一次" width="780px">
-      <p class="gt-note">这里是<b>试算，不执行</b>：回答「这条缺口按四条规则各会判成什么」。调缺口规则前、或想确认「照现在这个时刻还来不来得及补」时，在这里先看结论——不补人、不改名额；要真正定人，去矩阵或时间轴点缺口。</p>
-      <div class="gt-left">
-        <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
-          <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />
-        </el-select>
-        <div class="gt-field">
-          <label>假定此刻</label>
-          <div class="mini-pills">
-            <button :class="{ on: trialWhen === 'real' }" @click="trialWhen = 'real'">按实际剩余</button>
-            <button :class="{ on: trialWhen === 'soon' }" @click="trialWhen = 'soon'">不足 1 小时</button>
-            <button :class="{ on: trialWhen === 'now' }" @click="trialWhen = 'now'">已开始</button>
-          </div>
-          <span class="gt-hint">同一个缺口在不同时刻判，结论可能不同：按现在实际剩多久 / 当成快开班 / 当成已开班</span>
-        </div>
-        <div class="gt-field">
-          <label>预测这段要几人</label>
-          <el-input-number v-model="trialForecast" size="small" :min="0" :max="20" controls-position="right" style="width: 110px;" />
-          <span class="gt-hint">只有 G3 用</span>
-        </div>
-      </div>
-      <div class="gt-right">
-        <div v-for="t in trialOut" :key="t.rule.id" class="gt-card" :class="{ on: trialSlotRule?.id === t.rule.id }">
-          <div class="gtc-h">
-            <span class="gr-id">{{ t.rule.id }}</span>{{ t.rule.name }}
-            <em v-if="trialSlotRule?.id === t.rule.id" class="gr-on">这条时段在用</em>
-          </div>
-          <div class="vd" :class="t.out.action">{{ t.out.text }}</div>
-          <div class="vd-why">{{ t.out.why }}</div>
-        </div>
-      </div>
-    </el-dialog>
-
     <!-- 登记离职已移除：离职入口在离职流程模块，它写事实，排班只承接结果 -->
   </div>
 </template>
@@ -1064,7 +1030,7 @@ import {
   roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage,
-  gapRules, gapRuleOf, gapList5, trialGap
+  gapRules, gapList5
 } from '../mock/scheduleV5Store.js'
 import {
   slotById, personById, activeCount5, windowLabel5, normWin5, matchWho5, whoLabel5, personBusy5, slotsOn5, JOBS5, applyDeadlineOf,
@@ -1108,36 +1074,6 @@ function gapRuleUses(id) {
   const n = [...v5.slots, ...v5.temps].filter(s => s.gapRule === 'G3').length
   return n ? `挂在 ${n} 个时段的缺口规则上` : '还没被引用'
 }
-const trialDlg = ref(false)
-const trialKey = ref('')
-const trialWhen = ref('real')
-const trialForecast = ref(0)
-watch(gapRows, list => {
-  if (!list.some(g => `${g.slotId}|${g.date}` === trialKey.value)) {
-    trialKey.value = list[0] ? `${list[0].slotId}|${list[0].date}` : ''
-  }
-}, { immediate: true })
-/* 预测值默认就是这条时段的名额：人事不改，就等于「按名额补齐」 */
-watch(trialKey, k => {
-  const g = gapRows.value.find(x => `${x.slotId}|${x.date}` === k)
-  trialForecast.value = g ? g.n : 0
-}, { immediate: true })
-const trialSlotRule = computed(() => {
-  const [slotId] = (trialKey.value || '').split('|')
-  return slotId ? gapRuleOf(slotId) : null
-})
-const trialOut = computed(() => {
-  const [slotId, date] = (trialKey.value || '').split('|')
-  if (!slotId) return []
-  const opts = { forecast: trialForecast.value }
-  if (trialWhen.value === 'soon') opts.remainMin = 30
-  if (trialWhen.value === 'now') opts.remainMin = 0
-  return trialGap(selSpace.value, slotId, date, opts)
-})
-function trialPick(g) {
-  trialKey.value = `${g.slotId}|${g.date}`
-  trialDlg.value = true
-}
 
 /* ===== 空间时间轴：这一天所有时段画在钟点上，行内是占位的人 ===== */
 const runView = ref('axis')
@@ -1145,7 +1081,7 @@ const runViewHint = computed(() => runView.value === 'grid'
   ? '格子里是当前占位的人；点空格直接定人'
   : runView.value === 'axis'
     ? '这一天每个时段上是谁、几点到几点；空格缺口点开就是定人'
-    : '这一轮缺哪几段、还剩多久、按这条时段自己选的规则判成什么；点一行预演四条规则各判一次')
+    : '这一轮缺哪几段、还剩多久、按这条时段自己选的规则判成什么')
 const axisDay = ref('')
 watch(() => [selSpace.value, shownRound.value?.id], () => {
   axisDay.value = runDates.value.includes(v5.today) ? v5.today : (runDates.value[0] || '')
@@ -2491,25 +2427,11 @@ tr.hl td { background: #fdf3e6 !important; }
 .gr-note { font-size: 12px; color: #8a8a95; line-height: 1.55; margin-top: 7px; }
 .src-tag { font-size: 11.5px; color: #6a6a75; background: #f6f4f5; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
 .vd { font-size: 12.5px; font-weight: 500; }
-.gt-note { font-size: 12px; color: #8a8a95; margin: 0 0 12px; line-height: 1.6; }
-.gt-note b { color: #a40035; }
 .vd.supplement { color: #a40035; }
 .vd.missed { color: #8a8a95; }
 .vd.none { color: #2f7d5c; }
 .vd.skip { color: #a8a8b2; font-weight: 400; }
 .vd-why { font-style: normal; font-size: 11.5px; color: #a8a8b2; margin-left: 8px; }
 .gp-trial { display: grid; grid-template-columns: 300px 1fr; gap: 18px; background: #fff; border: 1px solid #f0eaec; border-radius: 12px; padding: 14px; }
-.gt-field { margin-top: 14px; }
-.gt-field label { display: block; font-size: 12px; color: #6a6a75; margin-bottom: 6px; }
-.gt-field .el-input-number { margin-right: 6px; }
-.gt-hint { font-size: 11.5px; color: #a8a8b2; }
-.mini-pills { display: flex; gap: 4px; }
-.mini-pills button { border: 1px solid #eee6e8; background: #fff; font-size: 12px; color: #6a6a75; padding: 3px 9px; border-radius: 6px; cursor: pointer; font-family: inherit; }
-.mini-pills button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
-.gt-right { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; }
-.gt-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; }
-.gt-card.on { border-color: #a40035; background: #fdf6f8; }
-.gtc-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #6a6a75; margin-bottom: 8px; }
-.gt-card .vd-why { display: block; margin: 6px 0 0; line-height: 1.5; }
 
 </style>

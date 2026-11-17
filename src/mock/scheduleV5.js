@@ -827,7 +827,7 @@ export function fmtRemain5(min) {
 }
 /*
   一条缺口按某条规则算一遍：只出结论，不落动作。
-  remainMin / forecast 传进来是为了试算时假定「缺口发生在另一个时刻」「预测值是另一个数」。
+  remainMin / forecast 允许调用方假定「缺口发生在另一个时刻」「预测值是另一个数」，缺省按实际。
 */
 export function evalGap5(state, slotId, date, rule, opts = {}) {
   const n = snapN5(state, slotId, date)

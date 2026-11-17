@@ -78,8 +78,7 @@
       <DocScreens
         :height="360"
         :images="[
-          { src: gapShot, label: '缺口规则页：四条规则（G0 不补充 + G1–G3），缺口按这一轮日期段取，判据用每条班次自己选的规则' },
-          { src: gapTrialShot, label: '试算：同一条缺口，四条规则各判一次——「假定此刻」换时刻看结论变化，红色标出这条时段在用的规则' }
+          { src: gapShot, label: '缺口规则页：四条规则（G0 不补充 + G1–G3），缺口按这一轮日期段取，判据用每条班次自己选的规则' }
         ]"
       />
       <table class="data-table">
@@ -90,20 +89,13 @@
           <tr><td><strong>G0 不补充</strong></td><td>缺了也不动，留给门店现场；发知情通知给人事经理（见 6.6）</td></tr>
           <tr><td><strong>G1 补齐名额</strong></td><td>缺几个补几个，不看还剩多久</td></tr>
           <tr><td><strong>G2 补齐名额 · 剩余不足 1 小时不补</strong></td><td>还剩不到 1 小时叫不来人，记成没补上</td></tr>
-          <tr><td><strong>G3 按当下经营预测</strong></td><td>引用算法服务「实时经营需求」重算这段现在要几个人，够就不补；预测人数在试算里传</td></tr>
+          <tr><td><strong>G3 按当下经营预测</strong></td><td>引用算法服务「实时经营需求」重算这段现在要几个人，够就不补</td></tr>
         </tbody>
       </table>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 170px;">试算</th><th>口径</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>入口</strong></td><td>「轮与结果」缺口视图点一行，弹「这条缺口，缺口规则逐条各判一次」</td></tr>
-          <tr><td><strong>假定此刻</strong></td><td>按实际剩余 / 不足 1 小时 / 已开始——同一个缺口在不同时刻判，结论可能不同</td></tr>
-          <tr><td><strong>预测人数</strong></td><td>只有 G3 用：假定这段现在要几人</td></tr>
-          <tr><td><strong>结论</strong></td><td>每条规则卡各给一个判定（按规则该补几人 / 不补 + 原因），红色标出这条时段实际在用的规则；<strong>试算只预判，不补人也不改名额</strong>——定人在矩阵或时间轴点缺口，补位也可能由求值自动完成</td></tr>
-        </tbody>
-      </table>
+      <div class="note">
+        <strong>判定与执行的分工：</strong>事件写进来时求值器已经按这条时段选的规则判过一次并执行（找到人自动补位，找不到发「待人事处理」）；
+        结果层缺口视图的结论列就是这次判定的结果——<strong>「该补几人」是结论不是操作</strong>，定人在矩阵或时间轴点缺口，补位也可能由求值自动完成。
+      </div>
       <div class="note">
         <strong>边界：</strong>缺口规则只管<strong>排班确定之后因事件缺人</strong>（请假、离职这类）；
         加场名额没人抢不算缺口，获取段没排满也不算——结果层手动补人即可。
@@ -157,7 +149,6 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import factsShot from '../../../docs/assets/pages/v5-facts.png'
 import gapShot from '../../../docs/assets/pages/v5-gap.png'
-import gapTrialShot from '../../../docs/assets/pages/v5-gap-trial.png'
 
 const tocItems = [
   { id: 'hs-64', label: '6.4 变化与求值' },

@@ -357,9 +357,6 @@ export function gaps5(spaceId, dates = null) {
 }
 /* ===== 缺口规则（挂在时段上；不进快照，改了立即生效） ===== */
 export const gapRules = GAP_RULES5
-export function gapRuleOf(slotId) {
-  return gapRuleOfSlot5(state, slotId)
-}
 export function setSlotGapRule(slotId, id) {
   if (!GAP_RULES5.some(r => r.id === id)) return { ok: false, reason: '没有这条规则' }
   const s = slotById(state, slotId)
@@ -377,10 +374,6 @@ export function gapList5(spaceId, dates = null) {
     return { ...g, src, srcLabel: GAP_SRC5[src], quota: g.n - g.occ, remain, rule: gapRuleOfSlot5(state, g.slotId), verdict: evalGap5(state, g.slotId, g.date, gapRuleOfSlot5(state, g.slotId)) }
   }).filter(g => g.src !== 'short')
     .sort((a, b) => (a.date + a.slot.start).localeCompare(b.date + b.slot.start))
-}
-/* 试算：同一条缺口，三条规则各判一次（假定发生时刻与预测值可调） */
-export function trialGap(spaceId, slotId, date, opts = {}) {
-  return GAP_RULES5.map(r => ({ rule: r, out: evalGap5(state, slotId, date, r, opts) }))
 }
 export function resultRows5(spaceId, dates = null) {
   const days = dates && dates.length ? new Set(dates) : null
