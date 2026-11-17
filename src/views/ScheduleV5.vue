@@ -738,13 +738,13 @@
             <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
           </div>
 
-          <!-- 全员一周：行是人、列是这一轮的日子，格子放班次/占用/顶班的时段 chip；点格子展开当天单轴 -->
+          <!-- 全员一周：行是人、列是这一轮的日子，格子放班次/占用/顶班的时段 chip；悬浮格子，在格子旁边出当天的单轴小卡 -->
           <div class="tl-box">
             <div class="tl-head">
               <strong>全员一周</strong>
-              <span>行是人、列是这一轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；点格子展开这个人当天的单轴细节。</span>
+              <span>行是人、列是这一轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；悬浮格子，在旁边看这个人当天的单轴细节。</span>
             </div>
-            <div class="tl-scroll">
+            <div class="tl-scroll" @scroll="hideCellNow">
               <div class="tl-grid" :style="{ gridTemplateColumns: `88px repeat(${tlDates.length}, minmax(64px, 1fr))` }">
                 <div class="tl-corner">人 \ 日期</div>
                 <div v-for="d in tlDates" :key="d.date" class="tl-colhead" :class="{ today: d.date === v5.today }">
@@ -753,38 +753,44 @@
                 <template v-for="row in tlGrid" :key="row.person.id">
                   <div class="tl-rowhead">{{ row.person.name }}<em>{{ row.person.id }}</em></div>
                   <div v-for="c in row.cells" :key="row.person.id + c.date" class="tl-cell"
-                    :class="{ has: c.chips.length, on: cellOpen && tlPid === row.person.id && tlDay === c.date }"
-                    @click="c.chips.length && toggleCell(row.person.id, c.date)">
+                    :class="{ has: c.chips.length, on: popShow && tlPid === row.person.id && tlDay === c.date }"
+                    @mouseenter="c.chips.length && hoverCell(row.person.id, c.date, $event)"
+                    @mouseleave="hideCellSoon"
+                    @click="c.chips.length && hoverCell(row.person.id, c.date, $event)">
                     <span v-for="(ch, i) in c.chips" :key="i" :class="['tl-chip', ch.cls]" :title="ch.tip">{{ ch.text }}</span>
                     <span v-if="!c.chips.length" class="tl-none">·</span>
                   </div>
                 </template>
               </div>
             </div>
-            <template v-if="cellOpen && tlDay">
-              <div class="tl-row tl-axis-row">
-                <div class="tl-rowlabel">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
-                <div class="tl-track">
-                  <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
-                </div>
-              </div>
-              <div v-for="row in tlBands" :key="row.label" class="tl-row">
-                <div class="tl-rowlabel">{{ row.label }}</div>
-                <div class="tl-track">
-                  <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
-                  <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
-                    <i v-for="(m, i) in b.marks || []" :key="'m' + i" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
-                    <strong>{{ b.text }}</strong>
-                    <span v-if="b.sub">{{ b.sub }}</span>
-                  </div>
-                </div>
-              </div>
-              <div v-if="tlRelated.length" class="tl-rel">
-                相关的人：
-                <button v-for="r in tlRelated" :key="r.id" @click="toggleCell(r.id, tlDay)">{{ r.name }}</button>
-              </div>
-            </template>
             <div v-if="!gridHasAny" class="tl-empty">这一轮还没有班，也没有事实</div>
+          </div>
+
+          <!-- 悬浮卡：贴着格子出当天的单轴细节，不往下撑页面 -->
+          <div v-if="popShow && tlDay" class="tl-pop" :style="{ left: popPos.left + 'px', top: popPos.top + 'px' }"
+            @mouseenter="keepCell" @mouseleave="hideCellSoon">
+            <div class="tl-pop-head">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
+            <div class="tl-row tl-axis-row">
+              <div class="tl-rowlabel">时段</div>
+              <div class="tl-track">
+                <b v-for="h in tlAxis.labels" :key="h" class="tl-ticklabel" :style="{ left: tlPct(h) }">{{ String(Math.floor(h / 60)).padStart(2, '0') }}:00</b>
+              </div>
+            </div>
+            <div v-for="row in tlBands" :key="row.label" class="tl-row">
+              <div class="tl-rowlabel">{{ row.label }}</div>
+              <div class="tl-track">
+                <i v-for="h in tlAxis.ticks" :key="h" class="tl-tick" :style="{ left: tlPct(h) }" />
+                <div v-for="b in row.bands" :key="b.text + b.s" class="tl-band" :class="b.cls" :style="{ left: tlPct(b.s), width: tlW(b) }">
+                  <i v-for="(m, i) in b.marks || []" :key="'m' + i" class="tl-occ" :style="{ left: ((m.s - b.s) / (b.e - b.s) * 100) + '%', width: ((m.e - m.s) / (b.e - b.s) * 100) + '%' }" />
+                  <strong>{{ b.text }}</strong>
+                  <span v-if="b.sub">{{ b.sub }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="tlRelated.length" class="tl-rel">
+              相关的人：
+              <button v-for="r in tlRelated" :key="r.id" @click="setCell(r.id, tlDay)">{{ r.name }}</button>
+            </div>
           </div>
 
           <!-- 待人事处理：求值没人顶时发给人事的待办，顶上后自动销掉 -->
@@ -1594,11 +1600,7 @@ const tlDates = computed(() => {
   }
   return out
 })
-const tlPeople = computed(() => {
-  const ids = new Set(curSpacePeople.value.map(p => p.id))
-  const extra = tlRelated.value.filter(p => !ids.has(p.id))
-  return [...curSpacePeople.value, ...extra]
-})
+const tlPeople = computed(() => curSpacePeople.value)
 /* 选哪一天：这个人有班或有事实的日子 */
 const tlDayRaw = ref('')
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
@@ -1632,13 +1634,35 @@ const tlGrid = computed(() => tlPeople.value.map(person => ({
   cells: tlDates.value.map(d => ({ date: d.date, chips: cellChips(person.id, d.date) }))
 })))
 const gridHasAny = computed(() => tlGrid.value.some(r => r.cells.some(c => c.chips.length)))
-const cellOpen = ref(false)
-function toggleCell(pid, day) {
-  if (cellOpen.value && tlPid.value === pid && tlDay.value === day) { cellOpen.value = false; return }
+const popShow = ref(false)
+const popPos = ref({ left: 0, top: 0 })
+let popHideTimer = null
+/* 选哪个人哪一天：悬浮格子时定，出小卡；卡上相关的人可切 */
+function setCell(pid, day) {
   tlPidRaw.value = pid
   tlDayRaw.value = day
-  cellOpen.value = true
+  popShow.value = true
 }
+function hoverCell(pid, day, evt) {
+  clearTimeout(popHideTimer)
+  tlPidRaw.value = pid
+  tlDayRaw.value = day
+  /* 定位：优先贴格子右侧，放不下贴左侧，再不行贴视口边；纵向跟格子上沿，超出视口底部就上提 */
+  const W = 480, M = 10
+  const r = evt.currentTarget.getBoundingClientRect()
+  let left = r.right + 8
+  if (left + W > window.innerWidth - M) left = r.left - W - 8
+  if (left < M) left = Math.max(M, Math.min(window.innerWidth - W - M, r.left))
+  const top = Math.max(M, Math.min(r.top - 6, window.innerHeight - 260))
+  popPos.value = { left, top }
+  popShow.value = true
+}
+function hideCellSoon() {
+  clearTimeout(popHideTimer)
+  popHideTimer = setTimeout(() => { popShow.value = false }, 150)
+}
+function keepCell() { clearTimeout(popHideTimer) }
+function hideCellNow() { clearTimeout(popHideTimer); popShow.value = false }
 const tlPersonName = computed(() => personById(v5, tlPid.value)?.name || '')
 /* 三条带：班次条 / 事实条（可能只占一小时，没写时段=占整班）/ 补位条（另一个人的新区间） */
 function tlBandsFor(day) {
@@ -2327,6 +2351,14 @@ tr.covered td { color: #9a9fa9; }
 .tl-rel { margin-top: 6px; font-size: 12px; color: #8a8a95; }
 .tl-rel button { border: 1px solid #eee6e8; background: #fcfbfc; border-radius: 12px; padding: 1px 10px; font-size: 11.5px; color: #a40035; cursor: pointer; margin-left: 4px; }
 .tl-rel button:hover { border-color: #a40035; }
+/* 悬浮卡：贴着格子出的当天单轴，不往下撑页面 */
+.tl-pop { position: fixed; z-index: 90; width: 480px; background: #fff; border: 1px solid #eee0e4; border-radius: 10px; box-shadow: 0 8px 28px rgba(60, 20, 30, 0.16); padding: 10px 12px 8px; }
+.tl-pop-head { font-size: 12.5px; color: #2c2c2a; font-weight: 600; margin-bottom: 6px; }
+.tl-pop .tl-row { margin-bottom: 4px; }
+.tl-pop .tl-track { height: 30px; }
+.tl-pop .tl-band strong { font-size: 10.5px; }
+.tl-pop .tl-band span { font-size: 10px; }
+.tl-pop .tl-rel { margin-top: 4px; }
 .ftype { font-size: 11.5px; background: #fdf1f4; color: #a40035; border-radius: 4px; padding: 2px 6px; }
 .trace-row td { background: #fbfaf9; }
 .trace { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11.5px; color: #6a6a75; }
