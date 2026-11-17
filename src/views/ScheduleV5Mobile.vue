@@ -21,26 +21,8 @@
         <button :class="{ active: tab === 'pick' }" @click="tab = 'pick'">可获取<span v-if="okCount" class="dot-badge">{{ okCount }}</span></button>
       </div>
 
-      <!-- 时间锚点：现在几点、这一轮铺到哪 -->
-      <div class="now-line">演示时刻 {{ v5.now }} · 本轮覆盖 {{ shortM(myRound.span[0]) }}–{{ shortM(myRound.span[1]) }} · 申领 {{ shortAt(myRound.applyDeadline) }} 截止</div>
-
       <!-- ============ 我的排班 ============ -->
       <section v-if="tab === 'mine'">
-        <div class="overview-card">
-          <div class="ov-item">
-            <span class="ov-label">本轮班次</span>
-            <b class="ov-value">{{ weekStats.count }}<i>个</i></b>
-          </div>
-          <div class="ov-item">
-            <span class="ov-label">合计工时</span>
-            <b class="ov-value">{{ weekStats.hours }}<i>小时</i></b>
-          </div>
-          <div class="ov-item">
-            <span class="ov-label">待你确认</span>
-            <b :class="['ov-value', { warn: weekStats.pending > 0 }]">{{ weekStats.pending }}<i>条</i></b>
-          </div>
-        </div>
-
         <!-- 有人要跟你换班：这条请求落在某一天，处理也在这一天，不另开一页 -->
         <div v-if="pendingSwaps.length" class="swap-req">
           <div class="section-title-row">
@@ -76,6 +58,12 @@
           @move="moveMine"
         />
 
+        <!-- 公共区入口：全职走排假模块；非全事件报备（报备即生效）——放月历下方，班次明细之前 -->
+        <div class="entry-row">
+          <button v-if="me.kind === 'fulltime'" class="entry-btn" @click="goLeave">休假申请</button>
+          <button v-else class="entry-btn" @click="openReport">事件报备</button>
+        </div>
+
         <div class="section-title-row">
           <span class="red-bar"></span>
           <span class="section-title">{{ mineSel ? dayLabel(mineSel) : '排班明细' }}</span>
@@ -107,6 +95,7 @@
             </div>
           </div>
 
+          <p v-if="partialLeaveOf(r)" class="rc-note">已报备：{{ partialLeaveOf(r).result }}</p>
           <p v-if="noteOf(r)" class="rc-note">{{ noteOf(r) }}</p>
           <p v-else-if="swapPendingInfo(r)" class="rc-note">已发给 {{ swapPendingInfo(r).to }}，{{ swapPendingInfo(r).deadline }} 前没答复自动失效</p>
           <p v-if="r.status === 'active' && !outTo(r) && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
@@ -291,6 +280,53 @@
         </div>
       </div>
     </div>
+
+    <!-- 事件报备（非全）：报备即生效——写一条请假事实，求值当场补位 / 缺口 / 通知人事 -->
+    <div v-if="sheet?.type === 'report'" class="sheet-mask" @click.self="sheet = null">
+      <div class="sheet">
+        <div class="sheet-title">事件报备</div>
+        <div class="sheet-body">
+          <div v-if="!reportCands.length" class="empty-box small">
+            <p class="empty-main">没有能报备的班</p>
+            <p class="empty-sub">换出去的、时间被占用过的班都列不出来</p>
+          </div>
+          <template v-else>
+            <div class="rep-label">哪条班</div>
+            <select v-model="repPid" class="rep-select">
+              <option v-for="r in reportCands" :key="r.id" :value="r.id">
+                {{ dayShort(r.date) }} {{ slotOf(r.slotId).name }} {{ slotOf(r.slotId).start }}–{{ slotOf(r.slotId).end }} · {{ spaceName(slotOf(r.slotId).spaceId) }}
+              </option>
+            </select>
+            <div class="rep-label">报备范围</div>
+            <div class="rep-scope">
+              <button :class="{ on: repScope === 'all' }" @click="repScope = 'all'">整段来不了</button>
+              <button :class="{ on: repScope === 'part' }" @click="repScope = 'part'">部分时间</button>
+            </div>
+            <div v-if="repScope === 'part' && repSlot" class="rep-part">
+              <input v-model="repStart" type="time" class="rep-time" :min="repSlot.start" :max="repSlot.end" />
+              <span class="rep-dash">到</span>
+              <input v-model="repEnd" type="time" class="rep-time" :min="repSlot.start" :max="repSlot.end" />
+              <span class="rep-range">要在 {{ repSlot.start }}–{{ repSlot.end }} 里面</span>
+            </div>
+            <div class="rep-label">分类（可不选）</div>
+            <select v-model="repCat" class="rep-select">
+              <option value="">不填</option>
+              <option>事假</option>
+              <option>病假</option>
+              <option>私事</option>
+              <option>其它</option>
+            </select>
+            <div class="rep-label">备注（可不填）</div>
+            <textarea v-model="repNote" class="rep-note" rows="2" placeholder="想说明什么就写点什么" />
+            <p class="sheet-note">报了当场生效：能顶的当场顶上，顶不了记缺口并通知人事。</p>
+          </template>
+        </div>
+        <div class="sheet-acts">
+          <button class="act-btn ghost" @click="sheet = null">再想想</button>
+          <button v-if="reportCands.length" class="act-btn primary" @click="doReport">提交报备</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -303,7 +339,7 @@ import MonthCalendar from '../components/v3/MonthCalendar.vue'
 import PersonaSwitch5 from '../components/v5/PersonaSwitch5.vue'
 import {
   v5, me as meRef, setMe, grabV5, applyV5, proposeSwap, answerSwap, ackNotice, myClaimBoard,
-  myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf, previewClaimSet, submitClaimSet
+  myPlacements, myOfferBoard, myNotices, swapPendingFor, applyRankOf, previewClaimSet, submitClaimSet, reportEvent5
 } from '../mock/scheduleV5Store.js'
 import { slotById, personById, spaceById, activeCount5, hours5, personBusy5, whoLabel5, WEEK_DATES, roundOf, datesOfRound5, categoriesOf5, catName5, dutyPersonId5 } from '../mock/scheduleV5.js'
 
@@ -348,7 +384,7 @@ const mineMarks = computed(() => {
   const m = {}
   myRows.value.forEach(r => {
     m[r.date] = m[r.date] || {}
-    if (r.status === 'covered' || outTo(r)) m[r.date].amber = (m[r.date].amber || 0) + 1
+    if (r.status === 'covered' || outTo(r) || partialLeaveOf(r)) m[r.date].amber = (m[r.date].amber || 0) + 1
     else m[r.date].red = (m[r.date].red || 0) + 1
   })
   return m
@@ -357,12 +393,6 @@ const mineMarks = computed(() => {
 const outTo = r => (r.personId === meId.value && r.swap ? personById(v5, r.swap.personId)?.name || '对方' : '')
 const inFrom = r => (r.personId !== meId.value && r.swap ? personById(v5, r.personId)?.name || '同事' : '')
 const dayRows = computed(() => myRows.value.filter(r => r.date === mineSel.value))
-const weekStats = computed(() => {
-  const active = myRows.value.filter(r => r.status === 'active' && !outTo(r))
-  const hours = active.reduce((s, r) => s + hours5(rowSpan(r).start, rowSpan(r).end), 0)
-  const pending = active.filter(r => pendingNoticeOf(r)).length
-  return { count: active.length, hours: Math.round(hours * 10) / 10, pending }
-})
 function moveMine(delta) {
   let { year, month } = mineState.value
   month += delta
@@ -500,9 +530,6 @@ function dayShort(d) {
 function shortAt(at) {
   return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}`
 }
-function shortM(d) {
-  return `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`
-}
 function hoursText(slot) {
   return `${hours5(slot.start, slot.end)} 小时`
 }
@@ -612,6 +639,52 @@ const swapGroups = computed(() => {
   return [...map.values()]
 })
 
+/* ---------- 公共区入口：全职排假跳专门模块；非全事件报备（报备即生效） ---------- */
+function goLeave() { router.push('/mobile-schedule-leave') }
+function openReport() { sheet.value = { type: 'report' } }
+/* 能报备的班：今天及以后自己已获得的班；换出去的、时间被占用过的列不出来 */
+const reportCands = computed(() =>
+  myRows.value.filter(r => r.date >= v5.today && r.status === 'active' && !r.swap && !r.out)
+)
+/* 部分报备：班还在我名下，只占那一段——挂在这条班上带时段的请假事实 */
+function partialLeaveOf(r) {
+  return v5.facts.find(f => f.placementId === r.id && f.start && f.end) || null
+}
+const repPid = ref('')
+const repScope = ref('all')
+const repStart = ref('')
+const repEnd = ref('')
+const repCat = ref('')
+const repNote = ref('')
+watch(() => sheet.value, s => {
+  if (s?.type === 'report') {
+    repPid.value = reportCands.value[0]?.id || ''
+    repScope.value = 'all'
+    repStart.value = ''
+    repEnd.value = ''
+    repCat.value = ''
+    repNote.value = ''
+  }
+})
+const repSlot = computed(() => {
+  const p = v5.placements.find(x => x.id === repPid.value)
+  return p ? slotOf(p.slotId) : null
+})
+function doReport() {
+  const opt = {}
+  if (repScope.value === 'part') {
+    if (!repStart.value || !repEnd.value) { ElMessage.warning('选了部分时间，起止时刻都要填'); return }
+    opt.start = repStart.value
+    opt.end = repEnd.value
+  }
+  if (repCat.value) opt.cat = repCat.value
+  if (repNote.value.trim()) opt.note = repNote.value.trim()
+  const r = reportEvent5(repPid.value, opt)
+  if (!r.ok) { ElMessage.warning(r.reason); return }
+  sheet.value = null
+  ElMessage.success(r.text ? `已报备：${r.text}` : '已报备，当场生效')
+}
+
 /* 换班请求说人话：谁、拿哪天的哪个班、换我哪天的哪个班 */
 function swapText(req) {
   const theirs = v5.placements.find(p => p.id === req.placementId)
@@ -694,16 +767,10 @@ function ackMakeup(r) {
 .dot-badge { font-size: 10.5px; color: #a40035; }
 .view-tabs button.active .badge { background: rgba(255, 255, 255, 0.92); }
 .view-tabs button.active .dot-badge { color: rgba(255, 255, 255, 0.9); }
-.now-line { font-size: 11px; color: #a5a5ad; margin: -2px 2px 8px; line-height: 1.5; }
-
-/* 概览 */
-.overview-card { display: flex; background: #fff; border-radius: 12px; padding: 12px 4px; margin-bottom: 10px; }
-.ov-item { flex: 1; text-align: center; position: relative; }
-.ov-item + .ov-item::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: #f0f0f0; }
-.ov-label { display: block; font-size: 11px; color: #9a9fa9; }
-.ov-value { display: block; margin-top: 4px; font-size: 18px; font-weight: 600; color: #222; font-variant-numeric: tabular-nums; }
-.ov-value i { font-style: normal; font-size: 10.5px; font-weight: 400; color: #9a9fa9; margin-left: 2px; }
-.ov-value.warn { color: #a40035; }
+/* 公共区入口：全职排假 / 非全事件报备——进 tab 第一眼就看到，不藏在班次卡里 */
+.entry-row { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; padding: 10px 12px; background: #fff; border: 1px solid #f3e6ea; border-radius: 12px; }
+.entry-btn { flex-shrink: 0; height: 34px; padding: 0 18px; border: none; border-radius: 17px; background: #a40035; color: #fff; font-size: 13px; font-weight: 600; }
+.entry-hint { font-size: 11px; color: #9a9fa9; line-height: 1.5; }
 
 .section-title-row { display: flex; align-items: center; gap: 6px; margin: 12px 2px 8px; }
 .red-bar { width: 3px; height: 13px; background: #a40035; border-radius: 2px; }
@@ -830,6 +897,17 @@ function ackMakeup(r) {
 .sheet-meta { font-size: 11.5px; color: #8a8a95; margin-top: 4px; }
 .sheet-body p { margin: 0 0 8px; font-size: 12.5px; color: #4a4a55; line-height: 1.7; }
 .sheet-body .sheet-note { margin-top: 10px; color: #8a8a95; font-size: 11.5px; }
+/* 事件报备表单 */
+.rep-label { margin-top: 12px; font-size: 12px; font-weight: 600; color: #4a4a55; }
+.rep-select { width: 100%; margin-top: 6px; height: 36px; padding: 0 10px; border: 1px solid #e6e6ec; border-radius: 8px; font-size: 12.5px; color: #333; background: #fff; }
+.rep-scope { display: flex; gap: 8px; margin-top: 6px; }
+.rep-scope button { flex: 1; height: 34px; border: 1px solid #e6e6ec; border-radius: 8px; background: #fff; color: #6a6a75; font-size: 12.5px; }
+.rep-scope button.on { border-color: #a40035; color: #a40035; font-weight: 600; background: #fbf1f4; }
+.rep-part { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.rep-time { height: 34px; padding: 0 8px; border: 1px solid #e6e6ec; border-radius: 8px; font-size: 12.5px; color: #333; }
+.rep-dash { font-size: 12px; color: #8a8a95; }
+.rep-range { font-size: 11px; color: #9a9fa9; margin-left: auto; }
+.rep-note { width: 100%; margin-top: 6px; padding: 8px 10px; border: 1px solid #e6e6ec; border-radius: 8px; font-size: 12.5px; color: #333; resize: none; font-family: inherit; }
 .checks { margin-top: 12px; padding: 10px 12px; background: #fbf8f9; border-radius: 10px; }
 .checks div { font-size: 11.5px; color: #6a6a75; line-height: 1.9; }
 .checks i { font-style: normal; color: #a40035; margin-right: 6px; }

@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="五、需求范围"
-    subtitle="现状四张考卷 + 通用设计三阶段：定义 / 获取 / 变化"
-    version="v3.9 补三张业务图与缺口规则"
-    date="2026-11-16"
+    subtitle="现状四张考卷 + 通用设计四阶段：定义 / 获取 / 变化 / 结果写入（本期不动）"
+    version="v3.10 四阶段口径：前三段本期做，结果写入不动"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-scope" class="section">
@@ -14,7 +14,8 @@
       </div>
       <div class="note lead-note">
         <strong>一句话定位：</strong>现行的四个岗位就是四张考卷；通用设计把「名额从哪来、谁能拿」
-        和「拿完之后来不了怎么办」拆成三个阶段——定义、获取、变化，用一套机制把四张考卷全答完。
+        和「拿完之后来不了怎么办」拆成四个阶段——定义、获取、变化、排班结果写入；
+        本期做前三段，结果写入沿用既有排班结果表不动（相关模块核查薪酬有效时段，要结合事件一起看）。
       </div>
     </div>
 
@@ -71,30 +72,37 @@
 
     <div id="hs-scope-stages" class="section">
       <div class="section-header">
-        <h2>5.2 通用设计：三个阶段</h2>
+        <h2>5.2 通用设计：四个阶段（本期做前三段）</h2>
       </div>
-      <svg viewBox="0 0 680 180" class="doc-svg" role="img" aria-label="通用设计三阶段：定义、获取、变化">
-        <title>通用设计三阶段</title>
+      <svg viewBox="0 0 680 128" class="doc-svg" role="img" aria-label="通用设计四个阶段：定义、获取、变化、排班结果写入；前三段本期做，第四段本期不动">
+        <title>通用设计四阶段</title>
         <defs>
           <marker id="stArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </marker>
         </defs>
-        <rect x="40" y="44" width="190" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-        <text x="135" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#0C447C">① 定义</text>
-        <text x="135" y="92" text-anchor="middle" font-size="12" fill="#185FA5">时段 · 名额 · 清单</text>
-        <line x1="234" y1="76" x2="248" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
-        <rect x="252" y="44" width="190" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
-        <text x="347" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#27500A">② 获取</text>
-        <text x="347" y="92" text-anchor="middle" font-size="12" fill="#3B6D11">窗口内三种拿法</text>
-        <line x1="446" y1="76" x2="460" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
-        <rect x="464" y="44" width="176" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
-        <text x="552" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#633806">③ 变化</text>
-        <text x="552" y="92" text-anchor="middle" font-size="12" fill="#854F0B">事实 → 结果重算</text>
-        <text x="340" y="150" text-anchor="middle" font-size="12" fill="#6a6a75">名额是容量不是库存——这一条贯穿三段，是三段能拼成一张卷子的前提</text>
+        <rect x="30" y="44" width="140" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="100" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#0C447C">① 定义</text>
+        <text x="100" y="92" text-anchor="middle" font-size="12" fill="#185FA5">时段 · 名额 · 清单</text>
+        <line x1="172" y1="76" x2="188" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
+        <rect x="192" y="44" width="140" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+        <text x="262" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#27500A">② 获取</text>
+        <text x="262" y="92" text-anchor="middle" font-size="12" fill="#3B6D11">窗口内三种拿法</text>
+        <line x1="334" y1="76" x2="350" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
+        <rect x="354" y="44" width="140" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="424" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#633806">③ 变化</text>
+        <text x="424" y="92" text-anchor="middle" font-size="12" fill="#854F0B">事实 → 结果重算</text>
+        <line x1="496" y1="76" x2="512" y2="76" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#stArr)"/>
+        <rect x="516" y="44" width="140" height="64" rx="10" fill="#F4F4F0" stroke="#888780" stroke-width="0.8" stroke-dasharray="5 3"/>
+        <text x="586" y="70" text-anchor="middle" font-size="14" font-weight="500" fill="#5F5E5A">④ 排班结果写入</text>
+        <text x="586" y="92" text-anchor="middle" font-size="12" fill="#888780">本期不动</text>
       </svg>
+      <div class="note">
+        <strong>名额是容量不是库存</strong>——这一条贯穿前三段，是三段能拼成一张卷子的前提。
+        <strong>第 ④ 段本期不动：</strong>结果写入沿用既有排班结果表；相关模块核查薪酬有效时段，要结合事件（事实）一起看。
+      </div>
 
-      <h4 class="h4sub">三阶段总图：每一段内部的关键结论</h4>
+      <h4 class="h4sub">四阶段总图：前三段内部的关键结论</h4>
       <svg viewBox="0 0 680 724" class="doc-svg" role="img" aria-label="排班通用化重构业务结构总图：定义、获取、变化三阶段的结构与要点">
         <title>三阶段业务结构总图</title>
         <defs>
@@ -196,7 +204,7 @@
 
         <text x="340" y="694" text-anchor="middle" font-size="11" fill="#888780">关闸前缺席属获取段 · 关闸后才归变化段</text>
       </svg>
-      <p class="arch-cap">总图先给全貌：三段各自的关键结论在 5.3–5.5 分头展开，四张考卷怎么落进三段见 5.6。</p>
+      <p class="arch-cap">总图先给全貌：前三段各自的关键结论在 5.3–5.5 分头展开，四张考卷怎么落进三段见 5.6；第 ④ 段排班结果写入本期不动，结果表结构、打卡与薪酬消费侧都不在本期范围。</p>
 
       <h4 class="h4sub">现状 vs 通用设计：左边各配各的，右边共用一套</h4>
       <p class="doc-p">
@@ -622,7 +630,7 @@ import timeSystemImg from '../../../docs/assets/unified-time-system.png'
 const tocItems = [
   { id: 'hs-scope', label: '五、需求范围' },
   { id: 'hs-scope-now', label: '5.1 现状：四张考卷' },
-  { id: 'hs-scope-stages', label: '5.2 通用设计三阶段' },
+  { id: 'hs-scope-stages', label: '5.2 通用设计四阶段' },
   { id: 'hs-scope-define', label: '5.3 定义段要点' },
   { id: 'hs-scope-acquire', label: '5.4 获取段要点' },
   { id: 'hs-scope-change', label: '5.5 变化段要点' },

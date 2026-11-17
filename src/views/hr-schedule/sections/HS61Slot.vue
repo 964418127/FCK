@@ -17,22 +17,24 @@
         再在班次下面挂一份获取清单（每一档开放给谁、用什么方式、什么时候开放）。不解决怎么分给人（见 6.2），也不解决分完之后的变化（见 6.4）。
       </p>
       <div class="func-entry">
-        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ 顶部外层选品牌店分类 → 左侧选空间 → <strong>时段与清单</strong>；
-        页签三块：周期时段 / 临时班次 / 申领规则；横向配置（缺口规则、算法服务）在顶部一级导航
+        <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ 顶部外层选品牌分类 → 左侧选空间 → <strong>时段与清单</strong>；
+        页签三块：周期时段 / 临时班次 / 申领规则；横向配置（缺口规则、算法服务）在顶部一级导航；
+        <strong>品牌分类</strong>入口在配置台页头按钮，进独立页面维护
       </div>
 
-      <h4 class="h4sub">空间的外层：品牌店分类</h4>
+      <h4 class="h4sub">空间的外层：品牌分类</h4>
       <p class="doc-p">
-        空间最外层按<strong>店型</strong>分三类 tab：<strong>直营品牌商场店 / 直营品牌小店 / 总部办公区</strong>——
-        切的是「这一层看哪类空间」，tab 上带各类型的门店数，切过去空间列表和右侧页面跟着换。
-        <strong>品牌</strong>是全公司共用的一份清单，门店挂品牌、随时可换；品牌分类就在外层右侧维护：
-        增 / 改名 / 删——还有门店挂着的品牌删不掉，要先把门店改到别的品牌（删除有确认）。
+        空间最外层按<strong>品牌分类</strong>分 tab：<strong>直营品牌商场店 / 直营品牌小店</strong>——
+        就两层：分类（也就是外层的 tab）和门店，没有中间层。门店直接挂一个分类值，挂在哪个分类就出现在哪个 tab 里。
+        分类清单全公司共用一份，在独立的<strong>品牌分类</strong>页面维护：左侧管分类（增 / 改名 / 删），右侧管门店归属——
+        门店可以搜索、勾选批量移出 / 归入，「添加门店」一次勾多家；没挂分类的门店收在「未归分类」里。总部办公区不是门店，单独一类。
       </p>
       <DocScreens
         :height="420"
         :images="[
-          { src: outerShot, label: '最外层 tab：直营品牌商场店（3）/ 直营品牌小店（2）/ 总部办公区；左侧空间列表跟着 tab 过滤，店卡上挂品牌名' },
-          { src: brandShot, label: '品牌分类维护：品牌增 / 改名 / 删（在用中的不让删）+ 门店挂品牌逐店下拉' }
+          { src: outerShot, label: '最外层 tab = 品牌分类：直营品牌商场店（4）/ 直营品牌小店（1）/ 总部办公区；左侧空间列表按分类过滤——已经在分类里面了，店卡不再重复标分类' },
+          { src: catsShot, label: '品牌分类独立页：左侧分类清单（新增 / 改名 / 删除，带门店数），右侧当前分类的门店表——搜索 / 勾选批量 / 添加门店 / 分页' },
+          { src: catsPickShot, label: '添加门店：只列还没在这个分类里的门店，可搜索、一次勾多家确认加入；底部分类页脚按数量分页' }
         ]"
       />
       <table class="data-table">
@@ -40,9 +42,9 @@
           <tr><th style="width: 170px;">外层</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>直营品牌商场店 / 直营品牌小店</strong></td><td>现有门店全部进这两类；店型是空间自己的属性，tab 就是按它切</td></tr>
+          <tr><td><strong>直营品牌商场店 / 直营品牌小店</strong></td><td>外层 tab，也是品牌分类的两个分类值；门店直接挂分类值，同一分类下的门店不要求同品牌、同城市</td></tr>
           <tr><td><strong>总部办公区</strong></td><td>不是门店，单独一类——没有营业高峰、没有抢单，只有岗位和班次</td></tr>
-          <tr><td><strong>品牌分类</strong></td><td>全公司共用一份清单（不是每店自己的）；空间挂品牌，品牌删不了只要还有门店在用；搜索空间时按品牌名也能搜到</td></tr>
+          <tr><td><strong>品牌分类维护</strong></td><td>独立页面，为门店数量多设计：分类增 / 改名 / 删（在用的删不掉）；门店按分类查、按名称城市搜，勾选后批量移出 / 归入；添加门店一次勾多家；未归分类收拢没挂分类的门店</td></tr>
         </tbody>
       </table>
 
@@ -143,6 +145,7 @@
       <div class="note">
         <strong>保存校验：</strong>① 窗口顺序——后面的档不能比前面的档先开放；② 档位上限相加不超过该班名额数；
         ③ 两个入口——同空间时间重叠且人群写重的两条班次，只查「先到先得 / 申领审核」类（直派不算入口，系统分人时自己挡时间冲突）。
+        <strong>档位最多 4 档</strong>：加到 4 档后「+ 加一档」收起，标「最多 4 档」。
       </div>
       <div class="note">
         <strong>删除 / 废弃一律二次确认：</strong>删除入口两处——「按班次」列表卡上的删除（可批量看后果）和编辑抽屉底部的「废弃这个班次」（改到一半直接废弃，不用回列表找卡）。后果一致：从下一轮起不再生成，这一轮已生成的班次与已登记的申领一起清掉，弹确认写明条数，确认才执行。临时班次（这一天的加场名额一起消失）、申领规则（删了恢复直接放行）、类别（被规则引用的删了规则改管全部时段）同理。
@@ -219,6 +222,36 @@
         </tbody>
       </table>
     </div>
+
+    <div id="hs-61-pos" class="section">
+      <div class="section-header">
+        <h3>6.1.6 按岗位：把清单折过来看</h3>
+      </div>
+      <DocScreens
+        :height="400"
+        :images="[
+          { src: posShot, label: '按岗位（兴隆湖）：岗位 × 日期两级——一个岗位一行，行内按下一轮覆盖区间逐日摊开：每天有哪些时段（临时标「临时」）、当天合计几位；名额列给每天合计范围，可获取人群按档位顺序带获取方式' },
+          { src: posTmpShot, label: '按岗位（蓝田）：临时班次落它的日期上并标「临时」，名额列分「每天 X 位」与「临时 Y 位」' }
+        ]"
+      />
+      <p class="doc-p">
+        时段与清单是<strong>按时段</strong>看的（一条时段一个坑）；周期时段页签里的<strong>按岗位</strong>视图（与按周期 / 按班次并列）把同一份清单<strong>按岗位</strong>折过来看，
+        并带<strong>日期维度</strong>——时段按下一轮覆盖区间逐日摊开（周期班次按星期几落到具体日期）——
+        管理人员问「推拿师下周三有几个位、都是哪些时段」时，不用逐条时段去数。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 160px;">要点</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>岗位来源</strong></td><td>只从各时段清单的<strong>档位</strong>里来：档位限定哪个岗位，这个岗位就出现一行；<strong>不是</strong>一张固定的岗位表</td></tr>
+          <tr><td><strong>日期维度</strong></td><td>时段按<strong>下一轮覆盖区间</strong>逐日摊开：周期班次按星期几落到具体日期，临时班次落它的日期并标「临时」；当天没有班的日期不显示，不占行</td></tr>
+          <tr><td><strong>不限岗位</strong></td><td>档位没限定岗位的（如通班、临时加场）算「不限岗位」一行，不会摊到每个岗位头上</td></tr>
+          <tr><td><strong>粒度</strong></td><td>先只做<strong>汇总</strong>：每个岗位一行，行内逐日列出时段与当天合计；不细到人</td></tr>
+          <tr><td><strong>名额拆法</strong></td><td>名额按档位<strong>上限</strong>拆到岗位；档位没写上限的，吃该时段剩余名额</td></tr>
+        </tbody>
+      </table>
+    </div>
   </DocShell>
 </template>
 
@@ -228,7 +261,8 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import slotCycleShot from '../../../docs/assets/pages/v5-slots.png'
 import outerShot from '../../../docs/assets/pages/v5-outer.png'
-import brandShot from '../../../docs/assets/pages/v5-brand.png'
+import catsShot from '../../../docs/assets/pages/v5-cats.png'
+import catsPickShot from '../../../docs/assets/pages/v5-cats-pick.png'
 import slotListShot from '../../../docs/assets/pages/v5-slot-list.png'
 import copyDayShot from '../../../docs/assets/pages/v5-copy-day.png'
 import slotEditShot from '../../../docs/assets/pages/v5-slot-edit.png'
@@ -239,6 +273,8 @@ import slotTmpEditShot from '../../../docs/assets/pages/v5-temp-edit.png'
 import slotRuleShot from '../../../docs/assets/pages/v5-slot-rule.png'
 import ruleEditShot from '../../../docs/assets/pages/v5-rule-edit.png'
 import catDlgShot from '../../../docs/assets/pages/v5-cat-dlg.png'
+import posShot from '../../../docs/assets/pages/v5-pos.png'
+import posTmpShot from '../../../docs/assets/pages/v5-pos-tmp.png'
 
 const tocItems = [
   { id: 'hs-61', label: '6.1 时段与清单' },
@@ -246,7 +282,8 @@ const tocItems = [
   { id: 'hs-61-list', label: '6.1.2 清单：谁能来' },
   { id: 'hs-61-service', label: '6.1.3 算法服务' },
   { id: 'hs-61-tmp', label: '6.1.4 临时班次' },
-  { id: 'hs-61-rule', label: '6.1.5 申领规则' }
+  { id: 'hs-61-rule', label: '6.1.5 申领规则' },
+  { id: 'hs-61-pos', label: '6.1.6 按岗位' }
 ]
 
 const breadcrumbs = [

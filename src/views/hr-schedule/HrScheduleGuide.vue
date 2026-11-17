@@ -25,7 +25,7 @@
       <div class="note">
         <strong>本版范围：</strong>一、版本信息；二、变更日志；三、文档说明；四、需求背景；<strong>五、需求范围</strong>；
         六、功能详细说明（6.1 时段与清单 / 6.2 轮与获取 / 6.3 排班结果 / 6.4 变化与求值 / 6.5 移动端）；七、附录。
-        四岗位的<strong>现行排班现状</strong>与 v5 的<strong>三阶段设计</strong>统一收在第五章。
+        四岗位的<strong>现行排班现状</strong>与 v5 的<strong>四阶段设计</strong>（前三段本期做、结果写入不动）统一收在第五章。
       </div>
     </div>
 
@@ -44,7 +44,7 @@
           </tr>
           <tr>
             <td><strong>重构改了什么、为什么这么切</strong></td>
-            <td><router-link to="/docs/hr-schedule/scope">5.3–5.6</router-link>：通用设计三阶段（定义 / 获取 / 变化）+ 拿现状对卷</td>
+            <td><router-link to="/docs/hr-schedule/scope">5.3–5.6</router-link>：通用设计四阶段（定义 / 获取 / 变化本期做，排班结果写入本期不动）+ 拿现状对卷</td>
           </tr>
           <tr>
             <td><strong>某个名词是什么意思</strong></td>

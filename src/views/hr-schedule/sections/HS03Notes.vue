@@ -20,6 +20,7 @@
         </thead>
         <tbody>
           <tr><td><strong>上班容器</strong></td><td>时段与名额的归属对象，考勤打卡也挂在它上面</td><td>不等于门店；城市、办公地点、个人也可以是容器</td></tr>
+          <tr><td><strong>品牌分类</strong></td><td>门店上层的分组，也就是配置台最外层的 tab（直营品牌商场店 / 直营品牌小店）；分类清单可增、改名、删</td><td><strong>只有两层：分类 → 门店</strong>，中间没有「品牌」层；只做分组，不影响名额与获取；办公区不是门店，单独一类</td></tr>
           <tr><td><strong>容器类型</strong></td><td>门店 / 办公地点 / 城市 / 人，四类</td><td>类型决定能挂什么，不影响名额怎么分</td></tr>
           <tr><td><strong>班次</strong></td><td>一段起止时间 + 休息，如早班 10:00–18:00</td><td>班次是时间，不是岗位</td></tr>
           <tr><td><strong>班次模板</strong></td><td>全平台通用班次，跨店比对身份用</td><td><strong>引用即继承</strong>：改模板，门店班次跟着变</td></tr>

@@ -38,12 +38,22 @@
           <tr><th style="width: 150px;">区域</th><th style="width: 320px;">展示</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>月历</strong></td><td>这一轮覆盖的每一天，有班的日子打点；按月排的空间整月都有班</td><td>顶部统计是这一期的口径（本期班次数 / 合计工时）</td></tr>
+          <tr><td><strong>月历</strong></td><td>这一轮覆盖的每一天，有班的日子打点；按月排的空间整月都有班</td><td>tab 条下直接是月历——页头不放轮信息（轮跟空间走）</td></tr>
           <tr><td><strong>当天班次卡</strong></td><td>班次名、时间、空间；「这条班怎么来的」（系统排给你的 / 自己领的）</td><td>直派的班写明「系统按规则直接排给你的，不用抢」</td></tr>
+          <tr><td><strong>公共区入口</strong></td><td>月历下方一行按钮：全职 = 休假申请（跳专门排假模块）；非全 = 事件报备</td><td>入口在公共区、不放进班次卡，也不带解释文案——按钮就是入口</td></tr>
           <tr><td><strong>被占用历史</strong></td><td>这条班的哪一段时间被什么事件占用、谁来顶的</td><td>「一段时间被事件占用」的表达，不改动班次本身</td></tr>
+          <tr><td><strong>事件报备（非全）</strong></td><td>选班（今天及以后自己已获得的班）→ 范围（整段 / 部分时间）→ 分类与备注（都不必填）→ 提交</td><td><strong>报备即生效</strong>：不用人事审，报了就按这条事实重算——能顶的当场顶上，顶不了按缺口规则记缺口并通知人事；换出去的、时间被占用过的班列不出来；报备后月历打琥珀点、班次卡带「已报备」说明行</td></tr>
           <tr><td><strong>动作</strong></td><td>找人对换（发起换班）</td><td>请假不在排班页发起——走专门的请假模块；补位确认落在班次卡上：待你确认 + 收到，我来。<strong>换班候选只有这条班次允许获取的人群</strong>（清单档位，按优先级），档位外的人不列出来（见 6.4）</td></tr>
         </tbody>
       </table>
+      <DocScreens
+        :height="560"
+        :images="[
+          { src: mLeaveEntry, label: '全职入口：月历下方「休假申请」，点了进专门的排假模块' },
+          { src: mReportSheet, label: '非全事件报备：选班（今天及以后已获得的班）→ 整段 / 部分时间 → 分类与备注非必选 → 提交' },
+          { src: mReportDone, label: '报备后：月历该天打琥珀点（有时间被占用），班次卡带「已报备」说明——只占报备那一段，少的那段当场顶上' }
+        ]"
+      />
     </div>
 
     <div id="hs-65-pick" class="section">
@@ -169,6 +179,9 @@ import mSwapRequest from '../../../docs/assets/pages/v5-m-swap-request.png'
 import mSwapWaiting from '../../../docs/assets/pages/v5-m-swap-waiting.png'
 import mOfficeDirectMine from '../../../docs/assets/pages/v5-m-office-direct-mine.png'
 import mOfficePtPick from '../../../docs/assets/pages/v5-m-office-pt-pick.png'
+import mLeaveEntry from '../../../docs/assets/pages/v5-m-leave-entry.png'
+import mReportSheet from '../../../docs/assets/pages/v5-m-report-sheet.png'
+import mReportDone from '../../../docs/assets/pages/v5-m-report-done.png'
 
 const tocItems = [
   { id: 'hs-65', label: '6.5 移动端' },

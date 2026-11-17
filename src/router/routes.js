@@ -779,6 +779,14 @@ export const routes = [
         }
       },
       {
+        path: 'schedule-v5/cats',
+        name: 'schedule-v5-cats',
+        component: () => import('../views/ScheduleV5Cats.vue'),
+        meta: {
+          title: '品牌分类'
+        }
+      },
+      {
         path: 'store-salary-strategy',
         name: 'store-salary-strategy',
         component: () => import('../views/StoreSalaryStrategy.vue'),

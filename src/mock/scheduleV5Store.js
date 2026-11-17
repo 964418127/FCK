@@ -45,6 +45,30 @@ export function submitLeave(placementId) {
   return { ok: true, text: fact.result }
 }
 
+/* ===== 事件报备（非全，移动端公共区入口）：报备即生效——写请假事实，求值当场补位 / 缺口 / 通知人事；分类与备注非必选 ===== */
+export function reportEvent5(placementId, opt = {}) {
+  const p = state.placements.find(x => x.id === placementId)
+  if (!p || p.personId !== meId.value) return { ok: false, reason: '只能报备自己已获得的班' }
+  if (p.status !== 'active' || p.swap || p.out) return { ok: false, reason: '这条班已经变了（换出去了或时间被占用），报备不了' }
+  const slot = slotById(state, p.slotId)
+  let { start, end } = opt
+  if (start && end) {
+    if (start < slot.start || end > slot.end || start >= end) {
+      return { ok: false, reason: `报备的时间要在 ${slot.start}–${slot.end} 里面` }
+    }
+    if (start === slot.start && end === slot.end) { start = ''; end = '' }
+  } else { start = ''; end = '' }
+  const fact = {
+    id: seq(), type: '请假', at: state.now, by: meId.value,
+    slotId: p.slotId, date: p.date, placementId, result: ''
+  }
+  if (start) { fact.start = start; fact.end = end }
+  if (opt.cat) fact.cat = opt.cat
+  if (opt.note) fact.note = opt.note
+  addFact5(state, fact)
+  return { ok: true, text: fact.result }
+}
+
 export function proposeSwap(placementId, partnerPlacementId) {
   const mine = state.placements.find(x => x.id === placementId)
   const theirs = state.placements.find(x => x.id === partnerPlacementId)
@@ -216,6 +240,7 @@ export function checkSlotForm(spaceId, form, exceptId = '') {
   if (form.start && form.end && form.start >= form.end) errs.push('结束时间要晚于开始时间')
   if (!form.days?.length) errs.push('一个星期都没选，这个班次不会排出来')
   if (!form.list?.length) errs.push('清单一行都没有，没人能拿到名额')
+  if (form.list.length > 4) errs.push(`人群档位最多 4 档，现在 ${form.list.length} 档`)
   if (form.quota?.source === 'manual' && !(form.quota.value > 0)) errs.push('名额要大于 0')
   if (form.quota?.source === 'service' && !form.quota.serviceId) errs.push('选了挂算法服务，但没指定是哪个')
 
@@ -244,7 +269,7 @@ export function revertConfig() {
   state.claimRules = seed.claimRules
   state.hourLimits = seed.hourLimits
   state.spaces = seed.spaces
-  state.brands = seed.brands
+  state.cats = seed.cats
   /* 节奏也是配置的一部分：全局轮 + 各空间自己的轮，config 一并回到种子 */
   state.round.config = seed.round.config
   if (state.rounds) {
@@ -461,42 +486,43 @@ export function removeRule5(id) {
   state.configDirty = true
 }
 
-/* ===== 外层空间：品牌分类（增 / 改名 / 删；还有门店在用的不让删） ===== */
-export const brands = computed(() => state.brands || [])
-export function brandNameOf(brandId) {
-  return (state.brands || []).find(b => b.id === brandId)?.name || '未归品牌'
+/* ===== 外层空间：品牌分类（就是 tab 清单本身：增 / 改名 / 删；门店直接挂分类值，在用的分类不让删） ===== */
+export const spaceCats = computed(() => state.cats || [])
+export function spaceCatName(catId) {
+  return (state.cats || []).find(c => c.id === catId)?.name || '未归分类'
 }
-export function brandUsage(brandId) {
-  return state.spaces.filter(s => s.brandId === brandId)
+export function spaceCatUsage(catId) {
+  return state.spaces.filter(s => s.cat === catId)
 }
-export function addBrand(name) {
+export function addSpaceCat(name) {
   const n = (name || '').trim()
-  if (!n) return { ok: false, reason: '品牌名不能为空' }
-  if ((state.brands || []).some(b => b.name === n)) return { ok: false, reason: '这个品牌已经在了' }
-  const row = { id: `B-${state.seq++}`, name: n }
-  state.brands.push(row)
-  return { ok: true, brand: row }
+  if (!n) return { ok: false, reason: '分类名不能为空' }
+  if ((state.cats || []).some(c => c.name === n)) return { ok: false, reason: '这个分类已经在了' }
+  const row = { id: `C-${state.seq++}`, name: n }
+  state.cats.push(row)
+  return { ok: true, cat: row }
 }
-export function renameBrand(id, name) {
+export function renameSpaceCat(id, name) {
   const n = (name || '').trim()
-  const b = (state.brands || []).find(x => x.id === id)
-  if (!b) return { ok: false, reason: '品牌不存在' }
-  if (!n) return { ok: false, reason: '品牌名不能为空' }
-  if ((state.brands || []).some(x => x.id !== id && x.name === n)) return { ok: false, reason: '这个品牌名已经在了' }
-  b.name = n
+  const c = (state.cats || []).find(x => x.id === id)
+  if (!c) return { ok: false, reason: '分类不存在' }
+  if (!n) return { ok: false, reason: '分类名不能为空' }
+  if ((state.cats || []).some(x => x.id !== id && x.name === n)) return { ok: false, reason: '这个分类名已经在了' }
+  c.name = n
   return { ok: true }
 }
-export function removeBrand(id) {
-  const used = brandUsage(id)
-  if (used.length) return { ok: false, reason: `还有 ${used.length} 家门店挂这个品牌，先把门店改到别的品牌` }
-  state.brands = state.brands.filter(b => b.id !== id)
-  return { ok: true }
-}
-/* 门店挂品牌：外层 tab 按店型分，品牌随时可换 */
-export function setSpaceBrand(spaceId, brandId) {
+export function setSpaceCat(spaceId, catId) {
   const s = state.spaces.find(x => x.id === spaceId)
-  if (!s) return { ok: false, reason: '空间不存在' }
-  s.brandId = brandId
+  if (!s) return { ok: false, reason: '门店不存在' }
+  /* 传空 = 移出分类（回到「未归分类」） */
+  if (catId && !(state.cats || []).some(c => c.id === catId)) return { ok: false, reason: '分类不存在' }
+  s.cat = catId || ''
+  return { ok: true }
+}
+export function removeSpaceCat(id) {
+  const used = spaceCatUsage(id)
+  if (used.length) return { ok: false, reason: `还有 ${used.length} 家门店在这个分类里，先把门店移到别的分类` }
+  state.cats = state.cats.filter(c => c.id !== id)
   return { ok: true }
 }
 

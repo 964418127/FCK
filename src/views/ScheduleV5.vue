@@ -27,18 +27,18 @@
       <button :class="{ on: mainTab === 'algo' }" @click="mainTab = 'algo'">算法服务</button>
     </div>
 
-    <!-- 最外层：品牌店分类（直营品牌商场店 / 直营品牌小店）+ 总部办公区，切的是这一层看哪类空间 -->
+    <!-- 最外层：品牌分类（tab 清单本身可维护）——门店直接挂分类值，挂在哪个分类就出现在哪个 tab；办公区不是门店，单独一类 -->
     <div class="outer-tabs" v-show="mainTab === 'schedule'">
-      <button v-for="t in SPACE_TYPES" :key="t.key" :class="{ on: spaceType === t.key }" @click="pickSpaceType(t.key)">
-        {{ t.label }}<em>{{ v5.spaces.filter(s => s.storeType === t.key).length }}</em>
+      <button v-for="t in outerTabs" :key="t.key" :class="{ on: spaceType === t.key }" @click="pickOuterTab(t.key)">
+        {{ t.label }}<em>{{ spacesOfCat(t.key).length }}</em>
       </button>
       <span class="ot-spacer" />
-      <el-button size="small" @click="brandDlg = true">品牌分类</el-button>
+      <el-button size="small" @click="router.push('/schedule-v5/cats')">品牌分类</el-button>
     </div>
 
     <div class="v5-body" v-show="mainTab === 'schedule'">
       <aside class="space-rail">
-        <el-input v-model="kw" placeholder="搜名称 / 城市 / 品牌" clearable size="small" />
+        <el-input v-model="kw" placeholder="搜名称 / 城市 / 分类" clearable size="small" />
         <div class="chips">
           <button v-for="c in cities" :key="c" :class="{ on: city === c }" @click="city = city === c ? '' : c">{{ c }}</button>
         </div>
@@ -49,7 +49,6 @@
               <i v-if="gapsOf(s.id)" class="gap-dot" />
             </div>
             <div class="ri-meta">
-              <span v-if="s.brandId" class="mini-tag">{{ brandNameOf(s.brandId) }}</span>
               <span>{{ s.city }}</span>
               <em>{{ peopleOf(s.id) }}人 · {{ slotCount(s.id) }}时段</em>
             </div>
@@ -63,7 +62,7 @@
           <button :class="{ on: tab === 'run' }" @click="tab = 'run'">轮与结果</button>
           <button :class="{ on: tab === 'fact' }" @click="tab = 'fact'">事实记录</button>
           <button :class="{ on: tab === 'me' }" @click="tab = 'me'">个人查询</button>
-          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }}<template v-if="curSpace?.brandId"> · {{ brandNameOf(curSpace.brandId) }}</template> · {{ curSpace?.storeType === 'office' ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
+          <span class="cur-space">{{ curSpace?.name }} · {{ curSpace?.city }} · {{ curSpace?.office ? '作业' : '营业' }} {{ curSpace?.bizStart }}–{{ curSpace?.bizEnd }}</span>
         </div>
 
         <!-- ① 定义段 -->
@@ -207,10 +206,11 @@
 
             <div class="hint-line">周期时段是模板：保存后从下一轮起生效，当前轮按已生成快照跑，不重算。</div>
 
-            <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天） -->
+            <!-- 视图切换：按班次（配置对象是班次）/ 按周期（节奏铺下来的每一天）/ 按岗位（把清单折过来看） -->
             <div class="cyc-switch">
               <button :class="{ on: cycView === 'cycle' }" @click="cycView = 'cycle'">按周期</button>
               <button :class="{ on: cycView === 'list' }" @click="cycView = 'list'">按班次</button>
+              <button :class="{ on: cycView === 'pos' }" @click="cycView = 'pos'">按岗位</button>
             </div>
 
             <!-- 编辑区：抽屉承载，不再往下挤页面 -->
@@ -291,7 +291,8 @@
                       style="width: 88px" placeholder="不限" />
                     <button class="del" @click="form.list.splice(i, 1)">移除</button>
                   </div>
-                  <button class="add-row" @click="form.list.push({ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
+                  <button v-if="form.list.length < 4" class="add-row" @click="form.list.push({ who: { tag: 'regular', scope: 'store', kind: 'all', pos: 'all' }, way: 'grab', win: { base: 'publish', d: 0, t: '06:00' } })">+ 加一档</button>
+                  <span v-else class="add-row-max">最多 4 档</span>
                   <div class="le-ways">
                     <div class="way-row"><span class="way-name">直派轮转</span><span class="way-desc">系统把这一档的人群<em>按轮换次序轮流排</em>（这次你、下次他），到这一档窗口开放时执行。没有申领入口，人只收通知。</span></div>
                     <div class="way-row"><span class="way-name">先到先得</span><span class="way-desc">窗口一开自己点，点了就成，位满即关；成不了当场说原因。</span></div>
@@ -324,7 +325,54 @@
               </div>
             </el-drawer>
 
-            <template v-if="cycView === 'list'">
+            <!-- 按岗位：把各时段清单的档位折过来看——岗位 × 日期两级，只汇总，不细到人 -->
+            <template v-if="cycView === 'pos'">
+              <div class="hint-line">
+                岗位来自各时段清单的档位：同一个岗位在几个时段里出现就并成一行；档位没限定岗位的，算「不限岗位」一行。
+                时段按下一轮覆盖区间（{{ short(round.nextSpan[0]) }}–{{ short(round.nextSpan[1]) }}）逐日摊开：周期班次按星期几落到具体日期，临时班次标「临时」落在它的日期上。
+                名额按档位上限拆到岗位，档位没写上限的吃该时段剩余名额。
+              </div>
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th style="width: 88px;">岗位</th>
+                    <th>下一轮逐日时段</th>
+                    <th style="width: 110px;">名额</th>
+                    <th style="width: 280px;">可获取人群（按档位顺序）</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in posRows" :key="r.job">
+                    <td><strong class="pt-job">{{ r.job }}</strong></td>
+                    <td>
+                      <div v-for="d in r.days" :key="d.date" class="pt-day">
+                        <span class="pt-date">{{ short(d.date) }} 周{{ DOW5[d.dow] }}</span>
+                        <div class="pt-day-slots">
+                          <span v-for="s in d.items" :key="s.key" class="pt-slot-inline">
+                            <span class="psi-main"><i v-if="s.tmp" class="pt-tmp">临时</i>{{ s.name }} {{ s.start }}–{{ s.end }}</span>
+                            <em>{{ s.n }} 位</em>
+                          </span>
+                        </div>
+                        <em class="pt-day-n">共 {{ d.dayN }} 位</em>
+                      </div>
+                      <span v-if="!r.days.length" class="pt-none">—</span>
+                    </td>
+                    <td>
+                      <span class="pt-q"><strong>{{ r.qMin === r.qMax ? r.qMin : `${r.qMin}–${r.qMax}` }}</strong> 位/天</span>
+                      <span v-if="r.qTmp" class="pt-q"><strong>{{ r.qTmp }}</strong> 位（临时）</span>
+                    </td>
+                    <td>
+                      <ol class="pt-who">
+                        <li v-for="(w, i) in r.whos" :key="i">{{ w }}</li>
+                      </ol>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div v-if="!posRows.length" class="empty">这个空间的时段清单还没有挂人群档位，暂无岗位可汇总</div>
+            </template>
+
+            <template v-else-if="cycView === 'list'">
             <article v-for="s in spaceSlots" :key="s.id" class="slot-card" :class="{ 'being-edited': editing === s.id }">
               <header>
                 <div class="sn">
@@ -333,10 +381,10 @@
                   <span class="days">{{ daysLabel(s.days) }}</span>
                   <span v-if="s.category" class="cat-tag">{{ catName5(curSpace, s.category) }}</span>
                   <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
-                    含{{ curSpace.storeType === 'office' ? '作业' : '营业' }}时段外
+                    含{{ curSpace.office ? '作业' : '营业' }}时段外
                   </span>
                   <span v-if="s.start < curSpace.bizStart || s.end > curSpace.bizEnd" class="out-tag">
-                    含{{ curSpace.storeType === 'office' ? '作业' : '营业' }}时段外
+                    含{{ curSpace.office ? '作业' : '营业' }}时段外
                   </span>
                 </div>
                 <div class="sacts">
@@ -806,8 +854,8 @@
         <!-- 个人查询：以人看班。空间维度（这条时段上有谁）之外的个人维度——这个人这一轮身上有哪些时段；无法履约的明细写清楚，画法与事实记录悬浮卡一致 -->
         <section v-else-if="tab === 'me'" class="pane">
           <div class="me-head">
-            <el-select v-model="mePid" size="small" filterable style="width: 190px">
-              <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name}`" :value="p.id" />
+            <el-select v-model="mePid" size="small" filterable style="width: 250px">
+              <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name} · ${p.kind === 'fulltime' ? '全职' : '非全'} · ${p.position}`" :value="p.id" />
             </el-select>
             <span v-if="mePid" class="me-stats">共 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
             <span class="fa-hint">以人看班：这个人在这里已有的全部排班（已过期的不用看）；悬浮某一天，出这天的班次 / 事实 / 补位明细卡（与事实记录悬浮卡同一画法）</span>
@@ -1006,31 +1054,6 @@
       </div>
     </el-dialog>
 
-    <!-- 品牌分类：全公司共用的品牌清单，增 / 改名 / 删；门店挂哪个品牌在下面改 -->
-    <el-dialog v-model="brandDlg" title="品牌分类" width="580px">
-      <div class="cat-dlg-hint">品牌是全公司共用的一份清单：这里加的品牌所有空间都能挂；还有门店挂着的品牌删不掉，要先把门店改到别的品牌。</div>
-      <div v-for="b in brands" :key="b.id" class="cat-dlg-row">
-        <span class="cd-id">{{ b.id }}</span>
-        <div class="cd-main">
-          <el-input :model-value="b.name" size="small" @change="val => doRenameBrand(b, val)" />
-          <span class="cd-use">{{ brandUseText(b.id) }}</span>
-        </div>
-        <el-button link size="small" type="danger" @click="doRemoveBrand(b)">删除</el-button>
-      </div>
-      <div class="cat-dlg-row add">
-        <el-input v-model="newBrandName" size="small" placeholder="新品牌名字，如 青禾" style="flex: 1" @keyup.enter="doAddBrand" />
-        <el-button size="small" type="primary" @click="doAddBrand">添加</el-button>
-      </div>
-      <div class="brand-assign-h">门店挂品牌</div>
-      <div v-for="s in v5.spaces.filter(x => x.storeType !== 'office')" :key="s.id" class="brand-assign-row">
-        <span class="ba-name">{{ s.name }}</span>
-        <span class="ba-type">{{ SPACE_TYPES.find(t => t.key === s.storeType)?.label }}</span>
-        <el-select :model-value="s.brandId" size="small" style="width: 140px" @change="val => setSpaceBrand(s.id, val)">
-          <el-option v-for="b in brands" :key="b.id" :label="b.name" :value="b.id" />
-        </el-select>
-      </div>
-    </el-dialog>
-
     <!-- 定人：一次把空着的名额选够 -->
     <el-dialog v-model="appointDlg" title="定人" width="600px">
       <div v-if="gapInfo" class="gap-banner">
@@ -1073,7 +1096,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TablePagination from '../components/TablePagination.vue'
 import { usePager } from '../composables/usePager.js'
@@ -1084,7 +1107,7 @@ import {
   roundOf, rulesOfSpace, saveRule5, removeRule5, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage,
-  brands, brandNameOf, brandUsage, addBrand, renameBrand, removeBrand, setSpaceBrand,
+  spaceCats, spaceCatName,
   gapRules, gapList5
 } from '../mock/scheduleV5Store.js'
 import {
@@ -1093,6 +1116,7 @@ import {
 } from '../mock/scheduleV5.js'
 
 const route = useRoute()
+const router = useRouter()
 const isDev = computed(() => route.query.dev === '1')
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 /* 人群：雇佣类型和岗位都写在人群里——时段本身不带岗位 */
@@ -1103,43 +1127,20 @@ const sub = ref(['cyc', 'tmp', 'rule'].includes(route.query.sub) ? route.query.s
 const mainTab = ref(['gap', 'algo'].includes(route.query.main) ? route.query.main : 'schedule')
 const kw = ref('')
 const city = ref('')
-/* 外层空间：按店型分 tab——直营品牌商场店 / 直营品牌小店，办公区单独一类 */
-const SPACE_TYPES = [
-  { key: 'mall', label: '直营品牌商场店' },
-  { key: 'small', label: '直营品牌小店' },
-  { key: 'office', label: '总部办公区' }
-]
-const spaceType = ref(SPACE_TYPES.find(t => v5.spaces.some(s => s.storeType === t.key && s.id === (route.query.space || '')))?.key || 'mall')
-const brandDlg = ref(false)
-const newBrandName = ref('')
-function pickSpaceType(key) {
+/* 外层：品牌分类就是 tab 清单本身（可增 / 改名 / 删）；门店直接挂分类值；办公区不是门店，单独一类 */
+const OFFICE_TAB = { key: 'office', label: '总部办公区' }
+const outerTabs = computed(() => [...spaceCats.value.map(c => ({ key: c.id, label: c.name })), OFFICE_TAB])
+const spaceType = ref(outerTabs.value.find(t => spacesOfCatRaw(t.key).some(s => s.id === (route.query.space || '')))?.key || spaceCats.value[0]?.id || 'office')
+function spacesOfCatRaw(key) {
+  return v5.spaces.filter(s => key === 'office' ? s.office : s.cat === key)
+}
+function spacesOfCat(key) {
+  return spacesOfCatRaw(key)
+}
+function pickOuterTab(key) {
   spaceType.value = key
-  const list = v5.spaces.filter(s => s.storeType === key)
+  const list = spacesOfCat(key)
   if (!list.some(s => s.id === selSpace.value) && list[0]) pickSpace(list[0].id)
-}
-function doAddBrand() {
-  const r = addBrand(newBrandName.value)
-  if (!r.ok) { ElMessage.warning(r.reason); return }
-  newBrandName.value = ''
-  ElMessage.success('品牌已添加')
-}
-function doRenameBrand(b, name) {
-  const r = renameBrand(b.id, name)
-  if (!r.ok) { ElMessage.warning(r.reason); return }
-  ElMessage.success('品牌名已改')
-}
-function brandUseText(id) {
-  const used = brandUsage(id)
-  return used.length ? `在用：${used.map(s => s.name).join('、')}` : '还没有门店挂这个品牌'
-}
-async function doRemoveBrand(b) {
-  const used = brandUsage(b.id)
-  if (used.length) { ElMessage.warning(`还有 ${used.length} 家门店挂「${b.name}」，先把门店改到别的品牌`); return }
-  try {
-    await ElMessageBox.confirm(`删除品牌「${b.name}」？现在没有门店挂它，删了不影响任何空间。`, '删除品牌', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
-    const r = removeBrand(b.id)
-    if (!r.ok) ElMessage.warning(r.reason)
-  } catch { /* 取消 */ }
 }
 const selSpace = ref(v5.spaces.some(s => s.id === (route.query.space || (route.query.sub === 'rule' ? 'S-205' : ''))) ? (route.query.space || (route.query.sub === 'rule' ? 'S-205' : '')) : v5.spaces[0].id)
 /* 每个空间有自己的轮：门店按周发一轮，办公区按月发一期——页面上一律按选中空间显示 */
@@ -1205,9 +1206,10 @@ const runNote = computed(() => {
 const cities = computed(() => [...new Set(v5.spaces.map(s => s.city))])
 const filteredSpaces = computed(() => v5.spaces.filter(s => {
   const k = kw.value.trim()
-  const brand = brandNameOf(s.brandId)
-  const hit = !k || s.name.includes(k) || s.city.includes(k) || brand.includes(k)
-  return s.storeType === spaceType.value && (!city.value || s.city === city.value) && hit
+  const catName = s.cat ? spaceCatName(s.cat) : ''
+  const hit = !k || s.name.includes(k) || s.city.includes(k) || catName.includes(k)
+  const inCat = spaceType.value === 'office' ? !!s.office : s.cat === spaceType.value
+  return inCat && (!city.value || s.city === city.value) && hit
 }))
 const curSpace = computed(() => v5.spaces.find(s => s.id === selSpace.value))
 const spaceSlots = computed(() => v5.slots.filter(s => s.spaceId === selSpace.value))
@@ -1224,8 +1226,76 @@ function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` 
 function shortAt(at) { return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))} ${at.slice(11, 16)}` }
 function slotCount(id) { return v5.slots.filter(s => s.spaceId === id).length + v5.temps.filter(t => t.spaceId === id).length }
 function peopleOf(id) { return v5.people.filter(p => p.spaceId === id).length }
+
+/* ===== 按岗位汇总：把每条时段的档位按岗位折过来 =====
+   岗位只从档位里来（档位没限岗位的算「不限岗位」）；名额按档位上限拆，没写上限的吃剩余名额平摊。 */
+const WAY_TEXT = { direct: '直派', grab: '先到先得', apply: '申领审核' }
+function jobOfEntry(e) {
+  return e.who?.pos && e.who.pos !== 'all' ? e.who.pos : '不限岗位'
+}
+function slotShares(slot) {
+  const entries = (slot.list || []).map(e => ({ ...e, job: jobOfEntry(e) }))
+  const capSum = entries.filter(e => e.cap).reduce((a, e) => a + e.cap, 0)
+  const left = Math.max(0, (slot.snapN ?? slot.quota?.value ?? 0) - capSum)
+  const noCap = entries.filter(e => !e.cap)
+  const share = noCap.length ? Math.floor(left / noCap.length) : 0
+  return entries.map(e => ({ ...e, n: e.cap ?? share }))
+}
+const posRows = computed(() => {
+  const map = new Map()
+  const rowOf = job => {
+    if (!map.has(job)) map.set(job, { job, whos: [] })
+    return map.get(job)
+  }
+  /* 可获取人群：档位折到岗位，同岗位去重排一起 */
+  const feed = slot => {
+    slotShares(slot).forEach(({ job, who, way, cap }) => {
+      const label = `${whoLabel5(who)} · ${WAY_TEXT[way] || way}${cap ? `（${cap} 位）` : ''}`
+      const whos = rowOf(job).whos
+      if (!whos.includes(label)) whos.push(label)
+    })
+  }
+  spaceSlots.value.forEach(feed)
+  spaceTemps.value.forEach(feed)
+  /* 日期维度：下一轮覆盖区间里，每个岗位每天有哪些时段（临时班次标「临时」）、合计几位 */
+  const dates = []
+  {
+    const [a, b] = round.value.nextSpan
+    const pad = n => String(n).padStart(2, '0')
+    const d = new Date(`${a}T00:00:00`)
+    const end = new Date(`${b}T00:00:00`)
+    while (d <= end) {
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      dates.push({ date, dow: d.getDay() })
+      d.setDate(d.getDate() + 1)
+    }
+  }
+  const jobN = (slot, job) => slotShares(slot).filter(x => x.job === job).reduce((a, x) => a + x.n, 0)
+  const rows = [...map.values()].map(row => {
+    row.days = dates.map(({ date, dow }) => {
+      const items = [
+        ...spaceSlots.value.filter(s => s.days.includes(dow) && jobN(s, row.job))
+          .map(s => ({ key: s.id, name: s.name, start: s.start, end: s.end, n: jobN(s, row.job), tmp: false })),
+        ...spaceTemps.value.filter(t => t.date === date && jobN(t, row.job))
+          .map(t => ({ key: t.id, name: t.name, start: t.start, end: t.end, n: jobN(t, row.job), tmp: true }))
+      ]
+      return { date, dow, items, dayN: items.reduce((a, x) => a + x.n, 0) }
+    }).filter(d => d.items.length)
+    const ns = row.days.map(d => d.dayN)
+    row.qMin = ns.length ? Math.min(...ns) : 0
+    row.qMax = ns.length ? Math.max(...ns) : 0
+    row.qTmp = row.days.flatMap(d => d.items).filter(i => i.tmp).reduce((a, x) => a + x.n, 0)
+    return row
+  }).filter(r => r.days.length)
+  return rows.sort((a, b) => {
+    if (a.job === '不限岗位') return 1
+    if (b.job === '不限岗位') return -1
+    return a.job.localeCompare(b.job, 'zh')
+  })
+})
+const DOW5 = ['日', '一', '二', '三', '四', '五', '六']
 /* 按周期视图：下一轮覆盖区间，每天列出当天会跑的班次（周期班次按星期几 + 临时班次按日期） */
-const cycView = ref('cycle') /* 默认按周期：配置人员按天干活 */
+const cycView = ref(['cycle', 'list', 'pos'].includes(route.query.view) ? route.query.view : 'cycle') /* 默认按周期：配置人员按天干活；按岗位是同一份清单的第三种看法 */
 const cycleDays = computed(() => {
   const [a, b] = round.value.nextSpan
   const out = []
@@ -2133,10 +2203,6 @@ function devResolveApply() {
 .outer-tabs button.on { background: #fdf1f4; color: #a40035; font-weight: 500; }
 .outer-tabs button.on em { color: #c98ba0; }
 .ot-spacer { flex: 1; }
-.brand-assign-h { font-size: 12.5px; color: #2c2c2a; font-weight: 500; margin: 14px 0 8px; padding-top: 10px; border-top: 1px dashed #eee6e8; }
-.brand-assign-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 12.5px; color: #4a4a52; }
-.brand-assign-row .ba-name { width: 100px; }
-.brand-assign-row .ba-type { font-size: 11px; color: #9a9fa9; flex: 1; }
 /* 一级导航：排班 / 系统服务 */
 .main-tabs { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; }
 .main-tabs button { border: 1px solid #eee6e8; background: #fff; padding: 6px 16px; border-radius: 18px; font-size: 13px; color: #6a6a75; cursor: pointer; }
@@ -2251,6 +2317,26 @@ function devResolveApply() {
 .sf-row .el-input { flex: 1; }
 .svc-link { margin-left: auto; }
 .hint-line { font-size: 12px; color: #8a8a95; margin: 8px 0 10px; }
+/* 按岗位汇总表 */
+.pos-table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+.pos-table th { text-align: left; font-weight: 500; color: #8a8a95; font-size: 11.5px; padding: 8px 10px; border-bottom: 1px solid #eee6e8; background: #fcfafa; white-space: nowrap; }
+.pos-table td { padding: 10px; border-bottom: 1px solid #f4eef0; vertical-align: top; }
+.pt-job { font-size: 13px; color: #2c2c2a; }
+/* 按岗位 · 逐日行：日期 | 当天时段小格（网格等宽对齐成列） | 当天合计 */
+.pt-day { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #f5eef0; }
+.pt-day:last-child { border-bottom: none; }
+.pt-date { flex-shrink: 0; width: 74px; padding-top: 2px; font-size: 11.5px; font-weight: 600; color: #4a4a55; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pt-day-slots { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 3px 12px; }
+.pt-slot-inline { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11.5px; color: #4a4a55; white-space: nowrap; min-width: 0; }
+.psi-main { overflow: hidden; text-overflow: ellipsis; }
+.pt-slot-inline em { flex-shrink: 0; font-style: normal; font-size: 11px; color: #0f6e56; background: #eaf6f1; border-radius: 4px; padding: 0 5px; }
+.pt-tmp { font-style: normal; font-size: 10.5px; color: #9a5b00; background: #fdf3e3; border-radius: 4px; padding: 0 5px; margin-right: 4px; }
+.pt-day-n { flex-shrink: 0; width: 44px; text-align: right; padding-top: 2px; font-style: normal; font-size: 11px; color: #8a8a95; white-space: nowrap; }
+.pt-q { display: block; color: #6a6a75; }
+.pt-q strong { color: #a40035; font-size: 13px; }
+.pt-who { margin: 0; padding-left: 16px; color: #4a4a55; }
+.pt-who li { line-height: 1.65; }
+.pt-none { color: #c8c8d0; }
 .hint-list { margin: 8px 0 10px; padding: 10px 12px 10px 26px; border: 1px solid #f0eaec; border-radius: 8px; background: #fcfbfc; font-size: 12px; color: #6a6a75; line-height: 1.9; }
 .hint-list li::marker { color: #a40035; }
 
@@ -2295,6 +2381,9 @@ function devResolveApply() {
 .cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .cd-use { font-size: 11.5px; color: #9a9fa9; white-space: nowrap; line-height: 18px; }
 .cat-dlg-row { align-items: flex-start; }
+.cat-dlg-sec { font-size: 12.5px; color: #a40035; font-weight: 600; margin: 14px 0 8px; }
+.cat-dlg-sec:first-of-type { margin-top: 0; }
+.cd-shop { width: 90px; font-size: 12.5px; color: #2c2c2a; line-height: 24px; white-space: nowrap; }
 
 .slot-card { border: 1px solid #f0eaec; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .slot-card header { display: flex; justify-content: space-between; align-items: center; }
@@ -2304,8 +2393,8 @@ function devResolveApply() {
 .days { font-size: 12px; color: #9a9fa9; }
 .sacts { display: flex; align-items: center; gap: 8px; }
 .quota-tag { font-size: 11.5px; color: #0f6e56; background: #eaf6f1; border-radius: 4px; padding: 2px 6px; }
-.list-rows { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.lr { display: flex; align-items: center; gap: 6px; border: 1px solid #f0eaec; border-radius: 6px; padding: 3px 8px; font-size: 12px; color: #4a4a55; }
+.list-rows { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.lr { display: flex; align-items: center; gap: 6px; border: 1px solid #f0eaec; border-radius: 6px; padding: 4px 8px; font-size: 12px; color: #4a4a55; background: #fff; }
 .lr-k { width: 14px; height: 14px; border-radius: 50%; background: #f2f2ee; color: #7a7a85; font-size: 10.5px; display: inline-flex; align-items: center; justify-content: center; }
 .lr-way { font-size: 11px; border-radius: 3px; padding: 1px 5px; }
 .way-direct { background: #eef3fb; color: #24587f; }
@@ -2338,6 +2427,8 @@ function devResolveApply() {
 .who-preview strong { color: #a40035; font-weight: 600; }
 .le-row .del, .add-row { border: none; background: none; color: #a40035; font-size: 12px; cursor: pointer; justify-self: end; padding: 0; }
 .add-row { margin-top: 4px; }
+.add-row:disabled { color: #c9c9d0; cursor: not-allowed; }
+.add-row-max { justify-self: end; font-size: 12px; color: #9a9fa9; }
 .ea { display: flex; align-items: center; gap: 8px; }
 .ea-hint { font-size: 11.5px; color: #a35b00; margin-right: auto; }
 .drawer-box .ea .ea-discard { margin-left: auto; }

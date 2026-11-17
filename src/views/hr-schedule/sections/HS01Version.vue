@@ -4,7 +4,7 @@
     title="一、版本信息"
     subtitle="文档身份、负责人与适用范围"
     version="v5.0"
-    date="2026-11-15"
+    date="2026-11-17"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-ver" class="section">
@@ -19,13 +19,13 @@
         <tbody>
           <tr><td><strong>文档</strong></td><td>人事中心 · 排班策略 · 产品需求说明</td></tr>
           <tr><td><strong>版本</strong></td><td>v5.0（排班策略 v5 独立重建首版；v3.x 为已归档对照）</td></tr>
-          <tr><td><strong>日期</strong></td><td>2026-11-15</td></tr>
+          <tr><td><strong>日期</strong></td><td>2026-11-17（v3.16 品牌分类 · v3.17 按岗位汇总）</td></tr>
           <tr><td><strong>负责人</strong></td><td><strong>Lacus7</strong></td></tr>
           <tr><td><strong>读者</strong></td><td>运营 / 门店管理 / 排班负责人 / 研发 / 测试 / 员工（仅移动端部分）</td></tr>
           <tr>
             <td><strong>范围</strong></td>
             <td>
-              时段与清单（班次 / 名额来源 / 档位）、轮与获取（直派 / 先到先得 / 申领审核 + 轮 + 余额去向）、
+              空间与品牌分类（分类 → 门店两层）、时段与清单（班次 / 名额来源 / 档位）、轮与获取（直派 / 先到先得 / 申领审核 + 轮 + 余额去向）、
               排班结果、变化与求值、移动端。<strong>不含</strong>考勤打卡（只留挂载点）、排班结果表本身的结构改造、
               加班认定与薪酬计算。
             </td>
