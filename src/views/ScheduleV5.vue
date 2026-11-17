@@ -858,9 +858,9 @@
               <el-option v-for="p in curSpacePeople" :key="p.id" :label="`${p.id} ${p.name} · ${p.kind === 'fulltime' ? '全职' : '非全'} · ${p.position}`" :value="p.id" />
             </el-select>
             <span v-if="mePid" class="me-stats">共 {{ meStats.count }} 条班 · 合计 {{ meStats.hours }} 小时<template v-if="meStats.blocked"> · <b class="me-bad">无法履约 {{ meStats.blocked }} 条</b></template></span>
-            <span class="fa-hint">以人看班：这个人在这里已有的全部排班（已过期的不用看）；悬浮某一天，出这天的班次 / 事实 / 补位明细卡（与事实记录悬浮卡同一画法）</span>
+            <el-date-picker v-model="meMonth" type="month" value-format="YYYY-MM" format="YYYY年MM月" :clearable="false" size="small" style="width: 132px" placeholder="选择月份" />
           </div>
-          <div v-if="!mePid || !meDays.length" class="me-empty">{{ !mePid ? '选一个人，看TA的全部排班' : '这个人在这里已经没有未过期的班' }}</div>
+          <div v-if="!mePid || !meDays.length" class="me-empty">{{ !mePid ? '选一个人，看TA的全部排班' : `${meMonthLabel} 这个人在这里没有班次记录` }}</div>
           <div v-else class="tl-box me-box">
             <div v-for="(d, di) in meDays" :key="d.date" class="me-row">
               <div class="me-day">
@@ -1868,14 +1868,16 @@ const mePid = ref('')
 watch(() => curSpacePeople.value, list => {
   if (!list.some(p => p.id === mePid.value)) mePid.value = list[0]?.id || ''
 }, { immediate: true })
-/* 这个人在当前空间已有的全部班的日子：不圈某一期，已过期的不用看 */
+/* 这个人在当前空间某个月已有的班：按月查，一次一个月——往回翻就是历史 */
+const meMonth = ref(v5.today.slice(0, 7))
+const meMonthLabel = computed(() => `${meMonth.value.slice(0, 4)}年${Number(meMonth.value.slice(5, 7))}月`)
 const meDateList = computed(() => {
   if (!mePid.value) return []
   const dates = new Set()
   v5.placements.forEach(p => {
     if (slotById(v5, p.slotId)?.spaceId !== selSpace.value) return
     if (p.personId !== mePid.value && dutyPersonId5(p) !== mePid.value) return
-    if (p.date < v5.today) return
+    if (p.date.slice(0, 7) !== meMonth.value) return
     dates.add(p.date)
   })
   return [...dates].sort()
