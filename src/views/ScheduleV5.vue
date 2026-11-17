@@ -469,7 +469,7 @@
               <li>一条规则 = 管谁 + 管哪一类（或全部）+ 计量（条数 / 分钟）+ 下限和上限</li>
               <li>两项计量都按这一天合计，不跨天累加</li>
               <li>没配规则的人直接放行；类下任一条都算数（名额满了可换同类的另一条）</li>
-              <li>改了立即用于试算，正式生效下一轮</li>
+              <li>改了立即生效，正式生效下一轮</li>
             </ul>
 
             <!-- 类别是空间的字典：规则按类管，类下任一条都算数 -->
@@ -503,7 +503,7 @@
             <el-drawer :model-value="ruleEditing" size="520px"
               :title="ruleForm.id ? '编辑规则' : '新增规则'"
               @update:model-value="v => { if (!v) ruleEditing = false }">
-              <div class="drawer-tag">改了立即用于试算，正式生效下一轮</div>
+              <div class="drawer-tag">改了立即生效，正式生效下一轮</div>
               <div class="edit-box drawer-box">
                 <div class="er">
                   <label>名称</label>
@@ -562,24 +562,6 @@
                 </span>
                 <el-button link size="small" @click="openLimitEdit">编辑</el-button>
               </template>
-            </div>
-
-            <div class="trial-card">
-              <strong>试算</strong>
-              <span class="lc-note">按「这个人这天最终占到的班」判，不是按勾了什么</span>
-              <el-select v-model="trialPerson" size="small" filterable style="width: 140px">
-                <el-option v-for="p in curSpacePeople" :key="p.id" :label="p.name" :value="p.id" />
-              </el-select>
-              <el-date-picker v-model="trialDate" type="date" size="small" value-format="YYYY-MM-DD" style="width: 140px" />
-              <div v-if="trial" class="trial-body">
-                <div v-if="!trial.hasRule" class="trial-line muted">这个人没命中任何规则：直接放行</div>
-                <div v-for="i in trial.items" :key="i.id" class="trial-line" :class="{ bad: !i.ok }">
-                  <span class="tl-dot" />{{ i.name }}：{{ i.actual }}，要求 {{ i.need }}{{ i.ok ? '（满足）' : '（差）' }}
-                </div>
-                <div v-for="l in trial.limits" :key="l.name" class="trial-line" :class="{ bad: !l.ok }">
-                  <span class="tl-dot" />{{ l.name }}：{{ l.used }} / {{ l.cap }} 小时{{ l.ok ? '' : '（超了）' }}
-                </div>
-              </div>
             </div>
           </template>
         </section>
@@ -1027,7 +1009,7 @@ import {
   v5, WEEK_DATES, saveSlotEdit, revertConfig, addTemp, removeTemp,
   addSlot, copySlot, removeSlot, checkSlotForm, setRoundConfig, setDayQuota, dayCap,
   appointV5, resolveApplyDemo, gaps5, resultRows5, factRows5, applicationRows5, copyDay5, ackNotice,
-  roundOf, rulesOfSpace, saveRule5, removeRule5, trialClaim, limitsOfSpace, setHourLimits, advanceRoundDemo,
+  roundOf, rulesOfSpace, saveRule5, removeRule5, limitsOfSpace, setHourLimits, advanceRoundDemo,
   roundList, pickRound, viewRound, viewRoundDates, roundOfDate, nextPublish,
   addCategory5, renameCategory5, removeCategory5, categoryUsage,
   gapRules, gapList5
@@ -1123,7 +1105,7 @@ const allSpaceSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.m
 const runSlots = computed(() => [...spaceSlots.value, ...spaceTemps.value.filter(t => runDates.value.includes(t.date)).map(t => ({ ...t, tmp: true }))])
 const curSpacePeople = computed(() => v5.people.filter(p => p.spaceId === selSpace.value))
 
-function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits(); initTrial() }
+function pickSpace(id) { selSpace.value = id; editing.value = null; syncRhythm(); syncLimits() }
 
 /* 时间展示：日期只到日，时刻带上时分 */
 function short(d) { return `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}` }
@@ -1881,7 +1863,7 @@ function saveRule() {
     unit: ruleForm.unit, min: ruleForm.min || 0, max: ruleForm.max || null
   })
   ruleEditing.value = false
-  ElMessage.success('规则已保存：立即用于试算，正式生效下一轮')
+  ElMessage.success('规则已保存：立即生效，正式生效下一轮')
 }
 function doRemoveTemp(t) {
   ElMessageBox.confirm(
@@ -1926,17 +1908,6 @@ function applyLimits() {
   limitEditing.value = false
   ElMessage.success('额度已保存：按门店各算一套，只控周和月')
 }
-const trialPerson = ref('')
-const trialDate = ref('')
-const trial = computed(() => (trialPerson.value && trialDate.value
-  ? trialClaim(trialPerson.value, selSpace.value, trialDate.value) : null))
-function initTrial() {
-  trialDate.value = roundDates.value[0] || ''
-  /* 优先选一个命中规则的人，试算一打开就有内容 */
-  const hit = curSpacePeople.value.find(p => claimRulesOf5(v5, selSpace.value, p).length)
-  trialPerson.value = (hit || curSpacePeople.value[0])?.id || ''
-}
-initTrial()
 
 /* 演示：申领截止（按当前空间所有申领逐组截断） */
 function devResolveApply() {
@@ -2119,16 +2090,11 @@ function devResolveApply() {
 .rc-who { font-size: 12px; color: #6a6a75; }
 .rc-scope { font-size: 11.5px; color: #6a4b8a; background: #f4eefb; border-radius: 4px; padding: 1px 6px; }
 .rc-need { font-size: 12px; color: #a40035; font-weight: 500; }
-.limit-card, .trial-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; }
-.limit-card strong, .trial-card strong { font-size: 13px; color: #2C2C2A; }
+.limit-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #eee6e8; border-radius: 8px; background: #fff; padding: 9px 12px; margin-bottom: 10px; font-size: 12.5px; }
+.limit-card strong { font-size: 13px; color: #2C2C2A; }
 .lc-note { font-size: 11.5px; color: #9a9fa9; }
 .lc-line { display: inline-flex; align-items: center; gap: 6px; }
 .lc-none { font-size: 12px; color: #9a9fa9; font-style: normal; }
-.trial-body { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
-.trial-line { font-size: 12px; color: #2f6f4f; display: flex; align-items: center; gap: 6px; }
-.trial-line.bad { color: #a4441d; }
-.trial-line.muted { color: #9a9fa9; }
-.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
 .rule-err { font-size: 12px; color: #a40035; margin: 4px 0; }
 .cat-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12.5px; }
 .cr-label { color: #6a6a75; }

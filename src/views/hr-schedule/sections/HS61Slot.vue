@@ -176,7 +176,7 @@
       <DocScreens
         :height="320"
         :images="[
-          { src: slotRuleShot, label: '申领规则（兴隆湖）：类别 A / B，规则挂人群不挂时段，底部试算选人 + 选日期直接出判定' },
+          { src: slotRuleShot, label: '申领规则（兴隆湖）：类别 A / B，规则挂人群不挂时段' },
           { src: ruleEditShot, label: '编辑规则抽屉：名称 / 管谁 / 管哪一类 / 计量（条数、分钟）+ 下限上限' },
           { src: catDlgShot, label: '管理类别：空间的字典，增 / 改名 / 删（被引用的类别删除要过确认）' }
         ]"
@@ -189,9 +189,8 @@
           <tr><td><strong>挂谁</strong></td><td>规则挂「人群」，不挂时段；没配规则的人直接放行</td></tr>
           <tr><td><strong>计量</strong></td><td>条数 / 分钟两种，配下限与上限；按这一天合计，不跨天累加</td></tr>
           <tr><td><strong>类别</strong></td><td>类别是空间的字典（如 A 类 / B 类）；规则可管某一类或全部，<strong>类下任一条都算数</strong>（名额满了可换同类另一条）</td></tr>
-          <tr><td><strong>工时制度</strong></td><td>每空间一份非全周 / 月工时上限，行内编辑；没配的空间非全不受额度限制——试算里的「本周 / 本月额度」就读它</td></tr>
-          <tr><td><strong>试算</strong></td><td>选一个人 + 一天，页面直接出判定：每条规则满足 / 不满足、周 / 月额度余量</td></tr>
-          <tr><td><strong>生效</strong></td><td>改了立即用于试算，正式生效下一轮</td></tr>
+          <tr><td><strong>工时制度</strong></td><td>每空间一份非全周 / 月工时上限，行内编辑；没配的空间非全不受额度限制</td></tr>
+          <tr><td><strong>生效</strong></td><td>改了立即生效，正式生效下一轮</td></tr>
         </tbody>
       </table>
     </div>

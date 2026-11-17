@@ -436,7 +436,7 @@ export function factRows5() {
 }
 
 /* ===== 排班时段选择规则（配置层） =====
-   规则挂「空间 × 人群」，不是挂时段；改了立即用于试算，正式生效下一轮。 */
+   规则挂「空间 × 人群」，不是挂时段；改了立即生效，正式生效下一轮。 */
 export const claimRules = computed(() => state.claimRules || [])
 export const hourLimits = computed(() => state.hourLimits || [])
 export function rulesOfSpace(spaceId) {
@@ -480,12 +480,6 @@ export function removeCategory5(spaceId, catId) {
   if (r.ok) state.configDirty = true
   return r
 }
-/* 试算：看某人某天在这家店占到的班过不过规则、额度还剩多少。
-   试算按刚改过的配置层算；正式判定按这一轮的快照（改动下一轮生效）。 */
-export function trialClaim(personId, spaceId, date) {
-  return claimCheck5(state, spaceId, personId, date, { config: true })
-}
-
 /* 移动端按这一轮快照口径看规则与额度（配了才出现，没配=没有约束） */
 export function myClaimBoard(spaceId, personId, date) {
   return claimCheck5(state, spaceId, personId, date)
