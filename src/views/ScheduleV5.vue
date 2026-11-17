@@ -1745,7 +1745,7 @@ const meDays = computed(() => {
     const blocked = []
     bands.forEach(b => {
       if (b.cls === 'covered' && !b.sub?.includes('换入')) blocked.push(`${b.text}：${b.sub}`)
-      else if (b.marks?.length) blocked.push(`${b.text}：其中 ${b.marks.map(m => m.label).join('、')} 被占用，其余照常`)
+      else if (b.marks?.length) blocked.push(`其中 ${b.marks.map(m => m.label).join('、')} 被占用，其余照常`)
     })
     return { date, bands, blocked }
   })
@@ -2376,7 +2376,7 @@ tr.covered td { color: #9a9fa9; }
 .me-day em { display: block; font-style: normal; color: #9a9fa9; font-size: 11px; }
 .me-track { height: 32px; }
 .me-none { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #c0c0c8; }
-.me-blocked { margin: 5px 0 0; padding: 6px 9px; background: #fdf6f8; border-radius: 6px; }
+.me-blocked { margin: 5px 0 0; padding: 3px 8px; background: #fdf6f8; border-radius: 6px; width: fit-content; max-width: 100%; }
 .me-blocked p { margin: 0; font-size: 12px; color: #a4441d; line-height: 1.55; }
 /* 悬浮卡：贴着格子出的当天单轴，不往下撑页面 */
 .tl-pop { position: fixed; z-index: 90; width: 480px; background: #fff; border: 1px solid #eee0e4; border-radius: 10px; box-shadow: 0 8px 28px rgba(60, 20, 30, 0.16); padding: 10px 12px 8px; }
