@@ -2,7 +2,7 @@
   <DocShell
     :toc-items="tocItems"
     title="6.4 变化与求值"
-    subtitle="关闸之后的偏差写一条事实、重算一次、留一个解版本，不回头改历史"
+    subtitle="关闸之后的偏差写一条事实、重算一次、事实表留痕，不回头改历史"
     version="v5.2"
     date="2026-11-17"
     :breadcrumbs="breadcrumbs"
@@ -14,18 +14,17 @@
       </div>
       <p class="doc-p">
         这一章解决<strong>排完之后出偏差怎么办</strong>：关闸以后班次已经落到人头上，再出变化不能改班次配置、也不能手工改结果表，
-        只能<strong>写一条事实</strong>。事实一旦写入，系统重算一次得到新的解，旧解留档——
-        历史上的每一版都能回看，但任何一版都不被回头修改。
+        只能<strong>写一条事实</strong>。事实一旦写入，系统重算一次——每条事实就是这一次重算的留痕，留痕由事实表承载，页面不另列版本时间线。
       </p>
       <div class="func-entry">
         <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>事实记录</strong>
-        （全员一周矩阵 / 事实表 / 解版本时间线）
+        （全员一周矩阵 / 事实表，支持搜索与分页）
       </div>
 
       <DocScreens
         :height="420"
         :images="[
-          { src: factsShot, label: '事实记录：全员一周矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表 + 解版本时间线' }
+          { src: factsShot, label: '事实记录：全员一周矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表（搜索 + 分页）' }
         ]"
       />
     </div>
@@ -41,7 +40,7 @@
         <tbody>
           <tr><td><strong>行 = 人</strong></td><td>这个空间这一轮涉及的所有人</td><td>一眼看出谁哪天有班、谁空着</td></tr>
           <tr><td><strong>列 = 这一轮的日子</strong></td><td>格子里画时间条</td><td>蓝 = 班次；橙斜纹 = 被事件占用；绿 = 顶上的班；黄 = 换班对调来的</td></tr>
-          <tr><td><strong>点格子</strong></td><td>展开这个人当天的单轴细节</td><td>班次 / 事实 / 补位三条带怎么叠出来的</td></tr>
+          <tr><td><strong>悬浮格子</strong></td><td>格子旁出当天单轴小卡，不撑开页面</td><td>班次 / 事实 / 补位三条带怎么叠出来的；卡上「相关的人」可切换</td></tr>
         </tbody>
       </table>
     </div>
@@ -113,7 +112,7 @@
 
     <div id="hs-64-solve" class="section">
       <div class="section-header">
-        <h3>6.4.4 求值与解版本</h3>
+        <h3>6.4.4 求值与留痕</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -122,7 +121,7 @@
         <tbody>
           <tr><td><strong>写一条事实</strong></td><td>请假 / 顶班 / 换班 / 离职各写各的，一条事实一个事项</td></tr>
           <tr><td><strong>重算一次</strong></td><td>按清单顺位找有空、没冲突的人顶；找得到直接补位并通知，找不到时段留空</td></tr>
-          <tr><td><strong>留一个解版本</strong></td><td>每次求值生成一个新版本号 + 变更说明；版本按时间排，只能追加不能改</td></tr>
+          <tr><td><strong>留痕</strong></td><td>每条事实就是一次重算的留痕（发生时间 + 影响的班次 + 结果），事实表即留痕，页面不另列解版本时间线</td></tr>
         </tbody>
       </table>
       <div class="note">
@@ -165,7 +164,7 @@ const tocItems = [
   { id: 'hs-64-timeline', label: '6.4.1 全员一周矩阵' },
   { id: 'hs-64-facts', label: '6.4.2 四类事实' },
   { id: 'hs-64-gap', label: '6.4.3 缺口规则' },
-  { id: 'hs-64-solve', label: '6.4.4 求值与解版本' },
+  { id: 'hs-64-solve', label: '6.4.4 求值与留痕' },
   { id: 'hs-64-notice', label: '6.4.5 通知与让位' }
 ]
 

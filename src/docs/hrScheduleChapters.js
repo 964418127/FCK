@@ -129,7 +129,7 @@ export const hrScheduleFeatureChapters = [
     no: '6.4',
     title: '变化与求值',
     nav: '变化与求值',
-    subtitle: '关闸之后的偏差写一条事实、重算一次、留一个解版本，不回头改历史',
+    subtitle: '关闸之后的偏差写一条事实、重算一次、事实表留痕，不回头改历史',
     routeName: 'doc-hr-schedule-6-4',
     path: '/docs/hr-schedule/6-4',
     file: 'sections/HS64Facts.vue'

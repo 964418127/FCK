@@ -735,7 +735,8 @@
         <!-- ③ 变化段：事实与记录 -->
         <section v-else-if="tab === 'fact'" class="pane">
           <div class="fact-acts">
-            <span class="fa-hint">变化只走事实：写一条，重算一次，留一个解版本。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
+            <el-input v-model="factKw" placeholder="搜人 / 类型 / 班次 / 结果" clearable size="small" style="width: 220px" />
+            <span class="fa-hint">变化只走事实：写一条，重算一次，事实表就是留痕。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
           </div>
 
           <!-- 全员一周：行是人、列是这一轮的日子，格子放班次/占用/顶班的时段 chip；悬浮格子，在格子旁边出当天的单轴小卡 -->
@@ -808,7 +809,7 @@
               <tr><th style="width: 120px;">发生时间</th><th style="width: 90px;">类型</th><th style="width: 76px;">谁</th><th style="width: 190px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
             </thead>
             <tbody>
-              <template v-for="f in facts" :key="f.id">
+              <template v-for="f in factRows" :key="f.id">
                 <tr :class="{ hl: hlFact === f.id }">
                   <td class="mono">{{ f.at.slice(5) }}</td>
                   <td><span class="ftype">{{ f.type }}</span></td>
@@ -834,15 +835,7 @@
               </template>
             </tbody>
           </table>
-
-          <div class="ver-title">解版本</div>
-          <div class="vers">
-            <div v-for="x in v5.versions" :key="x.v" class="ver">
-              <span class="v-no">v{{ x.v }}</span>
-              <span class="v-at">{{ x.at.slice(5) }}</span>
-              <span class="v-note">{{ x.note }}</span>
-            </div>
-          </div>
+          <TablePagination v-model:page="factPage" v-model:page-size="factPageSize" :total="factTotal" />
         </section>
       </main>
     </div>
@@ -1582,8 +1575,16 @@ const { page, pageSize, total, rows } = usePager(resultList)
 /* 申领登记（人事只看不审批） */
 const applies = computed(() => applicationRows5(selSpace.value).filter(a => runDates.value.includes(a.date)))
 
-/* 事实与版本 */
+/* 事实记录：搜索 + 分页（页面留痕就是事实表本身，不再单列解版本块） */
+const factKw = ref('')
 const facts = computed(() => factRows5())
+const factFiltered = computed(() => {
+  const kw = factKw.value.trim().toLowerCase()
+  if (!kw) return facts.value
+  return facts.value.filter(f => [f.type, f.person, f.date, f.slotName, f.slotTime, f.result]
+    .some(x => (x || '').toLowerCase().includes(kw)))
+})
+const { page: factPage, pageSize: factPageSize, total: factTotal, rows: factRows } = usePager(factFiltered)
 
 /* 个人时间线：横轴是这个人当天的时间，纵向班次条/事实条/补位条；支持只占一部分时间的请假 */
 const tlPidRaw = ref('')
@@ -1751,6 +1752,10 @@ const openFact = ref('')
 const hlFact = ref('')
 function jumpFact(id) {
   tab.value = 'fact'
+  /* 从结果表点过来：清掉搜索、翻到目标事实所在页，再高亮 */
+  factKw.value = ''
+  const idx = factFiltered.value.findIndex(f => f.id === id)
+  if (idx >= 0) factPage.value = Math.floor(idx / factPageSize.value) + 1
   hlFact.value = id
   nextTick(() => document.querySelector('.data-table tr.hl')?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
   setTimeout(() => { if (hlFact.value === id) hlFact.value = '' }, 2600)
@@ -2365,11 +2370,6 @@ tr.covered td { color: #9a9fa9; }
 .tr-title { color: #9a9fa9; }
 .tr-item { border: 1px solid #f0eaec; border-radius: 4px; padding: 1px 6px; background: #fff; }
 .tr-item.muted { color: #9a9fa9; }
-.ver-title { font-size: 13px; font-weight: 500; margin: 18px 0 8px; color: #2c2c2a; }
-.vers { display: flex; flex-direction: column; gap: 6px; }
-.ver { display: flex; gap: 10px; align-items: baseline; font-size: 12px; color: #6a6a75; }
-.v-no { color: #a40035; font-weight: 600; width: 28px; }
-.v-at { color: #9a9fa9; font-variant-numeric: tabular-nums; width: 74px; }
 .empty { font-size: 12px; color: #9a9fa9; padding: 14px 0; }
 .svc-note { font-size: 12px; color: #6a6a75; background: #fbfaf9; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; line-height: 1.7; }
 .dlg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12.5px; color: #6a6a75; }
