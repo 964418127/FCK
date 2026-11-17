@@ -663,7 +663,7 @@
 
           <!-- 缺口：只看排班确定后的缺口（事件拿走一段 / 临时加位没人接）；点一行看三条规则各判成什么 -->
           <template v-else>
-            <p class="gap-view-note">这里只看<b>排班确定之后因事件缺人</b>的缺口，按这条时段自己选的规则判；轮里名额没人拿满不算缺口，直接在矩阵或时间轴上定人。</p>
+            <p class="gap-view-note">这里只看<b>排班确定之后因事件缺人</b>的缺口，按这条时段自己选的规则判；轮里名额没人拿满不算缺口，直接在矩阵或时间轴上定人。结论列是规则判出来的「该补几人」，不是已经补上。</p>
             <table class="data-table">
               <thead>
                 <tr><th style="width: 130px;">来路</th><th style="width: 175px;">时段</th><th style="width: 70px;">日期</th><th style="width: 95px;">还剩</th><th style="width: 80px;">缺几个</th><th style="width: 150px;">规则</th><th>结论</th></tr>
@@ -1015,6 +1015,7 @@
 
     <!-- 试算：同一条缺口，三条规则各判一次——不占页面，点缺口才出来 -->
     <el-dialog v-model="trialDlg" title="这条缺口，缺口规则逐条各判一次" width="780px">
+      <p class="gt-note">这里是<b>试算，不执行</b>：回答「这条缺口按四条规则各会判成什么」。调缺口规则前、或想确认「照现在这个时刻还来不来得及补」时，在这里先看结论——不补人、不改名额；要真正定人，去矩阵或时间轴点缺口。</p>
       <div class="gt-left">
         <el-select v-model="trialKey" size="small" placeholder="选一条缺口" style="width: 100%;">
           <el-option v-for="g in gapRows" :key="g.slotId + '|' + g.date" :label="`${g.date.slice(5)} ${g.slot.name}（缺 ${g.quota}）`" :value="g.slotId + '|' + g.date" />
@@ -1026,6 +1027,7 @@
             <button :class="{ on: trialWhen === 'soon' }" @click="trialWhen = 'soon'">不足 1 小时</button>
             <button :class="{ on: trialWhen === 'now' }" @click="trialWhen = 'now'">已开始</button>
           </div>
+          <span class="gt-hint">同一个缺口在不同时刻判，结论可能不同：按现在实际剩多久 / 当成快开班 / 当成已开班</span>
         </div>
         <div class="gt-field">
           <label>预测这段要几人</label>
@@ -1143,7 +1145,7 @@ const runViewHint = computed(() => runView.value === 'grid'
   ? '格子里是当前占位的人；点空格直接定人'
   : runView.value === 'axis'
     ? '这一天每个时段上是谁、几点到几点；空格缺口点开就是定人'
-    : '这一轮缺哪几段、还剩多久、按这条时段自己选的规则判成什么；点一行看三条规则各判一次')
+    : '这一轮缺哪几段、还剩多久、按这条时段自己选的规则判成什么；点一行预演四条规则各判一次')
 const axisDay = ref('')
 watch(() => [selSpace.value, shownRound.value?.id], () => {
   axisDay.value = runDates.value.includes(v5.today) ? v5.today : (runDates.value[0] || '')
@@ -2489,6 +2491,8 @@ tr.hl td { background: #fdf3e6 !important; }
 .gr-note { font-size: 12px; color: #8a8a95; line-height: 1.55; margin-top: 7px; }
 .src-tag { font-size: 11.5px; color: #6a6a75; background: #f6f4f5; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
 .vd { font-size: 12.5px; font-weight: 500; }
+.gt-note { font-size: 12px; color: #8a8a95; margin: 0 0 12px; line-height: 1.6; }
+.gt-note b { color: #a40035; }
 .vd.supplement { color: #a40035; }
 .vd.missed { color: #8a8a95; }
 .vd.none { color: #2f7d5c; }

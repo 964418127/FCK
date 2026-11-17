@@ -840,13 +840,13 @@ export function evalGap5(state, slotId, date, rule, opts = {}) {
   if (rule.kind === 'forecast') {
     const need = Math.max(0, forecast - occ)
     if (need === 0) return { need: 0, action: 'none', text: '按预测不用补', why: `预测这段要 ${forecast} 人，现在 ${occ} 人` }
-    return { need, action: 'supplement', text: `补 ${need} 人`, why: `预测这段要 ${forecast} 人，现在 ${occ} 人` }
+    return { need, action: 'supplement', text: `按规则该补 ${need} 人`, why: `预测这段要 ${forecast} 人，现在 ${occ} 人` }
   }
   if (remain === 0) return { need: quota, action: 'missed', text: '补不上，记成没补上', why: '这段已经开始了' }
   if (rule.minGap && remain < rule.minGap) {
     return { need: quota, action: 'missed', text: '补不上，记成没补上', why: `还剩 ${fmtRemain5(remain)}，不到 ${rule.minGap} 分钟` }
   }
-  return { need: quota, action: 'supplement', text: `补 ${quota} 人`, why: `名额 ${n} 人，现在 ${occ} 人` }
+  return { need: quota, action: 'supplement', text: `按规则该补 ${quota} 人`, why: `名额 ${n} 人，现在 ${occ} 人` }
 }
 
 /*

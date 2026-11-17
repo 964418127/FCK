@@ -101,7 +101,7 @@
           <tr><td><strong>入口</strong></td><td>「轮与结果」缺口视图点一行，弹「这条缺口，缺口规则逐条各判一次」</td></tr>
           <tr><td><strong>假定此刻</strong></td><td>按实际剩余 / 不足 1 小时 / 已开始——同一个缺口在不同时刻判，结论可能不同</td></tr>
           <tr><td><strong>预测人数</strong></td><td>只有 G3 用：假定这段现在要几人</td></tr>
-          <tr><td><strong>结论</strong></td><td>每条规则卡各给一个结论（补几人 / 不补 + 原因），红色标出这条时段实际在用的规则</td></tr>
+          <tr><td><strong>结论</strong></td><td>每条规则卡各给一个判定（按规则该补几人 / 不补 + 原因），红色标出这条时段实际在用的规则；<strong>试算只预判，不补人也不改名额</strong>——定人在矩阵或时间轴点缺口，补位也可能由求值自动完成</td></tr>
         </tbody>
       </table>
       <div class="note">
