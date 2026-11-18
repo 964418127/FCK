@@ -20,6 +20,7 @@
         :images="[
           { src: mAttendanceShot, label: '打卡页：门店带任务与时段，日期、地点、时段取自任务不可改；未到时间整块提示，不露倒计时' },
           { src: mAttendanceLeaveShot, label: '顺序打卡：到店未完成时，「离店打卡」始终锁住为「待到店打卡」' },
+          { src: mAttendanceRecordsShot, label: '打卡记录：月历只有日期与状态点，图例分未打卡 / 正常 / 异常；不出现具体打卡时间' },
           { src: mAttendanceEmptyShot, label: '当日无任务：不进打卡流程，整页只有标题 + 一句话 + 「去看可选任务」' },
           { src: mAttendanceOfflineShot, label: '提前下线：标「提前离店」，只说一句结果，不显示派给了谁' }
         ]"
@@ -267,6 +268,7 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 import DocScreens from '../../../docs/components/DocScreens.vue'
 import mAttendanceShot from '../../../docs/assets/pages/m-pt-attendance.png'
 import mAttendanceLeaveShot from '../../../docs/assets/pages/m-pt-attendance-leave.png'
+import mAttendanceRecordsShot from '../../../docs/assets/pages/m-pt-attendance-records.png'
 import mAttendanceEmptyShot from '../../../docs/assets/pages/m-pt-attendance-empty.png'
 import mAttendanceOfflineShot from '../../../docs/assets/pages/m-pt-attendance-offline.png'
 
