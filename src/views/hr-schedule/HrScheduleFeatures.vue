@@ -2,7 +2,7 @@
   <DocShell
     :toc-items="tocItems"
     title="六、功能详细说明"
-    subtitle="6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端"
+    subtitle="6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知 → 6.7 打卡"
     version="v5.0"
     date="2026-11-15"
     :breadcrumbs="breadcrumbs"
@@ -13,8 +13,9 @@
         <DocCopyButton section-id="hs-feat" />
       </div>
       <p class="doc-p">
-        五个功能章按<strong>数据流顺序</strong>排：先配出时段与清单（6.1），再切成轮让人获取（6.2），
-        获取结果写进唯一记录口（6.3）；之后的变化写事实、重算、留版本（6.4）；员工端只看两件事（6.5）。
+        功能章按<strong>数据流顺序</strong>排：先配出时段与清单（6.1），再切成轮让人获取（6.2），
+        获取结果写进唯一记录口（6.3）；之后的变化写事实、重算、留版本（6.4）；员工端只看两件事（6.5）；
+        通知（6.6）说清会发哪些系统消息；打卡（6.7）是人事中心并入的通用能力，第一个落地非全客户经理。
       </p>
 
       <div class="chapter-grid">
@@ -39,6 +40,8 @@
           <tr><td><strong>6.3 排班结果</strong></td><td>排班策略 v5 → 轮与结果 / 个人查询</td><td>唯一记录口 + 占用矩阵 + 申领登记；个人查询按天看一个人这一轮的班与无法履约明细</td></tr>
           <tr><td><strong>6.4 变化与求值</strong></td><td>排班策略 v5 → 事实记录</td><td>四类事实、全员一周矩阵、事实表（搜索 + 分页）</td></tr>
           <tr><td><strong>6.5 移动端</strong></td><td>移动端菜单 → 人事组「我的排班」（<code>/v5/m</code>）</td><td>我的排班 + 可获取两页签，右上角切演示视角</td></tr>
+          <tr><td><strong>6.6 通知</strong></td><td>本章 6.6（<code>/docs/hr-schedule/6-6</code>）</td><td>发给员工的补位 / 安排 / 换班，发给人事经理的缺口</td></tr>
+          <tr><td><strong>6.7 打卡</strong></td><td>本章 6.7（<code>/docs/hr-schedule/6-7</code>）</td><td>人事中心通用打卡能力，首个落地非全客户经理</td></tr>
         </tbody>
       </table>
       <div class="note">

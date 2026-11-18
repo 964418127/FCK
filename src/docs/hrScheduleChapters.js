@@ -87,10 +87,11 @@ export const hrScheduleChapters = [
 ]
 
 /**
- * 第六章「功能详细说明」下的功能章节（6.1–6.6）。
+ * 第六章「功能详细说明」下的功能章节（6.1–6.7）。
  *
- * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知。
+ * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知 → 6.7 打卡。
  * 章序就是数据流：先配出时段与清单，再切成轮让人领，领完写进结果表，之后的变化才有的改。
+ * 6.7 打卡是人事中心并入的通用能力（首个落地业务：非全客户经理），挂在结果之后——工时与补人都从结果出来。
  * 编号 6.x 只在第六章内部使用。
  */
 export const hrScheduleFeatureChapters = [
@@ -153,5 +154,15 @@ export const hrScheduleFeatureChapters = [
     routeName: 'doc-hr-schedule-6-6',
     path: '/docs/hr-schedule/6-6',
     file: 'sections/HS66Notice.vue'
+  },
+  {
+    id: '6-7',
+    no: '6.7',
+    title: '打卡（支持非全合作）',
+    nav: '打卡',
+    subtitle: '人事中心提供打卡通用能力，非全客户经理第一个落地：取任务门店与时段，两次打卡成对出有效工时',
+    routeName: 'doc-hr-schedule-6-7',
+    path: '/docs/hr-schedule/6-7',
+    file: 'sections/HS67Checkin.vue'
   }
 ]
