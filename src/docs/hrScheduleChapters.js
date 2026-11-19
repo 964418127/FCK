@@ -87,11 +87,11 @@ export const hrScheduleChapters = [
 ]
 
 /**
- * 第六章「功能详细说明」下的功能章节（6.1–6.7）。
+ * 第六章「功能详细说明」下的功能章节（6.1–6.9）。
  *
- * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知 → 6.7 打卡。
+ * 6.1 时段与清单 → 6.2 轮与获取 → 6.3 排班结果 → 6.4 变化与求值 → 6.5 移动端 → 6.6 通知 → 6.7 打卡 → 6.8 薪酬 → 6.9 权限契约。
  * 章序就是数据流：先配出时段与清单，再切成轮让人领，领完写进结果表，之后的变化才有的改。
- * 6.7 打卡是人事中心并入的通用能力（首个落地业务：非全客户经理），挂在结果之后——工时与补人都从结果出来。
+ * 6.7–6.9 是人事中心并入的「支持非全合作」能力（首个落地业务：非全客户经理），挂在结果之后——打卡出工时，薪酬用工时，权限契约管边界。
  * 编号 6.x 只在第六章内部使用。
  */
 export const hrScheduleFeatureChapters = [
@@ -164,5 +164,35 @@ export const hrScheduleFeatureChapters = [
     routeName: 'doc-hr-schedule-6-7',
     path: '/docs/hr-schedule/6-7',
     file: 'sections/HS67Checkin.vue'
+  },
+  {
+    id: '6-8',
+    no: '6.8',
+    title: '薪酬计算与看板（支持非全合作）',
+    nav: '薪酬计算与看板',
+    subtitle: '单价四级继承、保底按小时配置，保底金额 = 打卡有效工时 × 保底时薪；看板与工资确认见 6.8.5、6.8.6',
+    routeName: 'doc-hr-schedule-6-8',
+    path: '/docs/hr-schedule/6-8',
+    file: 'sections/HS68Salary.vue'
+  },
+  {
+    id: '6-9',
+    no: '6.9',
+    title: '权限与数据契约（支持非全合作）',
+    nav: '权限与契约',
+    subtitle: '非全与全职的权限对照、旧排班兜底逻辑的停用边界、四类角色矩阵；十一个对象的必备字段与三条硬约束',
+    routeName: 'doc-hr-schedule-6-9',
+    path: '/docs/hr-schedule/6-9',
+    file: 'sections/HS69Governance.vue'
+  },
+  {
+    id: '6-10',
+    no: '6.10',
+    title: '移除门店权限（支持非全合作）',
+    nav: '门店范围',
+    subtitle: '客户经理不使用门店权限：可见与可操作的门店一律取挂店范围，合作关系跟着挂店走',
+    routeName: 'doc-hr-schedule-6-10',
+    path: '/docs/hr-schedule/6-10',
+    file: 'sections/HS610StoreScope.vue'
   }
 ]

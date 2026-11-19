@@ -15,6 +15,10 @@
       <div class="note lead-note">
         <strong>一句话定位：</strong>人事中心是通用设计，第一个要上的业务是非全客户经理——非全按工时结算，工时来自打卡，所以把打卡能力并入本章；这一节说清人事中心提供什么、非全客户经理怎么落。
       </div>
+      <div class="note src-note">
+        <strong>来源：</strong>本章内容并入自《非全客户经理 · 产品需求说明》6.6 到店打卡，原文见
+        <router-link to="/docs/parttime-account-manager/6-6">/docs/parttime-account-manager/6-6</router-link>。
+      </div>
       <DocScreens
         mode="phone"
         :images="[

@@ -30,6 +30,11 @@
 }
 .decision-note a { color: hsl(var(--primary)); text-decoration: underline; font-weight: 600; }
 
+/* 来源块：并入章节开头标注原文出处 */
+.src-note { color: hsl(var(--muted-foreground)); font-size: 12.5px; }
+.src-note strong { color: hsl(var(--foreground)); }
+.src-note a { color: hsl(var(--primary)); text-decoration: underline; }
+
 /* 宽账表：一张表放十几列，压紧内边距、数字不换行，分组表头单独一层底色；窄屏改为容器内横向滚动 */
 .ledger-wrap { width: 100%; overflow-x: auto; margin: 10px 0; }
 .data-table.ledger { font-size: 12px; min-width: max(1120px, 100%); }

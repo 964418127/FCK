@@ -27,8 +27,8 @@ export const docGroups = [
         title: '排班策略 · 产品需求说明',
         meta: 'v3.0 基线 · 2026-11-12',
         desc: '四岗位现行排班现状 + 架构对比（一条策略装四件事 vs 四层各管一件事）+ v3 框架：容器 → 时段 → 获取规则 → 排班结果表',
-        scope: '7 章 + 7 个功能章节',
-        updated: '2026-11-18',
+        scope: '7 章 + 10 个功能章节',
+        updated: '2026-11-19',
         path: '/docs/hr-schedule'
       }
     ]

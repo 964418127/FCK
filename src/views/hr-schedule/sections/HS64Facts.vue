@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="6.4 变化与求值"
     subtitle="关闸之后的偏差写一条事实、重算一次、事实表留痕，不回头改历史"
-    version="v5.2"
-    date="2026-11-17"
+    version="v5.4"
+    date="2026-11-19"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-64" class="section">
@@ -54,7 +54,7 @@
           <tr><th style="width: 90px;">事实</th><th style="width: 280px;">发生什么</th><th>系统怎么处理</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>请假</strong></td><td>人的一段班次时间来不了；可整班也可只请几小时</td><td>按这条班次的缺口规则重算（见 6.4.3）：只请一段也走缺口规则，顶班人只顶被拿走的那一段</td></tr>
+          <tr><td><strong>请假</strong></td><td>人的一段班次时间来不了；可整班也可只请几小时</td><td>按这条班次的缺口规则重算（见 6.4.4）：只请一段也走缺口规则，顶班人只顶被拿走的那一段</td></tr>
           <tr><td><strong>顶班</strong></td><td>人事安排另一个人来顶这个班</td><td>经营性安排，通知即可、不需对方同意；顶上后「待人事处理」自动销</td></tr>
           <tr><td><strong>换班</strong></td><td>两个人各拿自己的一天班次对调，同岗位对等</td><td>两条班次同时生效地对调，各自留变动历史；请求由对方在移动端答复。<strong>等待期 30 分钟</strong>：从发起算起，对方没拒绝也没同意，到点自动失效、两边都不动。谁能参与换班：只有这条班次允许获取的人群（清单档位里、按优先级开放的那批人）——档位外的人不出现在换班候选里，发起方选不到，对方也收不到请求</td></tr>
           <tr><td><strong>离职</strong></td><td>人离店，从某天起不再来</td><td>只交付事实与实际离职日期；后续班次标记被覆盖，<strong>不找人顶</strong>（补人由招聘侧处理）</td></tr>
@@ -64,6 +64,7 @@
         <strong>事实从哪来（来源边界）：</strong>四类事实各归各的发起模块，排班只收事实、做重算——
         <strong>请假</strong>在专门的请假模块提交（排班页不设请假入口，补位确认后去不了同样在请假模块提交）；
         <strong>换班</strong>由员工在移动端「我的排班」发起；<strong>顶班</strong>由人事在配置台安排；<strong>离职</strong>由离职流程交付。
+        业务侧的事件清单见 <router-link to="/docs/hr-schedule/6-4">6.4.3 事件记录</router-link>。
       </div>
       <div class="note">
         <strong>表达口径：</strong>一切变化都描述为「一段时间被一个事件占用」——不修改个人已获得的班次本身，
@@ -71,9 +72,36 @@
       </div>
     </div>
 
+    <div id="hs-64-events" class="section">
+      <div class="section-header">
+        <h3>6.4.3 事件记录（本期收录）</h3>
+      </div>
+      <p class="doc-p">
+        事件记录是<strong>业务侧发生了什么</strong>的清单：事件进来先落记录，能落到「一段时间被占用」的写成事实、进求值；
+        记录类的只留痕、不触发重算。本期先收录下面这几类，<strong>清单开放，后续随业务补充</strong>。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 130px;">事件</th><th style="width: 250px;">记录什么</th><th>进求值怎么走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>打卡</strong></td><td>上下班：班次的到岗与离岗记录，上下班成对出有效工时（见 6.7 / 6.8）</td><td>履约证明，只留痕；不占用班次、不触发重算</td></tr>
+          <tr><td><strong>请假 / 事件报备</strong></td><td>人一段时间来不了；请假撤销把这条事实失效、班次恢复</td><td>写请假事实，按缺口规则重算（见 6.4.4）</td></tr>
+          <tr><td><strong>订单</strong></td><td>订单成交与取消订单</td><td>客量变化，动的是时段需求（名额侧），不占用个人班次</td></tr>
+          <tr><td><strong>预约订单</strong></td><td>预定订单与取消预定订单</td><td>未来客量变化，影响后续时段的需求安排</td></tr>
+          <tr><td><strong>培训</strong></td><td>培训占用的时段</td><td>证明该时段无法履约，写占用事实、走缺口规则重算</td></tr>
+          <tr><td><strong>离职</strong></td><td>人离店，从某天起不再来</td><td>写离职事实：已排班次标记被覆盖、不找人顶；离职事件同时是班次无法履约的证明</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>事件与事实的分工：</strong>事件是业务侧发生了什么，事实是排班侧怎么响应——同一个事件落到不同人头上就是不同的事实条数；
+        事件记录只管把「发生了什么」记全，判断与执行仍按 6.4.5 求值与留痕走。
+      </div>
+    </div>
+
     <div id="hs-64-gap" class="section">
       <div class="section-header">
-        <h3>6.4.3 缺口规则：缺人之后怎么判</h3>
+        <h3>6.4.4 缺口规则：缺人之后怎么判</h3>
       </div>
       <DocScreens
         :height="360"
@@ -104,7 +132,7 @@
 
     <div id="hs-64-solve" class="section">
       <div class="section-header">
-        <h3>6.4.4 求值与留痕</h3>
+        <h3>6.4.5 求值与留痕</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -124,7 +152,7 @@
 
     <div id="hs-64-notice" class="section">
       <div class="section-header">
-        <h3>6.4.5 通知与让位</h3>
+        <h3>6.4.6 通知与让位</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -154,9 +182,10 @@ const tocItems = [
   { id: 'hs-64', label: '6.4 变化与求值' },
   { id: 'hs-64-timeline', label: '6.4.1 全员一周矩阵' },
   { id: 'hs-64-facts', label: '6.4.2 四类事实' },
-  { id: 'hs-64-gap', label: '6.4.3 缺口规则' },
-  { id: 'hs-64-solve', label: '6.4.4 求值与留痕' },
-  { id: 'hs-64-notice', label: '6.4.5 通知与让位' }
+  { id: 'hs-64-events', label: '6.4.3 事件记录（本期收录）' },
+  { id: 'hs-64-gap', label: '6.4.4 缺口规则' },
+  { id: 'hs-64-solve', label: '6.4.5 求值与留痕' },
+  { id: 'hs-64-notice', label: '6.4.6 通知与让位' }
 ]
 
 const breadcrumbs = [

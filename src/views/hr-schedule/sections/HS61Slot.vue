@@ -109,7 +109,7 @@
           <tr><td><strong>名额来源</strong></td><td>人工给定 / 挂算法服务</td><td>算法服务在顶部「算法服务」页登记（见 6.1.3）</td></tr>
           <tr><td><strong>名额数</strong></td><td>整数</td><td>页面一律「已占 x / N」容量口径</td></tr>
           <tr><td><strong>单日名额</strong></td><td>按周期视图逐日加减</td><td>只改那一天的数，不动班次配置</td></tr>
-          <tr><td><strong>缺口规则</strong></td><td>每条班次选一条</td><td>只管排班确定后因事件缺人怎么判（见 6.4.3）</td></tr>
+          <tr><td><strong>缺口规则</strong></td><td>每条班次选一条</td><td>只管排班确定后因事件缺人怎么判（见 6.4.4）</td></tr>
         </tbody>
       </table>
       <div class="note">
