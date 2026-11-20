@@ -506,8 +506,10 @@ function doSubmitSet() {
 }
 
 /* 日期条按这一天一天的铺：选中那天自动滑到视野中间，别让人自己找 */
+/* SSR（静态预渲染）里没有 document，滚动只在浏览器里做 */
 watch(pickSel, async () => {
   await nextTick()
+  if (typeof document === 'undefined') return
   const el = document.querySelector('.date-strip .ds-cell.active')
   if (el) el.scrollIntoView({ inline: 'center', block: 'nearest' })
 }, { immediate: true })
