@@ -161,7 +161,7 @@
         </thead>
         <tbody>
           <tr><td><strong>受益方向</strong></td><td>补人、多拿一个班：通知即可</td></tr>
-          <tr><td><strong>受损方向</strong></td><td>顶掉已经到手的东西：必须通知 + 补偿；临近开始时间的让位需对方同意</td></tr>
+          <tr><td><strong>受损方向</strong></td><td>顶掉已经到手的东西：必须通知 + 补偿</td></tr>
         </tbody>
       </table>
       <div class="note">
