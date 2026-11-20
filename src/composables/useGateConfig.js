@@ -507,19 +507,32 @@ export function buildShareLink () {
 
 /**
  * 启动第一步（同步）：先铺本机缓存，再让链接参数覆盖。
+ * 离线静态包会在 HTML 里注入 window.__FCK_GATE_HIDDEN__（打包时的 gate 出厂配置）——
+ * file:// 下没有服务端接口，localStorage 也是新机器的空值，出厂配置保证菜单显隐与打包时一致。
+ * 优先级：链接 ?gate= > 出厂注入 > localStorage 缓存 > 空。
  * @returns {boolean} 是否消费掉了链接里的 gate 参数
  */
 export function bootstrapGate (query) {
   openChannel()
 
-  let cached = null
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    cached = saved ? decode(saved) : null
-  } catch (e) {
-    /* ignore */
+  const injected = typeof window !== 'undefined' && Array.isArray(window.__FCK_GATE_HIDDEN__)
+    ? { hidden: window.__FCK_GATE_HIDDEN__.filter((x) => typeof x === 'string') }
+    : null
+
+  if (injected) {
+    applyState(injected)
+    persistLocal()
+    broadcastLocal()
+  } else {
+    let cached = null
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      cached = saved ? decode(saved) : null
+    } catch (e) {
+      /* ignore */
+    }
+    if (cached) applyState(cached)
   }
-  if (cached) applyState(cached)
 
   const fromLink = query && query.gate ? decode(query.gate) : null
   if (fromLink) {

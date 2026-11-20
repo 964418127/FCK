@@ -36,6 +36,23 @@ const onlyDocs = args.includes('--docs') || args.includes('--whitelist')
 const all = !onlyDocs
 const offline = args.includes('--offline') || args.includes('--file')
 const base = getArg('base', null)
+// gate 模式：只打包菜单里开放（未被隐藏）的页面。状态读项目根 .gate-state.json
+const gateMode = args.includes('--gate')
+let gateHidden = null
+if (gateMode) {
+  const stateFile = resolve(root, '.gate-state.json')
+  if (existsSync(stateFile)) {
+    try {
+      const state = JSON.parse(readFileSync(stateFile, 'utf-8'))
+      gateHidden = Array.isArray(state.hidden) ? state.hidden.filter((x) => typeof x === 'string') : []
+    } catch (e) {
+      console.warn(`  ⚠ ${relative(root, stateFile)} 解析失败（${e.message}），退回全量打包`)
+      gateHidden = null
+    }
+  } else {
+    console.warn('  ⚠ 未找到 .gate-state.json（gate 状态不存在），退回全量打包')
+  }
+}
 
 const outAbs = resolve(root, outDir)
 
@@ -89,7 +106,8 @@ if (!all) {
 }
 
 console.log(`  ▸ vite-ssg build  →  ${outDir}/  (base=${base || (process.env.GITHUB_PAGES === 'true' ? '/FCK/' : '/')})`)
-if (all) console.log('  ▸ 范围：全部路由')
+if (gateHidden) console.log(`  ▸ 范围：gate 开放集合（${gateHidden.length} 个菜单项被隐藏）`)
+else if (all) console.log('  ▸ 范围：全部路由')
 else console.log('  ▸ 范围：静态化白名单（见 vite.config.js 的 ssgIncludePaths）')
 console.log('')
 
@@ -101,6 +119,7 @@ function runBuildOnce() {
       ...process.env,
       SSG_OUT_DIR: outDir,
       ...(all ? { SSG_ALL: '1' } : {}),
+      ...(gateHidden ? { SSG_GATE_HIDDEN: gateHidden.join(',') } : {}),
       ...(offline ? { SSG_IIFE: '1' } : {}),
       ...(base ? { SSG_BASE: String(base) } : {}),
     },
@@ -235,6 +254,26 @@ const htmlFiles = []
 if (offline) {
   const rewrote = makeOffline(outAbs)
   console.log(`\n  · 离线模式：已把 ${rewrote} 个 HTML 的资源路径改为相对，并摘掉客户端入口脚本`)
+  // 出厂 gate 配置：离线包没有服务端接口，useGateConfig 会读这份注入铺底，
+  // 保证双击打开时菜单显隐和打包时的 gate 状态一致（用户链接 ?gate= 仍可覆盖）
+  if (gateHidden) {
+    const snippet = `<script>window.__FCK_GATE_HIDDEN__=${JSON.stringify(gateHidden)}</script>`
+    let injected = 0
+    ;(function walk(d) {
+      for (const name of readdirSync(d)) {
+        const p = join(d, name)
+        if (statSync(p).isDirectory()) { walk(p); continue }
+        if (!name.endsWith('.html')) continue
+        let html = readFileSync(p, 'utf-8')
+        if (!html.includes('__FCK_GATE_HIDDEN__')) {
+          html = html.replace('</head>', `${snippet}</head>`)
+          writeFileSync(p, html)
+          injected++
+        }
+      }
+    })(outAbs)
+    console.log(`  · 离线注入：${injected} 个 HTML 已写入出厂 gate 配置（${gateHidden.length} 个隐藏项）`)
+  }
 }
 
 // 写一份导航页，方便直接打开看（不参与路由）
@@ -248,6 +287,20 @@ console.log(`  ✓ 磁盘上的 .html：${htmlFiles.length} 个`)
 console.log(`  ✓ 输出目录：${relative(root, outAbs)}/  （${(size / 1024 / 1024).toFixed(1)} MB）`)
 console.log(`  ✓ 导航页：${relative(root, join(outAbs, 'pages.html'))}  ← 直接双击或用浏览器打开`)
 if (offline) console.log('  ✓ 离线模式：相对路径 + 经典脚本 + hash 路由，任意 HTML 双击即用（菜单可展开、可跳页）')
+// gate 模式校验：确认过滤真的生效了，并报告映射遗漏的页面（白名单里声明了但没渲染出来）
+if (gateHidden) {
+  const gate = manifest.gate || {}
+  if (!gate.filtered) {
+    console.warn('  ⚠ gate 过滤未生效（manifest 无 gate 标记）——检查 vite.config.js 的 includedRoutes')
+  } else {
+    const missed = (gate.allowed || []).filter((p) => !manifest.pages.includes(p))
+    console.log(`  ✓ gate 过滤：${gate.hiddenIds} 个菜单项隐藏，开放集合 ${gate.allowed.length} 页`)
+    if (missed.length) {
+      console.warn(`  ⚠ 开放集合中 ${missed.length} 页没渲染出来（name→path 映射或路由缺失）：`)
+      missed.forEach((p) => console.warn(`    - ${p}`))
+    }
+  }
+}
 console.log('  ────────────────────────────────────────────────')
 if (!offline) console.log(`  本地预览：npm run static:serve${outDir === 'site' ? '' : ` -- --out=${outDir}`}`)
 if (tolerated) console.log('  （已忽略临时目录清理失败，产物完整）')

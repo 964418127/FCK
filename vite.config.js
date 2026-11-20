@@ -8,6 +8,9 @@ import { resignChapters } from './src/docs/resignChapters.js'
 import { gateMiddleware } from './scripts/gate-store.js'
 import { llmMiddleware } from './scripts/llm-proxy.js'
 import { printCommandHelp } from './scripts/commands.mjs'
+import { sidebarMenu } from './src/config/sidebarMenu.js'
+import { mobileMenuGroups } from './src/config/mobileMenu.js'
+import { docMenu } from './src/docs/menu.js'
 
 // 静态化白名单：只对文档中心这几条线做预渲染
 // 业务路由（/welcome /job-compensation-template 等）保持 SPA 模式
@@ -21,6 +24,75 @@ const ssgIncludePaths = [
   // 离职流程
   ...resignChapters.map(ch => ch.path)
 ]
+
+// ---------- gate 模式：只预渲染菜单里开放（未被隐藏）的页面 ----------
+// SSG_GATE_HIDDEN=逗号分隔的菜单 id（build-static.mjs 从 .gate-state.json 读出传入）。
+// 三棵菜单树（Web 侧边栏 / 移动端 / 文档中心）里没被隐藏的节点就是「开放集合」：
+//   叶子 → 页面（to 或 index=路由 name 映射回 path）
+//   分组 → 自身或后代有开放项时入口页保留
+// 结构性底座（根 / 文档目录 / 移动端总览 / 登录）始终打包。
+// 结果写进 SSG 产物 manifest.json 的 gate 字段，供 build-static 校验。
+let gateAllowSet = null
+
+const gateBasePaths = ['/', '/docs', '/mobile-menu', '/login', '/mobile-login']
+
+function buildGateAllowSet (routes) {
+  const hidden = new Set(String(process.env.SSG_GATE_HIDDEN || '').split(',').filter(Boolean))
+  // name → 绝对 path（路由表里 children 的 path 是相对的，这里拼回绝对）
+  const nameToPath = new Map()
+  const walkRoutes = (list, parent = '') => {
+    ;(list || []).forEach((r) => {
+      if (!r || !r.path) return
+      const abs = r.path.startsWith('/') ? r.path : (parent.replace(/\/$/, '') + '/' + r.path)
+      if (r.name) nameToPath.set(r.name, abs)
+      if (r.children) walkRoutes(r.children, abs)
+    })
+  }
+  walkRoutes(routes)
+
+  const idOf = (n) => n.index || n.id
+  const kidsOf = (n) => n.children || n.items
+  const hasOpenDescendant = (n) =>
+    (kidsOf(n) || []).some((c) => !hidden.has(idOf(c)) || hasOpenDescendant(c))
+  // 节点 → 页面 path：to 可能是字符串（可带 query，剥掉）、路由定位对象（path 或 name）、
+  // 或干脆没有（靠 index=路由 name 映射）
+  const toPathOf = (n) => {
+    const t = n.to
+    if (typeof t === 'string' && t) return t.split('?')[0]
+    if (t && typeof t === 'object') {
+      if (t.path) return String(t.path).split('?')[0]
+      if (t.name) return nameToPath.get(t.name) || null
+      return null
+    }
+    return nameToPath.get(idOf(n)) || null
+  }
+
+  const allow = new Set(gateBasePaths)
+  const walkMenu = (nodes) => {
+    (nodes || []).forEach((n) => {
+      if (!n) return
+      const visible = !hidden.has(idOf(n))
+      const kids = kidsOf(n)
+      if (kids && kids.length) {
+        walkMenu(kids)
+        // 分组自身开放、或组里还有开放项 → 分组入口页保留
+        if (visible || hasOpenDescendant(n)) {
+          const page = toPathOf(n)
+          if (page) allow.add(page)
+        }
+        return
+      }
+      if (visible) {
+        const page = toPathOf(n)
+        if (page) allow.add(page)
+      }
+    })
+  }
+  walkMenu(sidebarMenu)
+  walkMenu(mobileMenuGroups)
+  walkMenu(docMenu)
+  return allow
+}
 
 // 收集本次 build 渲染过的所有路径
 const renderedPaths = new Set()
@@ -151,9 +223,16 @@ export default defineConfig(({ isSsrBuild } = {}) => ({
     host: '0.0.0.0'
   },
   ssgOptions: {
-    // SSG_ALL=1 → 全站预渲染（所有路由都出真 HTML）；否则走上面白名单
-    includedRoutes: async (paths) =>
-      process.env.SSG_ALL === '1' ? paths : paths.filter(p => ssgIncludePaths.includes(p)),
+    // 优先级：SSG_GATE_HIDDEN（gate 开放集合）> SSG_ALL=1（全站）> ssgIncludePaths 白名单
+    includedRoutes: async (paths, routes) => {
+      if (process.env.SSG_GATE_HIDDEN) {
+        gateAllowSet = buildGateAllowSet(routes)
+        const norm = (p) => (p.startsWith('/') ? p : '/' + p)
+        return paths.filter((p) => gateAllowSet.has(norm(p)))
+      }
+      if (process.env.SSG_ALL === '1') return paths
+      return paths.filter(p => ssgIncludePaths.includes(p))
+    },
     script: 'async',
     formatting: 'minify',
     crittersOptions: {
@@ -165,7 +244,10 @@ export default defineConfig(({ isSsrBuild } = {}) => ({
       const manifest = {
         buildAt: new Date().toISOString(),
         total: renderedPaths.size,
-        pages: [...renderedPaths].sort()
+        pages: [...renderedPaths].sort(),
+        ...(gateAllowSet
+          ? { gate: { filtered: true, allowed: [...gateAllowSet].sort(), hiddenIds: String(process.env.SSG_GATE_HIDDEN).split(',').filter(Boolean).length } }
+          : {})
       }
       writeFileSync(
         resolve(distDir, 'manifest.json'),

@@ -36,7 +36,7 @@ export const COMMANDS = [
   },
   {
     cmd: 'npm run static:offline',
-    desc: '离线包，双击 html 就能用（IIFE + hash 路由）',
+    desc: '离线包，只打包 gate 开放的页面（双击 html 就能用）',
     target: 'site-offline/'
   },
   {
@@ -62,6 +62,7 @@ export const PARAMS = [
   { flag: '--out=.tmp/x', desc: '换输出目录' },
   { flag: '--base=/FCK/', desc: '指定部署子路径（GitHub Pages）' },
   { flag: '--docs', desc: '只跑白名单（等同 static:docs）' },
+  { flag: '--gate', desc: '只打包 gate 开放的页面（读 .gate-state.json，找不到时退回全量）' },
   { flag: '--nav-only', desc: '只重写 pages.html 索引页' }
 ].map(p => ({ ...p, cmd: PARAM_PREFIX + p.flag }))
 
