@@ -47,7 +47,7 @@
 
     <div id="hs-64-facts" class="section">
       <div class="section-header">
-        <h3>6.4.2 四类事实</h3>
+        <h3>6.4.2 五类事实</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -58,12 +58,13 @@
           <tr><td><strong>顶班</strong></td><td>人事安排另一个人来顶这个班</td><td>经营性安排，通知即可、不需对方同意；顶上后「待人事处理」自动销</td></tr>
           <tr><td><strong>换班</strong></td><td>两个人各拿自己的一天班次对调，同岗位对等</td><td>两条班次同时生效地对调，各自留变动历史；请求由对方在移动端答复。<strong>等待期 30 分钟</strong>：从发起算起，对方没拒绝也没同意，到点自动失效、两边都不动。谁能参与换班：只有这条班次允许获取的人群（清单档位里、按优先级开放的那批人）——档位外的人不出现在换班候选里，发起方选不到，对方也收不到请求</td></tr>
           <tr><td><strong>离职</strong></td><td>人离店，从某天起不再来</td><td>只交付事实与实际离职日期；后续班次标记被覆盖，<strong>不找人顶</strong>（补人由招聘侧处理）</td></tr>
+          <tr><td><strong>取消挂店</strong></td><td>人与门店的挂店合作终止，不再合作（见 <router-link to="/docs/hr-schedule/6-10">6.10</router-link>）</td><td>效果同离职：该店后续班次标记被覆盖、无法履约原班次计划，<strong>不找人顶</strong>（补人由挂店与招聘侧处理）；只覆盖这个人<strong>在这家店</strong>的班次，其他门店班次不动</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>事实从哪来（来源边界）：</strong>四类事实各归各的发起模块，排班只收事实、做重算——
+        <strong>事实从哪来（来源边界）：</strong>五类事实各归各的发起模块，排班只收事实、做重算——
         <strong>请假</strong>在专门的请假模块提交（排班页不设请假入口，补位确认后去不了同样在请假模块提交）；
-        <strong>换班</strong>由员工在移动端「我的排班」发起；<strong>顶班</strong>由人事在配置台安排；<strong>离职</strong>由离职流程交付。
+        <strong>换班</strong>由员工在移动端「我的排班」发起；<strong>顶班</strong>由人事在配置台安排；<strong>离职</strong>由离职流程交付；<strong>取消挂店</strong>由挂店管理交付（自下线 / 移出）。
         业务侧的事件清单见 <router-link to="/docs/hr-schedule/6-4">6.4.3 事件记录</router-link>。
       </div>
       <div class="note">
@@ -139,7 +140,7 @@
           <tr><th style="width: 160px;">步骤</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>写一条事实</strong></td><td>请假 / 顶班 / 换班 / 离职各写各的，一条事实一个事项</td></tr>
+          <tr><td><strong>写一条事实</strong></td><td>请假 / 顶班 / 换班 / 离职 / 取消挂店各写各的，一条事实一个事项</td></tr>
           <tr><td><strong>重算一次</strong></td><td>按清单顺位找有空、没冲突的人顶；找得到直接补位并通知，找不到时段留空</td></tr>
           <tr><td><strong>留痕</strong></td><td>每条事实就是一次重算的留痕（发生时间 + 影响的班次 + 结果），事实表即留痕，页面不另列解版本时间线</td></tr>
         </tbody>
@@ -168,6 +169,31 @@
         处理动作都在业务页：补位确认落在班次卡上，换班答复落在「我的排班」里。全部通知清单见 <router-link to="/docs/hr-schedule/6-6">6.6 通知</router-link>。
       </div>
     </div>
+
+    <div id="hs-64-sys" class="section">
+      <div class="section-header">
+        <h3>6.4.7 对周边系统的支持</h3>
+      </div>
+      <p class="doc-p">
+        取消挂店这类变化，源头在周边系统（如挂店管理）。周边系统<strong>不自己改班次</strong>，而是<strong>调用排班新增「取消挂店」事件</strong>；
+        排班是班次的唯一记录口，收到调用后、新增事件前，<strong>按岗位主动核查一次</strong>——核查通过才新增事件，把已存在的班次标记为无法履约（见 6.4.2、6.4.4）。
+        对周边系统来说只有一件事：调用排班新增事件；核查、标记、重算都发生在排班内。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 220px;">调用新增「取消挂店」事件 · 岗位</th><th>排班新增事件前的主动核查</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>客户经理</strong>（全职 / 非全）</td><td>无需核查，直接新增事件，该店已排班次标记为无法履约</td></tr>
+          <tr><td><strong>推拿师</strong>（全职 / 非全）</td><td>排班<strong>主动核查订单</strong>：存在订单时<strong>不允许新增事件</strong>（取消挂店不生效，调用方收到拒绝与原因）；无订单才放行</td></tr>
+          <tr><td><strong>其他岗位</strong></td><td>核查规则待该岗位接入排班时补充</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>边界：</strong>核查是排班收到调用后<strong>主动做一次</strong>，不要求周边系统先查一遍；核查不通过就没有事件，也没有班次标记；
+        核查规则按岗位增量维护，新岗位接入排班时在本节补它自己的规则，不追溯已接入岗位。
+      </div>
+    </div>
   </DocShell>
 </template>
 
@@ -181,11 +207,12 @@ import gapShot from '../../../docs/assets/pages/v5-gap.png'
 const tocItems = [
   { id: 'hs-64', label: '6.4 变化与求值' },
   { id: 'hs-64-timeline', label: '6.4.1 全员一周矩阵' },
-  { id: 'hs-64-facts', label: '6.4.2 四类事实' },
+  { id: 'hs-64-facts', label: '6.4.2 五类事实' },
   { id: 'hs-64-events', label: '6.4.3 事件记录（本期收录）' },
   { id: 'hs-64-gap', label: '6.4.4 缺口规则' },
   { id: 'hs-64-solve', label: '6.4.5 求值与留痕' },
-  { id: 'hs-64-notice', label: '6.4.6 通知与让位' }
+  { id: 'hs-64-notice', label: '6.4.6 通知与让位' },
+  { id: 'hs-64-sys', label: '6.4.7 对周边系统的支持' }
 ]
 
 const breadcrumbs = [
