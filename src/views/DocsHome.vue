@@ -24,17 +24,29 @@
         <span class="group-desc">{{ g.desc }}</span>
       </div>
       <div class="card-grid">
-        <router-link v-for="d in g.docs" :key="d.path" :to="d.path" class="card">
-          <div class="card-top">
-            <span class="card-title">{{ d.title }}</span>
-            <span v-if="d.meta" class="card-meta">{{ d.meta }}</span>
-          </div>
-          <p class="card-desc">{{ d.desc }}</p>
-          <div class="card-foot">
-            <span class="card-scope">{{ d.scope }}</span>
-            <span class="card-arrow">进入 →</span>
-          </div>
-        </router-link>
+        <div v-for="d in g.docs" :key="d.path" :class="['card-cell', { 'has-pack': !!pkgOf(d.path) }]">
+          <router-link :to="d.path" class="card">
+            <div class="card-top">
+              <span class="card-title">{{ d.title }}</span>
+              <span v-if="d.meta" class="card-meta">{{ d.meta }}</span>
+            </div>
+            <p class="card-desc">{{ d.desc }}</p>
+            <div class="card-foot">
+              <span class="card-scope">{{ d.scope }}</span>
+              <span class="card-arrow">进入 →</span>
+            </div>
+          </router-link>
+          <a
+            v-if="pkgOf(d.path)"
+            class="card-pack"
+            :href="pkgOf(d.path).file"
+            :title="`离线包：${pkgOf(d.path).pages} 页，${pkgOf(d.path).sizeText}，生成于 ${pkgOf(d.path).generatedAtText}`"
+            download
+          >
+            <span class="pack-icon">⤓</span>
+            离线包 · {{ pkgOf(d.path).sizeText }} · {{ shortDate(pkgOf(d.path).generatedAtText) }}
+          </a>
+        </div>
       </div>
     </section>
 
@@ -92,6 +104,19 @@
 import { computed } from 'vue'
 import { docGroups } from '../docs/docCatalog.js'
 import { isMenuVisible } from '../composables/useGateConfig.js'
+import { useOfflinePackages } from '../composables/useOfflinePackages.js'
+
+// 离线包入口：清单来自 public/docs/offline-manifest.json（打包命令写入），
+// 只有真正打过包的文档才显示下载条，没包就只留原来的整卡入口
+const { findOfflinePackage } = useOfflinePackages()
+const pkgOf = (path) => findOfflinePackage(path)
+
+// 包上没有时分秒的必要，「11-23 21:04」够表达「这是什么时候的快照」
+const shortDate = (text) => {
+  const m = String(text || '').match(/(\d{1,2})[/-](\d{1,2})[/-]\s*(\d{1,2}:\d{2})/)
+  if (m) return `${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')} ${m[3]}`
+  return String(text || '').slice(5, 16)
+}
 
 // 卡片跟随 /gate 菜单配置：被隐藏的文档不在目录页留空入口
 const groups = computed(() =>
@@ -184,6 +209,36 @@ const latestUpdate = computed(() => {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
 }
+/* 卡片 + 离线包下载条拼成一个整体：有包时卡片切平下沿，下载条接在下面 */
+.card-cell {
+  display: flex;
+  flex-direction: column;
+}
+.card-cell .card { flex: 1; }
+.card-cell.has-pack .card {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: transparent;
+}
+.card-pack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  border: 1px solid hsl(var(--border));
+  border-top: 1px dashed hsl(var(--border));
+  border-radius: 0 0 10px 10px;
+  background: hsl(var(--muted) / 0.2);
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.card-pack:hover {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.06);
+  border-color: hsl(var(--primary) / 0.35);
+}
+.pack-icon { font-size: 12px; line-height: 1; }
 .card {
   display: flex;
   flex-direction: column;

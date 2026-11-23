@@ -42,3 +42,8 @@ dist-ssr
 site/
 .vite-ssg-temp/
 site-offline/
+
+# 单文档离线包构建产物（zip 与包目录不进库，manifest 清单进库）
+.docpkg/
+.docpkg-tmp/
+public/docs/*/

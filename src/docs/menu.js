@@ -107,14 +107,32 @@ const salaryAgentChapterMenu = salaryAgentChapters.flatMap(ch => {
   return [node]
 })
 
-export const docMenu = [
-  {
-    // 目录页（/docs 默认落地页）：一级叶子，常驻最顶，方便从任何文档回到全局目录
-    index: 'doc-home',
-    label: '文档目录',
-    icon: HomeFilled,
-    to: '/docs'
-  },
+// ---------- 单文档离线包的菜单裁剪 ----------
+// npm run static:doc -- --doc=/docs/x 时，构建期注入 VITE_DOC_SCOPE；
+// 这里把菜单裁到「祖先链 + 本文档」：文档目录、兄弟分组、没进包的同组文档一律不留，
+// 保证包内菜单每一条链接都指向真实存在的页面。dev / 普通构建 scope 为空，菜单全量。
+const docScope = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DOC_SCOPE) || ''
+
+// 叶子带 to 且命中 scope（文档首页或其子路径）→ 整枝保留（含章节 children）；
+// 分组节点 → 递归裁子级，裁完还有剩才保留
+function pickDocBranch(nodes, scope) {
+  const out = []
+  for (const n of nodes) {
+    const to = n.to ? String(n.to).split('?')[0] : ''
+    if (to && (to === scope || to.startsWith(scope + '/'))) {
+      out.push(n)
+      continue
+    }
+    if (n.children && n.children.length) {
+      const picked = pickDocBranch(n.children, scope)
+      if (picked.length) out.push({ ...n, children: picked })
+    }
+  }
+  return out
+}
+
+// 全量菜单数据（未裁剪）。docMenu 是对外导出名，消费方一律用它
+export const docMenuSource = [
   {
     index: 'doc-hr-center',
     label: '人事中心',
@@ -245,6 +263,9 @@ export const docMenu = [
     ]
   }
 ]
+
+// 对外导出：scope 为空（dev / 普通构建）= 全量；单文档离线包 = 裁剪到祖先链
+export const docMenu = docScope ? pickDocBranch(docMenuSource, docScope) : docMenuSource
 
 /** 纯数据形态（剥掉图标组件与 to），供 /gate「菜单配置」页的「文档中心」页签使用 */
 const plainDocMenu = (nodes) => nodes.map((n) => ({

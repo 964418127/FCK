@@ -169,7 +169,10 @@ export default defineConfig(({ isSsrBuild } = {}) => ({
   define: {
     // 离线包（SSG_IIFE=1）用 hash 路由：file:// 下 pushState 会 SecurityError。
     // main.js 据此给 ViteSSG 传自己的 history（vite-ssg 里 history 在 routerOptions 之前展开，传的会覆盖它）
-    'import.meta.env.VITE_HASH_ROUTER': JSON.stringify(process.env.SSG_IIFE === '1' ? '1' : '0')
+    'import.meta.env.VITE_HASH_ROUTER': JSON.stringify(process.env.SSG_IIFE === '1' ? '1' : '0'),
+    // 单文档离线包范围（static:doc -- --doc=/docs/x）：menu.js 据此把菜单裁到「祖先链 + 本文档」。
+    // dev / 普通构建为空串，菜单保持全量
+    'import.meta.env.VITE_DOC_SCOPE': JSON.stringify(process.env.SSG_DOC_SCOPE || '')
   },
   // 离线包：把「构建期固定的 /assets/xxx.png」改成「运行时按页面深度拼」。
   // 因为图片是 el-image 在 JS 里赋 src 的，HTML 层的路径改写管不到；
@@ -223,11 +226,18 @@ export default defineConfig(({ isSsrBuild } = {}) => ({
     host: '0.0.0.0'
   },
   ssgOptions: {
-    // 优先级：SSG_GATE_HIDDEN（gate 开放集合）> SSG_ALL=1（全站）> ssgIncludePaths 白名单
+    // 优先级：SSG_DOC_SCOPE（单文档离线包）> SSG_GATE_HIDDEN（gate 开放集合）> SSG_ALL=1（全站）> ssgIncludePaths 白名单
     includedRoutes: async (paths, routes) => {
+      const norm = (p) => (p.startsWith('/') ? p : '/' + p)
+      if (process.env.SSG_DOC_SCOPE) {
+        const scope = process.env.SSG_DOC_SCOPE
+        return paths.filter((p) => {
+          const n = norm(p)
+          return n === scope || n.startsWith(scope + '/')
+        })
+      }
       if (process.env.SSG_GATE_HIDDEN) {
         gateAllowSet = buildGateAllowSet(routes)
-        const norm = (p) => (p.startsWith('/') ? p : '/' + p)
         return paths.filter((p) => gateAllowSet.has(norm(p)))
       }
       if (process.env.SSG_ALL === '1') return paths

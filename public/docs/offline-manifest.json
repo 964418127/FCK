@@ -1,0 +1,22 @@
+{
+  "packages": [
+    {
+      "scope": "/docs/salary-agent",
+      "home": "/docs/salary-agent",
+      "file": "/docs/salary-agent/salary-agent-offline.zip",
+      "generatedAt": "2026-11-23T14:01:29.051Z",
+      "generatedAtText": "2026/11/23 22:01:29",
+      "pages": 15,
+      "sizeText": "2.2 MB"
+    },
+    {
+      "scope": "/docs/hr-schedule",
+      "home": "/docs/hr-schedule",
+      "file": "/docs/hr-schedule/hr-schedule-offline.zip",
+      "generatedAt": "2026-11-23T13:59:31.951Z",
+      "generatedAtText": "2026/11/23 21:59:31",
+      "pages": 18,
+      "sizeText": "10.7 MB"
+    }
+  ]
+}

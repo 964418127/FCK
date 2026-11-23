@@ -14,14 +14,22 @@
         </div>
         <p v-if="subtitle" class="doc-hero-tip" v-html="subtitle"></p>
         <div v-if="breadcrumbs && breadcrumbs.length" class="doc-hero-breadcrumbs">
-          <span v-for="(b, i) in breadcrumbs" :key="i">
-            <router-link v-if="b.to" :to="b.to">{{ b.label }}</router-link>
+            <span v-for="(b, i) in breadcrumbs" :key="i">
+            <router-link v-if="b.to && crumbInside(b.to)" :to="b.to">{{ b.label }}</router-link>
             <span v-else>{{ b.label }}</span>
             <span v-if="i < breadcrumbs.length - 1" class="crumb-sep">/</span>
           </span>
         </div>
       </div>
       <div class="doc-hero-actions">
+        <el-button
+          v-if="offlinePkg"
+          tag="a"
+          class="doc-hero-pack"
+          :href="offlinePkg.file"
+          :title="`离线包：${offlinePkg.pages} 页，${offlinePkg.sizeText}，生成于 ${offlinePkg.generatedAtText}`"
+          download
+        >下载离线包</el-button>
         <el-button @click="copyToClipboard">复制</el-button>
         <el-button type="primary" @click="exportToPdf">导出 PDF</el-button>
       </div>
@@ -41,10 +49,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { Document } from '@element-plus/icons-vue'
 import FloatingToc from '../../components/FloatingToc.vue'
 import { useDocCopy } from '../composables/useDocCopy.js'
+import { useOfflinePackages } from '../../composables/useOfflinePackages.js'
 
 defineProps({
   tocItems: { type: Array, required: true },
@@ -56,6 +66,21 @@ defineProps({
 })
 
 const { copyToClipboard, exportToPdf } = useDocCopy()
+
+/* 单文档离线包（static:doc）：只在文档首页显示下载入口——章节页不给，免得每页都挂一个。
+   清单里没有包的文档不显示；离线包内部 fetch 不到清单，也自然不显示 */
+const route = useRoute()
+const { findOfflinePackage } = useOfflinePackages()
+const offlinePkg = computed(() => {
+  const pkg = findOfflinePackage(route.path)
+  if (!pkg) return null
+  return route.path === pkg.scope || route.path === pkg.home ? pkg : null
+})
+
+// 单文档离线包（static:doc）：面包屑里指向包外（如 /docs 目录页）的链接降级为纯文本，
+// 包内没有那些路由，点了就是白屏。dev / 普通构建 docScope 为空，全部照常可点
+const docScope = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DOC_SCOPE) || ''
+const crumbInside = (to) => !docScope || String(to) === docScope || String(to).startsWith(docScope + '/')
 
 /* ===== 查看大图：点击正文里的文档图，克隆原尺寸弹出 ===== */
 const lightbox = ref(null)

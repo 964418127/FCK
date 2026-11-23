@@ -16,7 +16,7 @@
  * 并继续做产物校验，避免「明明成功了却报失败」。
  */
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 
@@ -31,10 +31,14 @@ const getArg = (name, fallback) => {
   const eq = hit.indexOf('=')
   return eq > -1 ? hit.slice(eq + 1) : true
 }
-const outDir = String(getArg('out', 'site'))
+// 单文档离线包：--doc=/docs/x → 只渲染该文档及其章节，打包成 zip 放进 public/docs/<id>/
+const docScopeArg = String(getArg('doc', '') || '')
+const packMode = Boolean(docScopeArg)
+const docScope = packMode ? (docScopeArg.startsWith('/') ? docScopeArg : '/' + docScopeArg) : ''
+const outDir = String(getArg('out', packMode ? '.docpkg-tmp' : 'site'))
 const onlyDocs = args.includes('--docs') || args.includes('--whitelist')
-const all = !onlyDocs
-const offline = args.includes('--offline') || args.includes('--file')
+const all = packMode ? false : !onlyDocs
+const offline = args.includes('--offline') || args.includes('--file') || packMode
 const base = getArg('base', null)
 // gate 模式：只打包菜单里开放（未被隐藏）的页面。状态读项目根 .gate-state.json
 const gateMode = args.includes('--gate')
@@ -55,6 +59,26 @@ if (gateMode) {
 }
 
 const outAbs = resolve(root, outDir)
+
+// 单文档离线包（packMode）：无论有没有 --gate，都注入出厂 gate 配置。
+// Chrome 对所有 file:// 页面共享同一份 localStorage——用户开过别的离线包存进去的
+// gate 状态会在本包启动时被当作缓存读回，把本文档的菜单整个滤空（症状：侧边栏全空）。
+// 注入在 bootstrapGate 里优先级最高，且会 persistLocal 把脏缓存洗掉，打开一次即自愈。
+let factoryHidden = gateHidden
+if (!factoryHidden && packMode) {
+  const stateFile = resolve(root, '.gate-state.json')
+  if (existsSync(stateFile)) {
+    try {
+      const state = JSON.parse(readFileSync(stateFile, 'utf-8'))
+      factoryHidden = Array.isArray(state.hidden) ? state.hidden.filter((x) => typeof x === 'string') : []
+    } catch (e) {
+      console.warn(`  ⚠ ${relative(root, stateFile)} 解析失败（${e.message}），出厂配置按空处理`)
+      factoryHidden = []
+    }
+  } else {
+    factoryHidden = []
+  }
+}
 
 // 只按现有 manifest 重写导航页（改了导航样式时不用重跑整站）
 if (args.includes('--nav-only')) {
@@ -106,7 +130,8 @@ if (!all) {
 }
 
 console.log(`  ▸ vite-ssg build  →  ${outDir}/  (base=${base || (process.env.GITHUB_PAGES === 'true' ? '/FCK/' : '/')})`)
-if (gateHidden) console.log(`  ▸ 范围：gate 开放集合（${gateHidden.length} 个菜单项被隐藏）`)
+if (packMode) console.log(`  ▸ 范围：单文档离线包 ${docScope}（含全部章节页）`)
+else if (gateHidden) console.log(`  ▸ 范围：gate 开放集合（${gateHidden.length} 个菜单项被隐藏）`)
 else if (all) console.log('  ▸ 范围：全部路由')
 else console.log('  ▸ 范围：静态化白名单（见 vite.config.js 的 ssgIncludePaths）')
 console.log('')
@@ -118,6 +143,7 @@ function runBuildOnce() {
     env: {
       ...process.env,
       SSG_OUT_DIR: outDir,
+      ...(docScope ? { SSG_DOC_SCOPE: docScope } : {}),
       ...(all ? { SSG_ALL: '1' } : {}),
       ...(gateHidden ? { SSG_GATE_HIDDEN: gateHidden.join(',') } : {}),
       ...(offline ? { SSG_IIFE: '1' } : {}),
@@ -255,9 +281,10 @@ if (offline) {
   const rewrote = makeOffline(outAbs)
   console.log(`\n  · 离线模式：已把 ${rewrote} 个 HTML 的资源路径改为相对，并摘掉客户端入口脚本`)
   // 出厂 gate 配置：离线包没有服务端接口，useGateConfig 会读这份注入铺底，
-  // 保证双击打开时菜单显隐和打包时的 gate 状态一致（用户链接 ?gate= 仍可覆盖）
-  if (gateHidden) {
-    const snippet = `<script>window.__FCK_GATE_HIDDEN__=${JSON.stringify(gateHidden)}</script>`
+  // 保证双击打开时菜单显隐和打包时的 gate 状态一致（用户链接 ?gate= 仍可覆盖）。
+  // 单文档包必注入——哪怕是空数组，也用来洗掉 file:// localStorage 里的脏缓存
+  if (factoryHidden) {
+    const snippet = `<script>window.__FCK_GATE_HIDDEN__=${JSON.stringify(factoryHidden)}</script>`
     let injected = 0
     ;(function walk(d) {
       for (const name of readdirSync(d)) {
@@ -272,7 +299,7 @@ if (offline) {
         }
       }
     })(outAbs)
-    console.log(`  · 离线注入：${injected} 个 HTML 已写入出厂 gate 配置（${gateHidden.length} 个隐藏项）`)
+    console.log(`  · 离线注入：${injected} 个 HTML 已写入出厂 gate 配置（${factoryHidden.length} 个隐藏项）`)
   }
 }
 
@@ -306,6 +333,12 @@ if (!offline) console.log(`  本地预览：npm run static:serve${outDir === 'si
 if (tolerated) console.log('  （已忽略临时目录清理失败，产物完整）')
 console.log('  全部命令与作用：npm run dev 启动时打印（清单在 scripts/commands.mjs）')
 console.log('')
+
+// 单文档离线包：挑选 + 组装 + 压缩，产物落 public/docs/<docId>/<docId>-offline.zip
+if (packMode) {
+  await packDocPackage()
+  process.exit(0)
+}
 
 // ---------- 离线模式：file:// 直开 ----------
 function makeOffline(dir) {
@@ -413,4 +446,168 @@ function dirSize(dir) {
     total += st.isDirectory() ? dirSize(p) : st.size
   }
   return total
+}
+
+// ---------- 单文档离线包：挑选 + 组装 + zip ----------
+// packMode 下产物在 .docpkg-tmp（已做 file:// 离线改造），这里只做三件事：
+//   ① 按 scope 挑 HTML；② 按引用差集挑 assets（全量 32MB，单文档实际引用约 3MB）；
+//   ③ 组装包目录（文档首页复制到包根当 index.html）并 zip 进 public/docs/<docId>/
+async function packDocPackage() {
+  const docId = docScope.replace(/^\/docs\//, '').replace(/\//g, '-') || 'doc'
+  const pages = manifest.pages.filter(p => p === docScope || p.startsWith(docScope + '/'))
+  if (!pages.length) {
+    console.error(`✗ 范围 ${docScope} 内没有渲染出任何页面，检查 --doc 路径是否与路由一致`)
+    process.exit(1)
+  }
+
+  // 1) 要带的 HTML：路由 → 产物文件（/docs/x → docs/x.html，目录形式回落 docs/x/index.html）
+  const keepHtml = []
+  for (const p of pages) {
+    const rel = p.replace(/^\//, '')
+    if (existsSync(join(outAbs, `${rel}.html`))) keepHtml.push(`${rel}.html`)
+    else if (existsSync(join(outAbs, `${rel}/index.html`))) keepHtml.push(`${rel}/index.html`)
+    else console.warn(`  ⚠ manifest 记了 ${p} 但磁盘上找不到产物，跳过`)
+  }
+
+  // 2) assets 引用差集。离线包的 app.js 是全站单文件，字符串里引用了全站所有图片，
+  //    照单全收会把包撑到 26MB —— 所以分三档：
+  //    HTML 引用 → 全带（首屏与预渲染内容）；CSS 引用 → 全带（背景图与字体）；
+  //    JS 字符串引用 → 只带非图片（其他都是别的页面运行时才用的图，文档页不依赖）
+  const imgExt = /\.(png|jpe?g|gif|webp|avif|ico)$/i
+  const assetRefs = new Set()
+  const grabRefs = (text, keepImages) => {
+    for (const m of String(text).matchAll(/assets\/[A-Za-z0-9@._-]+/g)) {
+      const name = m[0].slice('assets/'.length)
+      if (keepImages || !imgExt.test(name)) assetRefs.add(name)
+    }
+  }
+  for (const rel of keepHtml) grabRefs(readFileSync(join(outAbs, rel), 'utf-8'), true)
+  const assetsDir = join(outAbs, 'assets')
+  const assetFiles = existsSync(assetsDir) ? readdirSync(assetsDir) : []
+  for (const name of assetFiles) {
+    if (/\.(js|css)$/.test(name)) grabRefs(readFileSync(join(assetsDir, name), 'utf-8'), /\.css$/.test(name))
+  }
+  // 2.5) 文档章节截图兜底。文档章节页是客户端渲染，截图引用只活在 app.js 字符串里，
+  //      会被上面的「JS 图片引用不收」规则裁掉（症状：离线包里「功能页面示例」全部加载失败）。
+  //      从源码反查：routes.js 里 glob 目录名含 docId 的章节组件 import 的图片，
+  //      按基名映射回产物 assets 的 hash 文件名，补进差集——只补本文档用到的，不回带全站 26MB 图。
+  const docImgBaseNames = new Set()
+  const routesSrc = readFileSync(resolve(root, 'src/router/routes.js'), 'utf-8')
+  const docViewDirs = new Set()
+  for (const m of routesSrc.matchAll(/import\.meta\.glob\('\.\.\/views\/([^']+)'/g)) {
+    const dir = m[1].split('/')[0]
+    if (dir.includes(docId)) docViewDirs.add(dir)
+  }
+  const collectVueImgs = (dirAbs) => {
+    if (!existsSync(dirAbs)) return
+    for (const name of readdirSync(dirAbs)) {
+      const fileAbs = join(dirAbs, name)
+      if (statSync(fileAbs).isDirectory()) { collectVueImgs(fileAbs); continue }
+      if (!/\.vue$/.test(name)) continue
+      const src = readFileSync(fileAbs, 'utf-8')
+      for (const m of src.matchAll(/import\s+\w+\s+from\s+['"]([^'"]+?\.(png|jpe?g|webp|gif|avif|svg))['"]/g)) {
+        const base = m[1].split('/').pop().replace(/\.\w+$/, '')
+        docImgBaseNames.add(base)
+      }
+    }
+  }
+  for (const dir of docViewDirs) collectVueImgs(join(root, 'src/views', dir))
+  if (docImgBaseNames.size) {
+    let matched = 0
+    for (const name of assetFiles) {
+      if (/\.(js|css)$/.test(name)) continue
+      // 产物图片命名是 <基名>.<hash>.<ext>（hash 可能缺省），基名命中即收
+      const base = name.replace(/\.\w+$/, '').replace(/\.[A-Za-z0-9_-]{8}$/, '')
+      if (docImgBaseNames.has(base)) { assetRefs.add(name); matched++ }
+    }
+    console.log(`  · 章节截图反查：${docImgBaseNames.size} 个基名 → 补进 ${matched} 个产物图片`)
+    if (!matched) console.warn('  ⚠ 一个都没匹配上，检查 routes.js 的 glob 目录与 import 写法是否变化')
+  }
+  const keepAssets = assetFiles.filter(name => assetRefs.has(name))
+
+  // 3) 组装包目录（相对结构与产物一致，makeOffline 的 ../ 前缀继续有效）
+  const packDir = resolve(root, '.docpkg', docId)
+  if (existsSync(packDir)) {
+    const old = join(tmpdir(), `fck-docpkg-${docId}-prev-${Date.now()}`)
+    try { renameSync(packDir, old) } catch { console.warn(`  ⚠ 旧包目录挪动失败：${old}`) }
+  }
+  mkdirSync(packDir, { recursive: true })
+  for (const rel of keepHtml) {
+    const target = join(packDir, rel)
+    mkdirSync(resolve(target, '..'), { recursive: true })
+    copyFileSync(join(outAbs, rel), target)
+  }
+  mkdirSync(join(packDir, 'assets'), { recursive: true })
+  for (const name of keepAssets) copyFileSync(join(assetsDir, name), join(packDir, 'assets', name))
+
+  // 4) 包根 index.html = 文档首页（降一层 ../ → ./），解压后双击它直接进文档
+  const homeRel = `${docScope.replace(/^\//, '')}.html`
+  if (existsSync(join(outAbs, homeRel))) {
+    const home = readFileSync(join(outAbs, homeRel), 'utf-8').replace(/(\.\.\/)+/g, './')
+    writeFileSync(join(packDir, 'index.html'), home)
+  }
+
+  // 5) README：生成时间与页面清单，让人知道包里是什么、什么时候打的
+  const readme = [
+    `${docScope} 离线包`,
+    `生成时间：${new Date().toLocaleString('zh-CN', { hour12: false })}`,
+    `包含页面：${pages.length} 个`,
+    ...pages.map(p => `  - ${p}`),
+    '',
+    '打开方式：解压后双击 index.html（无需服务器，离线可用）。',
+    '菜单只保留本文档所在分组与章节；其他文档请回线上文档中心查看。',
+    '内容快照自生成时刻的线上版本，文档更新后请重新生成。'
+  ].join('\n')
+  writeFileSync(join(packDir, 'README.txt'), readme, 'utf-8')
+
+  // 6) zip → public/docs/<docId>/（public 会被 dev 与构建同时服务，下载地址稳定）
+  const pubDir = resolve(root, 'public/docs', docId)
+  mkdirSync(pubDir, { recursive: true })
+  const zipPath = join(pubDir, `${docId}-offline.zip`)
+  // zip 对已存在的档案是「追加」不是「覆盖」，不删旧包会把上一版一起背在包里
+  if (existsSync(zipPath)) unlinkSync(zipPath)
+  await new Promise((res, rej) => {
+    const z = spawn('zip', ['-r', '-q', zipPath, '.'], { cwd: packDir, stdio: 'ignore' })
+    z.on('close', code => code === 0 ? res() : rej(new Error(`zip 退出码 ${code}`)))
+    z.on('error', rej)
+  })
+
+  // 7) 临时产物挪去系统 temp，别让 40MB 的 .docpkg-tmp 留在项目根
+  try { renameSync(outAbs, join(tmpdir(), `fck-docpkg-tmp-${docId}-${Date.now()}`)) } catch {}
+
+  const zipSize = statSync(zipPath).size
+
+  // 8) 登记到「已打包清单」：目录页据此显示下载入口（没有包的文档不显示，避免死链）
+  const manifestFile = resolve(root, 'public/docs/offline-manifest.json')
+  let offlineManifest = { packages: [] }
+  if (existsSync(manifestFile)) {
+    try { offlineManifest = JSON.parse(readFileSync(manifestFile, 'utf-8')) } catch {}
+  }
+  const now = new Date()
+  offlineManifest.packages = (offlineManifest.packages || []).filter(p => p.scope !== docScope)
+  // 文档首页：多数文档就是 scope 本身；假勤这类入口是 /docs/x/overview 的单独记下来，
+  // 页面据此判断「当前这一页是不是文档首页」，只有首页才显示下载入口
+  const home = pages.includes(docScope)
+    ? docScope
+    : pages.slice().sort((a, b) => a.split('/').length - b.split('/').length || a.length - b.length)[0]
+  offlineManifest.packages.push({
+    scope: docScope,
+    home,
+    file: `/docs/${docId}/${docId}-offline.zip`,
+    generatedAt: now.toISOString(),
+    generatedAtText: now.toLocaleString('zh-CN', { hour12: false }),
+    pages: pages.length,
+    sizeText: `${(zipSize / 1024 / 1024).toFixed(1)} MB`
+  })
+  offlineManifest.packages.sort((a, b) => String(b.generatedAt).localeCompare(String(a.generatedAt)))
+  mkdirSync(resolve(root, 'public/docs'), { recursive: true })
+  writeFileSync(manifestFile, JSON.stringify(offlineManifest, null, 2) + '\n', 'utf-8')
+  console.log('')
+  console.log('  ────────────────────────────────────────────────')
+  console.log(`  ✓ 打包范围：${docScope}（${pages.length} 页，HTML ${keepHtml.length} 个文件 + assets ${keepAssets.length} 个）`)
+  console.log(`  ✓ 包目录：${relative(root, packDir)}/  （${(dirSize(packDir) / 1024 / 1024).toFixed(1)} MB）`)
+  console.log(`  ✓ 离线包：${relative(root, zipPath)}  （${(zipSize / 1024 / 1024).toFixed(1)} MB）`)
+  console.log(`  ✓ 下载地址：/docs/${docId}/${docId}-offline.zip`)
+  console.log('  ✓ 解压后双击 index.html 即可离线阅读')
+  console.log('')
 }

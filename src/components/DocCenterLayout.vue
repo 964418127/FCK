@@ -4,8 +4,8 @@
     <aside :class="['sidebar', { collapsed: isCollapsed }]">
       <div class="sidebar-header">
         <div v-show="!isCollapsed" class="header-content">
-          <h2 class="home-link" title="回到文档中心目录页" @click="goHome">文档中心</h2>
-          <el-button class="back-btn" size="small" link @click="goBack">
+          <h2 class="home-link" :title="docScope ? '回到本文档首页' : '回到文档中心目录页'" @click="docScope ? goDocHome() : goHome">文档中心</h2>
+          <el-button v-if="!docScope" class="back-btn" size="small" link @click="goBack">
             <el-icon><Back /></el-icon>
             <span>返回主页</span>
           </el-button>
@@ -38,6 +38,10 @@ import { filterMenuTree } from '../composables/useGateConfig.js'
 const router = useRouter()
 const isCollapsed = ref(false)
 
+// 单文档离线包（static:doc -- --doc=/docs/x）：包内只有本文档的页面，
+// 「返回主页 / 文档目录」都是包内不存在的路由 —— 隐藏返回按钮，标题改为回本文档首页
+const docScope = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DOC_SCOPE) || ''
+
 // 文档中心自己的左侧章节导航也要受「菜单配置」控制（/gate 的「文档中心」页签）
 const visibleDocMenu = computed(() => filterMenuTree(docMenu))
 
@@ -53,6 +57,11 @@ const goBack = () => {
 // 回到目录页（/docs 的默认落地页）
 const goHome = () => {
   router.push('/docs')
+}
+
+// 离线包内：回到本文档首页（包根 index.html 对应的路由）
+const goDocHome = () => {
+  router.push(docScope)
 }
 </script>
 

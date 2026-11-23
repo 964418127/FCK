@@ -168,6 +168,7 @@ let floatMenuTimeout = null
 
 // 根据当前 activeMenu 展开对应的父级分组
 const expandGroupsForActive = () => {
+  let matched = false
   props.menuData.forEach(item => {
     if (item.children) {
       item.children.forEach(child => {
@@ -177,19 +178,35 @@ const expandGroupsForActive = () => {
               child.children.some(g => g.index === activeMenu.value)) {
             expandedGroups.value.add(item.index)
             expandedGroups.value.add(child.index)
+            matched = true
           }
         } else if (child.index === activeMenu.value) {
           expandedGroups.value.add(item.index)
+          matched = true
         }
       })
     }
   })
+  return matched
+}
+
+// 单文档离线包：菜单只剩一条链，且首页以无 hash 的 / 打开时 route.name 匹配不到任何菜单项，
+// 分组全收起 → 打开像一片空。这种形态下把唯一链默认全部展开，打开即见章节
+const expandSoleChain = () => {
+  if (props.menuData.length !== 1) return
+  const walk = (nodes) => (nodes || []).forEach((n) => {
+    if (n.children && n.children.length) {
+      expandedGroups.value.add(n.index)
+      walk(n.children)
+    }
+  })
+  walk(props.menuData)
 }
 
 // 初始化：根据当前路由设置激活菜单和展开的分组
 const initActiveMenu = () => {
   activeMenu.value = route.name || 'welcome'
-  expandGroupsForActive()
+  if (!expandGroupsForActive()) expandSoleChain()
 }
 
 initActiveMenu()
