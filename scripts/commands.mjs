@@ -40,6 +40,11 @@ export const COMMANDS = [
     target: 'site-offline/'
   },
   {
+    cmd: 'npm run static:doc -- --doc=/docs/<id>',
+    desc: '单文档离线包：zip 落 public/docs/<id>/，目录页与文档页头出下载入口',
+    target: 'public/docs/<id>/<id>-offline.zip'
+  },
+  {
     cmd: 'npm run static:serve',
     desc: '纯静态预览产物（clean URL，未知路径真 404）',
     target: 'http://localhost:3100'
