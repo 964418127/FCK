@@ -22,6 +22,7 @@ import { resignChapters, featureChapters } from './resignChapters.js'
 import { orchChapters, orchFeatureChapters } from './orchestrationChapters.js'
 import { parttimeChapters, parttimeFeatureChapters } from './parttimeChapters.js'
 import { generalParamChapters, generalParamFeatureChapters } from './generalParamChapters.js'
+import { salaryAgentChapters, salaryAgentFeatureChapters, salaryAgentAppendixChapters } from './salaryAgentChapters.js'
 import { hrScheduleChapters, hrScheduleFeatureChapters } from './hrScheduleChapters.js'
 
 // 把 chapters 转换成菜单叶子节点
@@ -88,6 +89,24 @@ const generalParamChapterMenu = generalParamChapters.flatMap(ch => {
   ]
 })
 
+// 薪酬查询 Agent 模块：与通用参数同一套写法，6.x 用一级缩进表示归属。
+const salaryAgentChapterMenu = salaryAgentChapters.flatMap(ch => {
+  const node = { index: ch.routeName, label: `${ch.order}、${ch.nav || ch.title}` }
+  if (ch.id === 'features') {
+    return [
+      node,
+      ...salaryAgentFeatureChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
+    ]
+  }
+  if (ch.id === 'appendix') {
+    return [
+      node,
+      ...salaryAgentAppendixChapters.map(f => ({ index: f.routeName, label: `${f.no} ${f.nav || f.title}`, indent: true }))
+    ]
+  }
+  return [node]
+})
+
 export const docMenu = [
   {
     // 目录页（/docs 默认落地页）：一级叶子，常驻最顶，方便从任何文档回到全局目录
@@ -143,6 +162,14 @@ export const docMenu = [
         icon: Reading,
         to: '/docs/general-param',
         children: generalParamChapterMenu
+      },
+      // 薪酬查询 Agent：模块化薪酬下的一份需求说明，不单独占一级分组
+      {
+        index: 'doc-salary-agent',
+        label: '薪酬查询 Agent',
+        icon: Reading,
+        to: '/docs/salary-agent',
+        children: salaryAgentChapterMenu
       }
     ]
   },

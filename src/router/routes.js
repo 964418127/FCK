@@ -12,6 +12,7 @@ import { orchChapters, orchFeatureChapters } from '../docs/orchestrationChapters
 import { parttimeChapters, parttimeFeatureChapters } from '../docs/parttimeChapters.js'
 import { generalParamChapters, generalParamFeatureChapters } from '../docs/generalParamChapters.js'
 import { hrScheduleChapters, hrScheduleFeatureChapters } from '../docs/hrScheduleChapters.js'
+import { salaryAgentChapters, salaryAgentFeatureChapters, salaryAgentAppendixChapters } from '../docs/salaryAgentChapters.js'
 
 // Vite 编译时把所有章节 SFC 转成静态映射（SSR 也能解析）
 const chapterModules = import.meta.glob('../views/v2phase1/*.vue')
@@ -35,6 +36,10 @@ const generalParamChapterModules = {
 const hrScheduleChapterModules = {
   ...import.meta.glob('../views/hr-schedule/*.vue'),
   ...import.meta.glob('../views/hr-schedule/sections/*.vue')
+}
+const salaryAgentChapterModules = {
+  ...import.meta.glob('../views/salary-agent-guide/*.vue'),
+  ...import.meta.glob('../views/salary-agent-guide/sections/*.vue')
 }
 
 export const routes = [
@@ -1368,6 +1373,33 @@ export const routes = [
       { path: 'general-param/6-6', redirect: '/docs/general-param/6-3' },
       { path: 'general-param/6-7', redirect: '/docs/general-param/6-1' },
       { path: 'general-param/6-8', redirect: '/docs/general-param/6-1' },
+      // 薪酬查询 Agent 模块：索引 + 七章 + 6.x
+      {
+        path: 'salary-agent',
+        name: 'doc-salary-agent-index',
+        component: () => import('../views/salary-agent-guide/SalaryAgentGuide.vue'),
+        meta: { title: '薪酬查询 Agent / 产品需求说明' }
+      },
+      ...salaryAgentChapters.map(ch => ({
+        path: `salary-agent/${ch.id}`,
+        name: ch.routeName,
+        component: salaryAgentChapterModules[`../views/salary-agent-guide/${ch.file}`],
+        meta: { title: `薪酬查询 Agent / ${ch.order}、${ch.title}` }
+      })),
+      // 第六章「功能详细说明」下的 6.x 章节
+      ...salaryAgentFeatureChapters.map(ch => ({
+        path: `salary-agent/${ch.id}`,
+        name: ch.routeName,
+        component: salaryAgentChapterModules[`../views/salary-agent-guide/${ch.file}`],
+        meta: { title: `薪酬查询 Agent / 六、功能详细说明 / ${ch.no} ${ch.title}` }
+      })),
+      // 第七章「附录」下的 7.x 章节
+      ...salaryAgentAppendixChapters.map(ch => ({
+        path: `salary-agent/${ch.id}`,
+        name: ch.routeName,
+        component: salaryAgentChapterModules[`../views/salary-agent-guide/${ch.file}`],
+        meta: { title: `薪酬查询 Agent / 七、附录 / ${ch.no} ${ch.title}` }
+      })),
       // 人事中心 · 排班策略模块：索引 + 七章 + 6.x
       {
         path: 'hr-schedule',

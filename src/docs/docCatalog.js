@@ -72,6 +72,15 @@ export const docGroups = [
         scope: '7 章 + 3 个功能章节',
         updated: '2026-11-10',
         path: '/docs/general-param'
+      },
+      {
+        gateId: 'doc-salary-agent',
+        title: '薪酬查询 Agent',
+        meta: 'v1.0 · 2026-11-23',
+        desc: '员工对【自己】薪酬的查询与求证：两类信息、三道围墙与字段裁剪、社保/公积金/个税只答结论、人工出口',
+        scope: '7 章 + 3 个功能章节',
+        updated: '2026-11-23',
+        path: '/docs/salary-agent'
       }
     ]
   },
