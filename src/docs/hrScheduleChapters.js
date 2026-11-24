@@ -5,7 +5,7 @@
  * 改一处，三处自动同步。
  *
  * 章节按公司 PRD 模板编号：一、版本信息 / 二、变更日志 / 三、文档说明 / 四、需求背景 / 五、需求范围 /
- * 六、功能详细说明（6.1–6.5 见 hrScheduleFeatureChapters）/ 七、附录。
+ * 六、功能详细说明（6.1–6.10 见 hrScheduleFeatureChapters）/ 七、附录 / 八、未来扩展。
  *
  * 排序规则：**配置在前、结果在后** —— 6.1 时段不配出来，后面没有一条名额可铺。
  *
@@ -83,6 +83,16 @@ export const hrScheduleChapters = [
     routeName: 'doc-hr-schedule-appendix',
     path: '/docs/hr-schedule/appendix',
     file: 'sections/HS07Appendix.vue'
+  },
+  {
+    id: 'future',
+    order: '八',
+    title: '未来扩展：多岗位接入的关键升级',
+    nav: '未来扩展',
+    subtitle: '缺口判定两段式与按人群登记、推拿师 4 小时阈值、客户经理关联调班、推拿师审核两条待定路线——已讨论待细化，不进本期范围',
+    routeName: 'doc-hr-schedule-future',
+    path: '/docs/hr-schedule/future',
+    file: 'sections/HS08Future.vue'
   }
 ]
 
