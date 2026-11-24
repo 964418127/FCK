@@ -5,7 +5,8 @@
  * + 索引页章节卡片（SalaryAgentGuide.vue）。
  *
  * 章节按公司 PRD 模板编号：一、版本信息 / 二、变更日志 / 三、文档说明 / 四、需求背景 /
- * 五、需求范围 / 六、功能详细说明（6.1 查询范围 / 6.2 围墙 / 6.3 回答口径 / 6.4 产品入口）/
+ * 五、需求范围 / 六、功能详细说明（6.1 查询范围 / 6.2 围墙体系 / 6.3 应答深度分层 /
+ * 6.4 完整求证链 / 6.5 产品入口与人工出口）/
  * 七、附录（7.1 待决事项 / 7.2 薪酬项清单·客户经理 / 7.3 薪酬项清单·推拿师 / 7.4 薪酬项清单·非全推拿师）。
  */
 export const salaryAgentChapters = [
@@ -138,9 +139,9 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-1',
     no: '6.1',
-    title: '查询范围与两类信息',
+    title: '查询范围与岗位底账',
     nav: '查询范围',
-    subtitle: '政策类答适用本人的命中值+依据；明细类答工资条原样',
+    subtitle: '三类取数通道 × 三个岗位底账：能查什么由岗位现行薪酬项集合决定',
     routeName: 'doc-salary-agent-6-1',
     path: '/docs/salary-agent/6-1',
     file: 'sections/SA61QueryScope.vue'
@@ -148,9 +149,9 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-2',
     no: '6.2',
-    title: '围墙与字段裁剪',
+    title: '围墙体系：通用围墙 + 岗位差异围墙',
     nav: '围墙',
-    subtitle: '三道关：只能查自己、敏感信息不在场、只读；裁剪在喂给 Agent 之前做',
+    subtitle: '通用三道对所有岗位一致；岗位差异围墙按底账定各岗位「什么不在场」',
     routeName: 'doc-salary-agent-6-2',
     path: '/docs/salary-agent/6-2',
     file: 'sections/SA62Walls.vue'
@@ -158,21 +159,31 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-3',
     no: '6.3',
-    title: '回答口径与人工出口',
-    nav: '回答口径',
-    subtitle: '代扣三类只答结论；非全不缴社保公积金、个税按周预扣多退少补；人工出口',
+    title: '应答深度分层：每个薪酬项答到多深',
+    nav: '应答深度',
+    subtitle: '判据只有一条：数据可得性 × 敏感度——四层归层，逐项标注在底账',
     routeName: 'doc-salary-agent-6-3',
     path: '/docs/salary-agent/6-3',
-    file: 'sections/SA63Answers.vue'
+    file: 'sections/SA63Depth.vue'
   },
   {
     id: '6-4',
     no: '6.4',
-    title: '产品入口与使用链路',
-    nav: '产品入口',
-    subtitle: '单独入口【薪酬咨询助手】（暂定名）；进入即锁定本人，一条链路到人工出口',
+    title: '完整求证链：以「客次提成 15 块」为例',
+    nav: '求证链',
+    subtitle: 'L1 项的四步还原：本人业务事实 → 规则命中 → 计算过程 → 结论判定',
     routeName: 'doc-salary-agent-6-4',
     path: '/docs/salary-agent/6-4',
-    file: 'sections/SA64Entry.vue'
+    file: 'sections/SA64Verify.vue'
+  },
+  {
+    id: '6-5',
+    no: '6.5',
+    title: '产品入口、使用链路与人工出口',
+    nav: '产品入口',
+    subtitle: '单独入口【薪酬咨询助手】（暂定名）；进入即锁定本人，一条链路到人工出口',
+    routeName: 'doc-salary-agent-6-5',
+    path: '/docs/salary-agent/6-5',
+    file: 'sections/SA65Entry.vue'
   }
 ]
