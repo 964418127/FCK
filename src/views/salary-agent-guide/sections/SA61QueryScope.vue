@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="6.1 查询范围与两类信息"
-    subtitle="政策类答适用本人的命中值+依据；明细类答工资条原样"
-    version="v1.0"
-    date="2026-11-23"
+    subtitle="政策类答适用本人的命中值+依据；明细类答工资条原样；常乐豆只给账户级汇总"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-61-two" class="section">
@@ -61,13 +61,13 @@
 
     <div id="sa-61-bean" class="section">
       <div class="section-header">
-        <h2>常乐豆：两条线，组成可查</h2>
+        <h2>常乐豆：高风险围墙，只给账户级汇总</h2>
         <DocCopyButton section-id="sa-61-bean" />
       </div>
       <p class="doc-p">
         常乐豆与薪酬是两条线：常乐豆不是工资条的组成部分，也不参与应税收入。
-        员工查薪酬时，Agent 不把常乐豆算进任何收入或扣缴项；查常乐豆时，也不把它混进工资条。
-        组成汇总的来源是模块化薪酬计算结果里的「获豆明细」「扣豆」分组——与工资同一套计算结果，对外仍按两条线呈现。
+        近期常乐豆存在劳动纠纷，公司正在推进常乐豆去明细化 —— 明细口径未定期间，Agent 对常乐豆
+        <strong>一律只答账户级汇总</strong>（本月结算、可用余额、提现冻结三个数），分类及以下任何颗粒度不开放。
       </p>
       <table class="data-table">
         <thead>
@@ -75,29 +75,32 @@
         </thead>
         <tbody>
           <tr>
-            <td><strong>我的常乐豆是怎么组成的？</strong></td>
-            <td>可查：本月合计、各分类的获豆 / 扣豆汇总（分类因岗位而异）——<strong>只给分类级汇总，不给分类下的逐条明细</strong>（每条的数量 / 业务日期 / 业务编号不在 Agent 数据面）</td>
+            <td><strong>我的常乐豆账户情况？</strong></td>
+            <td>账户级汇总：本月结算 X 颗、可用余额 X 颗、提现冻结 X 颗 —— 到此为止</td>
           </tr>
           <tr>
-            <td><strong>某一类豆是怎么算的？</strong></td>
-            <td>分类的计算规则由模块化薪酬的发放策略提供，属于政策类口径，按本页政策类方式答（适用本人的命中值 + 依据）</td>
+            <td><strong>本月住宿获豆是多少？某类豆为什么是这个数？</strong></td>
+            <td>不答分类数字、不解释原因，只回账户级汇总（追问也只回账户级汇总，见 6.3 兜底句）</td>
           </tr>
           <tr>
-            <td><strong>常乐豆抵扣公积金的部分呢？</strong></td>
-            <td>不可答：抵扣扣减现行即无备注、无说明，Agent 不做解释，只答固定一句（见 6.3 追问兜底）</td>
+            <td><strong>常乐豆怎么组成的？各类汇总？</strong></td>
+            <td>不提供分类汇总与组成，只回账户级汇总</td>
+          </tr>
+          <tr>
+            <td><strong>豆是怎么算的？</strong></td>
+            <td>计算规则暂不开放（高风险期收窄），只回账户级汇总</td>
           </tr>
           <tr>
             <td><strong>常乐豆和我的工资有什么关系？</strong></td>
-            <td>联动关系不在场（6.2），只答固定一句</td>
+            <td>两条线，联动关系不在场（6.2），只答固定一句</td>
           </tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>为什么只给汇总：</strong>分类汇总已够员工核对自己的常乐豆组成；
-        逐条明细能对回具体业务动作，第一版不开放——员工要逐条，引导去自助明细查询。
+        <strong>为什么收这么紧：</strong>劳动纠纷背景下，Agent 的任何应答都可能被截图留存作为依据；
+        在明细口径定案之前，分类与算法层面的应答只会放大争议面 —— 账户级汇总是员工核对账户本身所需的最小信息。
+        <br /><strong>口径会随明细化演进：</strong>公司常乐豆去明细化落地后，按新明细口径重新评估开放颗粒度（7.1 待决，归属薪酬侧 + 产品）。
         <br /><strong>谁有常乐豆：</strong>仅全职推拿师、全职客户经理。非全职、兼职及其他岗位问起，答「该岗位不参与常乐豆」。
-        <br /><strong>为什么抵扣不解释：</strong>抵扣公积金的扣减在现行规则里就不做过多解释（扣减类型和数量无备注无说明）——
-        Agent 沿用同一条边界，系统里没有的解释，Agent 也不编。
       </div>
     </div>
 
@@ -121,7 +124,7 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 const tocItems = [
   { id: 'sa-61-two', label: '员工能查的两类信息' },
   { id: 'sa-61-src', label: '两类信息的取数方式' },
-  { id: 'sa-61-bean', label: '常乐豆：两条线，组成只给汇总' },
+  { id: 'sa-61-bean', label: '常乐豆：高风险围墙，只给账户级汇总' },
   { id: 'sa-61-mul', label: '多张工资条' }
 ]
 

@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="五、需求范围"
     subtitle="一句话：只做「查与证」这一件事——围墙之内的数据面、四种答法、一条人工出口"
-    version="v1.0"
-    date="2026-11-23"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-scope-lead" class="section">
@@ -93,6 +93,11 @@
       </div>
       <div class="chain">
         <div class="chain-node on">
+          <div class="cn-t">从【薪酬咨询助手】进入</div>
+          <div class="cn-d">单独入口（暂定名），登录态带入即锁定本人 —— 查询对象不可选、不可改（6.4）</div>
+        </div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-node on">
           <div class="cn-t">查本人的工资条</div>
           <div class="cn-d">已发放、登录人名下的全部工资条（含多主体多张）：构成、代扣、发放时间与状态</div>
         </div>
@@ -104,7 +109,7 @@
         <div class="chain-arrow">→</div>
         <div class="chain-node">
           <div class="cn-t">按固定口径作答</div>
-          <div class="cn-d">代扣三类只答结论不做解释；常乐豆只给分类级汇总；追问统一兜底句</div>
+          <div class="cn-d">代扣三类只答结论不做解释；常乐豆高风险期只给账户级汇总；追问统一兜底句</div>
         </div>
         <div class="chain-arrow">→</div>
         <div class="chain-node">
@@ -148,7 +153,7 @@
             <text x="410" y="90" text-anchor="middle" font-size="11" fill="#3B6D11">条件系统注入，不认口述</text>
             <rect x="30" y="116" width="240" height="56" rx="8" fill="#FFFFFF" stroke="#97C459" stroke-width="0.5"/>
             <text x="150" y="140" text-anchor="middle" font-size="12" font-weight="500" fill="#27500A">固定口径与兜底句</text>
-            <text x="150" y="158" text-anchor="middle" font-size="11" fill="#3B6D11">代扣三类 · 常乐豆汇总</text>
+            <text x="150" y="158" text-anchor="middle" font-size="11" fill="#3B6D11">代扣三类 · 常乐豆账户级汇总</text>
             <rect x="290" y="116" width="240" height="56" rx="8" fill="#FFFFFF" stroke="#97C459" stroke-width="0.5"/>
             <text x="410" y="140" text-anchor="middle" font-size="12" font-weight="500" fill="#27500A">人工出口（只转交）</text>
             <text x="410" y="158" text-anchor="middle" font-size="11" fill="#3B6D11">带条目升级，不受理申诉</text>

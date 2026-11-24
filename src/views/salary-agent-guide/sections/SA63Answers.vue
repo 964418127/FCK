@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="6.3 回答口径与人工出口"
-    subtitle="代扣三类只答结论；非全不缴社保公积金、个税按周预扣多退少补；核实后仍不服走显式人工路径"
-    version="v1.0"
-    date="2026-11-23"
+    subtitle="代扣三类只答结论；常乐豆追问一律固定句；非全不缴社保公积金、个税按周预扣多退少补"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-63-three" class="section">
@@ -43,7 +43,7 @@
         <DocCopyButton section-id="sa-63-fallback" />
       </div>
       <p class="doc-p">
-        下面两类问题只答固定一句，不做展开：
+        下面两类问题只答固定一句，不做展开。常乐豆问题无论追问几层，都只回固定句，不展开账户级汇总以外的任何内容：
       </p>
       <table class="data-table">
         <thead>
@@ -51,7 +51,7 @@
         </thead>
         <tbody>
           <tr><td><strong>代扣三类追问</strong></td><td>「该项金额以工资条为准，如有疑问请联系人事核实。」</td></tr>
-          <tr><td><strong>常乐豆逐条明细 / 抵扣公积金 / 与工资的关系</strong></td><td>「常乐豆明细以自助明细查询展示为准，如仍有疑问请联系人事核实。」</td></tr>
+          <tr><td><strong>常乐豆追问（分类汇总 / 组成 / 算法 / 为什么少）</strong></td><td>「常乐豆相关问题目前仅提供账户级汇总（本月结算 / 可用余额 / 提现冻结），明细与计算说明请以人事核实为准。」</td></tr>
         </tbody>
       </table>
       <p class="doc-p">

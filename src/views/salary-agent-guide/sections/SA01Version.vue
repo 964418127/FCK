@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="一、版本信息"
     subtitle="文档身份、负责人与适用范围"
-    version="v1.0"
-    date="2026-11-23"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-ver" class="section">
@@ -19,11 +19,11 @@
         <tbody>
           <tr><td><strong>文档</strong></td><td>薪酬查询 Agent · 产品需求说明</td></tr>
           <tr><td><strong>归属</strong></td><td>模块化薪酬</td></tr>
-          <tr><td><strong>版本</strong></td><td>v1.0</td></tr>
-          <tr><td><strong>日期</strong></td><td>2026-11-23</td></tr>
+          <tr><td><strong>版本</strong></td><td>v1.1</td></tr>
+          <tr><td><strong>日期</strong></td><td>2026-11-24</td></tr>
           <tr><td><strong>负责人</strong></td><td><strong>Lacus7</strong></td></tr>
           <tr><td><strong>读者</strong></td><td>业务运营 / 人事 / 薪酬结算 / 研发 / 测试</td></tr>
-          <tr><td><strong>范围</strong></td><td>员工对【自己】薪酬的查询与求证：查询范围、围墙、回答口径、人工出口。不含 Agent 的模型选型与入口载体、申诉受理、薪酬计算与发放</td></tr>
+          <tr><td><strong>范围</strong></td><td>员工对【自己】薪酬的查询与求证：查询范围、围墙、回答口径、产品入口与使用链路、人工出口。不含 Agent 的模型选型与入口载体、申诉受理、薪酬计算与发放</td></tr>
         </tbody>
       </table>
       <div class="note">

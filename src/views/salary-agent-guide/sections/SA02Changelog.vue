@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="二、变更日志"
-    subtitle="本轮成文只留一条日志，之后同轮修订就地更新"
-    version="v1.0"
-    date="2026-11-23"
+    subtitle="v1.1 单独入口定案 + 常乐豆高风险围墙；后续同轮修订就地更新"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-log" class="section">
@@ -17,6 +17,12 @@
           <tr><th style="width: 90px;">版本</th><th style="width: 110px;">日期</th><th style="width: 90px;">负责人</th><th>变更内容</th></tr>
         </thead>
         <tbody>
+          <tr>
+            <td>v1.1</td>
+            <td>2026-11-24</td>
+            <td>Lacus7</td>
+            <td>产品入口定为单独入口【薪酬咨询助手】（暂定名），新增 6.4 产品入口与使用链路；常乐豆升级为高风险围墙 —— 因劳动纠纷 + 公司推进去明细化，应答从「分类级汇总」收窄为「账户级汇总」（本月结算 / 可用余额 / 提现冻结），分类汇总、组成、计算规则一律不答；背景章补风险前提；7.1 待决新增常乐豆明细口径重评（随明细化，归属薪酬侧 + 产品）</td>
+          </tr>
           <tr>
             <td>v1.0</td>
             <td>2026-11-23</td>

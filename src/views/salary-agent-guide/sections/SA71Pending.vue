@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="7.1 待决事项"
     subtitle="不在本轮拍板但必须挂起的条目：归属方 + 卡在哪"
-    version="v1.0"
-    date="2026-11-23"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-app" class="section">
@@ -18,9 +18,14 @@
         </thead>
         <tbody>
           <tr>
-            <td><strong>Agent 入口与载体</strong></td>
-            <td>员工从哪里进入（企业微信 / 员工端小程序 / App），取决于渠道规划与登录态打通方式</td>
+            <td><strong>入口名称与载体</strong></td>
+            <td>入口形态已定（单独入口，暂定名【薪酬咨询助手】，见 6.4）；待决的是载体选型（企业微信 / 员工端小程序 / App）与对外名称，取决于渠道规划与登录态打通方式</td>
             <td>技术 + 渠道</td>
+          </tr>
+          <tr>
+            <td><strong>常乐豆明细口径重评</strong></td>
+            <td>公司常乐豆去明细化落地后，按新明细口径重新评估 Agent 的开放颗粒度（现行为账户级汇总，6.1）；在明细化定案前不承诺任何明细</td>
+            <td>薪酬侧 + 产品</td>
           </tr>
           <tr>
             <td><strong>代扣金额的数据对接</strong></td>

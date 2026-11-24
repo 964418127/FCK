@@ -5,7 +5,7 @@
  * + 索引页章节卡片（SalaryAgentGuide.vue）。
  *
  * 章节按公司 PRD 模板编号：一、版本信息 / 二、变更日志 / 三、文档说明 / 四、需求背景 /
- * 五、需求范围 / 六、功能详细说明（6.1 查询范围 / 6.2 围墙 / 6.3 回答口径）/
+ * 五、需求范围 / 六、功能详细说明（6.1 查询范围 / 6.2 围墙 / 6.3 回答口径 / 6.4 产品入口）/
  * 七、附录（7.1 待决事项 / 7.2 薪酬项清单·客户经理 / 7.3 薪酬项清单·推拿师 / 7.4 薪酬项清单·非全推拿师）。
  */
 export const salaryAgentChapters = [
@@ -164,5 +164,15 @@ export const salaryAgentFeatureChapters = [
     routeName: 'doc-salary-agent-6-3',
     path: '/docs/salary-agent/6-3',
     file: 'sections/SA63Answers.vue'
+  },
+  {
+    id: '6-4',
+    no: '6.4',
+    title: '产品入口与使用链路',
+    nav: '产品入口',
+    subtitle: '单独入口【薪酬咨询助手】（暂定名）；进入即锁定本人，一条链路到人工出口',
+    routeName: 'doc-salary-agent-6-4',
+    path: '/docs/salary-agent/6-4',
+    file: 'sections/SA64Entry.vue'
   }
 ]
