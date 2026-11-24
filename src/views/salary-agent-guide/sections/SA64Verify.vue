@@ -1,9 +1,9 @@
 <template>
   <DocShell
     :toc-items="tocItems"
-    title="6.4 完整求证链：以「客次提成 15 块」为例"
-    subtitle="L1 项的四步还原：本人业务事实 → 规则命中 → 计算过程 → 结论判定"
-    version="v2.4"
+    title="6.4 完整求证链与场景走位"
+    subtitle="四步还原（事实 → 规则 → 计算 → 判定）+ 六步场景卡走到底"
+    version="v2.6"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -91,6 +91,56 @@
       </div>
     </div>
 
+    <div id="sa-64-scenario" class="section">
+      <div class="section-header">
+        <h2>一个场景走到底：客次提成 15 块</h2>
+        <DocCopyButton section-id="sa-64-scenario" />
+      </div>
+      <p class="doc-p">
+        把最常见的质疑走一遍全程，看行为侧每一步踩在支撑侧哪个实体上
+        （以全职客户经理的「计件客次收入」为例，底账 7.2 标注 L1 求证层；四步求证链的细化口径见 6.4）。
+        卡片颜色即数据源类别：<span class="lg lg-a">入口与定位</span> <span class="lg lg-b">业务事实</span>
+        <span class="lg lg-c">政策依据</span> <span class="lg lg-d">组装（关键步）</span>
+      </p>
+      <div class="steps">
+        <div class="step-card st-a">
+          <div class="step-head"><span class="step-no">1</span><span class="step-t">进入即锁定本人</span></div>
+          <div class="step-d">从【薪酬咨询助手】进入（暂定名），登录态带入——查询对象不可选、不可改（6.5）。</div>
+          <div class="step-src">背后数据源：登录态 / 员工档案（岗位归属）</div>
+        </div>
+        <div class="step-card st-a">
+          <div class="step-head"><span class="step-no">2</span><span class="step-t">定位薪酬项</span></div>
+          <div class="step-d">提问解析到显示名「计件客次收入」+ 业务日期 3 号；查底账确认该项为 L1 求证层。</div>
+          <div class="step-src">背后数据源：岗位底账（7.2，含深度标注）</div>
+        </div>
+        <div class="step-card st-b">
+          <div class="step-head"><span class="step-no">3</span><span class="step-t">取业务事实</span></div>
+          <div class="step-d">读本人 3 号的客次记录与订单实付金额——员工本人经历过，给本人看不构成泄露（清单见 6.1 表 A）。</div>
+          <div class="step-src">背后数据源：本人业务事实（本人名下过滤）</div>
+        </div>
+        <div class="step-card st-c">
+          <div class="step-head"><span class="step-no">4</span><span class="step-t">取政策依据</span></div>
+          <div class="step-d">命中客次提成单价 + 规则说明文案——「为什么是 5 元」的依据带出处（清单见 6.1 表 B）。</div>
+          <div class="step-src">背后数据源：政策参数命中值 + 政策资料仓库</div>
+        </div>
+        <div class="step-card st-d">
+          <span class="step-key">关键步</span>
+          <div class="step-head"><span class="step-no">5</span><span class="step-t">组装计算还原</span></div>
+          <div class="step-d">把事实、规则、算式连成应答：3 客次 × 5 元 = 15 元——数字全部来自前三步，Agent 不自带。</div>
+          <div class="step-src">背后数据源：STEP 03 + 04 拼装（无新增数据源）</div>
+        </div>
+        <div class="step-card st-a">
+          <div class="step-head"><span class="step-no">6</span><span class="step-t">结论判定</span></div>
+          <div class="step-d">一致 → 就地证完；有出入 → 如实报差异转人工，携带已查内容，不评对错、不下结论。</div>
+          <div class="step-src">背后数据源：人工出口条目（6.5）</div>
+        </div>
+      </div>
+      <p class="arch-cap">
+        同一条链路换个数据源就走别的层：常乐豆问题走到 STEP 02 就换成「账户级三数」（STEP 03–05 不执行），
+        代扣三类走到 STEP 04 后直接报结论——这就是「按深度分层作答」在场景里的样子。
+      </p>
+    </div>
+
     <div id="sa-64-src" class="section">
       <div class="section-header">
         <h2>求证层的数据源清单</h2>
@@ -117,7 +167,7 @@
           <tr>
             <td><strong>卫生检查事实</strong></td>
             <td>本人负责房间 / 卫生间的打扫与检查记录</td>
-            <td>卫生打扫类激励与扣款的求证（事实数据已列入 5.3 表 A：房间卫生 / 卫生间 / 离店卫生 / 卫生检查；升 L1 待薪酬侧确认，确认前按 L2 答）</td>
+            <td>卫生打扫类激励与扣款的求证（事实数据已列入 6.1 表 A：房间卫生 / 卫生间 / 离店卫生 / 卫生检查；升 L1 待薪酬侧确认，确认前按 L2 答）</td>
           </tr>
           <tr>
             <td><strong>政策命中值</strong></td>
@@ -129,7 +179,7 @@
       <div class="note">
         <strong>不在求证层的数据源：</strong>他人订单与接待数据（围墙①②）、投诉工单详情与处理过程（第三方内容）、
         策略模板的计算脚本（内部口径文档）——这些即使业务系统里有，也不进 Agent 数据面。
-        <br /><strong>升级路径：</strong>卫生类激励 / 扣款现行按 L2 答；卫生打扫与检查事实已列入 5.3 表 A，接入数据面并经薪酬侧确认后，
+        <br /><strong>升级路径：</strong>卫生类激励 / 扣款现行按 L2 答；卫生打扫与检查事实已列入 6.1 表 A，接入数据面并经薪酬侧确认后，
         可重评升 L1——升层改的是数据面接入清单与底账标注，不改围墙与分层规则本身（归属薪酬侧 + 产品）。
       </div>
     </div>
@@ -144,8 +194,8 @@
           <tr><th style="width: 250px;">边界</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>公式展开范围</strong></td><td>只有 5.3 表 C 的 A 档项（底账 L1）展开完整算式；B 档只讲口径不给算式，C 档不展开——公式里不得出现他人数据、策略 / 模板名与内部系数</td></tr>
-          <tr><td><strong>只还原已发生的</strong></td><td>求证链只对已发放工资条上的结论做还原；对未发生薪酬的预估是试算，不做（5.4 / 5.5）</td></tr>
+          <tr><td><strong>公式展开范围</strong></td><td>按 6.3 公式开放度逐项表执行：仅「允许 · 完整公式」16 项展开完整算式；「仅口径」36 项只讲规则；「只报数」18 项无规则可讲；常乐豆 31 项不展开——公式里不得出现他人数据、策略 / 模板名与内部系数</td></tr>
+          <tr><td><strong>只还原已发生的</strong></td><td>求证链只对已发放工资条上的结论做还原；对未发生薪酬的预估是试算，不做（5.3 做与不做）</td></tr>
           <tr><td><strong>不在 L1 的项不进链路</strong></td><td>只有底账标注 L1 的项才走四步还原；L2 / L3 / L4 项被问到时按 6.3 对应层作答，Agent 不临时「加深」</td></tr>
           <tr><td><strong>算不平就转人工</strong></td><td>还原后与员工预期有出入且事实能解释的，如实解释；事实解释不了的，明示已查内容转人工——Agent 不下「公司错了」或「你想错了」的结论</td></tr>
           <tr><td><strong>全程只读</strong></td><td>求证不产生任何写操作、不改任何数据；差异的修正永远在人工侧</td></tr>
@@ -162,6 +212,7 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 const tocItems = [
   { id: 'sa-64-case', label: '场景与链路总览' },
   { id: 'sa-64-steps', label: '四步的取数与应答' },
+  { id: 'sa-64-scenario', label: '场景走到底（六步）' },
   { id: 'sa-64-src', label: '求证层的数据源清单' },
   { id: 'sa-64-edge', label: '求证链的边界' }
 ]
@@ -178,4 +229,45 @@ const breadcrumbs = [
 
 <style scoped>
 .doc-svg { width: 100%; height: auto; display: block; margin: 4px 0 8px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 8px; }
+.step-card {
+  background: #fbfbfa; border: 1px solid #e3e6ea; border-top: 3px solid #888780;
+  border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;
+  position: relative;
+}
+.step-card.st-a { border-top-color: #185fa5; }
+.step-card.st-b { border-top-color: #3b6d11; }
+.step-card.st-c { border-top-color: #854f0b; }
+.step-card.st-d {
+  border-top-color: #993c1d; border-color: #993c1d;
+  background: #fdf4f0; box-shadow: 0 2px 10px hsl(18 55% 45% / 0.14);
+}
+.step-head { display: flex; align-items: center; gap: 8px; }
+.step-no {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+}
+.st-a .step-no { background: #185fa5; }
+.st-b .step-no { background: #3b6d11; }
+.st-c .step-no { background: #854f0b; }
+.st-d .step-no { background: #993c1d; }
+.step-t { font-size: 13.5px; font-weight: 600; color: #2c2c2a; }
+.step-d { font-size: 12px; color: #5f5e5a; line-height: 1.6; }
+.step-src {
+  font-size: 11.5px; font-weight: 500; color: #5f5e5a;
+  background: #f1f0ec; border-radius: 5px; padding: 4px 8px;
+  line-height: 1.5; margin-top: auto;
+}
+.st-d .step-src { color: #712b13; background: hsl(18 60% 92%); }
+.step-key {
+  position: absolute; top: -11px; right: 10px;
+  font-size: 11px; font-weight: 700; color: #fff;
+  background: #993c1d; border-radius: 999px; padding: 2px 10px;
+}
+.lg { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px; }
+.lg-a { color: #185fa5; background: hsl(210 65% 92%); }
+.lg-b { color: #3b6d11; background: hsl(90 45% 90%); }
+.lg-c { color: #854f0b; background: hsl(38 70% 90%); }
+.lg-d { color: #993c1d; background: hsl(18 60% 91%); }
 </style>

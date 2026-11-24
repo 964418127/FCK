@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="七、附录"
     subtitle="7.1 待决事项 · 7.2/7.3/7.4 各岗位现行薪酬项清单（形式 + 应答深度逐项标注）"
-    version="v2.4"
+    version="v2.6"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

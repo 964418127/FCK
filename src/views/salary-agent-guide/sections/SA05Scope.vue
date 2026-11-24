@@ -2,8 +2,8 @@
   <DocShell
     :toc-items="tocItems"
     title="五、需求范围"
-    subtitle="一句话：只做「查与证」——行为侧答到多深，支撑侧数据从哪来"
-    version="v2.4"
+    subtitle="宏观设计：做哪几件事、边界在哪、覆盖哪些岗位——明细按归属落在第 6 章"
+    version="v2.6"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -18,9 +18,9 @@
         能答到多深由应答深度分层决定（6.3），分层由数据可得性与敏感度决定，不由话术决定。
         求证后仍不服的，走显式人工出口。改数据、试算、查别人，通通不在范围内。
         <br /><br />
-        本章两条线一起讲：<strong>行为侧</strong>（员工怎么问、Agent 按什么深度答）与
-        <strong>支撑侧</strong>（Agent 的知识面由哪些数据实体组成、怎么加工、谁维护）——
-        行为侧的每一步，都要落到支撑侧的一个实体上，没有「凭空算」这一步。
+        本章只讲<strong>宏观设计</strong>：做哪几件事、边界在哪、覆盖哪些岗位。
+        明细不在这里堆——按归属落在第 6 章：支撑侧五实体的来源加工与本人业务事实清单在 <strong>6.1</strong>，
+        计算公式开放度的逐项判定在 <strong>6.3</strong>，求证链的场景走位在 <strong>6.4</strong>。
       </div>
     </div>
 
@@ -64,7 +64,7 @@
         <text x="523" y="82" text-anchor="middle" font-size="10.5" fill="#3B6D11">账户级层只给三数 · 层外追问固定兜底句</text>
 
         <!-- 支撑侧 -->
-        <text x="30" y="130" font-size="12" font-weight="600" fill="#712B13">支撑侧：Agent 的知识面（5.2）—— 两层围墙之内（6.2）</text>
+        <text x="30" y="130" font-size="12" font-weight="600" fill="#712B13">支撑侧：Agent 的知识面（5.2）—— 两层围墙之内（6.2），明细见 6.1</text>
         <rect x="30" y="140" width="620" height="186" rx="14" fill="#FAECE7" stroke="#993C1D" stroke-width="1" stroke-dasharray="7 4"/>
         <rect x="48" y="158" width="114" height="72" rx="9" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.5"/>
         <text x="105" y="180" text-anchor="middle" font-size="11.5" font-weight="500" fill="#712B13">工资条快照</text>
@@ -81,7 +81,7 @@
         <rect x="420" y="158" width="114" height="72" rx="9" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.5"/>
         <text x="477" y="180" text-anchor="middle" font-size="11.5" font-weight="500" fill="#712B13">本人业务事实</text>
         <text x="477" y="196" text-anchor="middle" font-size="10" fill="#993C1D">排班 · 出勤 · 订单 · 卫生</text>
-        <text x="477" y="210" text-anchor="middle" font-size="10" fill="#993C1D">按岗位罗列（5.3）</text>
+        <text x="477" y="210" text-anchor="middle" font-size="10" fill="#993C1D">按岗位罗列（6.1）</text>
         <rect x="544" y="158" width="88" height="72" rx="9" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.5"/>
         <text x="588" y="180" text-anchor="middle" font-size="11.5" font-weight="500" fill="#712B13">常乐豆账户</text>
         <text x="588" y="196" text-anchor="middle" font-size="10" fill="#993C1D">只导出三数</text>
@@ -110,269 +110,38 @@
       </p>
     </div>
 
-    <div id="sa-scope-data" class="section">
+    <div id="sa-scope-support" class="section">
       <div class="section-header">
-        <h2>5.2 支撑侧：数据从哪来、谁维护</h2>
-        <DocCopyButton section-id="sa-scope-data" />
+        <h2>5.2 支撑侧：五个数据实体</h2>
+        <DocCopyButton section-id="sa-scope-support" />
       </div>
       <p class="doc-p">
-        行为侧的每一条规则（围墙、深度分层、求证链），落到研发手里都是下面这张表的一行——
-        <strong>每类数据从哪来、喂给 Agent 之前做什么加工、多久更新、谁维护</strong>。
-        系统落地名以研发确认为准，这里先按业务说法写。
+        支撑侧就是 Agent 的知识面：能答什么取决于这五个实体里有什么，答不了什么取决于哪个实体里没有。
+        每个实体的来源、喂给 Agent 前的加工、更新时机与维护方，以及本人业务事实的逐岗位清单，都在 <strong>6.1</strong> 展开。
       </p>
       <table class="data-table">
         <thead>
-          <tr>
-            <th style="width: 130px;">数据实体</th>
-            <th style="width: 190px;">来源</th>
-            <th>喂给 Agent 前的加工</th>
-            <th style="width: 120px;">更新时机</th>
-            <th style="width: 100px;">维护方</th>
-          </tr>
+          <tr><th style="width: 190px;">数据实体</th><th style="width: 290px;">一句话</th><th>明细与判定</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td><strong>工资条快照</strong></td>
-            <td>模块化薪酬计算结果（已发放的工资单）</td>
-            <td>敏感字段喂之前剥除（6.2）；薪酬项只留显示名称，内部名称与策略模板名不进知识面</td>
-            <td>随算薪 / 发放更新</td>
-            <td>薪酬侧</td>
-          </tr>
-          <tr>
-            <td><strong>政策参数命中值</strong></td>
-            <td>通用参数配置（取值契约：条件查询、命中取值）</td>
-            <td>系统按本人条件注入命中值与依据，员工对话不可改变查询条件</td>
-            <td>配置变更即更新</td>
-            <td>薪酬侧（配置规则管理）</td>
-          </tr>
-          <tr>
-            <td><strong>政策资料仓库</strong></td>
-            <td>政策文件与规则文案：如住宿获豆政策、客次提成规则说明、补贴说明等</td>
-            <td>每条挂显示名薪酬项；敏感段落<strong>在维护侧就不进仓库</strong>（如常乐豆相关操作说明，不在场不是藏着）</td>
-            <td><strong>维护更新即生效</strong></td>
-            <td>薪酬侧（提供维护功能）</td>
-          </tr>
-          <tr>
-            <td><strong>本人业务事实</strong></td>
-            <td>订单实付金额、接待 / 班次记录、卫生检查记录等业务系统数据</td>
-            <td>只取本人名下；接入清单按 5.3 表 A 与底账 L1 项逐项确认（排班、请假、出勤、订单、评价、新客 / 回头客、门店任务、房间卫生、卫生间、离店卫生、卫生检查、投诉记录）</td>
-            <td>随业务系统产生</td>
-            <td>研发接入</td>
-          </tr>
-          <tr>
-            <td><strong>常乐豆账户级汇总</strong></td>
-            <td>常乐豆账户</td>
-            <td>只导出三个数（本月结算 / 可用余额 / 提现冻结）；分类及以下颗粒度不导出，与工资条联动不在场</td>
-            <td>随账户结算更新</td>
-            <td>薪酬侧</td>
-          </tr>
+          <tr><td><strong>工资条快照</strong></td><td>已发放、本人名下的工资单：构成、代扣、发放时间与状态</td><td>数据源清单见 6.1</td></tr>
+          <tr><td><strong>政策参数命中值</strong></td><td>按本人条件命中的保底、单价、比例——带命中依据</td><td>数据源清单见 6.1</td></tr>
+          <tr><td><strong>政策资料仓库</strong></td><td>政策与规则文案，按显示名薪酬项挂载，<strong>支持维护更新</strong></td><td>存什么、怎么维护见 6.1</td></tr>
+          <tr><td><strong>本人业务事实</strong></td><td>排班、出勤、订单、评价、卫生、投诉等本人记录（只取本人名下）</td><td>三岗位逐项清单见 6.1 表 A</td></tr>
+          <tr><td><strong>常乐豆账户级汇总</strong></td><td>只导出三个汇总数，分类及以下不导出</td><td>按 L3 作答，见 6.3</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>Agent 知识面的完整组成：</strong>上表五个数据实体 + 岗位底账（7.2–7.4，107 项逐项标注形式与应答深度）
-        + 应答规则（四层口径与兜底句）。<strong>不在知识面里的</strong>：员工与 Agent 的对话历史、任何他人数据、
-        内部名称与策略模板名、社保公积金个税的解释口径。
+        <strong>知识面的完整组成：</strong>上表五个实体 + 岗位底账（7.2–7.4，107 项逐项标注形式与应答深度）+ 应答规则（四层口径与兜底句）。
+        <strong>不在知识面里的</strong>：员工与 Agent 的对话历史、任何他人数据、内部名称与策略模板名、社保公积金个税的解释口径。
+        <br /><strong>没有「凭空算」这一步：</strong>行为侧每条规则落地时都踩在某个实体上——求证链的四步各有数据源（6.4），
+        围墙的每一道裁掉的都是某个实体里的某一类字段（6.2）。
       </div>
-
-      <div id="sa-scope-repo" class="subsection">
-        <h3>政策资料仓库：要的不是静态文件，是可维护的功能</h3>
-        <p class="doc-p">
-          政策类回答不能只靠参数命中值——「住宿获豆怎么算」「客次提成的规则是什么」这类问题，
-          需要政策说明文案辅助解读。所以支撑侧明确一个实体：<strong>政策资料仓库</strong>，并且它是带维护功能的：
-        </p>
-        <table class="data-table">
-          <thead>
-            <tr><th style="width: 150px;">要点</th><th>口径</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>存什么</strong></td><td>各薪酬项的政策说明与规则文案，按显示名薪酬项挂载；一类一档（如「住宿获豆政策」「计件客次收入规则」）</td></tr>
-            <tr><td><strong>维护功能</strong></td><td>提供维护更新功能：新增 / 更新 / 停用——政策变了改仓库，不是改代码、不是重训模型；仓库内容与发布由薪酬侧负责，维护界面由研发实现</td></tr>
-            <tr><td><strong>生效方式</strong></td><td>维护更新即重新进入知识面；历史版本留痕——应答里的「命中依据」引用当前生效版本</td></tr>
-            <tr><td><strong>裁剪关同样适用</strong></td><td>敏感段落（常乐豆相关操作说明、内部账务口径）在维护侧就不进仓库——围墙第二道「不在场」对政策资料同样生效，政策解读只解读员工应知部分</td></tr>
-          </tbody>
-        </table>
-        <div class="note">
-          <strong>为什么强调可维护：</strong>薪酬策略与政策会持续演进（模板切换、单价调整、新激励上线），
-          若政策文案是一次性喂入的静态资料，每次演进都要研发重新处理——维护功能把「政策更新」从研发动作
-          变成薪酬侧的日常动作，这也是 Agent 能长期答对政策类问题的前提。
-        </div>
-      </div>
-    </div>
-
-    <div id="sa-scope-facts" class="section">
-      <div class="section-header">
-        <h2>5.3 业务事实与标准值：按岗位罗列</h2>
-        <DocCopyButton section-id="sa-scope-facts" />
-      </div>
-      <p class="doc-p">
-        求证链靠两样东西拼起来：<strong>本人发生了什么</strong>（业务事实——随业务系统产生、只取本人名下）
-        与<strong>规则怎么说</strong>（标准与单价——来自政策参数命中值）。只说「订单」远远不够，
-        下面两张表按岗位把数据罗列全，研发照此清单确认接入。
-      </p>
-      <h3 class="fact-h">表 A · 业务事实（本人发生）</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 170px;">数据</th>
-            <th style="width: 105px;">推拿师·全职</th>
-            <th style="width: 105px;">客户经理·全职</th>
-            <th style="width: 105px;">推拿师·非全</th>
-            <th>求证用途</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>排班与班次记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取（接单时段）</td><td>出勤、顶班、时段类还原</td></tr>
-          <tr><td><strong>请假记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>缺勤 / 扣款类核对</td></tr>
-          <tr><td><strong>出勤打卡</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>工时与加班核算</td></tr>
-          <tr><td><strong>订单与实付金额</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>计件 / 提成还原的主事实</td></tr>
-          <tr><td><strong>评价 · 新客 · 回头客记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>激励类还原（围绕订单产生）</td></tr>
-          <tr><td><strong>门店任务完成记录</strong></td><td class="no">—</td><td class="yes">取</td><td class="no">—</td><td>任务激励核对</td></tr>
-          <tr><td><strong>房间卫生打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>房间卫生打扫激励 / 未打扫扣款（推拿师为豆侧 L3、客经为现金 L2）</td></tr>
-          <tr><td><strong>卫生间打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生间打扫激励 / 未打扫扣款（同上，按岗位走现金或豆）</td></tr>
-          <tr><td><strong>离店卫生记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>离店卫生未打扫扣款（推拿师豆侧、非全现金，底账 7.3 / 7.4）</td></tr>
-          <tr><td><strong>卫生检查记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生检查激励 / 扣款（客经含打扫申诉扣回，底账 7.2）</td></tr>
-          <tr><td><strong>投诉记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>投诉扣款核对（三岗位均有该项）：只核本人名下有无与金额，<strong>投诉内容与处理判定过程不在场</strong></td></tr>
-        </tbody>
-      </table>
-      <h3 class="fact-h">表 B · 标准与单价（政策命中值，非业务事实）</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 190px;">标准 / 单价</th><th style="width: 190px;">适用岗位</th><th>求证链用途</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>保底标准与保底月份</strong></td><td>推拿师（全职 / 非全）</td><td>保底类收入的还原依据</td></tr>
-          <tr><td><strong>超产值标准</strong></td><td>推拿师 · 全职</td><td>超产值获豆 / 超产计算的还原依据</td></tr>
-          <tr><td><strong>评价单价</strong></td><td>推拿师</td><td>评价激励的还原依据</td></tr>
-          <tr><td><strong>客次提成单价</strong></td><td>客户经理 · 全职</td><td>计件客次收入的还原依据（L1）</td></tr>
-        </tbody>
-      </table>
-      <div class="note">
-        <strong>两类数据的分工：</strong>表 A 是「发生了多少」（本人业务事实，5.2 第四行），表 B 是「按什么规则算」
-        （政策参数命中值，5.2 第二行）——求证链 STEP 03 取表 A、STEP 04 取表 B，两者拼一起才算得回那个数（5.4）。
-        表 A 的接入清单（哪些表、哪些字段）由研发按本节清单与底账 L1 项逐项确认；表 B 挂显示名薪酬项，由薪酬侧配置维护。
-        <br /><strong>卫生类的一个连带结论：</strong>房间卫生、卫生间、离店卫生与卫生检查的事实数据在场后，
-        卫生类薪酬项<strong>具备升 L1 求证的条件</strong>（6.4 留的升级路径）——是否升层由薪酬侧按 6.3 的判据确认后调整底账标注，Agent 不自行改层。
-      </div>
-
-      <h3 class="fact-h">表 C · 计算公式开放度：哪些项允许查「真实公式」</h3>
-      <p class="doc-p">
-        模块化薪酬里每个薪酬项都有真实计算公式。要不要对员工展开公式，本质上是一个<strong>求证深度</strong>问题：
-        展开到什么层，取决于公式里有没有「不该摊给员工的东西」。规则定三档，与 6.3 的四层深度一一对应：
-      </p>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 150px;">公式档位</th><th style="width: 150px;">对应深度</th><th>能给出什么</th><th>典型项</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="lg lg-b">A 完整公式</span></td>
-            <td>L1 完整求证</td>
-            <td>算式全展开：本人事实（数量）× 命中单价 / 标准 = 金额，参数逐个带值带依据</td>
-            <td>计件、客次提成、加班、修脚、打赏等订单直接驱动的项</td>
-          </tr>
-          <tr>
-            <td><span class="lg lg-a">B 仅口径</span></td>
-            <td>L2 只答结论</td>
-            <td>讲清「按什么规则计、挂在哪个标准上」，<strong>不给完整算式与参数组合</strong>；金额照报</td>
-            <td>班次津贴、各类激励、扣款、代扣三类（社保 / 公积金 / 个税）</td>
-          </tr>
-          <tr>
-            <td><span class="lg lg-c">C 不开放</span></td>
-            <td>L3 账户级 / L4 不在场</td>
-            <td>只给账户级三数或整项不在场——公式、分类、组成都不展开</td>
-            <td>全部常乐豆形式项、公积金单位部分等</td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="doc-p">
-        <strong>展开公式的三条红线</strong>（任一条踩到，该项只能落 B 档）：
-        ① 公式里出现他人数据（同店排名、团队分摊）② 出现内部账务或策略 / 模板名
-        ③ 出现不可对员工解释的内部系数。公式只允许由<strong>「本人业务事实 × 命中参数」</strong>构成。
-      </p>
-      <h3 class="fact-h">A 档清单（按岗位，底账 7.2–7.4 的 L1 项）</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th style="width: 170px;">岗位</th><th style="width: 230px;">允许完整公式的薪酬项</th><th>公式结构（参数值取表 B 命中值）</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>推拿师 · 全职</strong></td>
-            <td>全月计件收入、工作日加班收入、节假日收入、节假日加班收入、修脚、打赏</td>
-            <td>计件类 = 本人计件项目量 × 对应提成单价（按生效模板，员工不感知模板）；加班类 = 加班客次 / 工时 × 加班单价；节假日类 = 节假日客次 × 节假日单价；修脚 = 修脚客次 × 修脚单价；打赏 = 本人打赏金额合计</td>
-          </tr>
-          <tr>
-            <td><strong>客户经理 · 全职</strong></td>
-            <td>计件客次收入、加班客次提成</td>
-            <td>计件客次收入 = 本人客次数 × 客次提成单价；加班客次提成 = 本人加班客次 × 加班客次单价</td>
-          </tr>
-          <tr>
-            <td><strong>推拿师 · 非全</strong></td>
-            <td>提成收入、回头客激励、新店订单激励、新店回头客激励、一类门店新人订单补贴、一类门店回头客激励、一类门店时段激励、打赏</td>
-            <td>提成类 = 本人订单实付 × 提成比例；激励类 = 对应订单 / 客次数量 × 激励单价；时段激励 = 冷门时段订单数 × 单价；打赏 = 本人打赏金额合计</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="note">
-        <strong>公式以薪酬计算引擎的现行配置为准：</strong>本表定的是「允许展示到公式这一层」的名单与结构，
-        具体参数值与依据由命中值给出（表 B）；<strong>公式里不出现策略名、模板名与内部系数</strong>——
-        员工看到的是「你的 3 客次 × 5 元」，不是「基础提成 24 V7 的算法」。
-        <br />B 档项问公式，统一回口径句 +「具体算法以薪酬规则为准」；C 档项问公式，走 6.5 的常乐豆兜底句。
-      </div>
-    </div>
-
-    <div id="sa-scope-scenario" class="section">
-      <div class="section-header">
-        <h2>5.4 一个场景走到底：客次提成 15 块</h2>
-        <DocCopyButton section-id="sa-scope-scenario" />
-      </div>
-      <p class="doc-p">
-        把最常见的质疑走一遍全程，看行为侧每一步踩在支撑侧哪个实体上
-        （以全职客户经理的「计件客次收入」为例，底账 7.2 标注 L1 求证层；四步求证链的细化口径见 6.4）。
-        卡片颜色即数据源类别：<span class="lg lg-a">入口与定位</span> <span class="lg lg-b">业务事实</span>
-        <span class="lg lg-c">政策依据</span> <span class="lg lg-d">组装（关键步）</span>
-      </p>
-      <div class="steps">
-        <div class="step-card st-a">
-          <div class="step-head"><span class="step-no">1</span><span class="step-t">进入即锁定本人</span></div>
-          <div class="step-d">从【薪酬咨询助手】进入（暂定名），登录态带入——查询对象不可选、不可改（6.5）。</div>
-          <div class="step-src">背后数据源：登录态 / 员工档案（岗位归属）</div>
-        </div>
-        <div class="step-card st-a">
-          <div class="step-head"><span class="step-no">2</span><span class="step-t">定位薪酬项</span></div>
-          <div class="step-d">提问解析到显示名「计件客次收入」+ 业务日期 3 号；查底账确认该项为 L1 求证层。</div>
-          <div class="step-src">背后数据源：岗位底账（7.2，含深度标注）</div>
-        </div>
-        <div class="step-card st-b">
-          <div class="step-head"><span class="step-no">3</span><span class="step-t">取业务事实</span></div>
-          <div class="step-d">读本人 3 号的客次记录与订单实付金额——员工本人经历过，给本人看不构成泄露（清单见 5.3 表 A）。</div>
-          <div class="step-src">背后数据源：本人业务事实（本人名下过滤）</div>
-        </div>
-        <div class="step-card st-c">
-          <div class="step-head"><span class="step-no">4</span><span class="step-t">取政策依据</span></div>
-          <div class="step-d">命中客次提成单价 + 规则说明文案——「为什么是 5 元」的依据带出处（清单见 5.3 表 B）。</div>
-          <div class="step-src">背后数据源：政策参数命中值 + 政策资料仓库</div>
-        </div>
-        <div class="step-card st-d">
-          <span class="step-key">关键步</span>
-          <div class="step-head"><span class="step-no">5</span><span class="step-t">组装计算还原</span></div>
-          <div class="step-d">把事实、规则、算式连成应答：3 客次 × 5 元 = 15 元——数字全部来自前三步，Agent 不自带。</div>
-          <div class="step-src">背后数据源：STEP 03 + 04 拼装（无新增数据源）</div>
-        </div>
-        <div class="step-card st-a">
-          <div class="step-head"><span class="step-no">6</span><span class="step-t">结论判定</span></div>
-          <div class="step-d">一致 → 就地证完；有出入 → 如实报差异转人工，携带已查内容，不评对错、不下结论。</div>
-          <div class="step-src">背后数据源：人工出口条目（6.5）</div>
-        </div>
-      </div>
-      <p class="arch-cap">
-        同一条链路换个数据源就走别的层：常乐豆问题走到 STEP 02 就换成「账户级三数」（STEP 03–05 不执行），
-        代扣三类走到 STEP 04 后直接报结论——这就是「按深度分层作答」在场景里的样子。
-      </p>
     </div>
 
     <div id="sa-scope-do" class="section">
       <div class="section-header">
-        <h2>5.5 做与不做</h2>
+        <h2>5.3 做与不做</h2>
         <DocCopyButton section-id="sa-scope-do" />
       </div>
       <div class="chain">
@@ -404,7 +173,7 @@
           <tr><td><strong>按岗位底账确定查询范围</strong></td><td>三个岗位（全职推拿师 / 全职客户经理 / 非全推拿师）各按现行薪酬项集合确定能查什么，底账见 7.2–7.4</td><td>6.1</td></tr>
           <tr><td><strong>两层围墙裁出数据面</strong></td><td>通用围墙三道对所有岗位一致；岗位差异围墙按底账定各岗位「什么不在场」</td><td>6.2</td></tr>
           <tr><td><strong>按应答深度分层作答</strong></td><td>每个薪酬项归入四层之一：完整求证 / 只答结论 / 账户级汇总 / 不在场；求证层的还原链路见 6.4</td><td>6.3</td></tr>
-          <tr><td><strong>支撑侧五实体建设与维护</strong></td><td>工资条快照、政策参数命中值、政策资料仓库（含维护更新功能）、本人业务事实接入（按 5.3 表 A 清单）、常乐豆账户级汇总——见 5.2 数据源清单</td><td>5.2 / 5.3</td></tr>
+          <tr><td><strong>支撑侧五实体建设与维护</strong></td><td>工资条快照、政策参数命中值、政策资料仓库（含维护更新功能）、本人业务事实接入（按 6.1 表 A 清单）、常乐豆账户级汇总——见 6.1 数据源清单</td><td>5.2 / 6.1</td></tr>
           <tr><td><strong>显式转人工</strong></td><td>核实后仍不服，携带明确条目走人工出口（6.5）</td><td>6.5</td></tr>
         </tbody>
       </table>
@@ -424,7 +193,7 @@
 
     <div id="sa-scope-people" class="section">
       <div class="section-header">
-        <h2>5.6 岗位覆盖：三个岗位可查，圈外待纳入</h2>
+        <h2>5.4 岗位覆盖：三个岗位可查，圈外待纳入</h2>
         <DocCopyButton section-id="sa-scope-people" />
       </div>
       <p class="doc-p">
@@ -487,11 +256,9 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 const tocItems = [
   { id: 'sa-scope-lead', label: '五、需求范围' },
   { id: 'sa-scope-map', label: '5.1 行为侧与支撑侧' },
-  { id: 'sa-scope-data', label: '5.2 支撑侧：数据从哪来' },
-  { id: 'sa-scope-facts', label: '5.3 业务事实与标准值' },
-  { id: 'sa-scope-scenario', label: '5.4 一个场景走到底' },
-  { id: 'sa-scope-do', label: '5.5 做与不做' },
-  { id: 'sa-scope-people', label: '5.6 岗位覆盖' }
+  { id: 'sa-scope-support', label: '5.2 支撑侧：五个数据实体' },
+  { id: 'sa-scope-do', label: '5.3 做与不做' },
+  { id: 'sa-scope-people', label: '5.4 岗位覆盖' }
 ]
 
 const breadcrumbs = [
@@ -508,49 +275,5 @@ const breadcrumbs = [
 .arch-cap { font-size: 12px; color: #6a6a75; margin: 8px 0 0; line-height: 1.6; }
 .subsection { margin-top: 20px; }
 .subsection h3 { font-size: 15px; font-weight: 600; color: #2c2c2a; margin: 0 0 8px; }
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 8px; }
-.step-card {
-  background: #fbfbfa; border: 1px solid #e3e6ea; border-top: 3px solid #888780;
-  border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;
-  position: relative;
-}
-.step-card.st-a { border-top-color: #185fa5; }
-.step-card.st-b { border-top-color: #3b6d11; }
-.step-card.st-c { border-top-color: #854f0b; }
-.step-card.st-d {
-  border-top-color: #993c1d; border-color: #993c1d;
-  background: #fdf4f0; box-shadow: 0 2px 10px hsl(18 55% 45% / 0.14);
-}
-.step-head { display: flex; align-items: center; gap: 8px; }
-.step-no {
-  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #fff;
-}
-.st-a .step-no { background: #185fa5; }
-.st-b .step-no { background: #3b6d11; }
-.st-c .step-no { background: #854f0b; }
-.st-d .step-no { background: #993c1d; }
-.step-t { font-size: 13.5px; font-weight: 600; color: #2c2c2a; }
-.step-d { font-size: 12px; color: #5f5e5a; line-height: 1.6; }
-.step-src {
-  font-size: 11.5px; font-weight: 500; color: #5f5e5a;
-  background: #f1f0ec; border-radius: 5px; padding: 4px 8px;
-  line-height: 1.5; margin-top: auto;
-}
-.st-d .step-src { color: #712b13; background: hsl(18 60% 92%); }
-.step-key {
-  position: absolute; top: -11px; right: 10px;
-  font-size: 11px; font-weight: 700; color: #fff;
-  background: #993c1d; border-radius: 999px; padding: 2px 10px;
-}
-.lg { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 9px; }
-.lg-a { color: #185fa5; background: hsl(210 65% 92%); }
-.lg-b { color: #3b6d11; background: hsl(90 45% 90%); }
-.lg-c { color: #854f0b; background: hsl(38 70% 90%); }
-.lg-d { color: #993c1d; background: hsl(18 60% 91%); }
-.fact-h { font-size: 14px; font-weight: 600; color: #2c2c2a; margin: 18px 0 8px; }
-td.yes { color: #3b6d11; font-weight: 600; text-align: center; }
-td.no { color: #b0aca3; text-align: center; }
-@media (max-width: 900px) { .steps { grid-template-columns: 1fr 1fr; } }
+
 </style>

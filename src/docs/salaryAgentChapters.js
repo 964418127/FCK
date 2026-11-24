@@ -139,9 +139,9 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-1',
     no: '6.1',
-    title: '查询范围与岗位底账',
+    title: '查询范围、数据源与业务事实',
     nav: '查询范围',
-    subtitle: '三类取数通道 × 三个岗位底账：能查什么由岗位现行薪酬项集合决定',
+    subtitle: '三类取数通道 → 支撑侧数据源清单 → 业务事实按岗位罗列 → 三个岗位底账',
     routeName: 'doc-salary-agent-6-1',
     path: '/docs/salary-agent/6-1',
     file: 'sections/SA61QueryScope.vue'
@@ -159,9 +159,9 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-3',
     no: '6.3',
-    title: '应答深度分层：每个薪酬项答到多深',
+    title: '应答深度分层与公式开放度',
     nav: '应答深度',
-    subtitle: '判据只有一条：数据可得性 × 敏感度——四层归层，逐项标注在底账',
+    subtitle: '四层归层（数据可得性 × 敏感度）+ 76 项现金薪酬项逐项定「允不允许查公式」',
     routeName: 'doc-salary-agent-6-3',
     path: '/docs/salary-agent/6-3',
     file: 'sections/SA63Depth.vue'
@@ -169,9 +169,9 @@ export const salaryAgentFeatureChapters = [
   {
     id: '6-4',
     no: '6.4',
-    title: '完整求证链：以「客次提成 15 块」为例',
+    title: '完整求证链与场景走位',
     nav: '求证链',
-    subtitle: 'L1 项的四步还原：本人业务事实 → 规则命中 → 计算过程 → 结论判定',
+    subtitle: '四步还原（事实 → 规则 → 计算 → 判定）+ 六步场景卡走到底',
     routeName: 'doc-salary-agent-6-4',
     path: '/docs/salary-agent/6-4',
     file: 'sections/SA64Verify.vue'

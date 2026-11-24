@@ -1,9 +1,9 @@
 <template>
   <DocShell
     :toc-items="tocItems"
-    title="6.1 查询范围与岗位底账"
-    subtitle="能查什么由岗位现行薪酬项集合决定：三类取数通道 × 三个岗位底账"
-    version="v2.4"
+    title="6.1 查询范围、数据源与业务事实"
+    subtitle="三类取数通道 → 支撑侧数据源清单 → 业务事实按岗位罗列 → 三个岗位底账"
+    version="v2.6"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -44,6 +44,151 @@
         命中依据是求证的核心 —— 员工要的不是再看一遍数字，而是「凭什么」。
         <br /><strong>业务事实为什么在场：</strong>求证层的还原链路（6.4）需要事实数据做输入——订单实付金额、客次记录
         都是员工本人业务，员工本来就经历过，给本人看不构成泄露；给不了的是别人的事实。
+      </div>
+    </div>
+
+    <div id="sa-61-src" class="section">
+      <div class="section-header">
+        <h2>支撑侧：数据从哪来、谁维护</h2>
+        <DocCopyButton section-id="sa-61-src" />
+      </div>
+      <p class="doc-p">
+        行为侧的每一条规则（围墙、深度分层、求证链），落到研发手里都是下面这张表的一行——
+        <strong>每类数据从哪来、喂给 Agent 之前做什么加工、多久更新、谁维护</strong>。
+        系统落地名以研发确认为准，这里先按业务说法写。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 130px;">数据实体</th>
+            <th style="width: 190px;">来源</th>
+            <th>喂给 Agent 前的加工</th>
+            <th style="width: 120px;">更新时机</th>
+            <th style="width: 100px;">维护方</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>工资条快照</strong></td>
+            <td>模块化薪酬计算结果（已发放的工资单）</td>
+            <td>敏感字段喂之前剥除（6.2）；薪酬项只留显示名称，内部名称与策略模板名不进知识面</td>
+            <td>随算薪 / 发放更新</td>
+            <td>薪酬侧</td>
+          </tr>
+          <tr>
+            <td><strong>政策参数命中值</strong></td>
+            <td>通用参数配置（取值契约：条件查询、命中取值）</td>
+            <td>系统按本人条件注入命中值与依据，员工对话不可改变查询条件</td>
+            <td>配置变更即更新</td>
+            <td>薪酬侧（配置规则管理）</td>
+          </tr>
+          <tr>
+            <td><strong>政策资料仓库</strong></td>
+            <td>政策文件与规则文案：如住宿获豆政策、客次提成规则说明、补贴说明等</td>
+            <td>每条挂显示名薪酬项；敏感段落<strong>在维护侧就不进仓库</strong>（如常乐豆相关操作说明，不在场不是藏着）</td>
+            <td><strong>维护更新即生效</strong></td>
+            <td>薪酬侧（提供维护功能）</td>
+          </tr>
+          <tr>
+            <td><strong>本人业务事实</strong></td>
+            <td>订单实付金额、接待 / 班次记录、卫生检查记录等业务系统数据</td>
+            <td>只取本人名下；接入清单按本节表 A 与底账 L1 项逐项确认（排班、请假、出勤、订单、评价、新客 / 回头客、门店任务、房间卫生、卫生间、离店卫生、卫生检查、投诉记录）</td>
+            <td>随业务系统产生</td>
+            <td>研发接入</td>
+          </tr>
+          <tr>
+            <td><strong>常乐豆账户级汇总</strong></td>
+            <td>常乐豆账户</td>
+            <td>只导出三个数（本月结算 / 可用余额 / 提现冻结）；分类及以下颗粒度不导出，与工资条联动不在场</td>
+            <td>随账户结算更新</td>
+            <td>薪酬侧</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>Agent 知识面的完整组成：</strong>上表五个数据实体 + 岗位底账（7.2–7.4，107 项逐项标注形式与应答深度）
+        + 应答规则（四层口径与兜底句）。<strong>不在知识面里的</strong>：员工与 Agent 的对话历史、任何他人数据、
+        内部名称与策略模板名、社保公积金个税的解释口径。
+      </div>
+
+      <div id="sa-scope-repo" class="subsection">
+        <h3>政策资料仓库：要的不是静态文件，是可维护的功能</h3>
+        <p class="doc-p">
+          政策类回答不能只靠参数命中值——「住宿获豆怎么算」「客次提成的规则是什么」这类问题，
+          需要政策说明文案辅助解读。所以支撑侧明确一个实体：<strong>政策资料仓库</strong>，并且它是带维护功能的：
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr><th style="width: 150px;">要点</th><th>口径</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>存什么</strong></td><td>各薪酬项的政策说明与规则文案，按显示名薪酬项挂载；一类一档（如「住宿获豆政策」「计件客次收入规则」）</td></tr>
+            <tr><td><strong>维护功能</strong></td><td>提供维护更新功能：新增 / 更新 / 停用——政策变了改仓库，不是改代码、不是重训模型；仓库内容与发布由薪酬侧负责，维护界面由研发实现</td></tr>
+            <tr><td><strong>生效方式</strong></td><td>维护更新即重新进入知识面；历史版本留痕——应答里的「命中依据」引用当前生效版本</td></tr>
+            <tr><td><strong>裁剪关同样适用</strong></td><td>敏感段落（常乐豆相关操作说明、内部账务口径）在维护侧就不进仓库——围墙第二道「不在场」对政策资料同样生效，政策解读只解读员工应知部分</td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <strong>为什么强调可维护：</strong>薪酬策略与政策会持续演进（模板切换、单价调整、新激励上线），
+          若政策文案是一次性喂入的静态资料，每次演进都要研发重新处理——维护功能把「政策更新」从研发动作
+          变成薪酬侧的日常动作，这也是 Agent 能长期答对政策类问题的前提。
+        </div>
+      </div>
+    </div>
+
+    <div id="sa-61-facts" class="section">
+      <div class="section-header">
+        <h2>业务事实与标准值：按岗位罗列</h2>
+        <DocCopyButton section-id="sa-61-facts" />
+      </div>
+      <p class="doc-p">
+        求证链靠两样东西拼起来：<strong>本人发生了什么</strong>（业务事实——随业务系统产生、只取本人名下）
+        与<strong>规则怎么说</strong>（标准与单价——来自政策参数命中值）。只说「订单」远远不够，
+        下面两张表按岗位把数据罗列全，研发照此清单确认接入。
+      </p>
+      <h3 class="fact-h">表 A · 业务事实（本人发生）</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 170px;">数据</th>
+            <th style="width: 105px;">推拿师·全职</th>
+            <th style="width: 105px;">客户经理·全职</th>
+            <th style="width: 105px;">推拿师·非全</th>
+            <th>求证用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>排班与班次记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取（接单时段）</td><td>出勤、顶班、时段类还原</td></tr>
+          <tr><td><strong>请假记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>缺勤 / 扣款类核对</td></tr>
+          <tr><td><strong>出勤打卡</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>工时与加班核算</td></tr>
+          <tr><td><strong>订单与实付金额</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>计件 / 提成还原的主事实</td></tr>
+          <tr><td><strong>评价 · 新客 · 回头客记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>激励类还原（围绕订单产生）</td></tr>
+          <tr><td><strong>门店任务完成记录</strong></td><td class="no">—</td><td class="yes">取</td><td class="no">—</td><td>任务激励核对</td></tr>
+          <tr><td><strong>房间卫生打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>房间卫生打扫激励 / 未打扫扣款（推拿师为豆侧 L3、客经为现金 L2）</td></tr>
+          <tr><td><strong>卫生间打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生间打扫激励 / 未打扫扣款（同上，按岗位走现金或豆）</td></tr>
+          <tr><td><strong>离店卫生记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>离店卫生未打扫扣款（推拿师豆侧、非全现金，底账 7.3 / 7.4）</td></tr>
+          <tr><td><strong>卫生检查记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生检查激励 / 扣款（客经含打扫申诉扣回，底账 7.2）</td></tr>
+          <tr><td><strong>投诉记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>投诉扣款核对（三岗位均有该项）：只核本人名下有无与金额，<strong>投诉内容与处理判定过程不在场</strong></td></tr>
+        </tbody>
+      </table>
+      <h3 class="fact-h">表 B · 标准与单价（政策命中值，非业务事实）</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 190px;">标准 / 单价</th><th style="width: 190px;">适用岗位</th><th>求证链用途</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>保底标准与保底月份</strong></td><td>推拿师（全职 / 非全）</td><td>保底类收入的还原依据</td></tr>
+          <tr><td><strong>超产值标准</strong></td><td>推拿师 · 全职</td><td>超产值获豆 / 超产计算的还原依据</td></tr>
+          <tr><td><strong>评价单价</strong></td><td>推拿师</td><td>评价激励的还原依据</td></tr>
+          <tr><td><strong>客次提成单价</strong></td><td>客户经理 · 全职</td><td>计件客次收入的还原依据（L1）</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>两类数据的分工：</strong>表 A 是「发生了多少」（本人业务事实，上一小节表格第四行），表 B 是「按什么规则算」
+        （政策参数命中值，上一小节表格第二行）——求证链 STEP 03 取表 A、STEP 04 取表 B，两者拼一起才算得回那个数（6.4）。
+        表 A 的接入清单（哪些表、哪些字段）由研发按本节清单与底账 L1 项逐项确认；表 B 挂显示名薪酬项，由薪酬侧配置维护。
+        <br /><strong>卫生类的一个连带结论：</strong>房间卫生、卫生间、离店卫生与卫生检查的事实数据在场后，
+        卫生类薪酬项<strong>具备升 L1 求证的条件</strong>（6.4 留的升级路径）——是否升层由薪酬侧按 6.3 的判据确认后调整底账标注，Agent 不自行改层。
       </div>
     </div>
 
@@ -125,6 +270,8 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
   { id: 'sa-61-three', label: '三类取数通道' },
+  { id: 'sa-61-src', label: '支撑侧数据源清单' },
+  { id: 'sa-61-facts', label: '业务事实与标准值' },
   { id: 'sa-61-post', label: '岗位底账' },
   { id: 'sa-61-weekly', label: '非全周薪与个税' },
   { id: 'sa-61-mul', label: '多张工资条' }
@@ -139,3 +286,11 @@ const breadcrumbs = [
 </script>
 
 <style scoped src="./doc-base.css"></style>
+
+<style scoped>
+.subsection { margin-top: 20px; }
+.subsection h3 { font-size: 15px; font-weight: 600; color: #2c2c2a; margin: 0 0 8px; }
+.fact-h { font-size: 14px; font-weight: 600; color: #2c2c2a; margin: 22px 0 8px; }
+td.yes { color: #3b6d11; font-weight: 600; text-align: center; }
+td.no { color: #b0aca3; text-align: center; }
+</style>
