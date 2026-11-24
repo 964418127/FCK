@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="一、版本信息"
     subtitle="文档身份、负责人与适用范围"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -19,7 +19,7 @@
         <tbody>
           <tr><td><strong>文档</strong></td><td>薪酬查询 Agent · 产品需求说明</td></tr>
           <tr><td><strong>归属</strong></td><td>模块化薪酬</td></tr>
-          <tr><td><strong>版本</strong></td><td>v2.0</td></tr>
+          <tr><td><strong>版本</strong></td><td>v2.3</td></tr>
           <tr><td><strong>日期</strong></td><td>2026-11-24</td></tr>
           <tr><td><strong>负责人</strong></td><td><strong>Lacus7</strong></td></tr>
           <tr><td><strong>读者</strong></td><td>业务运营 / 人事 / 薪酬结算 / 研发 / 测试</td></tr>

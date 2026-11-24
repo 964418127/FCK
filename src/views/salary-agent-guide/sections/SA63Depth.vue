@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.3 应答深度分层：每个薪酬项答到多深"
     subtitle="判据只有一条：数据可得性 × 敏感度——能还原的还原，还原不了的只报结论，敏感的只给账户级"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -80,7 +80,7 @@
           <tr><td><span class="lv lv3">L3 账户级</span></td><td>全部常乐豆形式项：保底 / 超产值 / 营销 / 回头客 / 住房 / 接待等服务获豆类 + 各类扣豆——一律并入账户级三数</td></tr>
           <tr><td><span class="lv lv4">L4 不在场</span></td><td>社保公积金单位部分、购买单位</td></tr>
           <tr><td rowspan="4"><strong>全职客户经理</strong>（7.2）</td><td><span class="lv lv1">L1 求证</span></td><td>计件客次收入、加班客次提成——事实=本人接待记录与订单，规则=客次提成单价</td></tr>
-          <tr><td><span class="lv lv2">L2 结论</span></td><td>各班次津贴与激励（新客班次 / 接待 / 卫生类激励为打扫记录驱动的，第一版按结论层答，还原待事实数据接入后重评）、代扣三类、扣缴组各扣款</td></tr>
+          <tr><td><span class="lv lv2">L2 结论</span></td><td>各班次津贴与激励（新客班次 / 接待 / 卫生类激励由打扫记录驱动，事实已列入 5.3 表 A，升 L1 待薪酬侧确认）、代扣三类、扣缴组各扣款</td></tr>
           <tr><td><span class="lv lv3">L3 账户级</span></td><td>获豆明细分组六项（新客 / 评价 / 盘点 / 资产卫生维护 / 采购物资 / 布草洗涤）+ 物资超标扣豆——并入账户级三数</td></tr>
           <tr><td><span class="lv lv4">L4 不在场</span></td><td>社保公积金单位部分、购买单位</td></tr>
           <tr><td rowspan="3"><strong>非全推拿师</strong>（7.4）</td><td><span class="lv lv1">L1 求证</span></td><td>提成收入、回头客激励、新店订单激励等订单驱动项——事实=本人订单，规则=提成比例</td></tr>

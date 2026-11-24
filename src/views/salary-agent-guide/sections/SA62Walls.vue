@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.2 围墙体系：通用围墙 + 岗位差异围墙"
     subtitle="通用三道对所有岗位一致；岗位差异围墙按底账定各岗位「什么不在场」"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

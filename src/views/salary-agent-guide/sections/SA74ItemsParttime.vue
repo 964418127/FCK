@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="7.4 薪酬项清单：非全日制推拿师"
     subtitle="策略「9月及以后非全收入」现行薪酬项：显示名 / 内部名 / 形式 / 应答深度——无常乐豆"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-23"
     :breadcrumbs="breadcrumbs"
   >

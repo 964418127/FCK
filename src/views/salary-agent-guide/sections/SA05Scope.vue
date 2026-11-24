@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="五、需求范围"
     subtitle="一句话：只做「查与证」——行为侧答到多深，支撑侧数据从哪来"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -80,7 +80,7 @@
         <text x="353" y="210" text-anchor="middle" font-size="10" fill="#A32D2D">支持维护更新</text>
         <rect x="420" y="158" width="114" height="72" rx="9" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.5"/>
         <text x="477" y="180" text-anchor="middle" font-size="11.5" font-weight="500" fill="#712B13">本人业务事实</text>
-        <text x="477" y="196" text-anchor="middle" font-size="10" fill="#993C1D">排班 · 出勤 · 订单</text>
+        <text x="477" y="196" text-anchor="middle" font-size="10" fill="#993C1D">排班 · 出勤 · 订单 · 卫生</text>
         <text x="477" y="210" text-anchor="middle" font-size="10" fill="#993C1D">按岗位罗列（5.3）</text>
         <rect x="544" y="158" width="88" height="72" rx="9" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.5"/>
         <text x="588" y="180" text-anchor="middle" font-size="11.5" font-weight="500" fill="#712B13">常乐豆账户</text>
@@ -155,7 +155,7 @@
           <tr>
             <td><strong>本人业务事实</strong></td>
             <td>订单实付金额、接待 / 班次记录、卫生检查记录等业务系统数据</td>
-            <td>只取本人名下；接入清单按 5.3 表 A 与底账 L1 项逐项确认（排班、请假、出勤、订单、评价、新客 / 回头客、门店任务、卫生检查）</td>
+            <td>只取本人名下；接入清单按 5.3 表 A 与底账 L1 项逐项确认（排班、请假、出勤、订单、评价、新客 / 回头客、门店任务、房间卫生、卫生间、离店卫生、卫生检查）</td>
             <td>随业务系统产生</td>
             <td>研发接入</td>
           </tr>
@@ -227,7 +227,10 @@
           <tr><td><strong>订单与实付金额</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>计件 / 提成还原的主事实</td></tr>
           <tr><td><strong>评价 · 新客 · 回头客记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>激励类还原（围绕订单产生）</td></tr>
           <tr><td><strong>门店任务完成记录</strong></td><td class="no">—</td><td class="yes">取</td><td class="no">—</td><td>任务激励核对</td></tr>
-          <tr><td><strong>卫生检查记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="no">—</td><td>卫生激励 / 扣款（L2，接入后可升 L1，6.4）</td></tr>
+          <tr><td><strong>房间卫生打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="yes">取</td><td>房间卫生打扫激励 / 未打扫扣款（推拿师为豆侧 L3、客经为现金 L2）</td></tr>
+          <tr><td><strong>卫生间打扫记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生间打扫激励 / 未打扫扣款（同上，按岗位走现金或豆）</td></tr>
+          <tr><td><strong>离店卫生记录</strong></td><td class="yes">取</td><td class="no">—</td><td class="yes">取</td><td>离店卫生未打扫扣款（推拿师豆侧、非全现金，底账 7.3 / 7.4）</td></tr>
+          <tr><td><strong>卫生检查记录</strong></td><td class="yes">取</td><td class="yes">取</td><td class="no">—</td><td>卫生检查激励 / 扣款（客经含打扫申诉扣回，底账 7.2）</td></tr>
         </tbody>
       </table>
       <h3 class="fact-h">表 B · 标准与单价（政策命中值，非业务事实）</h3>
@@ -246,6 +249,8 @@
         <strong>两类数据的分工：</strong>表 A 是「发生了多少」（本人业务事实，5.2 第四行），表 B 是「按什么规则算」
         （政策参数命中值，5.2 第二行）——求证链 STEP 03 取表 A、STEP 04 取表 B，两者拼一起才算得回那个数（5.4）。
         表 A 的接入清单（哪些表、哪些字段）由研发按本节清单与底账 L1 项逐项确认；表 B 挂显示名薪酬项，由薪酬侧配置维护。
+        <br /><strong>卫生类的一个连带结论：</strong>房间卫生、卫生间、离店卫生与卫生检查的事实数据在场后，
+        卫生类薪酬项<strong>具备升 L1 求证的条件</strong>（6.4 留的升级路径）——是否升层由薪酬侧按 6.3 的判据确认后调整底账标注，Agent 不自行改层。
       </div>
     </div>
 

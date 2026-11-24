@@ -2,8 +2,8 @@
   <DocShell
     :toc-items="tocItems"
     title="二、变更日志"
-    subtitle="v2.2 业务事实按岗位罗列（5.3）+ 场景卡样式强化"
-    version="v2.2"
+    subtitle="v2.3 业务事实补卫生四项（房间 / 卫生间 / 离店 / 卫生检查）"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -17,6 +17,12 @@
           <tr><th style="width: 90px;">版本</th><th style="width: 110px;">日期</th><th style="width: 90px;">负责人</th><th>变更内容</th></tr>
         </thead>
         <tbody>
+          <tr>
+            <td>v2.3</td>
+            <td>2026-11-24</td>
+            <td>Lacus7</td>
+            <td>5.3 表 A 卫生类事实拆细为四项：房间卫生打扫、卫生间打扫、离店卫生、卫生检查，三岗位逐格标注（客户经理房间 / 卫生间两类在场，非全推拿师房间 / 离店两类在场）；5.1 业务事实框补「卫生」；5.2 接入清单同步；6.3 / 6.4 反映卫生事实已列入接入清单、升 L1 待薪酬侧确认（确认前按 L2 答）</td>
+          </tr>
           <tr>
             <td>v2.2</td>
             <td>2026-11-24</td>

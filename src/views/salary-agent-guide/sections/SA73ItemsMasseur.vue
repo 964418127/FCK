@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="7.3 薪酬项清单：全职推拿师"
     subtitle="三个模板合并的现行薪酬项：显示名 / 内部名 / 模板 / 形式 / 应答深度"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="六、功能详细说明"
     subtitle="6.1 查询范围与岗位底账 → 6.2 围墙体系 → 6.3 应答深度分层 → 6.4 完整求证链 → 6.5 产品入口与人工出口"
-    version="v2.2"
+    version="v2.3"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
