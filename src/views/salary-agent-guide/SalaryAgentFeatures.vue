@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="六、功能详细说明"
-    subtitle="6.1 查询范围与两类信息 → 6.2 围墙与字段裁剪 → 6.3 回答口径与人工出口"
-    version="v1.0"
-    date="2026-11-23"
+    subtitle="6.1 查询范围与两类信息 → 6.2 围墙与字段裁剪 → 6.3 回答口径与人工出口 → 6.4 产品入口与使用链路"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-ch-structure" class="section">
@@ -12,8 +12,9 @@
         <h2>本章怎么组织</h2>
       </div>
       <p class="doc-p">
-        只三节：<strong>能查什么</strong>（6.1）、<strong>什么都碰不到</strong>（6.2）、<strong>按什么口径答</strong>（6.3）。
-        顺序只有一个理由：先划能查的边界，再立围墙，最后定回答口径。
+        只四节：<strong>能查什么</strong>（6.1）、<strong>什么都碰不到</strong>（6.2）、<strong>按什么口径答</strong>（6.3）、
+        <strong>从哪进来怎么走</strong>（6.4）。
+        顺序只有一个理由：先划能查的边界，再立围墙，再定回答口径，最后讲入口与链路怎么把上面三节串起来。
       </p>
     </div>
 

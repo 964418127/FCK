@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="七、附录"
     subtitle="7.1 待决事项 · 7.2/7.3/7.4 各岗位现行薪酬项清单（现金 / 常乐豆底账）"
-    version="v1.0"
-    date="2026-11-23"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-app-ch" class="section">

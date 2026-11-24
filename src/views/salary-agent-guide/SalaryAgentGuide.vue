@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="薪酬查询 Agent · 产品需求说明"
-    subtitle="员工对【自己】薪酬的查询与求证：两类信息、三道围墙、代扣三类只答结论"
-    version="v1.0"
-    date="2026-11-23"
+    subtitle="员工对【自己】薪酬的查询与求证：两类信息、三道围墙、单独入口【薪酬咨询助手】、常乐豆账户级汇总"
+    version="v1.1"
+    date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-nav" class="section">
@@ -42,7 +42,7 @@
           <tr><td><strong>员工能查什么</strong></td><td>6.1 查询范围与两类信息</td></tr>
           <tr><td><strong>围墙怎么设计</strong></td><td>6.2 围墙与字段裁剪</td></tr>
           <tr><td><strong>哪些岗位能查</strong></td><td>五、需求范围 · 岗位覆盖</td></tr>
-          <tr><td><strong>常乐豆的组成怎么答</strong></td><td>6.1 查询范围与两类信息</td></tr>
+          <tr><td><strong>常乐豆的组成怎么答</strong></td><td>6.1 查询范围与两类信息（高风险期只给账户级汇总）</td></tr>
           <tr><td><strong>社保/公积金/个税怎么答</strong></td><td>6.3 回答口径与人工出口</td></tr>
           <tr><td><strong>各岗位现在用哪些薪酬项、哪些是常乐豆</strong></td><td>7.2 客户经理清单 / 7.3 全职推拿师清单 / 7.4 非全推拿师清单</td></tr>
           <tr><td><strong>某个名词是什么意思</strong></td><td><router-link to="/docs/salary-agent/notes">三、文档说明</router-link></td></tr>

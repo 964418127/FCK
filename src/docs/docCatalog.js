@@ -76,10 +76,10 @@ export const docGroups = [
       {
         gateId: 'doc-salary-agent',
         title: '薪酬查询 Agent',
-        meta: 'v1.0 · 2026-11-23',
-        desc: '员工对【自己】薪酬的查询与求证：两类信息、三道围墙与字段裁剪、社保/公积金/个税只答结论、人工出口',
-        scope: '7 章 + 3 个功能章节',
-        updated: '2026-11-23',
+        meta: 'v1.1 · 2026-11-24',
+        desc: '员工对【自己】薪酬的查询与求证：两类信息、三道围墙、单独入口薪酬咨询助手、常乐豆高风险围墙只给账户级汇总、人工出口',
+        scope: '7 章 + 4 个功能章节',
+        updated: '2026-11-24',
         path: '/docs/salary-agent'
       }
     ]
