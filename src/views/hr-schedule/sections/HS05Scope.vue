@@ -419,7 +419,7 @@
         <rect x="452" y="30" width="188" height="76" rx="10" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
         <text x="546" y="52" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">③ 缺口规则</text>
         <text x="546" y="76" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要不要补，缺口规则已答（G0–G3）</text>
-        <text x="546" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要补就摆出缺口，人事定人</text>
+        <text x="546" y="92" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854f0b">要补就寻人补位，没人顶再摆给人事</text>
         <text x="340" y="140" text-anchor="middle" font-size="12" fill="#6a6a75">关闸前缺席属获取段（不在候选、申请作废）· 关闸后才进这三步</text>
         <line x1="40" y1="154" x2="640" y2="154" stroke="#d9d5d0" stroke-width="0.5" stroke-dasharray="4 3"/>
         <text x="340" y="176" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">缺口发生就是异常：设了「不补充」的、要补还没补上的，都给对应的人事经理发一条缺口通知</text>
@@ -435,7 +435,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td><strong>请假</strong></td><td>员工</td><td>被拿掉的那段少了人，按班次声明的缺口规则处理；要补由人事定人</td></tr>
+          <tr><td><strong>请假</strong></td><td>员工</td><td>被拿掉的那段少了人，按班次声明的缺口规则处理；要补的求值当场寻人顶上，没人顶发待处理给人事</td></tr>
           <tr><td><strong>顶班</strong></td><td>人事</td><td>名额限定到这一个人，别人进不来</td></tr>
           <tr><td><strong>换班</strong></td><td>员工双方</td><td>两条互相指向的事实，同时生效、同时撤销</td></tr>
           <tr><td><strong>离职</strong>（含长期假 / 调岗这一类资格退出）</td><td>离职流程模块写入</td><td>不找人，这个人直接从结果里消失；排班不提供登记入口，只承接结果。员工可见可选的班次，兜底选人时只挑状态在线、可排班的人</td></tr>
@@ -444,12 +444,12 @@
       <div class="note">
         <strong>三条关键说明：</strong>① 结果跟着重算，每次变化留一条记录（能回答「那天当时排的是谁」），班次本身不做状态变更；
         ② 顶别人已经到手的班，要他点头；受益方向（顶班的、被补的）通知即可；
-        ③ 被拿掉的那段少了人，排班不自动找人：缺口规则判完要补时，系统把缺口摆出来（结果层缺口清单），人事在这里定人；人事直接安排的，是再写一条顶班事实、又一次重算。
+        ③ 被拿掉的那段少了人，求值当场寻人补位——按该时段的人群档位顺位找、用有效班次时段复核工时（见 6.4.5）；没人顶的发「待处理」，人事在结果层缺口清单定人；人事直接安排的，是再写一条顶班事实、又一次重算。
       </div>
 
       <div class="note">
         <strong>现行「按缺口类型自动处理」的动作不带入 v5：</strong>班次变形、人群补位、重开自选窗口、转临时时段这四类动作，
-        v5 不再按缺口类型自动触发——要不要补由缺口规则答（见下），要补就摆出缺口由人事定人；特殊情况的加位走临时时段（定义段能力）。
+        v5 不再按缺口类型自动触发——要不要补由缺口规则答（见下），要补的求值当场寻人补位、没人顶发待处理；特殊情况的加位走临时时段（定义段能力）。
         事实的写入需要业务事件系统同步改造：一条事实只声明区间与发起方，排班按事实重算、留痕、通知，不自己起动作。
       </div>
 
@@ -505,7 +505,7 @@
         <text x="500" y="161" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0c447c">剩 2 小时 · 仍归原人</text>
 
         <text x="40" y="214" font-size="12" fill="#6a6a75">作业面 = 被事件拿走的那段；没被事件碰到的班次时间，仍归原来的人履约</text>
-        <text x="40" y="236" font-size="12" fill="#6a6a75">被拿走的段少人 → 要不要补、怎么补，缺口规则已答（G0–G3），排班不自动找人</text>
+        <text x="40" y="236" font-size="12" fill="#6a6a75">被拿走的段少人 → 要不要补、怎么补，缺口规则已答（G0–G3）；要补就寻人顶上，没人顶发待处理</text>
       </svg>
       <p class="arch-cap">三种切法共用同一条界线：事件只拿走声明的那一段，没被碰到的班次时间还是原来的人的；拿走的一段未超 30 分钟只记占用、不触发缺口判定。</p>
 
@@ -591,7 +591,7 @@
             <td><strong>全职客户经理</strong></td>
             <td>人数组合算名额，通班是一个班次</td>
             <td>单轮直派 + 两档抢</td>
-            <td>缺口按班次声明的规则处理，要补摆出缺口、人事定人；补不到的走通班兜底</td>
+            <td>缺口按班次声明的规则处理，要补的求值当场寻人补位、没人顶发待处理；补不到的走通班兜底</td>
           </tr>
           <tr>
             <td><strong>全职推拿师</strong></td>
