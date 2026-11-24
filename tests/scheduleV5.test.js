@@ -231,6 +231,25 @@ test('请假只占一部分时间且班次设了「不补充」：不找人顶�
   assert.ok(!s.placements.some(p => p.fromFact === 'F-P0'), '不补充的班次不找人顶')
 })
 
+test('请假只占 30 分钟：只记占用，不触发缺口判定（不寻人、不发缺口通知）', () => {
+  const s = mk()
+  const noticesBefore = s.notices.length
+  const placementsBefore = s.placements.length
+  const fact = { id: 'F-P30', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-26', placementId: 'P-10', start: '10:00', end: '10:30', result: '' }
+  addFact5(s, fact)
+  assert.ok(fact.result.includes('未超 30 分钟') && fact.result.includes('不触发缺口判定'), '结果写明未超 30 分钟、不触发缺口判定')
+  assert.equal(s.notices.length, noticesBefore, '不发缺口通知也不发补位通知')
+  assert.equal(s.placements.length, placementsBefore, '不找人顶')
+})
+
+test('请假占 31 分钟：超过 30 分钟门槛，正常触发缺口判定', () => {
+  const s = mk()
+  const fact = { id: 'F-P31', type: '请假', at: '2026-11-14 11:00', by: 'E-107', slotId: 'SL-01', date: '2026-11-26', placementId: 'P-10', start: '10:00', end: '10:31', result: '' }
+  addFact5(s, fact)
+  assert.ok(!fact.result.includes('不触发缺口判定'), '超过门槛就进缺口判定')
+  assert.ok(s.placements.some(p => p.fromFact === 'F-P31'), '找人顶被拿走的那一段')
+})
+
 test('顶班：人事安排，通知即可，不需同意', () => {
   const s = mk()
   const fact = { id: 'F-Z', type: '顶班', at: '2026-11-14 12:00', by: 'HR', slotId: 'SL-01', date: '2026-11-25', personId: 'E-133', result: '' }
@@ -951,18 +970,21 @@ test('观澜店周五截止：此刻这一轮已经排完、等开工', () => {
 })
 
 /* 缺口规则：名额是必要人数，规则只决定「按什么算还需几个、来不来得及」 */
-test('缺口规则：G1 补齐名额、G2 剩余不足 1 小时不补', () => {
+test('缺口规则：G1 补齐名额、G2 剩余不足 2.5 小时不补', () => {
   const s = mk()
   const g1 = GAP_RULES5.find(r => r.id === 'G1')
   const g2 = GAP_RULES5.find(r => r.id === 'G2')
+  assert.equal(g2.minGap, 150, '2.5 小时 = 30 分钟通勤 + 2 小时补位班次时长')
   /* 11-16 早班只有一个缺口，明天发生，剩余按整天算 */
   const out1 = evalGap5(s, 'SL-01', '2026-11-23', g1)
   assert.equal(out1.action, 'supplement')
   assert.equal(out1.need, snapN5(s, 'SL-01', '2026-11-23') - activeCount5(s, 'SL-01', '2026-11-23'))
   assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2).action, 'supplement', '还剩一整天，叫得来人')
-  /* 同一条缺口假定只剩 30 分钟：G2 判成补不上，G1 照补 */
+  /* 同一条缺口假定只剩半小时：G2 判成补不上，G1 照补；2.5 小时整够补，差 1 分钟不补 */
   assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 30 }).action, 'missed')
   assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g1, { remainMin: 30 }).action, 'supplement')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 149 }).action, 'missed', '差 1 分钟不到 2.5 小时')
+  assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 150 }).action, 'supplement', '够 2.5 小时就补')
   assert.equal(evalGap5(s, 'SL-01', '2026-11-23', g2, { remainMin: 0 }).action, 'missed', '已经开始的补不上')
 })
 
@@ -997,6 +1019,7 @@ test('缺口剩余时长：未来算全天、当天按此刻往后截、过去�
   assert.equal(gapRemain5(s, 'SL-01', '2026-11-10'), 0, '已经过去')
   assert.equal(fmtRemain5(0), '已开始 / 已过')
   assert.equal(fmtRemain5(45), '45 分钟')
+  assert.equal(fmtRemain5(150), '2 小时 30 分')
   assert.equal(fmtRemain5(180), '3 小时')
 })
 

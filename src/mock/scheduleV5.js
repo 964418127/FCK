@@ -783,13 +783,15 @@ export function slotsOn5(state, date) {
 
 /* ===== 缺口规则：缺口发生时，用哪条规则决定补不补 =====
    名额一律是必要人数，所以规则不讨论「要不要有人」，只讨论「按什么算还需要几个、来不来得及」。
-   三条锁死，不给自由条件编辑器：G1 补齐名额 / G2 剩余不足 1 小时不补 / G3 按当下经营预测。
+   三条锁死，不给自由条件编辑器：G1 补齐名额 / G2 剩余不足 2.5 小时不补 / G3 按当下经营预测。
+   G2 的 2.5 小时 = 30 分钟通勤 + 2 小时补位班次时长，「剩余」= 被事件拿走的那段时长。
+   门槛：请假 / 报备拿走的一段未超过 30 分钟，只记占用事实、不触发缺口判定。
    规则改的是「怎么判断」，不改名额、不改归属，也不需要快照。 */
 export const GAP_RULES5 = [
   /* G0 是显式的「不补」：缺了也不动，留给门店现场，不产生补人待办 */
   { id: 'G0', name: '不补充', note: '这条班次缺人也不补，留给门店现场处理', kind: 'none', minGap: 0 },
   { id: 'G1', name: '补齐名额', note: '名额缺几个就补几个，不看还剩多久', kind: 'quota', minGap: 0 },
-  { id: 'G2', name: '补齐名额 · 剩余不足 1 小时不补', note: '还剩不到 1 小时，人叫不来也不值当，记成没补上', kind: 'quota', minGap: 60 },
+  { id: 'G2', name: '补齐名额 · 剩余不足 2.5 小时不补', note: '被拿走的那段不足 2.5 小时不叫人，记成没补上——2.5 小时 = 30 分钟通勤 + 2 小时补位班次时长', kind: 'quota', minGap: 150 },
   /* G3 不是独立算法：引用算法服务里注册的「实时经营需求」（AS-05），预测值从那来 */
   { id: 'G3', name: '按当下经营预测', note: '按实时经营预测重算这段现在要几个人，现在的人够就不补', kind: 'forecast', serviceId: 'AS-05', minGap: 0 }
 ]
@@ -835,6 +837,7 @@ export function fmtRemain5(min) {
 /*
   一条缺口按某条规则算一遍：只出结论，不落动作。
   remainMin / forecast 允许调用方假定「缺口发生在另一个时刻」「预测值是另一个数」，缺省按实际。
+  「剩余」口径 = 被事件拿走的那段时长：整段缺口即班次剩余时间，段级缺口由调用方传 remainMin。
 */
 export function evalGap5(state, slotId, date, rule, opts = {}) {
   const n = snapN5(state, slotId, date)
@@ -851,7 +854,7 @@ export function evalGap5(state, slotId, date, rule, opts = {}) {
   }
   if (remain === 0) return { need: quota, action: 'missed', text: '补不上，记成没补上', why: '这段已经开始了' }
   if (rule.minGap && remain < rule.minGap) {
-    return { need: quota, action: 'missed', text: '补不上，记成没补上', why: `还剩 ${fmtRemain5(remain)}，不到 ${rule.minGap} 分钟` }
+    return { need: quota, action: 'missed', text: '补不上，记成没补上', why: `还剩 ${fmtRemain5(remain)}，不足 ${fmtRemain5(rule.minGap)}（30 分钟通勤 + 2 小时补位班次）` }
   }
   return { need: quota, action: 'supplement', text: `按规则该补 ${quota} 人`, why: `名额 ${n} 人，现在 ${occ} 人` }
 }
@@ -1378,7 +1381,16 @@ export function addFact5(state, fact) {
     const slot = slotById(state, fact.slotId)
     /* 只请一部分时间（如 1 小时）：班次还在这个人身上，被拿走的那段就是缺口，按班次声明的缺口规则处理 */
     const partial = target && slot && fact.start && fact.end && (fact.start > slot.start || fact.end < slot.end)
-    if (target && partial) {
+    /* 被拿走的一段未超过 30 分钟：只记占用事实，不触发缺口判定（不摆缺口、不寻人、不发缺口通知） */
+    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const takenMins = target && slot
+      ? (partial ? toMin(fact.end) - toMin(fact.start) : toMin(slot.end) - toMin(slot.start))
+      : Infinity
+    if (target && takenMins <= 30) {
+      fact.result = partial
+        ? `只占 ${fact.start}–${fact.end}，未超 30 分钟，只记占用、不触发缺口判定`
+        : '未超 30 分钟，只记占用、不触发缺口判定'
+    } else if (target && partial) {
       if (gapRuleOfSlot5(state, target.slotId).kind === 'none') {
         fact.result = `只占 ${fact.start}–${fact.end}，剩余时间不动；少的那段按班次规则不补充，已通知人事`
         state.notices.unshift({
