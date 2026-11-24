@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="一、版本信息"
     subtitle="文档身份、负责人与适用范围"
-    version="v2.1"
+    version="v2.2"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

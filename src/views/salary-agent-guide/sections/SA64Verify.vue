@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.4 完整求证链：以「客次提成 15 块」为例"
     subtitle="L1 项的四步还原：本人业务事实 → 规则命中 → 计算过程 → 结论判定"
-    version="v2.1"
+    version="v2.2"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
@@ -144,7 +144,7 @@
           <tr><th style="width: 250px;">边界</th><th>口径</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>只还原已发生的</strong></td><td>求证链只对已发放工资条上的结论做还原；对未发生薪酬的预估是试算，不做（5.3）</td></tr>
+          <tr><td><strong>只还原已发生的</strong></td><td>求证链只对已发放工资条上的结论做还原；对未发生薪酬的预估是试算，不做（5.4 / 5.5）</td></tr>
           <tr><td><strong>不在 L1 的项不进链路</strong></td><td>只有底账标注 L1 的项才走四步还原；L2 / L3 / L4 项被问到时按 6.3 对应层作答，Agent 不临时「加深」</td></tr>
           <tr><td><strong>算不平就转人工</strong></td><td>还原后与员工预期有出入且事实能解释的，如实解释；事实解释不了的，明示已查内容转人工——Agent 不下「公司错了」或「你想错了」的结论</td></tr>
           <tr><td><strong>全程只读</strong></td><td>求证不产生任何写操作、不改任何数据；差异的修正永远在人工侧</td></tr>
