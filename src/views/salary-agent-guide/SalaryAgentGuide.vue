@@ -2,8 +2,8 @@
   <DocShell
     :toc-items="tocItems"
     title="薪酬查询 Agent · 产品需求说明"
-    subtitle="员工对【自己】薪酬的查询与求证：三岗位底账、两层围墙、四层应答深度、求证链、单独入口【薪酬咨询助手】"
-    version="v2.0"
+    subtitle="员工对【自己】薪酬的查询与求证：三岗位底账、两层围墙、四层应答深度、支撑侧数据源与政策资料仓库、求证链、单独入口【薪酬咨询助手】"
+    version="v2.1"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.4 完整求证链：以「客次提成 15 块」为例"
     subtitle="L1 项的四步还原：本人业务事实 → 规则命中 → 计算过程 → 结论判定"
-    version="v2.0"
+    version="v2.1"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="7.2 薪酬项清单：全日制客户经理"
     subtitle="策略「客户经理收入 V69」现行薪酬项：显示名 / 内部名 / 分组 / 形式 / 应答深度"
-    version="v2.0"
+    version="v2.1"
     date="2026-11-23"
     :breadcrumbs="breadcrumbs"
   >

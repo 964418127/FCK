@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.3 应答深度分层：每个薪酬项答到多深"
     subtitle="判据只有一条：数据可得性 × 敏感度——能还原的还原，还原不了的只报结论，敏感的只给账户级"
-    version="v2.0"
+    version="v2.1"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

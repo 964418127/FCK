@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.5 产品入口、使用链路与人工出口"
     subtitle="单独入口【薪酬咨询助手】（暂定名）；进入即锁定本人，一条链路到人工出口"
-    version="v2.0"
+    version="v2.1"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
