@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="三、文档说明"
     subtitle="跨章节共用的名词口径，先在这里定死"
-    version="v2.3"
+    version="v2.4"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >

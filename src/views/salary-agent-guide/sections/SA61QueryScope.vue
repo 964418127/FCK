@@ -3,7 +3,7 @@
     :toc-items="tocItems"
     title="6.1 查询范围与岗位底账"
     subtitle="能查什么由岗位现行薪酬项集合决定：三类取数通道 × 三个岗位底账"
-    version="v2.3"
+    version="v2.4"
     date="2026-11-24"
     :breadcrumbs="breadcrumbs"
   >
