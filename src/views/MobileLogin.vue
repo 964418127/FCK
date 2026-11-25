@@ -1,42 +1,54 @@
 <template>
   <div class="mobile-login">
-    <div class="login-container">
+    <!-- 上半：品牌区 -->
+    <div class="hero">
+      <div class="hero-blob blob-1"></div>
+      <div class="hero-blob blob-2"></div>
+      <div class="hero-blob blob-3"></div>
       <div class="logo">
-        <svg width="80" height="80" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#a40035"/>
-              <stop offset="100%" stop-color="#7a0026"/>
-            </linearGradient>
-          </defs>
-          <rect width="96" height="96" rx="20" fill="url(#g)"/>
-          <g fill="white">
-            <path d="M28 28 L40 68 M40 28 L28 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
-            <path d="M48 28 L68 28 L68 68 L56 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
-            <circle cx="34" cy="48" r="4" fill="white" />
-            <circle cx="62" cy="48" r="4" fill="white" />
+        <svg width="72" height="72" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <rect width="96" height="96" rx="22" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+          <g fill="none" stroke="white" stroke-width="6" stroke-linecap="round">
+            <path d="M28 28 L40 68 M40 28 L28 68" />
+            <path d="M48 28 L68 28 L68 68 L56 68" />
           </g>
+          <circle cx="34" cy="48" r="4" fill="white" />
+          <circle cx="62" cy="48" r="4" fill="white" />
         </svg>
       </div>
       <h2 class="title">XV 平台</h2>
       <p class="subtitle">数字化平台</p>
-      
+    </div>
+
+    <!-- 下半：白色面板 -->
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">欢迎回来</h3>
+      <p class="sheet-desc">登录后开始今天的工作</p>
+
       <el-form :model="loginForm" :rules="loginRules" class="login-form">
         <el-form-item prop="username">
-          <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" />
+          <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" size="large" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" />
+          <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="login-button" @click="handleLogin" :loading="loading">
-            登录
+            登 录
           </el-button>
         </el-form-item>
         <el-form-item>
-          <el-button type="text" class="pc-login-link" @click="goToPCLogin">
-            PC端登录
-          </el-button>
+          <div class="device-switch">
+            <div class="device-option" @click="goToPCLogin">
+              <el-icon><Monitor /></el-icon>
+              <span>PC 端</span>
+            </div>
+            <div class="device-option active">
+              <el-icon><Iphone /></el-icon>
+              <span>移动端</span>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
     </div>
@@ -84,48 +96,168 @@ const goToPCLogin = () => {
 .mobile-login {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #a40035 0%, #7a0026 100%);
-  padding: 20px;
+  flex-direction: column;
+  background: #fbf8f9;
 }
 
-.login-container {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 50px 30px;
-  width: 100%;
-  max-width: 450px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* ── 品牌区 ── */
+.hero {
+  position: relative;
+  padding: 72px 24px 64px;
+  background: linear-gradient(150deg, #c31450 0%, #a40035 55%, #7a0026 100%);
   text-align: center;
+  overflow: hidden;
+}
+
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.blob-1 {
+  width: 260px;
+  height: 260px;
+  top: -110px;
+  right: -80px;
+}
+
+.blob-2 {
+  width: 180px;
+  height: 180px;
+  bottom: -70px;
+  left: -60px;
+}
+
+.blob-3 {
+  width: 90px;
+  height: 90px;
+  top: 44px;
+  left: 36px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .logo {
-  margin-bottom: 20px;
+  position: relative;
+  margin-bottom: 18px;
 }
 
 .title {
+  position: relative;
   color: white;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 2px;
   margin-bottom: 8px;
 }
 
 .subtitle {
-  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+  color: rgba(255, 255, 255, 0.75);
   font-size: 14px;
-  margin-bottom: 30px;
+  letter-spacing: 6px;
 }
 
-.login-form {
-  margin-top: 20px;
+/* ── 白色面板 ── */
+.sheet {
+  position: relative;
+  flex: 1;
+  margin-top: -28px;
+  background: #ffffff;
+  border-radius: 28px 28px 0 0;
+  padding: 14px 28px 32px;
+  box-shadow: 0 -12px 40px rgba(122, 0, 38, 0.18);
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e8dde1;
+  margin: 0 auto 20px;
+}
+
+.sheet-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2b1a20;
+  margin-bottom: 6px;
+}
+
+.sheet-desc {
+  font-size: 13px;
+  color: #9a8a90;
+  margin-bottom: 24px;
+}
+
+.login-form :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  background: #f7f2f4;
+  box-shadow: 0 0 0 1px #efe4e8 inset;
+  padding: 4px 14px;
+}
+
+.login-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1.5px #a40035 inset;
+  background: #fff;
 }
 
 .login-button {
   width: 100%;
   height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 8px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c31450 0%, #a40035 100%);
+  box-shadow: 0 8px 20px rgba(164, 0, 53, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(164, 0, 53, 0.4);
+}
+
+/* ── 端切换胶囊 ── */
+.device-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #f7f2f4;
+  border-radius: 999px;
+  margin: 0 auto;
+}
+
+.device-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #9a8a90;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.device-option:hover {
+  color: #a40035;
+}
+
+.device-option.active {
+  background: linear-gradient(135deg, #c31450 0%, #a40035 100%);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(164, 0, 53, 0.3);
+  cursor: default;
+}
+
+.device-option .el-icon {
   font-size: 16px;
 }
 </style>

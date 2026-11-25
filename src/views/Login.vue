@@ -1,65 +1,86 @@
 <template>
-  <div class="login-container">
-    <!-- 背景装饰 -->
-    <div class="background-decoration">
-      <div class="decoration-shape shape-1"></div>
-      <div class="decoration-shape shape-2"></div>
-      <div class="decoration-shape shape-3"></div>
-      <div class="decoration-shape shape-4"></div>
-    </div>
-    
-    <!-- 登录卡片 -->
-    <div class="login-card">
-      <div class="login-header">
-        <div class="logo">
-          <svg width="80" height="80" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#a40035"/>
-                <stop offset="100%" stop-color="#7a0026"/>
-              </linearGradient>
-            </defs>
-            <rect width="96" height="96" rx="20" fill="url(#g)"/>
-            <g fill="white">
-              <path d="M28 28 L40 68 M40 28 L28 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
-              <path d="M48 28 L68 28 L68 68 L56 68" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
-              <circle cx="34" cy="48" r="4" fill="white" />
-              <circle cx="62" cy="48" r="4" fill="white" />
+  <div class="login-page">
+    <!-- 左侧：品牌区 -->
+    <div class="brand-panel">
+      <div class="brand-blob blob-1"></div>
+      <div class="brand-blob blob-2"></div>
+      <div class="brand-blob blob-3"></div>
+
+      <div class="brand-content">
+        <div class="brand-logo">
+          <svg width="64" height="64" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+            <rect width="96" height="96" rx="22" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+            <g fill="none" stroke="white" stroke-width="6" stroke-linecap="round">
+              <path d="M28 28 L40 68 M40 28 L28 68" />
+              <path d="M48 28 L68 28 L68 68 L56 68" />
             </g>
+            <circle cx="34" cy="48" r="4" fill="white" />
+            <circle cx="62" cy="48" r="4" fill="white" />
           </svg>
         </div>
-        <h2 class="login-title">XV 平台</h2>
-        <p class="login-subtitle">数字化平台</p>
+        <h1 class="brand-title">XV 平台</h1>
+        <p class="brand-subtitle">数字化平台</p>
+
+        <div class="brand-points">
+          <div class="brand-point">
+            <span class="point-dot"></span>
+            <span>人事 · 薪酬 · 排班一体化</span>
+          </div>
+          <div class="brand-point">
+            <span class="point-dot"></span>
+            <span>移动端与 PC 端协同办公</span>
+          </div>
+          <div class="brand-point">
+            <span class="point-dot"></span>
+            <span>数据驱动门店运营决策</span>
+          </div>
+        </div>
       </div>
-      <el-form :model="loginForm" :rules="loginRules" class="login-form">
-        <el-form-item prop="username">
-          <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" />
-        </el-form-item>
-        <el-form-item prop="captcha">
-          <div class="captcha-container">
-            <el-input v-model="loginForm.captcha" placeholder="验证码" prefix-icon="Key" />
-            <div class="captcha-image">
-              <div class="captcha-placeholder" @click="refreshCaptcha">
-                <el-icon class="captcha-icon"><Key /></el-icon>
+
+      <p class="brand-footer">© XV 平台 · 数字化运营</p>
+    </div>
+
+    <!-- 右侧：表单区 -->
+    <div class="form-panel">
+      <div class="form-box">
+        <h2 class="form-title">欢迎回来</h2>
+        <p class="form-desc">请使用平台账号登录</p>
+
+        <el-form :model="loginForm" :rules="loginRules" class="login-form">
+          <el-form-item prop="username">
+            <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" size="large" />
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password />
+          </el-form-item>
+          <el-form-item prop="captcha">
+            <div class="captcha-row">
+              <el-input v-model="loginForm.captcha" placeholder="验证码" prefix-icon="Key" size="large" />
+              <div class="captcha-box" @click="refreshCaptcha">
+                <el-icon><Key /></el-icon>
                 <span>点击刷新</span>
               </div>
             </div>
-          </div>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" class="login-button" @click="handleLogin" :loading="loading">
-            登录
-          </el-button>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="text" class="mobile-login-link" @click="goToMobileLogin">
-            移动端登录
-          </el-button>
-        </el-form-item>
-      </el-form>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" class="login-button" @click="handleLogin" :loading="loading">
+              登 录
+            </el-button>
+          </el-form-item>
+          <el-form-item>
+            <div class="device-switch">
+              <div class="device-option active">
+                <el-icon><Monitor /></el-icon>
+                <span>PC 端</span>
+              </div>
+              <div class="device-option" @click="goToMobileLogin">
+                <el-icon><Iphone /></el-icon>
+                <span>移动端</span>
+              </div>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -111,172 +132,237 @@ const goToMobileLogin = () => {
 </script>
 
 <style scoped>
-.login-container {
+.login-page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #a40035 0%, #7a0026 100%);
+}
+
+/* ── 左侧品牌区 ── */
+.brand-panel {
   position: relative;
+  flex: 1;
+  max-width: 46%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 64px;
+  background: linear-gradient(150deg, #c31450 0%, #a40035 55%, #7a0026 100%);
   overflow: hidden;
 }
 
-/* 背景装饰 */
-.background-decoration {
+.brand-blob {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
   pointer-events: none;
 }
 
-.decoration-shape {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: float 20s ease-in-out infinite;
+.blob-1 {
+  width: 420px;
+  height: 420px;
+  top: -160px;
+  right: -140px;
 }
 
-.shape-1 {
-  width: 400px;
-  height: 400px;
-  top: -200px;
-  right: -200px;
-  animation-delay: 0s;
-}
-
-.shape-2 {
+.blob-2 {
   width: 300px;
   height: 300px;
-  bottom: -150px;
-  left: -150px;
-  animation-delay: 5s;
+  bottom: -120px;
+  left: -100px;
 }
 
-.shape-3 {
-  width: 200px;
-  height: 200px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation-delay: 10s;
-}
-
-.shape-4 {
-  width: 150px;
-  height: 150px;
-  top: 80%;
-  right: 20%;
-  animation-delay: 15s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-50px) rotate(90deg);
-  }
-  50% {
-    transform: translateY(0) rotate(180deg);
-  }
-  75% {
-    transform: translateY(50px) rotate(270deg);
-  }
-}
-
-/* 登录卡片 */
-.login-card {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 50px;
-  width: 100%;
-  max-width: 450px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.login-title {
-  font-size: 32px;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 10px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.login-subtitle {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.login-form {
-  margin-top: 20px;
-}
-
-.login-form .el-input__wrapper {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-}
-
-.login-form .el-input__inner {
-  color: white;
-}
-
-.login-form .el-input__inner::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.login-form .el-form-item__label {
-  color: white;
-}
-
-.captcha-container {
-  display: flex;
-  gap: 10px;
-}
-
-.captcha-image {
+.blob-3 {
   width: 120px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  height: 120px;
+  top: 20%;
+  left: 18%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.brand-content {
+  position: relative;
+}
+
+.brand-logo {
+  margin-bottom: 28px;
+}
+
+.brand-title {
+  color: #fff;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.brand-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  letter-spacing: 8px;
+  margin-bottom: 48px;
+}
+
+.brand-points {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.brand-point {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 15px;
+}
+
+.point-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.brand-footer {
+  position: absolute;
+  bottom: 28px;
+  left: 64px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+/* ── 右侧表单区 ── */
+.form-panel {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #fbf8f9;
+  padding: 40px;
 }
 
-.captcha-placeholder {
+.form-box {
+  width: 100%;
+  max-width: 400px;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2b1a20;
+  margin-bottom: 8px;
+}
+
+.form-desc {
+  font-size: 14px;
+  color: #9a8a90;
+  margin-bottom: 36px;
+}
+
+.login-form :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  background: #f7f2f4;
+  box-shadow: 0 0 0 1px #efe4e8 inset;
+  padding: 4px 14px;
+}
+
+.login-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1.5px #a40035 inset;
+  background: #fff;
+}
+
+.captcha-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.captcha-box {
+  width: 118px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: white;
+  gap: 2px;
+  background: #f7f2f4;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #efe4e8 inset;
+  color: #b39aa4;
   font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  user-select: none;
 }
 
-.captcha-icon {
-  margin-bottom: 4px;
-  font-size: 16px;
+.captcha-box:hover {
+  color: #a40035;
 }
 
 .login-button {
   width: 100%;
-  height: 44px;
+  height: 48px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
+  letter-spacing: 8px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c31450 0%, #a40035 100%);
+  box-shadow: 0 8px 20px rgba(164, 0, 53, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(164, 0, 53, 0.4);
+}
+
+/* ── 端切换胶囊 ── */
+.device-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #f7f2f4;
+  border-radius: 999px;
+  margin: 0 auto;
+}
+
+.device-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #9a8a90;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.device-option:hover {
+  color: #a40035;
+}
+
+.device-option.active {
+  background: linear-gradient(135deg, #c31450 0%, #a40035 100%);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(164, 0, 53, 0.3);
+  cursor: default;
+}
+
+.device-option .el-icon {
+  font-size: 16px;
+}
+
+/* 窄屏回退：品牌区隐藏，表单铺满 */
+@media (max-width: 768px) {
+  .brand-panel {
+    display: none;
+  }
 }
 </style>

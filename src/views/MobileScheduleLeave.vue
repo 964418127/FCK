@@ -978,6 +978,7 @@ onMounted(() => {
 
 .calendar-day {
   min-height: 60px;
+  min-width: 0;
   padding: 8px;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -1035,6 +1036,8 @@ onMounted(() => {
 
 .calendar-day {
   min-height: 60px;
+  min-width: 0;
+  overflow: hidden;
   padding: 6px;
   border: 1px solid #eee;
   border-radius: 8px;

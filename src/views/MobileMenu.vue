@@ -9,6 +9,10 @@
           <p class="username">管理员</p>
           <p class="role">系统管理员</p>
         </div>
+        <button class="logout-btn" @click="handleLogout">
+          <el-icon><SwitchButton /></el-icon>
+          <span>退出</span>
+        </button>
       </div>
     </div>
 
@@ -35,13 +39,6 @@
       <div v-if="!visibleGroups.length" class="menu-empty">
         当前账号的菜单项都未开放
       </div>
-    </div>
-
-    <div class="menu-footer">
-      <el-button type="text" @click="handleLogout">
-        <el-icon><SwitchButton /></el-icon>
-        退出登录
-      </el-button>
     </div>
   </div>
 </template>
@@ -124,6 +121,32 @@ const handleLogout = () => {
   opacity: 0.8;
 }
 
+/* 页头右侧退出按钮（幽灵胶囊） */
+.logout-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+  color: #fff;
+}
+
+.logout-btn .el-icon {
+  font-size: 15px;
+}
+
 .menu-content {
   padding: 20px;
 }
@@ -201,10 +224,5 @@ const handleLogout = () => {
   text-align: center;
   font-size: 14px;
   color: #999;
-}
-
-.menu-footer {
-  padding: 20px;
-  text-align: center;
 }
 </style>
