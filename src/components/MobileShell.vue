@@ -1,6 +1,6 @@
 <template>
-  <!-- 宽屏：手机面板容器 -->
-  <div v-if="isWide" class="m-shell-backdrop">
+  <!-- 移动端容器壳：宽屏=手机面板；窄屏/真机=媒体查询还原全屏（纯 CSS，SSR 安全） -->
+  <div class="m-shell-backdrop">
     <div class="m-shell">
       <div class="m-shell-screen">
         <div class="m-shell-body">
@@ -9,22 +9,11 @@
       </div>
     </div>
   </div>
-  <!-- 窄屏 / 真机：保持全屏 -->
-  <div v-else class="m-shell-plain">
-    <slot />
-  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-
-const mq = window.matchMedia('(min-width: 768px)')
-const isWide = ref(mq.matches)
-
-const onChange = (e) => { isWide.value = e.matches }
-
-onMounted(() => mq.addEventListener('change', onChange))
-onBeforeUnmount(() => mq.removeEventListener('change', onChange))
+// 不用 JS 判屏：window 在 SSG/Node 渲染期不存在（踩过坑），
+// 宽窄切换全部交给 CSS 媒体查询，服务端与客户端渲染结果一致
 </script>
 
 <style scoped>
@@ -96,9 +85,27 @@ onBeforeUnmount(() => mq.removeEventListener('change', onChange))
   height: 100% !important;
 }
 
-/* ── 窄屏：不加任何壳 ── */
-.m-shell-plain {
-  width: 100%;
-  min-height: 100vh;
+/* ── 窄屏 / 真机：还原全屏 ── */
+@media (max-width: 767px) {
+  .m-shell-backdrop {
+    display: block;
+    height: 100vh;
+    padding: 0;
+    background: none;
+  }
+
+  .m-shell {
+    width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .m-shell-screen {
+    border-radius: 0;
+  }
 }
 </style>
