@@ -18,20 +18,20 @@
       </p>
       <div class="func-entry">
         <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>事实记录</strong>
-        （全员一周矩阵 / 事实表：默认展示最近 4 轮窗口，支持搜索与分页）
+        （全员时间轴矩阵 / 事实表：默认展示最近 4 轮窗口，支持搜索与分页）
       </div>
 
       <DocScreens
         :height="420"
         :images="[
-          { src: factsShot, label: '事实记录：全员一周矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表（最近 4 轮窗口 · 所属轮标注 · 搜索 + 分页）' }
+          { src: factsShot, label: '事实记录：最近 4 轮窗口 tab（页首统一约束）+ 全员时间轴矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表（所属轮标注 · 搜索 + 分页）' }
         ]"
       />
     </div>
 
     <div id="hs-64-timeline" class="section">
       <div class="section-header">
-        <h3>6.4.1 全员一周矩阵</h3>
+        <h3>6.4.1 全员时间轴矩阵</h3>
       </div>
       <table class="data-table">
         <thead>
@@ -44,8 +44,8 @@
         </tbody>
       </table>
       <div class="note">
-        <strong>轮次窗口（事实记录页的统一约束）：</strong>事实记录默认展示<strong>最近 4 轮</strong>——已结束 / 执行中 / 已截止 · 待开始；
-        全员一周矩阵在窗口内切轮（结果页回答「这一轮怎么排的」，事实页回答「最近发生了什么变化」）。
+        <strong>轮次窗口（事实记录页的统一约束，在页签最顶部）：</strong>事实记录默认展示<strong>最近 4 轮</strong>——已结束 / 执行中 / 已截止 · 待开始；
+        全员时间轴在窗口内切轮（结果页回答「这一轮怎么排的」，事实页回答「最近发生了什么变化」）。
         <strong>申领中的轮不进窗口</strong>：还没翻轮、没有班次和占位，事实无处可挂。
         事实表每行标注<strong>所属轮</strong>——按「影响的班次日期落在哪轮 span」推导，不存轮次字段（周期改长度后归属跟着新 span 走，见 <router-link to="/docs/hr-schedule/future">8.7</router-link>）；
         搜关键字时查全部轮次，更早的、以及落在未发布预告轮的事实（如离职生效日在未来）用搜索兜底。
@@ -215,7 +215,7 @@ import gapShot from '../../../docs/assets/pages/v5-gap.png'
 
 const tocItems = [
   { id: 'hs-64', label: '6.4 变化与求值' },
-  { id: 'hs-64-timeline', label: '6.4.1 全员一周矩阵' },
+  { id: 'hs-64-timeline', label: '6.4.1 全员时间轴矩阵' },
   { id: 'hs-64-facts', label: '6.4.2 五类事实' },
   { id: 'hs-64-events', label: '6.4.3 事件记录（本期收录）' },
   { id: 'hs-64-gap', label: '6.4.4 缺口规则' },

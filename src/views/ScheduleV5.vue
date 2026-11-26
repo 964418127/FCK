@@ -765,22 +765,25 @@
 
         <!-- ③ 变化段：事实与记录 -->
         <section v-else-if="tab === 'fact'" class="pane">
+          <!-- 轮次窗口：整个页签的统一约束（矩阵的日期轴、事实表的过滤都从这里走），放页签最顶上 -->
+          <div class="rb-tabs" style="margin-bottom: 10px">
+            <button v-for="r in factWindow" :key="r.id" :class="{ on: factRoundSel && factRoundSel.id === r.id }" @click="factRoundId = r.id">
+              <strong>{{ short(r.span[0]) }}–{{ short(r.span[1]) }}</strong>
+              <em :class="['rb-badge', r.status]">{{ roundStatusLabel(r.status) }}</em>
+            </button>
+            <span class="rw-note">最近 4 轮窗口：矩阵与事实表共用；申领中的轮没有班次，不会有事实，不进窗口。</span>
+          </div>
+
           <div class="fact-acts">
             <el-input v-model="factKw" placeholder="搜人 / 类型 / 班次" clearable size="small" style="width: 220px" />
             <span class="fa-hint">变化只走事实：写一条，重算一次，事实表就是留痕。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
           </div>
 
-          <!-- 全员一周：行是人、列是这一轮的日子，格子放班次/占用/顶班的时段 chip；悬浮格子，在格子旁边出当天的单轴小卡 -->
+          <!-- 全员时间轴：行是人、列是窗口内选中轮的日子，格子放班次/占用/顶班的时段 chip；悬浮格子，在格子旁边出当天的单轴小卡 -->
           <div class="tl-box">
             <div class="tl-head">
-              <strong>全员一周</strong>
-              <span>行是人、列是选中轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；悬浮格子，在旁边看这个人当天的单轴细节。</span>
-            </div>
-            <div class="rb-tabs" style="margin-bottom: 8px">
-              <button v-for="r in factWindow" :key="r.id" :class="{ on: factRoundSel && factRoundSel.id === r.id }" @click="factRoundId = r.id">
-                <strong>{{ short(r.span[0]) }}–{{ short(r.span[1]) }}</strong>
-                <em :class="['rb-badge', r.status]">{{ roundStatusLabel(r.status) }}</em>
-              </button>
+              <strong>全员时间轴</strong>
+              <span>行是人、列是选中轮的日子（不固定一周，双周轮 / 自定义轮照常铺）：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；悬浮格子，在旁边看这个人当天的单轴细节。</span>
             </div>
             <div class="tl-scroll" @scroll="hideCellNow">
               <div class="tl-grid" :style="{ gridTemplateColumns: `88px repeat(${tlDates.length}, minmax(64px, 1fr))` }">
@@ -897,7 +900,7 @@
         </section>
       </main>
 
-      <!-- 悬浮卡：贴着格子/日子出的当天单轴细节（事实记录全员一周 与 个人查询 共用），不往下撑页面 -->
+      <!-- 悬浮卡：贴着格子/日子出的当天单轴细节（事实记录全员时间轴 与 个人查询 共用），不往下撑页面 -->
       <div v-if="popShow && tlDay" class="tl-pop" :style="{ left: popPos.left + 'px', top: popPos.top + 'px' }"
         @mouseenter="keepCell" @mouseleave="hideCellSoon">
         <div class="tl-pop-head">{{ tlPersonName }} · {{ tlDay.slice(5) }}</div>
@@ -2513,7 +2516,7 @@ tr.covered td { color: #9a9fa9; }
 .fa-hint { font-size: 12px; color: #8a8a95; margin-right: auto; }
 /* 个人时间线 */
 .tl-box { border: 1px solid #f0eaec; border-radius: 10px; background: #fff; padding: 10px 12px 8px; margin-bottom: 14px; }
-/* 全员一周网格 */
+/* 全员时间轴网格 */
 .tl-scroll { overflow-x: auto; margin-bottom: 6px; }
 .tl-grid { display: grid; gap: 2px; min-width: 100%; }
 .tl-corner { font-size: 10.5px; color: #b0b0b8; display: flex; align-items: flex-end; padding: 2px 4px 4px 0; }
@@ -2635,6 +2638,7 @@ tr.hl td { background: #fdf3e6 !important; }
 .rb-tabs button { display: flex; align-items: center; gap: 6px; border: 1px solid #eee6e8; background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #6a6a75; cursor: pointer; }
 .rb-tabs button strong { font-weight: 500; }
 .rb-tabs button.on { border-color: #a40035; color: #a40035; background: #fdf6f8; }
+.rb-tabs .rw-note { font-size: 12px; color: #a0a0aa; margin-left: 4px; }
 .rb-badge { font-style: normal; font-size: 10.5px; padding: 0 5px; border-radius: 3px; background: #f2f2f4; color: #8a8a95; }
 .rb-badge.applying { background: #fdf6f8; color: #a40035; }
 .rb-badge.locked { background: #fdf3e3; color: #854F0B; }
