@@ -318,8 +318,9 @@ export const ROUND5 = {
     排班节奏：两种周期类型——业务周 / 自然月（+ 业务自定义）
     业务周 = 三个参数说完：每周几为起点、每周几什么时间发布、发布的是几个业务周之后的那期
       leadWeeks=2 就是「发布下下周期的班」：当天发布、窗口内选择，到那一周才生效使用
-      换算成偏移恒等式：起点周一 + 周四发布 + 提前 2 周 = 起点 − 11 天（周四）发布、− 9 天截止
-    自然月 = 锚点（1 号）+ 相对起点的发布/截止偏移
+      换算成偏移恒等式：起点周一 + 周四发布 + 提前 2 周 = 起点 − 11 天（周四）发布
+    自然月 = 锚点（1 号）+ 相对起点的发布偏移
+    申领截止四种模式统一：都是「发布后 n 天 + 时刻」——窗口 = 发布到截止，长度不随发布提前量漂移
   */
   config: {
     kind: 'bizweek',
@@ -334,7 +335,7 @@ export const ROUND5 = {
 }
 
 /*
-  总部办公区按月排：自然月 1 号起头，提前 4 天 06:00 发下个月，提前 1 天 20:00 截止。
+  总部办公区按月排：自然月 1 号起头，提前 4 天 06:00 发下个月，发布后 3 天 20:00 截止。
   当前这一期是 11 月整月（10-28 发），下一期是 12 月（11-27 发）。
   节奏不同不代表机制不同——还是同一套「发布 → 窗口 → 截止」，只是周期长度换了。
 */
@@ -346,8 +347,8 @@ export const ROUND_OFFICE5 = {
     cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' },
     publishOffsetDays: -4,
     publishHour: '06:00',
-    applyOffsetDays: -1,
-    applyHour: '20:00'
+    deadlineDays: 3,
+    deadlineTime: '20:00'
   }
 }
 
@@ -477,7 +478,7 @@ function shiftCycle(cycle, startStr, k = 1) {
 }
 /* 业务周：把「每周几发布、发布几个业务周之后的那期」换算成相对周期起点的天数
    恒等式校验：起点周一 + 周四发布 + leadWeeks=2 → 7 + ((1-4+7)%7=4) = 11 天（周四发布） */
-function bizOffsetDays(config) {
+export function bizOffsetDays(config) {
   const inWeek = ((config.startDow - config.publishDow + 7) % 7) || 7
   return 7 * ((config.leadWeeks || 1) - 1) + inWeek
 }
@@ -491,14 +492,21 @@ export function publishAtOf(config, cycleStart) {
   d.setDate(d.getDate() + (config.publishOffsetDays || 0))
   return `${fmtDate(d)} ${config.publishHour ?? '06:00'}`
 }
+/* 申领截止四种模式统一：发布时刻 + n 天（窗口长度挂发布，不随发布提前量漂移） */
 export function applyDeadlineOf(config, cycleStart) {
-  const d = at0(cycleStart)
-  if (config.kind === 'bizweek') {
-    d.setDate(d.getDate() - bizOffsetDays(config) + (config.deadlineDays || 0))
-    return `${fmtDate(d)} ${config.deadlineTime ?? '20:00'}`
-  }
-  d.setDate(d.getDate() + (config.applyOffsetDays || 0))
-  return `${fmtDate(d)} ${config.applyHour ?? '20:00'}`
+  const pub = publishAtOf(config, cycleStart)
+  const d = at0(pub.slice(0, 10))
+  d.setDate(d.getDate() + (config.deadlineDays || 0))
+  return `${fmtDate(d)} ${config.deadlineTime ?? '20:00'}`
+}
+/* 节奏保存前自检：申领截止不得晚于周期开始（发布提前量太小时，窗口会开进班已生效的时段里） */
+export function rhythmErr(config, now = NOW) {
+  const plan = nextRoundPlan(config, now)
+  if (!plan) return ''
+  const dl = applyDeadlineOf(config, plan.cycleStart)
+  return dl.slice(0, 10) > plan.cycleStart
+    ? `申领截止（${dl}）晚于周期开始（${plan.cycleStart}）：把截止天数调小，或把发布提前量加大`
+    : ''
 }
 /* 下一个发布时刻：每次触发生成的是「下一个还没排的周期」（N+1）——当天发布、窗口内选择，到那一周才生效 */
 export function nextRoundPlan(config, now = NOW) {

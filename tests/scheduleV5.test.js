@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5, gapRuleOfSlot5, publishAtOf, applyDeadlineOf } from '../src/mock/scheduleV5.js'
+import { buildV5State, roundOf, snapN5, activeCount5, grab5, applyFor5, addFact5, resolveApplications5, openOffers5, matchWho5, whoLabel5, windowOpen5, openAt5, windowLabel5, WEEK_DATES, recalcRound, slotById, JOBS5, cycleStartOf, cycleEndOf, dayCopyPlan5, applyDayCopy5, runDueDirect5, canTake5, slotsOn5, datesOfRound5, claimCheck5, claimRulesOf5, claimSet5, weekRange5, monthRange5, runDueRounds5, addCategory5, renameCategory5, removeCategory5, categoryUsage5, dutyPersonId5, claimedSlots5, personBusy5, undoSwap5, roundListOf, roundStatusOf, nextPublishOf, GAP_RULES5, gapSrcOf5, gapRemain5, fmtRemain5, evalGap5, gapRuleOfSlot5, publishAtOf, applyDeadlineOf, rhythmErr, bizOffsetDays } from '../src/mock/scheduleV5.js'
 import { checkSlotForm } from '../src/mock/scheduleV5Store.js'
 
 const mk = () => reactive(buildV5State())
@@ -317,9 +317,32 @@ test('节奏：业务周——周四 06:00 发布，发布的是下下周期那�
   assert.equal(publishAtOf(c1, '2026-11-30'), '2026-11-26 06:00')
 })
 
-test('节奏：自然周（旧偏移口径仍支持），提前 4 天 06:00 发，铺一周', () => {
+test('节奏：申领截止统一为「发布后 n 天」，四种模式一套', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
+  /* 业务周：发布 11-19，发布后 2 天 = 11-21 20:00 */
+  assert.equal(applyDeadlineOf(s.round.config, '2026-11-30'), '2026-11-21 20:00')
+  assert.equal(bizOffsetDays(s.round.config), 11, '起点周一 + 周四发布 + lead 2 = 提前 11 天')
+  /* 自然周：发布 = 起点 − 4 天，发布后 3 天 = 起点 − 1 天 */
+  const w = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
+  assert.equal(applyDeadlineOf(w, '2026-11-23'), '2026-11-22 20:00')
+  /* 自然月（办公区种子形态）：发布 10-28，发布后 3 天 = 10-31 20:00 */
+  const m = { cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
+  assert.equal(applyDeadlineOf(m, '2026-11-01'), '2026-10-31 20:00')
+})
+
+test('节奏守门：申领截止不得晚于周期开始', () => {
+  const s = mk()
+  /* 正常配置（发布提前 4 天、截止发布后 3 天）：截止在周期开始前，自检放行 */
+  const ok = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
+  assert.equal(rhythmErr(ok), '')
+  /* 发布只提前 1 天、截止发布后 3 天 → 截止落进生效期，自检拦下 */
+  const bad = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -1, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
+  assert.ok(rhythmErr(bad).includes('晚于周期开始'), '越线的配置要报错')
+})
+
+test('节奏：自然周，提前 4 天 06:00 发，铺一周', () => {
+  const s = mk()
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   assert.equal(s.round.nextAt, '2026-11-19 06:00')
   assert.equal(s.round.nextSpan[0], '2026-11-23')
@@ -328,7 +351,7 @@ test('节奏：自然周（旧偏移口径仍支持），提前 4 天 06:00 发�
 
 test('节奏：改发布偏移（提前 5 天）→ 预告跟着重算', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   assert.equal(s.round.nextAt, '2026-11-18 06:00')
   assert.equal(s.round.nextSpan[0], '2026-11-23')
@@ -336,7 +359,7 @@ test('节奏：改发布偏移（提前 5 天）→ 预告跟着重算', () => {
 
 test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '09:00', applyOffsetDays: -1, applyHour: '20:00' }
+  s.round.config = { cycle: { anchor: 'monthStart', unit: 'month', n: 1, start: '' }, publishOffsetDays: -5, publishHour: '09:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   /* now=11-14，12 月周期起点 12-01，提前 5 天 = 11-26 09:00 发布，铺 12-01~12-31 */
   assert.equal(s.round.nextAt, '2026-11-26 09:00')
@@ -345,7 +368,7 @@ test('节奏：自然月，周期=整月，提前 5 天发铺下月', () => {
 
 test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }, publishOffsetDays: -6, publishHour: '08:00', applyOffsetDays: -1, applyHour: '20:00' }
+  s.round.config = { cycle: { anchor: 'custom', unit: 'month', n: 1, start: '2026-10-26' }, publishOffsetDays: -6, publishHour: '08:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   /* now=11-14 落在 10-26~11-25 期；发布 10-20 已过 → 下一期 11-26~12-25，提前 6 天 = 11-20 08:00 */
   assert.equal(s.round.nextAt, '2026-11-20 08:00')
@@ -354,7 +377,7 @@ test('节奏：业务自定义周期（每月 26 日–次月 25 日）', () => 
 
 test('节奏：每次触发生成的是下一个还没排的周期（N+1），一期接一期连续', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 1, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   /* 逐次推演：nextAt 发布 → 铺下一周 → 移到发布之后再看下一轮，两次覆盖区间首尾相接 */
   const first = { at: s.round.nextAt, span: [...s.round.nextSpan] }
@@ -368,7 +391,7 @@ test('节奏：每次触发生成的是下一个还没排的周期（N+1），�
 
 test('节奏：改周期长度立即体现在预告区间', () => {
   const s = mk()
-  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 3, start: '' }, publishOffsetDays: -4, publishHour: '06:00', applyOffsetDays: -1, applyHour: '20:00' }
+  s.round.config = { cycle: { anchor: 'monday', unit: 'week', n: 3, start: '' }, publishOffsetDays: -4, publishHour: '06:00', deadlineDays: 3, deadlineTime: '20:00' }
   recalcRound(s)
   const span = (new Date(s.round.nextSpan[1]) - new Date(s.round.nextSpan[0])) / 86400000 + 1
   assert.equal(span, 21, '铺三周')
