@@ -89,7 +89,7 @@ export const hrScheduleChapters = [
     order: '八',
     title: '未来扩展：多岗位接入的关键升级',
     nav: '未来扩展',
-    subtitle: '以上线动作为轴：每上一批岗位推导对应预升级——非全客户经理（研发中）→ 全职客户经理（关联调班）→ 全职推拿师（X=4 + 审核两条路线）→ 非全推拿师；框架 = 缺口两段式 + 按人群登记',
+    subtitle: '以上线动作为轴：每上一批岗位推导对应预升级——非全客户经理（研发中）→ 全职客户经理（关联调班）→ 全职推拿师（X=4 + 审核两条路线）→ 非全推拿师；框架 = 缺口两段式 + 按人群登记；另记跨批次迭代：发布停留期两阶段、周期变更按期预检决策',
     routeName: 'doc-hr-schedule-future',
     path: '/docs/hr-schedule/future',
     file: 'sections/HS08Future.vue'

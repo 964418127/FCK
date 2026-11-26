@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="八、未来扩展：多岗位接入的关键升级"
-    subtitle="以上线岗位为轴：通用化设计已定，每上一批岗位、迭代支持对应内容——非全客户经理（研发中）→ 全职客户经理 → 全职推拿师 → 非全推拿师"
+    subtitle="以上线岗位为轴：通用化设计已定，每上一批岗位、迭代支持对应内容——非全客户经理（研发中）→ 全职客户经理 → 全职推拿师 → 非全推拿师；另记跨批次通用迭代：发布与周期变更"
     version="v3.0 基线 + v5 重构"
-    date="2026-11-24"
+    date="2026-11-26"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-fu-why" class="section">
@@ -273,9 +273,114 @@
       </p>
     </div>
 
+    <div id="hs-fu-release" class="section">
+      <div class="section-header">
+        <h2>8.7 发布与周期变更：跨批次的通用迭代</h2>
+      </div>
+      <p class="doc-p">
+        这两条<strong>不属于任何单一批次</strong>——节奏模块随第一批上线就会被碰到，先记作跨批次储备：
+        一是发布要不要给操作人员留维护窗口（可见层与数据层是两个阶段）；二是周期变更撞上已发周期怎么处理。
+      </p>
+      <h4 class="h4sub">发布停留期：可见层（现行）与数据层（待建）是两个阶段</h4>
+      <svg viewBox="0 0 680 250" class="doc-svg" role="img"
+           aria-label="发布两阶段对比：现行可见层——发布即跑副作用、各档发布后推到点才可见；迭代数据层——发布只生成草稿、停留期内可重新生成、确认开放才跑副作用">
+        <title>发布停留期：两个阶段</title>
+        <defs>
+          <marker id="u8e" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <text x="40" y="30" font-size="12" font-weight="500" fill="#0c447c">现行 · 可见层控制（已支持）</text>
+        <rect x="40" y="40" width="180" height="56" rx="10" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="130" y="62" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">发布</text>
+        <text x="130" y="80" text-anchor="middle" font-size="10" fill="#993c1d">副作用即跑：直派执行 · 占位落库</text>
+        <line x1="222" y1="68" x2="238" y2="68" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8e)"/>
+        <rect x="242" y="40" width="180" height="56" rx="10" fill="#f4f4f0" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="332" y="62" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">各档「发布后推」</text>
+        <text x="332" y="80" text-anchor="middle" font-size="10" fill="#888780">到点才可见 · 数据其实已生效</text>
+        <line x1="424" y1="68" x2="440" y2="68" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8e)"/>
+        <rect x="444" y="40" width="180" height="56" rx="10" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.5"/>
+        <text x="534" y="62" text-anchor="middle" font-size="12" font-weight="500" fill="#27500a">员工可见</text>
+        <text x="534" y="80" text-anchor="middle" font-size="10" fill="#3b6d11">开抢 / 申领从这里起算</text>
+        <text x="40" y="116" font-size="11" fill="#6a6a75">停留效果间接实现——但没有重新生成入口，想推翻时副作用已跑，撤回有成本</text>
+
+        <text x="40" y="150" font-size="12" font-weight="500" fill="#633806">迭代 · 数据层闸门（待建）</text>
+        <rect x="40" y="160" width="180" height="56" rx="10" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="130" y="182" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">发布 · 只生成草稿</text>
+        <text x="130" y="200" text-anchor="middle" font-size="10" fill="#993c1d">快照待确认 · 无副作用</text>
+        <line x1="222" y1="188" x2="238" y2="188" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8e)"/>
+        <rect x="242" y="160" width="180" height="56" rx="10" fill="#faeeda" stroke="#c58a2e" stroke-width="0.5"/>
+        <text x="332" y="182" text-anchor="middle" font-size="12" font-weight="500" fill="#633806">停留期（轮级参数）</text>
+        <text x="332" y="200" text-anchor="middle" font-size="10" fill="#854f0b">重新生成 · 或立即开放 · 默认 0</text>
+        <line x1="424" y1="188" x2="440" y2="188" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8e)"/>
+        <rect x="444" y="160" width="180" height="56" rx="10" fill="#e6f1fb" stroke="#185fa5" stroke-width="0.5"/>
+        <text x="534" y="182" text-anchor="middle" font-size="12" font-weight="500" fill="#0c447c">确认开放</text>
+        <text x="534" y="200" text-anchor="middle" font-size="10" fill="#185fa5">此刻才跑占位与直派 · 员工可见</text>
+        <text x="40" y="236" font-size="11" fill="#6a6a75">两阶段不是二选一：稳定节奏先用「发布后推」扛，需要操作干预窗口再上数据层</text>
+      </svg>
+      <p class="arch-cap">数据层方案里停留期内重新生成零成本（没人看见、没副作用）；「立即生成」同时就是提前发布入口，节奏时刻照常算下一轮。</p>
+
+      <h4 class="h4sub">周期变更撞上已发周期：按「期」预检与决策，不做日级切分</h4>
+      <svg viewBox="0 0 680 430" class="doc-svg" role="img"
+           aria-label="周期变更冲突处理：生成前逐期预检，冲突期一次决策——覆盖、保留、拦截；生效线以下的日子一律不动；日级空段走临时班次兜底">
+        <title>周期变更冲突处理</title>
+        <defs>
+          <marker id="u8f" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect x="180" y="8" width="320" height="32" rx="8" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="340" y="28" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">周期变更：长度 / 锚点改动 · 手动提前发布</text>
+        <line x1="340" y1="40" x2="340" y2="54" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8f)"/>
+
+        <rect x="140" y="58" width="400" height="38" rx="8" fill="#e6f1fb" stroke="#185fa5" stroke-width="0.5"/>
+        <text x="340" y="82" text-anchor="middle" font-size="12" font-weight="500" fill="#0c447c">生成前预检：新周期未来各期 vs 已发周期，逐期比对</text>
+        <line x1="340" y1="96" x2="340" y2="110" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8f)"/>
+
+        <rect x="40" y="114" width="196" height="44" rx="8" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.5"/>
+        <text x="138" y="132" text-anchor="middle" font-size="12" font-weight="500" fill="#27500a">不冲突</text>
+        <text x="138" y="148" text-anchor="middle" font-size="10" fill="#3b6d11">正常生成（现行逻辑）</text>
+        <rect x="244" y="114" width="196" height="44" rx="8" fill="#faeeda" stroke="#c58a2e" stroke-width="0.5"/>
+        <text x="342" y="132" text-anchor="middle" font-size="12" font-weight="500" fill="#633806">完全重叠 → 进决策</text>
+        <text x="342" y="148" text-anchor="middle" font-size="10" fill="#854f0b">整期撞上已发轮</text>
+        <rect x="448" y="114" width="196" height="44" rx="8" fill="#faeeda" stroke="#c58a2e" stroke-width="0.5"/>
+        <text x="546" y="132" text-anchor="middle" font-size="12" font-weight="500" fill="#633806">部分重叠 → 进决策</text>
+        <text x="546" y="148" text-anchor="middle" font-size="10" fill="#854f0b">期中段撞上 · 尾巴留空段</text>
+        <line x1="342" y1="158" x2="342" y2="172" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8f)"/>
+        <line x1="546" y1="158" x2="546" y2="166" stroke="#888780" stroke-width="1" fill="none"/>
+        <path d="M546 166 Q 546 172 540 172 L 348 172" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#u8f)"/>
+
+        <rect x="40" y="176" width="604" height="118" rx="10" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+        <text x="56" y="198" font-size="13" font-weight="500" fill="#633806">一次决策 · 作用于本次全部冲突期（弹层带期清单：选班已完成 / 窗口进行中 / 未开放）</text>
+        <rect x="56" y="210" width="188" height="68" rx="8" fill="#ffffff" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="150" y="230" text-anchor="middle" font-size="12" font-weight="500" fill="#712b13">a · 覆盖</text>
+        <text x="150" y="246" text-anchor="middle" font-size="10" fill="#993c1d">生效线前重生成 · 原班次失效</text>
+        <text x="150" y="260" text-anchor="middle" font-size="10" fill="#993c1d">员工重新参与选班</text>
+        <rect x="252" y="210" width="188" height="68" rx="8" fill="#ffffff" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="346" y="230" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">b · 保留</text>
+        <text x="346" y="246" text-anchor="middle" font-size="10" fill="#888780">跳过该期 · 从下一期顺延</text>
+        <text x="346" y="260" text-anchor="middle" font-size="10" fill="#888780">已完成的选班不受扰</text>
+        <rect x="448" y="210" width="188" height="68" rx="8" fill="#ffffff" stroke="#c8cbcf" stroke-width="0.5"/>
+        <text x="542" y="230" text-anchor="middle" font-size="12" font-weight="500" fill="#444441">c · 拦截</text>
+        <text x="542" y="246" text-anchor="middle" font-size="10" fill="#888780">取消本次生成</text>
+        <text x="542" y="260" text-anchor="middle" font-size="10" fill="#888780">先处理已发轮再来</text>
+
+        <rect x="40" y="306" width="604" height="28" rx="8" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+        <text x="342" y="324" text-anchor="middle" font-size="11" fill="#712b13">硬边界 · 生效线：已生效（已履约）的日子一律不动——覆盖只到生效线为止，横跨生效线的期要切段处理</text>
+
+        <rect x="40" y="344" width="604" height="28" rx="8" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.5"/>
+        <text x="342" y="362" text-anchor="middle" font-size="11" fill="#27500a">日级空段（如周五到周日）→ 临时班次人工兜底 · 既有机制 · 不进周期引擎</text>
+
+        <text x="40" y="402" font-size="12" fill="#6a6a75">粒度按「期」不按「天」：一期之内不拆两套窗口 / 快照 / 截止——这就是不做日级切分的理由；期三态 × 窗口三态，行为可穷举</text>
+      </svg>
+      <div class="note">
+        <strong>上线前待细化：</strong>① a 覆盖后重开窗口的截止算法（沿用原截止 / 从覆盖时刻重起）；② a 的批量失效事实与全员重选通知口径（进 6.6 通知清单）；③ 停留期按时长还是按到点时刻、谁有权重新生成与提前发布、操作是否留痕；④ 数据层闸门与 6.2.2「三个时刻」表的合并方式（发布 → 开放 → 截止 → 生效）。
+      </div>
+    </div>
+
     <div id="hs-fu-map" class="section">
       <div class="section-header">
-        <h2>8.7 上线节奏总图</h2>
+        <h2>8.8 上线节奏总图</h2>
       </div>
       <p class="doc-p">四批岗位按上线先后排在一张图里，★ 是该批上线时要迭代支持的登记点：</p>
       <svg viewBox="0 0 680 290" class="doc-svg" role="img"
@@ -342,7 +447,8 @@ const tocItems = [
   { id: 'hs-fu-batch2', label: '8.4 上线全职客户经理：关联调班' },
   { id: 'hs-fu-batch3', label: '8.5 上线全职推拿师：X=4 与审核路线' },
   { id: 'hs-fu-batch4', label: '8.6 上线非全推拿师：暂无迭代' },
-  { id: 'hs-fu-map', label: '8.7 上线节奏总图' }
+  { id: 'hs-fu-release', label: '8.7 发布与周期变更：跨批次迭代' },
+  { id: 'hs-fu-map', label: '8.8 上线节奏总图' }
 ]
 
 const breadcrumbs = [
