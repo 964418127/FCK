@@ -3,8 +3,8 @@
     :toc-items="tocItems"
     title="6.4 变化与求值"
     subtitle="关闸之后的偏差写一条事实、重算一次、事实表留痕，不回头改历史"
-    version="v5.4"
-    date="2026-11-19"
+    version="v5.5"
+    date="2026-11-26"
     :breadcrumbs="breadcrumbs"
   >
     <div id="hs-64" class="section">
@@ -18,13 +18,13 @@
       </p>
       <div class="func-entry">
         <strong>功能入口：</strong>排班策略 v5（原型 <code>/schedule-v5</code>）→ <strong>事实记录</strong>
-        （全员一周矩阵 / 事实表，支持搜索与分页）
+        （全员一周矩阵 / 事实表：默认展示最近 4 轮窗口，支持搜索与分页）
       </div>
 
       <DocScreens
         :height="420"
         :images="[
-          { src: factsShot, label: '事实记录：全员一周矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表（搜索 + 分页）' }
+          { src: factsShot, label: '事实记录：全员一周矩阵（蓝=班次·橙斜纹=被占用·绿=顶班）+ 事实表（最近 4 轮窗口 · 所属轮标注 · 搜索 + 分页）' }
         ]"
       />
     </div>
@@ -39,10 +39,17 @@
         </thead>
         <tbody>
           <tr><td><strong>行 = 人</strong></td><td>这个空间这一轮涉及的所有人</td><td>一眼看出谁哪天有班、谁空着</td></tr>
-          <tr><td><strong>列 = 这一轮的日子</strong></td><td>格子里画时间条</td><td>蓝 = 班次；橙斜纹 = 被事件占用；绿 = 顶上的班；黄 = 换班对调来的</td></tr>
+          <tr><td><strong>列 = 选中轮的日子</strong></td><td>格子里画时间条；矩阵上方有轮次 tab，在窗口内切轮回查</td><td>蓝 = 班次；橙斜纹 = 被事件占用；绿 = 顶上的班；黄 = 换班对调来的</td></tr>
           <tr><td><strong>悬浮格子</strong></td><td>格子旁出当天单轴小卡，不撑开页面</td><td>班次 / 事实 / 补位三条带怎么叠出来的；卡上「相关的人」可切换</td></tr>
         </tbody>
       </table>
+      <div class="note">
+        <strong>轮次窗口（事实记录页的统一约束）：</strong>事实记录默认展示<strong>最近 4 轮</strong>——已结束 / 执行中 / 已截止 · 待开始；
+        全员一周矩阵在窗口内切轮（结果页回答「这一轮怎么排的」，事实页回答「最近发生了什么变化」）。
+        <strong>申领中的轮不进窗口</strong>：还没翻轮、没有班次和占位，事实无处可挂。
+        事实表每行标注<strong>所属轮</strong>——按「影响的班次日期落在哪轮 span」推导，不存轮次字段（周期改长度后归属跟着新 span 走，见 <router-link to="/docs/hr-schedule/future">8.7</router-link>）；
+        搜关键字时查全部轮次，更早的、以及落在未发布预告轮的事实（如离职生效日在未来）用搜索兜底。
+      </div>
     </div>
 
     <div id="hs-64-facts" class="section">

@@ -766,7 +766,7 @@
         <!-- ③ 变化段：事实与记录 -->
         <section v-else-if="tab === 'fact'" class="pane">
           <div class="fact-acts">
-            <el-input v-model="factKw" placeholder="搜人 / 类型 / 班次 / 结果" clearable size="small" style="width: 220px" />
+            <el-input v-model="factKw" placeholder="搜人 / 类型 / 班次" clearable size="small" style="width: 220px" />
             <span class="fa-hint">变化只走事实：写一条，重算一次，事实表就是留痕。一条事实有两个时间——<b>发生时间</b>（谁在什么时候报的）和<b>影响的班次</b>（哪一天哪一班）。</span>
           </div>
 
@@ -774,7 +774,13 @@
           <div class="tl-box">
             <div class="tl-head">
               <strong>全员一周</strong>
-              <span>行是人、列是这一轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；悬浮格子，在旁边看这个人当天的单轴细节。</span>
+              <span>行是人、列是选中轮的日子：蓝=班次、橙=被事件占用的段、绿=顶上的段、黄=换班；悬浮格子，在旁边看这个人当天的单轴细节。</span>
+            </div>
+            <div class="rb-tabs" style="margin-bottom: 8px">
+              <button v-for="r in factWindow" :key="r.id" :class="{ on: factRoundSel && factRoundSel.id === r.id }" @click="factRoundId = r.id">
+                <strong>{{ short(r.span[0]) }}–{{ short(r.span[1]) }}</strong>
+                <em :class="['rb-badge', r.status]">{{ roundStatusLabel(r.status) }}</em>
+              </button>
             </div>
             <div class="tl-scroll" @scroll="hideCellNow">
               <div class="tl-grid" :style="{ gridTemplateColumns: `88px repeat(${tlDates.length}, minmax(64px, 1fr))` }">
@@ -808,13 +814,24 @@
             </div>
           </div>
 
+          <p class="fact-window-hint">
+            事实表默认展示<strong>最近 4 轮</strong>（已结束 / 执行中 / 已截止 · 待开始）内的事实，按「所属轮」标注；
+            <b>申领中的轮没有班次，不会有事实</b>，不进窗口。搜关键字时查全部轮次——更早的、以及落在未发布预告轮的（如离职生效日在未来），用搜索兜底。
+          </p>
           <table class="data-table">
             <thead>
-              <tr><th style="width: 120px;">发生时间</th><th style="width: 90px;">类型</th><th style="width: 76px;">谁</th><th style="width: 190px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
+              <tr><th style="width: 128px;">所属轮</th><th style="width: 110px;">发生时间</th><th style="width: 84px;">类型</th><th style="width: 72px;">谁</th><th style="width: 180px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
             </thead>
             <tbody>
               <template v-for="f in factRows" :key="f.id">
                 <tr :class="{ hl: hlFact === f.id }">
+                  <td>
+                    <template v-if="factRoundOf(f)">
+                      <span class="fr-span">{{ short(factRoundOf(f).span[0]) }}–{{ short(factRoundOf(f).span[1]) }}</span>
+                      <em :class="['rb-badge', factRoundOf(f).status]">{{ roundStatusLabel(factRoundOf(f).status) }}</em>
+                    </template>
+                    <span v-else class="muted">窗口外</span>
+                  </td>
                   <td class="mono">{{ f.at.slice(5) }}</td>
                   <td><span class="ftype">{{ f.type }}</span></td>
                   <td>{{ f.person }}</td>
@@ -826,7 +843,7 @@
                   <td><el-button link size="small" @click="openFact = openFact === f.id ? '' : f.id">展开</el-button></td>
                 </tr>
                 <tr v-if="openFact === f.id" class="trace-row">
-                  <td colspan="6">
+                  <td colspan="7">
                     <div class="trace">
                       <span class="tr-title">这一条事实带动的班次：</span>
                       <span v-for="pid in f.placements" :key="pid" class="tr-item">
@@ -1664,14 +1681,30 @@ const { page, pageSize, total, rows } = usePager(resultList)
 /* 申领登记（人事只看不审批） */
 const applies = computed(() => applicationRows5(selSpace.value).filter(a => runDates.value.includes(a.date)))
 
-/* 事实记录：搜索 + 分页（页面留痕就是事实表本身，不再单列解版本块） */
+/* 事实记录：搜索 + 分页（页面留痕就是事实表本身，不再单列解版本块）
+   窗口 = 最近 4 轮（排除申领中——没翻轮没班次，事实无处可挂）；关键字搜索查全部轮次兜底 */
 const factKw = ref('')
 const facts = computed(() => factRows5())
+const factWindow = computed(() => roundList(selSpace.value).filter(r => r.status !== 'applying').slice(-4))
+const factRoundId = ref('')
+const factRoundSel = computed(() => {
+  if (factRoundId.value) {
+    const hit = factWindow.value.find(r => r.id === factRoundId.value)
+    if (hit) return hit
+  }
+  return factWindow.value.find(r => r.status === 'running') || factWindow.value[factWindow.value.length - 1] || round.value
+})
+watch(selSpace, () => { factRoundId.value = '' })
+/* 事实归属轮：按影响日期落在哪轮 span 里推导（不存轮次字段，周期改长度后归属跟着新 span 走，见第 8 章 8.7） */
+function factRoundOf(f) {
+  if (!f.date) return null
+  return roundList(selSpace.value).find(r => f.date >= r.span[0] && f.date <= r.span[1]) || null
+}
 const factFiltered = computed(() => {
   const kw = factKw.value.trim().toLowerCase()
-  if (!kw) return facts.value
-  return facts.value.filter(f => [f.type, f.person, f.date, f.slotName, f.slotTime, f.result]
+  if (kw) return facts.value.filter(f => [f.type, f.person, f.date, f.slotName, f.slotTime]
     .some(x => (x || '').toLowerCase().includes(kw)))
+  return facts.value.filter(f => factWindow.value.some(r => f.date && f.date >= r.span[0] && f.date <= r.span[1]))
 })
 const { page: factPage, pageSize: factPageSize, total: factTotal, rows: factRows } = usePager(factFiltered)
 
@@ -1679,7 +1712,7 @@ const { page: factPage, pageSize: factPageSize, total: factTotal, rows: factRows
 const tlPidRaw = ref('')
 const tlPid = computed(() => tlPidRaw.value || curSpacePeople.value[0]?.id || '')
 const tlDates = computed(() => {
-  const [a, b] = round.value.span
+  const [a, b] = factRoundSel.value.span
   const out = []
   const pad = n => String(n).padStart(2, '0')
   const d = new Date(`${a}T00:00:00`)
@@ -2501,6 +2534,9 @@ tr.covered td { color: #9a9fa9; }
 .tl-chip.sw { background: #faf3dd; color: #854f0b; }
 .param-line { font-size: 11px; color: #8a8a95; margin-top: 3px; line-height: 1.4; }
 /* 待人事处理：求值没人顶时发给人事的待办 */
+.fact-window-hint { font-size: 11.5px; color: #8a8a95; line-height: 1.5; margin: 2px 0 8px; }
+.fact-window-hint strong { color: #444441; }
+.fr-span { font-size: 11.5px; color: #2c2c2a; margin-right: 4px; }
 .hr-todo { background: #faeeda; border: 1px solid #ecd9b0; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
 .hr-todo > strong { font-size: 12.5px; color: #854F0B; }
 .hrt-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #6a6a75; }
