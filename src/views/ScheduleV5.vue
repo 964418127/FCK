@@ -819,7 +819,7 @@
 
           <p class="fact-window-hint">
             事实表默认展示<strong>最近 4 轮</strong>（已结束 / 执行中 / 已截止 · 待开始）内的事实，按「所属轮」标注；
-            <b>申领中的轮没有班次，不会有事实</b>，不进窗口。搜关键字时查全部轮次——更早的、以及落在未发布预告轮的（如离职生效日在未来），用搜索兜底。
+            <b>申领中的轮没有班次，不会有事实</b>，不进窗口。搜关键字时不限窗口、查全部事实——窗口外的（更早轮次的、或日期超出窗口轮覆盖范围的，如离职生效日在更远的未来）也能搜到。
           </p>
           <table class="data-table">
             <thead>
@@ -1685,7 +1685,7 @@ const { page, pageSize, total, rows } = usePager(resultList)
 const applies = computed(() => applicationRows5(selSpace.value).filter(a => runDates.value.includes(a.date)))
 
 /* 事实记录：搜索 + 分页（页面留痕就是事实表本身，不再单列解版本块）
-   窗口 = 最近 4 轮（排除申领中——没翻轮没班次，事实无处可挂）；关键字搜索查全部轮次兜底 */
+   窗口 = 最近 4 轮（排除申领中——没翻轮没班次，事实无处可挂）；关键字搜索不限窗口查全部事实，窗口外的也能搜到 */
 const factKw = ref('')
 const facts = computed(() => factRows5())
 const factWindow = computed(() => roundList(selSpace.value).filter(r => r.status !== 'applying').slice(-4))
