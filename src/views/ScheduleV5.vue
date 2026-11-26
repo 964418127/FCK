@@ -818,23 +818,17 @@
           </div>
 
           <p class="fact-window-hint">
-            事实表默认展示<strong>最近 4 轮</strong>（已结束 / 执行中 / 已截止 · 待开始）内的事实，按「所属轮」标注；
-            <b>申领中的轮没有班次，不会有事实</b>，不进窗口。搜关键字时不限窗口、查全部事实——窗口外的（更早轮次的、或日期超出窗口轮覆盖范围的，如离职生效日在更远的未来）也能搜到。
+            事实表与上方矩阵<strong>同一约束：只看顶部选中的这一轮</strong>（搜关键字也在这一轮内过滤）；
+            日期落在更远未来的事实（如离职生效日在还没发布的轮里），等那一轮发布后切轮查看。
           </p>
           <table class="data-table">
             <thead>
-              <tr><th style="width: 128px;">所属轮</th><th style="width: 110px;">发生时间</th><th style="width: 84px;">类型</th><th style="width: 72px;">谁</th><th style="width: 180px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
+              <tr><th style="width: 110px;">发生时间</th><th style="width: 84px;">类型</th><th style="width: 72px;">谁</th><th style="width: 180px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
             </thead>
             <tbody>
+              <tr v-if="!factRows.length"><td colspan="6" class="empty-cell">这一轮还没有事实——切顶部其他轮查看</td></tr>
               <template v-for="f in factRows" :key="f.id">
                 <tr :class="{ hl: hlFact === f.id }">
-                  <td>
-                    <template v-if="factRoundOf(f)">
-                      <span class="fr-span">{{ short(factRoundOf(f).span[0]) }}–{{ short(factRoundOf(f).span[1]) }}</span>
-                      <em :class="['rb-badge', factRoundOf(f).status]">{{ roundStatusLabel(factRoundOf(f).status) }}</em>
-                    </template>
-                    <span v-else class="muted">窗口外</span>
-                  </td>
                   <td class="mono">{{ f.at.slice(5) }}</td>
                   <td><span class="ftype">{{ f.type }}</span></td>
                   <td>{{ f.person }}</td>
@@ -846,7 +840,7 @@
                   <td><el-button link size="small" @click="openFact = openFact === f.id ? '' : f.id">展开</el-button></td>
                 </tr>
                 <tr v-if="openFact === f.id" class="trace-row">
-                  <td colspan="7">
+                  <td colspan="6">
                     <div class="trace">
                       <span class="tr-title">这一条事实带动的班次：</span>
                       <span v-for="pid in f.placements" :key="pid" class="tr-item">
@@ -1695,19 +1689,21 @@ const factRoundSel = computed(() => {
     const hit = factWindow.value.find(r => r.id === factRoundId.value)
     if (hit) return hit
   }
-  return factWindow.value.find(r => r.status === 'running') || factWindow.value[factWindow.value.length - 1] || round.value
+  /* 默认落在最新事实所在的那一轮（事实页回答「最近发生了什么变化」），没有事实的轮回退执行中 */
+  const latest = facts.value.reduce((m, f) => (f.date && (!m || f.date > m)) ? f.date : m, '')
+  const hit = factWindow.value.find(r => latest >= r.span[0] && latest <= r.span[1])
+  return hit || factWindow.value.find(r => r.status === 'running') || factWindow.value[factWindow.value.length - 1] || round.value
 })
 watch(selSpace, () => { factRoundId.value = '' })
-/* 事实归属轮：按影响日期落在哪轮 span 里推导（不存轮次字段，周期改长度后归属跟着新 span 走，见第 8 章 8.7） */
-function factRoundOf(f) {
-  if (!f.date) return null
-  return roundList(selSpace.value).find(r => f.date >= r.span[0] && f.date <= r.span[1]) || null
-}
+/* 事实表与全员时间轴同一约束：只看顶部选中的这一轮（搜关键字也在这一轮内过滤）——
+   一个页签一套口径，不从「选中轮」突兀跳到「全部轮次」 */
 const factFiltered = computed(() => {
+  const sel = factRoundSel.value
+  const base = facts.value.filter(f => f.date && f.date >= sel.span[0] && f.date <= sel.span[1])
   const kw = factKw.value.trim().toLowerCase()
-  if (kw) return facts.value.filter(f => [f.type, f.person, f.date, f.slotName, f.slotTime]
+  if (!kw) return base
+  return base.filter(f => [f.type, f.person, f.date, f.slotName, f.slotTime]
     .some(x => (x || '').toLowerCase().includes(kw)))
-  return facts.value.filter(f => factWindow.value.some(r => f.date && f.date >= r.span[0] && f.date <= r.span[1]))
 })
 const { page: factPage, pageSize: factPageSize, total: factTotal, rows: factRows } = usePager(factFiltered)
 
@@ -2539,7 +2535,6 @@ tr.covered td { color: #9a9fa9; }
 /* 待人事处理：求值没人顶时发给人事的待办 */
 .fact-window-hint { font-size: 11.5px; color: #8a8a95; line-height: 1.5; margin: 2px 0 8px; }
 .fact-window-hint strong { color: #444441; }
-.fr-span { font-size: 11.5px; color: #2c2c2a; margin-right: 4px; }
 .hr-todo { background: #faeeda; border: 1px solid #ecd9b0; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
 .hr-todo > strong { font-size: 12.5px; color: #854F0B; }
 .hrt-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #6a6a75; }
