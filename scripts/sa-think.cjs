@@ -63,17 +63,26 @@ async function main () {
   console.log('求证卡是员工语言:', after.newWords)
   await page.screenshot({ path: path.join(OUT, 'verify-rewritten.png') })
 
-  // 我的工单：正常侧页头无身份切换按钮
+  // 我的工单：页头常驻低调切换器（与排班 v5 同款，不靠 ?dev=1 隐藏）
   await page.goto('http://localhost:5199/mobile-salary-agent/tickets', { waitUntil: 'domcontentloaded' })
   await wait(1000)
-  console.log('正常侧无身份切换入口:', (await page.$$('.hdr-demo')).length === 0)
-  await page.screenshot({ path: path.join(OUT, 'tickets-no-dev.png') })
+  console.log('页头有低调切换器:', (await page.$$('.ps-trigger')).length === 1)
+  const trigText = await page.$eval('.ps-trigger', el => el.innerText.trim())
+  console.log('切换器显示当前姓名:', trigText.length > 0 && trigText.length <= 8)
+  await page.screenshot({ path: path.join(OUT, 'tickets-persona.png') })
 
-  // ?dev=1：低调演示身份入口出现
-  await page.goto('http://localhost:5199/mobile-salary-agent/tickets?dev=1', { waitUntil: 'domcontentloaded' })
-  await wait(1000)
-  console.log('?dev=1 有低调演示身份入口:', (await page.$$('.hdr-demo')).length === 1)
-  await page.screenshot({ path: path.join(OUT, 'tickets-dev.png') })
+  // 点开下拉浮层：搜索框 + 人员列表（带工单数演示看点）
+  await page.click('.ps-trigger')
+  await wait(400)
+  const pop = await page.evaluate(() => ({
+    pop: !!document.querySelector('.ps-pop'),
+    rows: document.querySelectorAll('.ps-row').length,
+    search: !!document.querySelector('.ps-q'),
+    tip: document.querySelector('.ps-trigger')?.title || ''
+  }))
+  console.log('下拉浮层展开:', pop.pop, '| 人员行数:', pop.rows, '| 搜索框:', pop.search)
+  console.log('title 标注演示用:', /演示/.test(pop.tip))
+  await page.screenshot({ path: path.join(OUT, 'tickets-persona-pop.png') })
 
   console.log('errors:', errors.length ? errors.join('\n') : 'none')
   await browser.close()
