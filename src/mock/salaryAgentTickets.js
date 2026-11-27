@@ -373,16 +373,36 @@ export const DIALOG_SCRIPTS = {
       b3: { from: 'agent', text: '好的，还有其他薪酬问题随时问我。', end: true }
     }
   },
-  'forecast': {
-    id: 'forecast',
+  'estimate': {
+    id: 'estimate',
     entry: 'f1',
     nodes: {
-      f1: { from: 'user', text: '帮我算算下个月能拿多少', next: 'f2' },
+      f1: { from: 'user', text: '我这个月提成有多少了', next: 'f2' },
       f2: {
         from: 'agent',
-        text: '试算类问题不在解答范围：助手只回答已发放工资条的求证，不做未来收入的预估。已发放月份的工资条有疑问，随时来查。',
-        end: true
-      }
+        text: '这个月还没到算薪日，先给你看本月的业务累计预估：',
+        card: {
+          type: 'estimate',
+          note: '非结论性预估 · 最终以工资结算为准',
+          rows: [
+            { label: '本月累计到店客次（11-01 ~ 11-26）', value: '41 次' },
+            { label: '现行单价', value: '25 元/客次' },
+            { label: '预估客次提成', value: '≈ 1025 元' }
+          ]
+        },
+        options: [
+          { label: '预估和实际发放差多少怎么办', next: 'f3' },
+          { label: '好的', next: 'f4' }
+        ]
+      },
+      f3: {
+        from: 'agent',
+        text: '预估只是业务累计的参考，不含未结算的扣款与津贴，和实发会有出入。工资发放后，你可以回来查证发放结果——届时每一笔都走完整还原链。',
+        options: [
+          { label: '好的', next: 'f4' }
+        ]
+      },
+      f4: { from: 'agent', text: '好的，还有其他薪酬问题随时问我。', end: true }
     }
   }
 }

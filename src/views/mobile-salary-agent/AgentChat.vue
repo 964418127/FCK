@@ -25,8 +25,8 @@
           <p class="hero-t1">你好，我是薪酬咨询助手</p>
           <p class="hero-t2">只回答你本人已发放工资条的求证，每一笔都走完整还原链。</p>
           <ul class="hero-rules">
-            <li><b>能查</b>：本人最近 3 个月已发放的薪酬项、计算过程与结论</li>
-            <li><b>不查</b>：试算未来收入、他人薪酬、3 个月之前的月份</li>
+            <li><b>能查</b>：本人最近 3 个月已发放的薪酬结论，以及本月算薪前的业务预估</li>
+            <li><b>不查</b>：试算未来月份收入、他人薪酬、3 个月之前的月份</li>
           </ul>
         </div>
         <p class="chips-title">你可以这样问</p>
@@ -84,6 +84,15 @@
                   <span>{{ r.label }}</span>
                   <b>{{ r.value }}</b>
                 </div>
+              </div>
+
+              <!-- 本月业务累计预估卡 -->
+              <div v-if="m.card && m.card.type === 'estimate'" class="estimate-card">
+                <div v-for="r in m.card.rows" :key="r.label" class="ac-row">
+                  <span>{{ r.label }}</span>
+                  <b>{{ r.value }}</b>
+                </div>
+                <p class="est-note">{{ m.card.note }}</p>
               </div>
             </div>
 
@@ -148,7 +157,7 @@ const router = useRouter()
 const quickQuestions = [
   { script: 'piecework', label: '查一下我 11 月上半月的客次提成' },
   { script: 'bean', label: '常乐豆本月结算了多少' },
-  { script: 'forecast', label: '帮我算算下个月能拿多少' }
+  { script: 'estimate', label: '我这个月提成有多少了' }
 ]
 
 function start (id) { openScript(id) }
@@ -237,6 +246,10 @@ function goTickets () { router.push('/mobile-salary-agent/tickets') }
 .ac-row { display: flex; justify-content: space-between; font-size: 13px; color: #595959; padding: 7px 0; }
 .ac-row b { color: #262626; font-weight: 500; }
 .ac-row + .ac-row { border-top: 1px solid #f5f5f5; }
+
+/* 预估卡 */
+.estimate-card { margin-top: 10px; border-top: 1px solid #f5f5f5; padding-top: 10px; }
+.est-note { margin: 8px 0 0; font-size: 11px; color: #854f0b; background: #faeeda; border-radius: 8px; padding: 6px 10px; }
 
 /* 可选回复 */
 .opt-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; width: 100%; }

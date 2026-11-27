@@ -2,9 +2,9 @@
   <DocShell
     :toc-items="tocItems"
     title="6.1 查询范围、数据源与业务事实"
-    subtitle="三类取数通道 → 支撑侧数据源清单 → 业务事实按岗位罗列 → 三个岗位底账"
-    version="v2.6"
-    date="2026-11-24"
+    subtitle="三类取数通道 → 算薪前预估露出 → 支撑侧数据源清单 → 业务事实按岗位罗列 → 三个岗位底账"
+    version="v2.7"
+    date="2026-11-27"
     :breadcrumbs="breadcrumbs"
   >
     <div id="sa-61-three" class="section">
@@ -42,8 +42,36 @@
       <div class="note">
         <strong>为什么政策类答依据：</strong>员工问的不是「保底政策是什么」，而是「适用于我的那个数是多少、依据什么来的」。
         命中依据是求证的核心 —— 员工要的不是再看一遍数字，而是「凭什么」。
-        <br /><strong>业务事实为什么在场：</strong>求证层的还原链路（6.4）需要事实数据做输入——订单实付金额、客次记录
+        <br />        <strong>业务事实为什么在场：</strong>求证层的还原链路（6.4）需要事实数据做输入——订单实付金额、客次记录
         都是员工本人业务，员工本来就经历过，给本人看不构成泄露；给不了的是别人的事实。
+      </div>
+    </div>
+
+    <div id="sa-61-estimate" class="section">
+      <div class="section-header">
+        <h2>算薪前：本月业务预估的露出</h2>
+        <DocCopyButton section-id="sa-61-estimate" />
+      </div>
+      <p class="doc-p">
+        下一个算薪日之前不存在薪酬结果，但算薪日前员工的高频提问是「我这个月提成有多少了」。
+        系统在算薪前有预估数据可用——薪酬未计算前的<strong>非结论性数据</strong>，
+        全部来自既有取数通道（本人业务事实累计 × 政策命中单价），不新增数据源。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width: 220px;">规则</th><th>口径</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>露出什么</strong></td><td>本月业务累计数（如累计到店客次）+ 现行单价 + 由此得到的预估值；只露这三样，不展开内部计算过程</td></tr>
+          <tr><td><strong>必须带的标注</strong></td><td>每张预估回答必带「非结论性预估，最终以工资结算为准」——预估不作为对账依据，结算后以工资条为准</td></tr>
+          <tr><td><strong>与求证链的衔接</strong></td><td>员工追问预估与实发的差异：说明出入来源（未结算扣款与津贴），引导发放后回来查证——发放后每一笔走完整求证链（6.4）</td></tr>
+          <tr><td><strong>时间界线</strong></td><td>只露本月截至当前的累计；未来月份（业务未发生）仍不做；「最近 3 个月」的查询范围不变（6.5）</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>为什么敢露预估：</strong>预估数全部来自员工本人的业务事实与现行政策命中值，这些业务员工本人就经历过；
+        风险不在「给预估」，在「把预估当结论」——结算为准的标注始终在场。
+        <br /><strong>表达原则：</strong>员工侧只见「业务累计 + 预估值 + 结算为准」，内部围墙与判定口径不进员工侧话术。
       </div>
     </div>
 
@@ -270,6 +298,7 @@ import DocCopyButton from '../../../docs/components/DocCopyButton.vue'
 
 const tocItems = [
   { id: 'sa-61-three', label: '三类取数通道' },
+  { id: 'sa-61-estimate', label: '算薪前预估露出' },
   { id: 'sa-61-src', label: '支撑侧数据源清单' },
   { id: 'sa-61-facts', label: '业务事实与标准值' },
   { id: 'sa-61-post', label: '岗位底账' },

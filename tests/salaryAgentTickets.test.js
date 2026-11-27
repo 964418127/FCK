@@ -108,6 +108,30 @@ test('对话脚本：主脚本节点引用完整、成单链路可达', () => {
   assert.ok(visited.has('hold'), '从入口应可达「暂不提交」节点')
 })
 
+test('对话脚本：算薪前走业务预估露出（非结论性、以工资结算为准）', () => {
+  const est = DIALOG_SCRIPTS.estimate
+  assert.ok(est, 'estimate 脚本存在（forecast 已替换）')
+  const texts = Object.values(est.nodes).map(n => n.text || '').join('\n')
+  assert.match(texts, /算薪/)
+  assert.match(texts, /工资发放后/)
+  const card = est.nodes.f2.card
+  assert.equal(card.type, 'estimate')
+  assert.match(card.note, /非结论性预估/)
+  assert.match(card.note, /工资结算为准/)
+  assert.equal(card.rows.length, 3)
+  // 预估与求证链衔接：从入口可达收尾节点
+  const visited = new Set()
+  const walk = (id) => {
+    if (visited.has(id) || !est.nodes[id]) return
+    visited.add(id)
+    const n = est.nodes[id]
+    if (n.next) walk(n.next)
+    for (const o of n.options || []) walk(o.next)
+  }
+  walk(est.entry)
+  assert.ok(visited.has('f4'), '预估脚本可正常收尾')
+})
+
 test('对话脚本：常乐豆查完即结论，无解释入口、无围墙词汇泄到员工侧', () => {
   const bean = DIALOG_SCRIPTS.bean
   const texts = Object.values(bean.nodes).map(n => n.text || '').join('\n')
