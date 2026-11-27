@@ -455,3 +455,123 @@ export function buildTicketFromCtx (ctx, tickets, now = TODAY) {
     reply: null
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* 咨询会话与生命周期                                                    */
+/* ------------------------------------------------------------------ */
+
+/** 会话自动结束标准：最近咨询无工单 → 末次咨询起 24h；有工单 → 工单结案起 24h（未结案不自动结束） */
+export const AUTO_END_HOURS = 24
+
+export function tsOf (s) {
+  if (typeof s === 'number') return s
+  return Date.parse(String(s || '').replace(' ', 'T'))
+}
+
+/** 时间推进工具（演示用）：把 'YYYY-MM-DD HH:mm' 加 n 小时，格式不变 */
+export function addHours (s, n) {
+  const d = new Date(tsOf(s))
+  d.setHours(d.getHours() + n)
+  const p = (x) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+/**
+ * 会话的自动结束判定（纯函数，不修改入参）：
+ * - 无工单会话：最后一次咨询（updatedAt）起 24h 后结束
+ * - 有工单会话：工单结案（reply.at）起 24h 后结束；工单未结案时永不自动结束
+ * - status 已标记 ended 的（手动新建替代、人工收口）直接返回已结束
+ * 返回 { ended, basis, deadline, reason }，basis=chat|ticket|ticket-open|manual
+ */
+export function sessionEndInfo (session, tickets = [], now = TODAY) {
+  if (!session) return { ended: false, basis: null, deadline: null, reason: null }
+  if (session.status === 'ended') {
+    return { ended: true, basis: 'manual', deadline: session.endedAt || null, reason: session.endReason || 'manual' }
+  }
+  const ticket = session.ticketId ? tickets.find(t => t.id === session.ticketId) : null
+  let basis, base, reason
+  if (!ticket) {
+    basis = 'chat'
+    base = session.updatedAt
+    reason = 'timeout-no-ticket'
+  } else if (ticket.status !== 'closed') {
+    return { ended: false, basis: 'ticket-open', deadline: null, reason: 'ticket-open' }
+  } else {
+    basis = 'ticket'
+    base = (ticket.reply && ticket.reply.at) || session.updatedAt
+    reason = 'timeout-after-closed'
+  }
+  const deadline = addHours(base, AUTO_END_HOURS)
+  return { ended: tsOf(now) >= tsOf(deadline), basis, deadline, reason }
+}
+
+/** 会话状态文案（员工侧中性表达，不露「自动结束机制」内部词） */
+export function sessionStatusLabel (session, tickets, now) {
+  const info = sessionEndInfo(session, tickets, now)
+  if (info.ended) return '已结束'
+  return '进行中'
+}
+
+export function nextSessionId (sessions) {
+  const nums = sessions.map(s => Number(String(s.id).replace(/\D/g, '')) || 0)
+  return `C-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`
+}
+
+/** 从脚本截取会话快照：用于种子历史会话（消息与脚本同源，不另造数据） */
+function snapshotScript (scriptId, uptoNodeId, at, id, extra = {}) {
+  const script = DIALOG_SCRIPTS[scriptId]
+  const messages = []
+  const ctx = {}
+  const appendAgent = (node) => {
+    if (!node) return
+    messages.push({ from: 'agent', text: node.text, card: node.card || null, options: node.options || null, ticketLink: !!node.ticketLink })
+  }
+  let nodeId = script.entry
+  const first = script.nodes[nodeId]
+  if (first.from === 'user') {
+    messages.push({ from: 'user', text: first.text })
+    nodeId = first.next
+    appendAgent(script.nodes[nodeId])
+  } else {
+    appendAgent(first)
+  }
+  let guard = 0
+  while (nodeId !== uptoNodeId && guard++ < 30) {
+    const node = script.nodes[nodeId]
+    if (!node) break
+    const opt = node.options && node.options[0]
+    if (!opt) break
+    messages.push({ from: 'user', text: opt.label, shots: (opt.meta && opt.meta.shots) || null })
+    if (opt.meta) Object.assign(ctx, opt.meta)
+    if (opt.action === 'confirm-ticket') break
+    nodeId = opt.next
+    appendAgent(script.nodes[nodeId])
+  }
+  return {
+    id, scriptId, title: messages[0] ? messages[0].text : '薪酬咨询',
+    nodeId, messages, ctx, createdAt: at, updatedAt: at,
+    ended: !!script.nodes[nodeId] && !!script.nodes[nodeId].end,
+    pendingConfirm: false, createdTicketId: null, ticketId: null,
+    status: 'active', endReason: null, endedAt: null,
+    ...extra
+  }
+}
+
+/** 种子历史会话：一条进行中（主脚本走到归因）、一条超时结束（常乐豆，2 天前） */
+export function buildSeedSessions () {
+  return [
+    snapshotScript('piecework', 'a2', '2026-11-27 15:20', 'C-001'),
+    snapshotScript('bean', 'b3', '2026-11-25 10:12', 'C-002', {
+      status: 'ended', endReason: 'timeout-no-ticket', endedAt: '2026-11-26 10:12'
+    })
+  ]
+}
+
+/** 新建一条空会话（欢迎态选问题后才写入消息） */
+export function buildNewSession (id, at = TODAY) {
+  return {
+    id, scriptId: null, title: '新咨询', nodeId: null, messages: [], ctx: {},
+    createdAt: at, updatedAt: at, ended: false, pendingConfirm: false,
+    createdTicketId: null, ticketId: null, status: 'active', endReason: null, endedAt: null
+  }
+}

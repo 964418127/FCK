@@ -34,6 +34,8 @@ async function main () {
     await new Promise(r => setTimeout(r, 500))
   }
 
+  // 打开会恢复最近进行中的历史会话，先新建对话回到欢迎态
+  await clickByText('.sb-new', '新建对话')
   await clickByText('.chips button', '客次提成')
   await clickByText('.opt-btn', '客次提成不对')
   await clickByText('.opt-btn', '金额算错了')

@@ -10,6 +10,11 @@ import { reactive, ref, computed } from 'vue'
 import {
   buildSeedTickets,
   buildTicketFromCtx,
+  buildSeedSessions,
+  buildNewSession,
+  nextSessionId,
+  sessionEndInfo,
+  addHours,
   DIALOG_SCRIPTS,
   MONTHLY_QUOTA,
   MONTH_NOW,
@@ -18,11 +23,20 @@ import {
   nextTicketId
 } from './salaryAgentTickets.js'
 
+const DEMO_NOW_INIT = '2026-11-27 16:00'
+
 const state = reactive({
   tickets: buildSeedTickets(),
-  dialog: null, // { scriptId, nodeId, messages: [], ctx: {}, ended, pendingConfirm }
+  sessions: buildSeedSessions(), // 咨询会话列表（会话级生命周期）
+  currentSessionId: null, // null = 欢迎态（新对话）
+  demoNow: DEMO_NOW_INIT, // 演示「当前时间」，可推进以展示 24h 自动结束
   meId: 'E-107'
 })
+
+/** 当前打开的会话对象（兼容原 dialog 的字段访问） */
+function currentSession () {
+  return state.sessions.find(s => s.id === state.currentSessionId) || null
+}
 
 /* ---------------- 身份与额度 ---------------- */
 
@@ -61,24 +75,78 @@ export const allTickets = computed(() =>
 
 const DEMO_EMPLOYEE = { id: 'E-107', name: '蓝田', position: '全职推拿师' }
 
-export const dialog = computed(() => state.dialog)
-export const dialogPendingConfirm = computed(() => !!(state.dialog && state.dialog.pendingConfirm))
-export const dialogTicketCreated = computed(() => state.dialog ? state.dialog.createdTicketId : null)
+/** 演示当前时间（可推进，用于展示 24h 自动结束） */
+export const demoNow = computed(() => state.demoNow)
+export function advanceDemoHours (n) { state.demoNow = addHours(state.demoNow, n) }
+export function resetDemoTime () { state.demoNow = DEMO_NOW_INIT }
 
+export const dialog = computed(() => currentSession())
+export const dialogPendingConfirm = computed(() => {
+  const d = currentSession()
+  return !!(d && d.pendingConfirm)
+})
+export const dialogTicketCreated = computed(() => {
+  const d = currentSession()
+  return d ? d.createdTicketId : null
+})
+
+/** 会话列表（倒序 + 实时自动结束判定） */
+export const sessionList = computed(() =>
+  state.sessions
+    .slice()
+    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+    .map(s => ({ ...s, endInfo: sessionEndInfo(s, state.tickets, state.demoNow) }))
+)
+/** 当前会话的自动结束判定 */
+export const currentEndInfo = computed(() => sessionEndInfo(currentSession(), state.tickets, state.demoNow))
+
+/** 进入助手页：恢复到最近一条「进行中」会话；没有则新对话（欢迎态） */
+export function resumeLastSession () {
+  const alive = state.sessions
+    .filter(s => s.status === 'active' && s.messages.length && !sessionEndInfo(s, state.tickets, state.demoNow).ended)
+    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+  state.currentSessionId = alive.length ? alive[0].id : null
+}
+
+/** 新建对话：当前会话置空，回欢迎态（原会话保留在历史里） */
+export function newDialog () { state.currentSessionId = null }
+export const resetDialog = newDialog // 兼容旧调用
+
+/** 从历史对话加载：指定会话成为当前会话 */
+export function loadSession (id) {
+  if (state.sessions.some(s => s.id === id)) state.currentSessionId = id
+}
+
+/** 手动收口会话（原型演示用） */
+export function endSession (id) {
+  const s = state.sessions.find(s => s.id === id)
+  if (s && s.status === 'active') {
+    s.status = 'ended'
+    s.endReason = 'manual'
+    s.endedAt = state.demoNow
+  }
+}
+
+function touch (d) { if (d) d.updatedAt = state.demoNow }
+
+/** 发起新咨询：新建一条会话并推进到脚本首个助手节点 */
 export function openScript (scriptId) {
   const script = DIALOG_SCRIPTS[scriptId]
   if (!script) return
+  const session = buildNewSession(nextSessionId(state.sessions), state.demoNow)
   const first = script.nodes[script.entry]
   const messages = []
   if (first.from === 'user') {
     messages.push({ from: 'user', text: first.text })
     const next = script.nodes[first.next]
     pushAgentNode(messages, next)
-    state.dialog = { scriptId, nodeId: first.next, messages, ctx: {}, ended: !!next.end, pendingConfirm: false, createdTicketId: null }
+    Object.assign(session, { scriptId, nodeId: first.next, messages, ended: !!next.end })
   } else {
     pushAgentNode(messages, first)
-    state.dialog = { scriptId, nodeId: script.entry, messages, ctx: {}, ended: !!first.end, pendingConfirm: false, createdTicketId: null }
+    Object.assign(session, { scriptId, nodeId: script.entry, messages, ended: !!first.end })
   }
+  state.sessions.push(session)
+  state.currentSessionId = session.id
 }
 
 function pushAgentNode (messages, node) {
@@ -94,8 +162,8 @@ function pushAgentNode (messages, node) {
 
 /** 点击选项：追加用户气泡（含截图条目），合并 meta，推进下一节点 */
 export function pickOption (optionIndex) {
-  const d = state.dialog
-  if (!d || d.ended || d.pendingConfirm) return
+  const d = currentSession()
+  if (!d || d.ended || d.pendingConfirm || currentEndInfo.value.ended) return
   const script = DIALOG_SCRIPTS[d.scriptId]
   const node = script.nodes[d.nodeId]
   const opt = node && node.options && node.options[optionIndex]
@@ -115,34 +183,34 @@ export function pickOption (optionIndex) {
   advanceTo(script, opt.next)
 }
 
-/** 成单确认弹层点「确认提交」：扣额度、生成工单、推进到 done 节点 */
+/** 成单确认弹层点「确认提交」：扣额度、生成工单、关联会话、推进到 done 节点 */
 export function confirmCreateTicket () {
-  const d = state.dialog
+  const d = currentSession()
   if (!d || !d.pendingConfirm) return
   const script = DIALOG_SCRIPTS[d.scriptId]
   const ticket = buildTicketFromCtx(d.ctx, state.tickets)
   state.tickets.push(ticket)
   d.pendingConfirm = false
   d.createdTicketId = ticket.id
+  d.ticketId = ticket.id
   advanceTo(script, 'done')
 }
 
 /** 成单确认弹层点「再想想」：回到选项状态 */
 export function cancelCreateTicket () {
-  const d = state.dialog
+  const d = currentSession()
   if (d) d.pendingConfirm = false
 }
 
 function advanceTo (script, nodeId) {
-  const d = state.dialog
+  const d = currentSession()
   const next = script.nodes[nodeId]
   d.nodeId = nodeId
+  touch(d)
   if (!next) { d.ended = true; return }
   pushAgentNode(d.messages, next)
   if (next.end) d.ended = true
 }
-
-export function resetDialog () { state.dialog = null }
 
 /** 当前演示身份（对话页页头展示） */
 export const demoEmployee = DEMO_EMPLOYEE

@@ -11,6 +11,7 @@
     <header class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>薪酬咨询助手</h1>
+      <button class="hdr-link ghost" @click="goHistory">历史</button>
       <button class="hdr-link" @click="goTickets">我的工单</button>
     </header>
 
@@ -28,6 +29,7 @@
             <li><b>能查</b>：本人最近 3 个月已发放的薪酬结论，以及本月算薪前的业务预估</li>
             <li><b>不查</b>：试算未来月份收入、他人薪酬、3 个月之前的月份</li>
           </ul>
+          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在「历史」中查看。</p>
         </div>
         <p class="chips-title">你可以这样问</p>
         <div class="chips">
@@ -42,6 +44,17 @@
 
       <!-- ============ 对话态 ============ -->
       <template v-else>
+        <!-- 会话状态条：随时可新建对话，已结束会话只读 -->
+        <div class="session-bar">
+          <span class="sb-state" :class="{ ended: currentEndInfo.ended }">
+            {{ currentEndInfo.ended ? '该咨询已结束' : '咨询进行中' }}
+          </span>
+          <button class="sb-new" @click="newDialog">新建对话</button>
+        </div>
+        <div v-if="currentEndInfo.ended" class="ended-tip">
+          这条咨询已结束，可在「历史」中查看记录。继续咨询请新建对话。
+        </div>
+
         <div
           v-for="(m, i) in dialog.messages"
           :key="i"
@@ -96,8 +109,8 @@
               </div>
             </div>
 
-            <!-- 可选回复（只出现在最后一条助手消息上） -->
-            <div v-if="hasOptions(m, i)" class="opt-group">
+            <!-- 可选回复（只出现在最后一条助手消息上；已结束会话不显示） -->
+            <div v-if="hasOptions(m, i) && !currentEndInfo.ended" class="opt-group">
               <button
                 v-for="(o, oi) in m.options"
                 :key="oi"
@@ -113,8 +126,8 @@
           </template>
         </div>
 
-        <div v-if="dialog.ended" class="re-run">
-          <button class="opt-btn ghost" @click="resetDialog">返回，换个问题</button>
+        <div v-if="dialog.ended && !currentEndInfo.ended" class="re-run">
+          <button class="opt-btn ghost" @click="newDialog">换个问题，新建对话</button>
         </div>
       </template>
     </div>
@@ -147,12 +160,20 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
-import { dialog, dialogPendingConfirm, openScript, pickOption, confirmCreateTicket, cancelCreateTicket, resetDialog, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
+import { dialog, dialogPendingConfirm, currentEndInfo, openScript, pickOption, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
+const route = useRoute()
+
+// 进入页面：从历史指定会话则加载它；否则恢复最近一条进行中会话；没有则欢迎态
+onMounted(() => {
+  const sid = route.query.session
+  if (sid) loadSession(sid)
+  else resumeLastSession()
+})
 
 const quickQuestions = [
   { script: 'piecework', label: '查一下我 11 月上半月的客次提成' },
@@ -183,6 +204,7 @@ watch(() => (dialogState.value ? dialogState.value.messages.length : 0), async (
 
 function goBack () { router.push('/mobile-menu') }
 function goTickets () { router.push('/mobile-salary-agent/tickets') }
+function goHistory () { router.push('/mobile-salary-agent/history') }
 </script>
 
 <style scoped>
@@ -191,6 +213,16 @@ function goTickets () { router.push('/mobile-salary-agent/tickets') }
 .page-header h1 { font-size: 16px; font-weight: 500; color: #262626; flex: 1; margin: 0; }
 .back-icon { font-size: 20px; color: #595959; }
 .hdr-link { border: none; background: #fceff2; color: #a40035; font-size: 12px; padding: 6px 10px; border-radius: 14px; }
+.hdr-link.ghost { background: #f5f5f5; color: #595959; }
+
+.hero-keep { margin: 10px 0 0; font-size: 11px; color: #bfbfbf; line-height: 1.6; }
+
+/* 会话状态条 */
+.session-bar { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #f0d5dc; border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; }
+.sb-state { font-size: 12px; color: #a40035; }
+.sb-state.ended { color: #8c8c8c; }
+.sb-new { border: none; background: #fceff2; color: #a40035; font-size: 12px; padding: 5px 10px; border-radius: 12px; }
+.ended-tip { background: #f5f5f5; color: #8c8c8c; font-size: 12px; line-height: 1.6; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 
 .chat-scroll { flex: 1; padding: 14px 12px 12px; overflow-y: auto; }
 

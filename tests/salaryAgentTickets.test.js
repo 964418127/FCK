@@ -8,7 +8,10 @@ import {
   evaluatePriority,
   buildTicketFromCtx,
   statusLabel,
-  DIALOG_SCRIPTS
+  DIALOG_SCRIPTS,
+  addHours,
+  sessionEndInfo,
+  buildSeedSessions
 } from '../src/mock/salaryAgentTickets.js'
 
 test('种子工单：2026-11 蓝田无工单，额度满额可用', () => {
@@ -145,6 +148,47 @@ test('对话脚本：常乐豆查完即结论，无解释入口、无围墙词�
   const account = b2.card
   assert.equal(account.rows.length, 3, '账户级三数：本月结算 / 可用余额 / 提现冻结')
   assert.equal(account.note, undefined, '卡内不得带围墙注释')
+})
+
+test('会话生命周期：无工单按末次咨询起 24h 自动结束', () => {
+  const s = { status: 'active', updatedAt: '2026-11-27 15:20', ticketId: null }
+  assert.equal(sessionEndInfo(s, [], '2026-11-28 15:19').ended, false)
+  const hit = sessionEndInfo(s, [], '2026-11-28 15:20')
+  assert.equal(hit.ended, true)
+  assert.equal(hit.basis, 'chat')
+  assert.equal(hit.deadline, '2026-11-28 15:20')
+})
+
+test('会话生命周期：有工单未结案，超 24h 也不自动结束', () => {
+  const s = { status: 'active', updatedAt: '2026-11-20 10:00', ticketId: 'T-1' }
+  const tickets = [{ id: 'T-1', status: 'processing' }]
+  const info = sessionEndInfo(s, tickets, '2026-11-30 10:00')
+  assert.equal(info.ended, false)
+  assert.equal(info.basis, 'ticket-open')
+})
+
+test('会话生命周期：有工单按结案时刻起 24h 结束，不按咨询时刻', () => {
+  const s = { status: 'active', updatedAt: '2026-11-20 10:00', ticketId: 'T-1' }
+  const tickets = [{ id: 'T-1', status: 'closed', reply: { at: '2026-11-27 09:00' } }]
+  assert.equal(sessionEndInfo(s, tickets, '2026-11-28 08:59').ended, false)
+  const hit = sessionEndInfo(s, tickets, '2026-11-28 09:00')
+  assert.equal(hit.ended, true)
+  assert.equal(hit.basis, 'ticket')
+  assert.equal(hit.deadline, '2026-11-28 09:00')
+})
+
+test('会话生命周期：已标记 ended 的会话始终返回已结束', () => {
+  const s = { status: 'ended', endReason: 'timeout-no-ticket', endedAt: '2026-11-26 10:12' }
+  assert.equal(sessionEndInfo(s, [], '2026-11-27 10:00').ended, true)
+})
+
+test('种子会话：一条进行中、一条已结束；加 24h 后主会话结束', () => {
+  const sessions = buildSeedSessions()
+  assert.equal(sessions.length, 2)
+  assert.equal(sessionEndInfo(sessions[0], [], '2026-11-27 16:00').ended, false)
+  assert.equal(sessionEndInfo(sessions[1], [], '2026-11-27 16:00').ended, true)
+  assert.equal(sessionEndInfo(sessions[0], [], '2026-11-28 15:20').ended, true)
+  assert.equal(addHours('2026-11-27 15:20', 24), '2026-11-28 15:20')
 })
 
 test('员工侧防泄漏：对话脚本不得出现内部机制词汇', () => {

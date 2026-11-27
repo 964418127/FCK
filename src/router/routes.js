@@ -899,6 +899,14 @@ export const routes = [
     }
   },
   {
+    path: '/mobile-salary-agent/history',
+    name: 'mobile-salary-agent-history',
+    component: () => import('../views/mobile-salary-agent/AgentHistory.vue'),
+    meta: {
+      title: '历史咨询'
+    }
+  },
+  {
     path: '/mobile-store-hanging',
     name: 'mobile-store-hanging',
     component: () => import('../views/MobileStoreHanging.vue'),
