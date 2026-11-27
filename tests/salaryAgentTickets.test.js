@@ -177,6 +177,16 @@ test('会话生命周期：有工单按结案时刻起 24h 结束，不按咨询
   assert.equal(hit.deadline, '2026-11-28 09:00')
 })
 
+test('会话生命周期：继续对话后从继续时刻重新保留 24h', () => {
+  // 已结束的会话（2 天前末次咨询），继续对话后不应再判为已结束
+  const s = { status: 'active', updatedAt: '2026-11-25 10:12', resumedAt: '2026-11-27 16:00', ticketId: null }
+  assert.equal(sessionEndInfo(s, [], '2026-11-27 16:00').ended, false)
+  assert.equal(sessionEndInfo(s, [], '2026-11-28 15:59').ended, false)
+  const hit = sessionEndInfo(s, [], '2026-11-28 16:00')
+  assert.equal(hit.ended, true)
+  assert.equal(hit.basis, 'resume')
+})
+
 test('会话生命周期：已标记 ended 的会话始终返回已结束', () => {
   const s = { status: 'ended', endReason: 'timeout-no-ticket', endedAt: '2026-11-26 10:12' }
   assert.equal(sessionEndInfo(s, [], '2026-11-27 10:00').ended, true)

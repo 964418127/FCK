@@ -11,8 +11,6 @@
     <header class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>薪酬咨询助手</h1>
-      <button class="hdr-link ghost" @click="goHistory">历史</button>
-      <button class="hdr-link" @click="goTickets">我的工单</button>
     </header>
 
     <div class="chat-scroll" ref="scrollEl">
@@ -29,30 +27,21 @@
             <li><b>能查</b>：本人最近 3 个月已发放的薪酬结论，以及本月算薪前的业务预估</li>
             <li><b>不查</b>：试算未来月份收入、他人薪酬、3 个月之前的月份</li>
           </ul>
-          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在「历史」中查看。</p>
+          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在底部「历史记录」查看。</p>
+          <p class="hero-quota">本月工单可提交 <b>{{ monthlyLeft }}/2</b> 次，提交工单会占用次数。</p>
         </div>
         <p class="chips-title">你可以这样问</p>
         <div class="chips">
           <button v-for="q in quickQuestions" :key="q.script" @click="start(q.script)">{{ q.label }}</button>
         </div>
-        <button class="ticket-entry" @click="goTickets">
-          <span class="te-main">我的工单</span>
-          <span class="te-quota">本月额度剩 {{ monthlyLeft }}/2</span>
-          <el-icon><ArrowRight /></el-icon>
-        </button>
       </div>
 
       <!-- ============ 对话态 ============ -->
       <template v-else>
-        <!-- 会话状态条：随时可新建对话，已结束会话只读 -->
-        <div class="session-bar">
-          <span class="sb-state" :class="{ ended: currentEndInfo.ended }">
-            {{ currentEndInfo.ended ? '该咨询已结束' : '咨询进行中' }}
-          </span>
-          <button class="sb-new" @click="newDialog">新建对话</button>
-        </div>
-        <div v-if="currentEndInfo.ended" class="ended-tip">
-          这条咨询已结束，可在「历史」中查看记录。继续咨询请新建对话。
+        <!-- 查看历史记录态：只读提示，继续对话入口在底部功能区 -->
+        <div v-if="isViewingHistory" class="history-view-tip">
+          <span class="hv-icon">历史记录</span>
+          这是已结束的咨询，可查看当时的解答。要在此基础上继续，点下方「继续对话」。
         </div>
 
         <div
@@ -132,9 +121,24 @@
       </template>
     </div>
 
-    <!-- 演示输入条 -->
-    <div class="chat-input-bar">
-      <span>演示原型 · 点击对话中的回复选项推进</span>
+    <!-- 对话框附近的功能区：常见功能入口都在这里，不在页头堆按钮 -->
+    <div class="dock">
+      <!-- 查看历史记录态：继续对话为主操作 -->
+      <button v-if="isViewingHistory" class="dock-primary" @click="doContinue">
+        <el-icon><ChatDotRound /></el-icon>继续对话
+      </button>
+      <div class="dock-tools">
+        <button class="dock-tool" @click="goHistory">
+          <el-icon><Clock /></el-icon><span>历史记录</span>
+        </button>
+        <button class="dock-tool" @click="goTickets">
+          <el-icon><Tickets /></el-icon><span>我的工单</span>
+        </button>
+        <button class="dock-tool" @click="newDialog">
+          <el-icon><Plus /></el-icon><span>新建对话</span>
+        </button>
+      </div>
+      <p class="dock-hint">演示原型 · 点击对话中的回复选项推进</p>
     </div>
 
     <!-- 成单确认弹层 -->
@@ -162,8 +166,8 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
-import { dialog, dialogPendingConfirm, currentEndInfo, openScript, pickOption, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
+import { ArrowLeft, ArrowRight, Clock, Tickets, Plus, ChatDotRound } from '@element-plus/icons-vue'
+import { dialog, dialogPendingConfirm, currentEndInfo, isViewingHistory, openScript, pickOption, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, continueSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -205,6 +209,10 @@ watch(() => (dialogState.value ? dialogState.value.messages.length : 0), async (
 function goBack () { router.push('/mobile-menu') }
 function goTickets () { router.push('/mobile-salary-agent/tickets') }
 function goHistory () { router.push('/mobile-salary-agent/history') }
+function doContinue () {
+  if (!dialog.value) return
+  continueSession(dialog.value.id)
+}
 </script>
 
 <style scoped>
@@ -212,17 +220,14 @@ function goHistory () { router.push('/mobile-salary-agent/history') }
 .page-header { position: sticky; top: 0; z-index: 10; height: 48px; background: #fff; display: flex; align-items: center; padding: 0 12px; gap: 8px; border-bottom: 1px solid #f0e7ea; }
 .page-header h1 { font-size: 16px; font-weight: 500; color: #262626; flex: 1; margin: 0; }
 .back-icon { font-size: 20px; color: #595959; }
-.hdr-link { border: none; background: #fceff2; color: #a40035; font-size: 12px; padding: 6px 10px; border-radius: 14px; }
-.hdr-link.ghost { background: #f5f5f5; color: #595959; }
 
 .hero-keep { margin: 10px 0 0; font-size: 11px; color: #bfbfbf; line-height: 1.6; }
+.hero-quota { margin: 6px 0 0; font-size: 11px; color: #8c8c8c; }
+.hero-quota b { color: #a40035; }
 
-/* 会话状态条 */
-.session-bar { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #f0d5dc; border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; }
-.sb-state { font-size: 12px; color: #a40035; }
-.sb-state.ended { color: #8c8c8c; }
-.sb-new { border: none; background: #fceff2; color: #a40035; font-size: 12px; padding: 5px 10px; border-radius: 12px; }
-.ended-tip { background: #f5f5f5; color: #8c8c8c; font-size: 12px; line-height: 1.6; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+/* 查看历史记录态提示 */
+.history-view-tip { display: flex; align-items: flex-start; gap: 8px; background: #f5f5f5; color: #8c8c8c; font-size: 12px; line-height: 1.6; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.hv-icon { flex: none; font-size: 11px; color: #5f5e5a; background: #e8e6e0; border-radius: 6px; padding: 1px 6px; }
 
 .chat-scroll { flex: 1; padding: 14px 12px 12px; overflow-y: auto; }
 
@@ -239,10 +244,6 @@ function goHistory () { router.push('/mobile-salary-agent/history') }
 .chips-title { font-size: 12px; color: #8c8c8c; margin: 16px 2px 8px; }
 .chips { display: flex; flex-direction: column; gap: 8px; }
 .chips button { text-align: left; background: #fff; border: 1px solid #f0d5dc; color: #434343; font-size: 13px; padding: 12px 14px; border-radius: 12px; }
-.ticket-entry { width: 100%; margin-top: 16px; display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #f0d5dc; border-radius: 12px; padding: 12px 14px; }
-.te-main { font-size: 14px; color: #262626; font-weight: 500; }
-.te-quota { font-size: 12px; color: #a40035; background: #fceff2; border-radius: 10px; padding: 2px 8px; }
-.ticket-entry .el-icon { margin-left: auto; color: #bfbfbf; }
 
 /* 消息流 */
 .msg-row { display: flex; flex-direction: column; margin-bottom: 14px; }
@@ -293,7 +294,13 @@ function goHistory () { router.push('/mobile-salary-agent/history') }
 .ticket-link { display: flex; align-items: center; gap: 4px; margin-top: 10px; background: #fceff2; border: none; color: #a40035; font-size: 13px; padding: 10px 14px; border-radius: 12px; }
 
 /* 输入条（演示假条） */
-.chat-input-bar { flex: none; background: #fff; border-top: 1px solid #f0f0f0; padding: 12px 14px; text-align: center; font-size: 12px; color: #bfbfbf; }
+/* 对话框附近的功能区 */
+.dock { flex: none; background: #fff; border-top: 1px solid #f0f0f0; padding: 8px 12px 10px; }
+.dock-primary { width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #c31450, #a40035); color: #fff; border: none; border-radius: 10px; padding: 10px 0; font-size: 13px; margin-bottom: 8px; }
+.dock-tools { display: flex; }
+.dock-tool { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; color: #595959; font-size: 11px; padding: 4px 0; }
+.dock-tool .el-icon { font-size: 18px; color: #a40035; }
+.dock-hint { text-align: center; font-size: 11px; color: #bfbfbf; margin: 6px 0 0; }
 
 /* 自写底部弹层 */
 .sheet-mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; z-index: 200; }

@@ -90,20 +90,26 @@ export const dialogTicketCreated = computed(() => {
   return d ? d.createdTicketId : null
 })
 
-/** 会话列表（倒序 + 实时自动结束判定） */
-export const sessionList = computed(() =>
+/** 历史咨询 = 全部已结束会话（进行中的就是当前对话，不进历史） */
+export const historySessions = computed(() =>
   state.sessions
+    .filter(s => sessionEndInfo(s, state.tickets, state.demoNow).ended)
     .slice()
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
     .map(s => ({ ...s, endInfo: sessionEndInfo(s, state.tickets, state.demoNow) }))
 )
 /** 当前会话的自动结束判定 */
 export const currentEndInfo = computed(() => sessionEndInfo(currentSession(), state.tickets, state.demoNow))
+/** 当前会话是否是「已结束、正在查看历史记录」的状态 */
+export const isViewingHistory = computed(() => {
+  const d = currentSession()
+  return !!d && currentEndInfo.value.ended
+})
 
 /** 进入助手页：恢复到最近一条「进行中」会话；没有则新对话（欢迎态） */
 export function resumeLastSession () {
   const alive = state.sessions
-    .filter(s => s.status === 'active' && s.messages.length && !sessionEndInfo(s, state.tickets, state.demoNow).ended)
+    .filter(s => s.messages.length && !sessionEndInfo(s, state.tickets, state.demoNow).ended)
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
   state.currentSessionId = alive.length ? alive[0].id : null
 }
@@ -112,9 +118,25 @@ export function resumeLastSession () {
 export function newDialog () { state.currentSessionId = null }
 export const resetDialog = newDialog // 兼容旧调用
 
-/** 从历史对话加载：指定会话成为当前会话 */
+/** 从历史对话加载：查看历史记录（只读，除非再点「继续对话」） */
 export function loadSession (id) {
   if (state.sessions.some(s => s.id === id)) state.currentSessionId = id
+}
+
+/**
+ * 继续对话：把一条已结束会话重新激活为当前对话。
+ * 规则：从「继续的时刻」起重新保留 24h（resumedAt 覆盖原基准），状态回到进行中。
+ */
+export function continueSession (id) {
+  const s = state.sessions.find(s => s.id === id)
+  if (!s) return
+  s.resumedAt = state.demoNow
+  s.updatedAt = state.demoNow
+  s.status = 'active'
+  s.endReason = null
+  s.endedAt = null
+  if (s.ended) s.ended = false // 脚本走到终点的，重新给一次推进机会
+  state.currentSessionId = id
 }
 
 /** 手动收口会话（原型演示用） */

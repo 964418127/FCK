@@ -478,19 +478,25 @@ export function addHours (s, n) {
 
 /**
  * 会话的自动结束判定（纯函数，不修改入参）：
+ * - 已「继续对话」的会话：从继续时刻（resumedAt）起重新保留 24h，覆盖原基准
  * - 无工单会话：最后一次咨询（updatedAt）起 24h 后结束
  * - 有工单会话：工单结案（reply.at）起 24h 后结束；工单未结案时永不自动结束
- * - status 已标记 ended 的（手动新建替代、人工收口）直接返回已结束
- * 返回 { ended, basis, deadline, reason }，basis=chat|ticket|ticket-open|manual
+ * - status 已标记 ended 的（人工收口）直接返回已结束
+ * 返回 { ended, basis, deadline, reason }，basis=resume|chat|ticket|ticket-open|manual
  */
 export function sessionEndInfo (session, tickets = [], now = TODAY) {
   if (!session) return { ended: false, basis: null, deadline: null, reason: null }
-  if (session.status === 'ended') {
+  const resumedAt = session.resumedAt
+  if (!resumedAt && session.status === 'ended') {
     return { ended: true, basis: 'manual', deadline: session.endedAt || null, reason: session.endReason || 'manual' }
   }
   const ticket = session.ticketId ? tickets.find(t => t.id === session.ticketId) : null
   let basis, base, reason
-  if (!ticket) {
+  if (resumedAt) {
+    basis = 'resume'
+    base = resumedAt
+    reason = 'timeout-after-resume'
+  } else if (!ticket) {
     basis = 'chat'
     base = session.updatedAt
     reason = 'timeout-no-ticket'
@@ -552,7 +558,7 @@ function snapshotScript (scriptId, uptoNodeId, at, id, extra = {}) {
     nodeId, messages, ctx, createdAt: at, updatedAt: at,
     ended: !!script.nodes[nodeId] && !!script.nodes[nodeId].end,
     pendingConfirm: false, createdTicketId: null, ticketId: null,
-    status: 'active', endReason: null, endedAt: null,
+    status: 'active', endReason: null, endedAt: null, resumedAt: null,
     ...extra
   }
 }
@@ -572,6 +578,6 @@ export function buildNewSession (id, at = TODAY) {
   return {
     id, scriptId: null, title: '新咨询', nodeId: null, messages: [], ctx: {},
     createdAt: at, updatedAt: at, ended: false, pendingConfirm: false,
-    createdTicketId: null, ticketId: null, status: 'active', endReason: null, endedAt: null
+    createdTicketId: null, ticketId: null, status: 'active', endReason: null, endedAt: null, resumedAt: null
   }
 }
