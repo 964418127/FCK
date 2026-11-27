@@ -1,5 +1,5 @@
 <!--
-  移动端 · 薪酬咨询助手（员工侧 · 历史咨询）
+  移动端 · 薪酬咨询助手（员工侧 · 历史对话）
   这里全部是「已结束」的咨询（进行中的就是当前对话，不进历史）。
   点一条 = 查看当时的记录（只读）；要继续，到对话页底部功能区点「继续对话」更新状态。
   时间推进控件是演示辅具，仅在 ?dev=1 时出现，正常员工侧不露。
@@ -9,7 +9,7 @@
   <div class="m-page">
     <header class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
-      <h1>历史咨询</h1>
+      <h1>历史对话</h1>
     </header>
 
     <div class="content-container">
@@ -27,7 +27,7 @@
 
       <div class="section-title-row">
         <span class="red-bar"></span>
-        <span class="section-title">历史记录</span>
+        <span class="section-title">历史对话</span>
         <span class="title-count">{{ historySessions.length }} 条</span>
       </div>
 

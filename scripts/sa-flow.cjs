@@ -31,7 +31,7 @@ async function main () {
       return false
     }, sel, text)
     if (!ok) throw new Error(`not found: ${text}`)
-    await new Promise(r => setTimeout(r, 500))
+    await new Promise(r => setTimeout(r, 900))
   }
 
   // 打开会恢复最近进行中的会话，先经 + 号功能弹层新建对话回到欢迎态
@@ -47,7 +47,7 @@ async function main () {
   })
   await new Promise(r => setTimeout(r, 300))
   await page.click('.cp-send')
-  await new Promise(r => setTimeout(r, 600))
+  await new Promise(r => setTimeout(r, 900))
   await clickByText('.opt-btn', '客次提成不对')
   await clickByText('.opt-btn', '金额算错了')
   await clickByText('.opt-btn', '11 月 1 日')
@@ -57,10 +57,10 @@ async function main () {
   await clickByText('.opt-btn', '12.5 元怎么办')
   await page.screenshot({ path: path.join(OUT, 'flow-confirm.png') })
   await clickByText('.opt-btn', '确认，提交工单')
-  await new Promise(r => setTimeout(r, 500))
+  await new Promise(r => setTimeout(r, 900))
   await page.screenshot({ path: path.join(OUT, 'flow-sheet.png') })
   await clickByText('.act-btn.primary', '确认提交')
-  await new Promise(r => setTimeout(r, 600))
+  await new Promise(r => setTimeout(r, 900))
   await page.screenshot({ path: path.join(OUT, 'flow-done.png') })
 
   const afterChat = await page.evaluate(() => document.body.innerText)
@@ -81,9 +81,9 @@ async function main () {
   await clickByText('.grid-item', '薪酬工单处理')
   await new Promise(r => setTimeout(r, 800))
   await clickByText('.ticket-card', '客次提成')
-  await new Promise(r => setTimeout(r, 500))
+  await new Promise(r => setTimeout(r, 900))
   await clickByText('.act-btn.primary', '接单处理')
-  await new Promise(r => setTimeout(r, 500))
+  await new Promise(r => setTimeout(r, 900))
   await page.evaluate(() => {
     const ta = document.querySelector('.reply-input')
     ta.value = '经复核确认少算 12.5 元，已转薪酬侧随下周工资单补差。本答复即工单最终结论。'
@@ -91,7 +91,7 @@ async function main () {
   })
   await new Promise(r => setTimeout(r, 300))
   await clickByText('.act-btn.primary', '答复并结案')
-  await new Promise(r => setTimeout(r, 600))
+  await new Promise(r => setTimeout(r, 900))
   const hrText = await page.evaluate(() => document.body.innerText)
   console.log('人事侧结案计数 3:', /已结案/.test(hrText))
   await page.screenshot({ path: path.join(OUT, 'flow-hr-closed.png') })

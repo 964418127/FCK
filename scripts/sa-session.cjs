@@ -28,7 +28,7 @@ async function main () {
       return false
     }, sel, t)
     if (!ok) throw new Error(`not found: ${t}`)
-    await new Promise(r => setTimeout(r, 500))
+    await new Promise(r => setTimeout(r, 900))
   }
   const typeAndSend = async (t) => {
     await page.evaluate((v) => {
@@ -39,7 +39,7 @@ async function main () {
     }, t)
     await new Promise(r => setTimeout(r, 200))
     await page.click('.cp-send')
-    await new Promise(r => setTimeout(r, 600))
+    await new Promise(r => setTimeout(r, 900))
   }
   const wait = (ms = 800) => new Promise(r => setTimeout(r, ms))
 
@@ -64,14 +64,14 @@ async function main () {
   console.log('输入框发送产生用户气泡:', t.includes('这个提成是怎么算的'))
   await page.screenshot({ path: path.join(OUT, 'session-input-send.png') })
 
-  // 4) + 号展开功能区：历史记录 / 我的工单 / 新建对话
+  // 4) + 号展开功能区：历史对话 / 我的工单 / 新建对话
   await page.click('.cp-plus')
   await wait(400)
   console.log('+ 号弹层三入口:', (await page.$$('.ts-item')).length === 3)
   await page.screenshot({ path: path.join(OUT, 'session-tools-sheet.png') })
 
   // 5) 历史页（正常员工侧无演示控件；?dev=1 才有推进控件）
-  await clickByText('.ts-item', '历史记录')
+  await clickByText('.ts-item', '历史对话')
   await wait()
   t = await text()
   console.log('历史页只有已结束 C-002:', t.includes('C-002') && !t.includes('C-001'))
@@ -92,7 +92,7 @@ async function main () {
   await clickByText('.session-card', 'C-001')
   await wait()
   t = await text()
-  console.log('查看历史记录只读:', t.includes('历史记录') && (await page.$$('.opt-btn')).length === 0)
+  console.log('查看历史对话只读:', t.includes('历史对话') && (await page.$$('.opt-btn')).length === 0)
   console.log('底部有「继续对话」:', (await page.$$('.composer-continue')).length === 1 && t.includes('继续对话'))
   await page.screenshot({ path: path.join(OUT, 'session-view-history.png') })
 

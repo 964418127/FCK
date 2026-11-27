@@ -27,7 +27,7 @@
             <li><b>能查</b>：本人最近 3 个月已发放的薪酬结论，以及本月算薪前的业务预估</li>
             <li><b>不查</b>：试算未来月份收入、他人薪酬、3 个月之前的月份</li>
           </ul>
-          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在左下角「+」里查看。</p>
+          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史对话可在左下角「+」里查看。</p>
           <p class="hero-quota">本月工单可提交 <b>{{ monthlyLeft }}/2</b> 次，提交工单会占用次数。</p>
         </div>
         <p class="chips-title">你可以这样问（点一下填进输入框）</p>
@@ -38,9 +38,9 @@
 
       <!-- ============ 对话态 ============ -->
       <template v-else>
-        <!-- 查看历史记录态：只读提示，继续对话入口在底部功能区 -->
+        <!-- 查看历史对话态：只读提示，继续对话入口在底部功能区 -->
         <div v-if="isViewingHistory" class="history-view-tip">
-          <span class="hv-icon">历史记录</span>
+          <span class="hv-icon">历史对话</span>
           这是已结束的咨询，可查看当时的解答。要在此基础上继续，点下方「继续对话」。
         </div>
 
@@ -115,6 +115,18 @@
           </template>
         </div>
 
+        <!-- 思考中：发出消息后短暂显示，接近真实 Agent 的交互节奏 -->
+        <div v-if="isThinking" class="msg-row agent thinking-row">
+          <div class="agent-head">
+            <span class="agent-avatar">薪</span>
+            <span class="agent-name">薪酬咨询助手</span>
+          </div>
+          <div class="bubble agent thinking-bubble">
+            <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+            <span class="thinking-text">正在查询…</span>
+          </div>
+        </div>
+
         <div v-if="dialog.ended && !currentEndInfo.ended" class="re-run">
           <button class="opt-btn ghost" @click="newDialog">换个问题，新建对话</button>
         </div>
@@ -123,7 +135,7 @@
 
     <!-- 底部输入区：输入框是主体，功能入口收进 + 号弹层（对话产品通行形态） -->
     <div class="composer">
-      <!-- 查看历史记录态：只读，不提供输入，改为继续对话 -->
+      <!-- 查看历史对话态：只读，不提供输入，改为继续对话 -->
       <button v-if="isViewingHistory" class="composer-continue" @click="doContinue">
         <el-icon><ChatDotRound /></el-icon>继续对话
       </button>
@@ -150,7 +162,7 @@
         <div class="ts-bar"></div>
         <div class="ts-grid">
           <button class="ts-item" @click="toolGo(goHistory)">
-            <span class="ts-ic"><el-icon><Clock /></el-icon></span><span>历史记录</span>
+            <span class="ts-ic"><el-icon><Clock /></el-icon></span><span>历史对话</span>
           </button>
           <button class="ts-item" @click="toolGo(goTickets)">
             <span class="ts-ic"><el-icon><Tickets /></el-icon></span><span>我的工单</span>
@@ -188,7 +200,7 @@
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, ArrowRight, Clock, Tickets, Plus, ChatDotRound, Promotion } from '@element-plus/icons-vue'
-import { dialog, dialogPendingConfirm, currentEndInfo, isViewingHistory, pickOption, sendText, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, continueSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
+import { dialog, dialogPendingConfirm, currentEndInfo, isViewingHistory, isThinking, pickOption, sendText, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, continueSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -230,13 +242,15 @@ const lastOptIdx = computed(() => {
   }
   return -1
 })
-function hasOptions (m, i) { return i === lastOptIdx.value }
+function hasOptions (m, i) { return !isThinking.value && i === lastOptIdx.value }
 
 const scrollEl = ref(null)
-watch(() => (dialogState.value ? dialogState.value.messages.length : 0), async () => {
+async function scrollToBottom () {
   await nextTick()
   if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight
-})
+}
+watch(() => (dialogState.value ? dialogState.value.messages.length : 0), scrollToBottom)
+watch(isThinking, v => { if (v) scrollToBottom() })
 
 function goBack () { router.push('/mobile-menu') }
 function goTickets () { router.push('/mobile-salary-agent/tickets') }
@@ -257,7 +271,7 @@ function doContinue () {
 .hero-quota { margin: 6px 0 0; font-size: 11px; color: #8c8c8c; }
 .hero-quota b { color: #a40035; }
 
-/* 查看历史记录态提示 */
+/* 查看历史对话态提示 */
 .history-view-tip { display: flex; align-items: flex-start; gap: 8px; background: #f5f5f5; color: #8c8c8c; font-size: 12px; line-height: 1.6; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .hv-icon { flex: none; font-size: 11px; color: #5f5e5a; background: #e8e6e0; border-radius: 6px; padding: 1px 6px; }
 
@@ -315,6 +329,14 @@ function doContinue () {
 /* 预估卡 */
 .estimate-card { margin-top: 10px; border-top: 1px solid #f5f5f5; padding-top: 10px; }
 .est-note { margin: 8px 0 0; font-size: 11px; color: #854f0b; background: #faeeda; border-radius: 8px; padding: 6px 10px; }
+
+/* 思考中气泡 */
+.thinking-bubble { display: flex; align-items: center; gap: 4px; }
+.tdot { width: 6px; height: 6px; border-radius: 50%; background: #c31450; animation: tdot-bounce 1.2s infinite ease-in-out; }
+.tdot:nth-child(2) { animation-delay: 0.15s; }
+.tdot:nth-child(3) { animation-delay: 0.3s; }
+.thinking-text { margin-left: 4px; font-size: 12px; color: #a40035; }
+@keyframes tdot-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
 
 /* 可选回复 */
 .opt-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; width: 100%; }

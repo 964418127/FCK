@@ -2,7 +2,7 @@
   移动端 · 薪酬咨询助手（员工侧 · 我的工单）
   额度卡（本月剩 x/2，工单成立才扣）→ 工单卡列表（状态 / 优先级 / 薪酬项）→ 点卡弹详情：
   争议点（期望 vs 实际）→ 取证包（描述 + 截图）→ 预核查报告（结论 + 四步）→ 人事答复（结案后只读）。
-  页头可切换演示身份（蓝田 / 林小满 / 陈一舟），对话演示页固定蓝田不在此列冲突。
+  身份切换是演示辅具（切不同员工看各自工单），仅 ?dev=1 出现、低调标注；正常员工侧页头只有标题。
   视觉沿用移动端规范：全屏页、白 sticky 页头、白卡 12px、品牌红 #a40035、自写底部弹层。
 -->
 <template>
@@ -10,9 +10,8 @@
     <header class="page-header">
       <el-icon class="back-icon" @click="goBack"><ArrowLeft /></el-icon>
       <h1>我的工单</h1>
-      <button class="hdr-me" @click="personSheet = true">
-        {{ meName }}<span class="hdr-pos">{{ mePosition }}</span>
-      </button>
+      <!-- 演示辅具：仅 ?dev=1 出现，低调标注，切不同员工看各自工单 -->
+      <button v-if="showDev" class="hdr-demo" @click="personSheet = true">演示身份 · {{ meName }}</button>
     </header>
 
     <div class="content-container">
@@ -57,7 +56,7 @@
     <div v-if="personSheet" class="sheet-mask" @click.self="personSheet = false">
       <div class="sheet">
         <div class="sheet-bar"></div>
-        <p class="sheet-title">切换演示身份</p>
+        <p class="sheet-title">演示身份（仅用于查看不同员工的工单）</p>
         <button
           v-for="p in staff"
           :key="p.id"
@@ -137,12 +136,14 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, Check } from '@element-plus/icons-vue'
 import { SA_PEOPLE, statusLabel, MONTHLY_QUOTA } from '../../mock/salaryAgentTickets.js'
-import { myTickets, meName, mePosition, meId, setMe, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
+import { myTickets, meName, meId, setMe, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
+const route = useRoute()
+const showDev = route.query.dev === '1'
 
 const monthlyQuota = MONTHLY_QUOTA
 const staff = SA_PEOPLE.filter(p => p.id !== 'HR-01')
@@ -169,9 +170,7 @@ function goBack () { router.push('/mobile-menu') }
 .page-header { position: sticky; top: 0; z-index: 10; height: 48px; background: #fff; display: flex; align-items: center; padding: 0 12px; gap: 8px; border-bottom: 1px solid #f0e7ea; }
 .page-header h1 { font-size: 16px; font-weight: 500; color: #262626; flex: 1; margin: 0; }
 .back-icon { font-size: 20px; color: #595959; }
-.hdr-me { border: none; background: none; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; padding: 0; }
-.hdr-me { color: #a40035; font-size: 13px; font-weight: 500; }
-.hdr-pos { font-size: 10px; color: #bfbfbf; font-weight: 400; }
+.hdr-demo { border: none; background: #f5f5f5; color: #8c8c8c; font-size: 11px; padding: 4px 8px; border-radius: 10px; flex: none; }
 
 .content-container { padding: 14px 12px 0; }
 

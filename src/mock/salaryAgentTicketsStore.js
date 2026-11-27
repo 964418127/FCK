@@ -140,6 +140,17 @@ export function continueSession (id) {
   state.currentSessionId = id
 }
 
+/** 思考态：发出消息后短暂显示「正在查询…」，再出答复（真实 Agent 交互节奏） */
+export const isThinking = ref(false)
+const THINK_MS = 700
+function withThinking (fn) {
+  isThinking.value = true
+  setTimeout(() => {
+    fn()
+    isThinking.value = false
+  }, THINK_MS)
+}
+
 /** 手动收口会话（原型演示用） */
 export function endSession (id) {
   const s = state.sessions.find(s => s.id === id)
@@ -152,24 +163,35 @@ export function endSession (id) {
 
 function touch (d) { if (d) d.updatedAt = state.demoNow }
 
-/** 发起新咨询：新建一条会话并推进到脚本首个助手节点；firstText 可覆盖首句用户气泡（自由输入用） */
-export function openScript (scriptId, firstText) {
+/**
+ * 发起新咨询：新建会话并推进到脚本首个助手节点。
+ * firstText 覆盖首句用户气泡（自由输入用）；defer=true 时先出用户气泡、经思考态再推助手答复。
+ */
+export function openScript (scriptId, firstText, defer = false) {
   const script = DIALOG_SCRIPTS[scriptId]
   if (!script) return
   const session = buildNewSession(nextSessionId(state.sessions), state.demoNow)
   const first = script.nodes[script.entry]
   const messages = []
+  let firstNodeId, firstAgentNode
   if (first.from === 'user') {
     messages.push({ from: 'user', text: (firstText && firstText.trim()) || first.text })
-    const next = script.nodes[first.next]
-    pushAgentNode(messages, next)
-    Object.assign(session, { scriptId, nodeId: first.next, messages, ended: !!next.end })
+    firstNodeId = first.next
+    firstAgentNode = script.nodes[first.next]
   } else {
-    pushAgentNode(messages, first)
-    Object.assign(session, { scriptId, nodeId: script.entry, messages, ended: !!first.end })
+    firstNodeId = script.entry
+    firstAgentNode = first
   }
+  Object.assign(session, { scriptId, nodeId: firstNodeId, messages })
   state.sessions.push(session)
   state.currentSessionId = session.id
+  const deliver = () => {
+    pushAgentNode(messages, firstAgentNode)
+    session.ended = !!firstAgentNode && !!firstAgentNode.end
+    touch(session)
+  }
+  if (defer) withThinking(deliver)
+  else deliver()
 }
 
 /** 输入框自由发送：引导话术（员工语言，不含内部机制词） */
@@ -186,19 +208,23 @@ export function sendText (text) {
   const d = currentSession()
   if (d && !d.ended && !d.pendingConfirm && !currentEndInfo.value.ended && d.messages.length) {
     d.messages.push({ from: 'user', text: t })
-    d.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
     touch(d)
+    withThinking(() => {
+      d.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
+    })
     return
   }
   const scriptId = matchScript(t)
-  if (scriptId) { openScript(scriptId, t); return }
+  if (scriptId) { openScript(scriptId, t, true); return }
   const session = buildNewSession(nextSessionId(state.sessions), state.demoNow)
   session.title = t.length > 14 ? t.slice(0, 14) + '…' : t
   session.messages.push({ from: 'user', text: t })
-  session.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
-  session.ended = true
   state.sessions.push(session)
   state.currentSessionId = session.id
+  withThinking(() => {
+    session.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
+    session.ended = true
+  })
 }
 
 function pushAgentNode (messages, node) {
@@ -232,7 +258,7 @@ export function pickOption (optionIndex) {
     d.pendingConfirm = true
     return
   }
-  advanceTo(script, opt.next)
+  withThinking(() => advanceTo(script, opt.next))
 }
 
 /** 成单确认弹层点「确认提交」：扣额度、生成工单、关联会话、推进到 done 节点 */
