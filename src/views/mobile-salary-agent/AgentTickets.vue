@@ -22,7 +22,7 @@
           <p class="qc-label">本月工单额度</p>
           <p class="qc-value">{{ monthlyLeft }}<span>/{{ monthlyQuota }} 次</span></p>
         </div>
-        <p class="qc-note">工单由助手判定成立、你确认后才占用额度；与助手的求证对话不限次。</p>
+        <p class="qc-note">提交工单会占用本月可提交次数；和助手的对话咨询不限次。</p>
       </div>
 
       <!-- 工单列表 -->
@@ -34,7 +34,7 @@
 
       <div v-if="!myTickets.length" class="empty-card">
         <p>本月还没有工单记录。</p>
-        <p class="empty-sub">对答复不服时，助手会引导你完成取证，再由助手判断是否生成工单。</p>
+        <p class="empty-sub">有疑问随时和助手聊，需要时会引导你提交工单。</p>
       </div>
 
       <button v-for="t in myTickets" :key="t.id" class="ticket-card" @click="openDetail(t)">
@@ -47,7 +47,6 @@
           <span>{{ t.period }}</span>
         </div>
         <div class="tc-foot">
-          <span class="pr-tag" :class="t.priority.toLowerCase()">{{ t.priority }}</span>
           <span class="tc-brief">{{ briefOf(t) }}</span>
           <span class="tc-time">{{ shortTime(t.createdAt) }}</span>
         </div>
@@ -86,7 +85,6 @@
         <!-- 争议点 -->
         <p class="dt-label">你的主张</p>
         <div class="dt-dispute">
-          <span class="dt-type">{{ detail.dispute.type }}</span>
           <div class="dd-nums">
             <div class="dd-cell"><span>你认为</span><b>{{ fmtVal(detail.dispute.expected) }}</b></div>
             <div class="dd-cell"><span>系统核算</span><b>{{ fmtVal(detail.dispute.actual) }}</b></div>
@@ -103,16 +101,14 @@
           </div>
         </div>
 
-        <!-- 预核查报告 -->
-        <p class="dt-label">助手预核查报告</p>
+        <!-- 复核情况（员工视角：只看结论与还原过程，优先级评定等内部机制不露） -->
+        <p class="dt-label">助手复核</p>
         <div class="dt-recheck">
           <div class="rc-head">
             <span class="rc-conclusion" :class="detail.recheck.deviate > 0 ? 'deviate' : 'keep'">
               {{ detail.recheck.conclusion }}<template v-if="detail.recheck.deviate > 0">（{{ detail.recheck.deviate }} 元）</template>
             </span>
-            <span class="pr-tag" :class="detail.priority.toLowerCase()">{{ detail.priority }}</span>
           </div>
-          <p class="rc-reason">{{ detail.priorityReason }}</p>
           <div v-for="(s, i) in detail.recheck.steps" :key="i" class="rc-step">
             <span class="rc-no">{{ i + 1 }}</span>{{ s }}
           </div>
@@ -128,7 +124,7 @@
         </template>
         <template v-else-if="detail.status === 'processing'">
           <p class="dt-label">处理进展</p>
-          <p class="dt-progress">人事已接单，正在核实。答复一次即结案。</p>
+          <p class="dt-progress">人事已接单，正在核实，答复后本单完结。</p>
         </template>
         <template v-else>
           <p class="dt-label">处理进展</p>
@@ -160,8 +156,7 @@ function openDetail (t) { detail.value = t }
 
 function briefOf (t) {
   const d = t.dispute
-  if (typeof d.expected === 'number' && typeof d.actual === 'number') return `主张 ${d.expected} · 系统 ${d.actual}`
-  return d.type
+  return `主张 ${d.expected} · 系统 ${d.actual}`
 }
 function shortTime (s) { return s.slice(5, 16) }
 function fmtVal (v) { return typeof v === 'number' ? `${v} 元` : v }
@@ -210,11 +205,6 @@ function goBack () { router.push('/mobile-menu') }
 .st-tag.processing { background: #faeeda; color: #854f0b; }
 .st-tag.closed { background: #f1efe8; color: #5f5e5a; }
 
-.pr-tag { font-size: 11px; padding: 2px 7px; border-radius: 8px; flex: none; }
-.pr-tag.p1 { background: #fcebeb; color: #a32d2d; }
-.pr-tag.p2 { background: #faeeda; color: #854f0b; }
-.pr-tag.p3 { background: #f1efe8; color: #5f5e5a; }
-
 /* 弹层通用 */
 .sheet-mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; z-index: 200; }
 .sheet { width: 100%; max-height: 86vh; overflow-y: auto; background: #fff; border-radius: 16px 16px 0 0; padding: 14px 16px 24px; }
@@ -233,7 +223,6 @@ function goBack () { router.push('/mobile-menu') }
 
 /* 详情 */
 .dt-dispute { background: #fafafa; border-radius: 10px; padding: 12px; }
-.dt-type { display: inline-block; font-size: 11px; color: #a40035; background: #fceff2; border-radius: 8px; padding: 2px 8px; margin-bottom: 8px; }
 .dd-nums { display: flex; gap: 10px; }
 .dd-cell { flex: 1; background: #fff; border-radius: 8px; padding: 8px 10px; }
 .dd-cell span { display: block; font-size: 11px; color: #8c8c8c; margin-bottom: 4px; }
@@ -250,7 +239,6 @@ function goBack () { router.push('/mobile-menu') }
 .rc-conclusion { font-size: 13px; font-weight: 500; }
 .rc-conclusion.deviate { color: #a40035; }
 .rc-conclusion.keep { color: #5f5e5a; }
-.rc-reason { font-size: 11px; color: #8c8c8c; margin: 0 0 10px; }
 .rc-step { display: flex; gap: 8px; font-size: 12px; color: #595959; line-height: 1.6; padding: 4px 0; }
 .rc-no { flex: none; width: 18px; height: 18px; border-radius: 50%; background: #f1efe8; color: #5f5e5a; font-size: 10px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
 

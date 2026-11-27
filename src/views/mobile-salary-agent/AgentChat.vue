@@ -132,11 +132,11 @@
         <div class="confirm-box">
           <div class="cb-row"><span>争议薪酬项</span><b>{{ dialog.ctx.item || '客次提成' }}</b></div>
           <div class="cb-row"><span>你的主张</span><b>{{ dialog.ctx.expected }} 元</b></div>
-          <div class="cb-row"><span>预核查结论</span><b class="p1">{{ dialog.ctx.recheckConclusion }} {{ dialog.ctx.deviate }} 元</b></div>
-          <div class="cb-row"><span>随单提交</span><b>你的描述与截图 + 预核查报告</b></div>
-          <div class="cb-row"><span>本月额度</span><b class="warn">剩 2 次 → 占用后剩 1 次</b></div>
+          <div class="cb-row"><span>复核情况</span><b class="p1">{{ dialog.ctx.recheckConclusion }} {{ dialog.ctx.deviate }} 元</b></div>
+          <div class="cb-row"><span>随单提交</span><b>你的描述与截图 + 复核情况</b></div>
+          <div class="cb-row"><span>本月可提交</span><b class="warn">剩 2 次 → 提交后剩 1 次</b></div>
         </div>
-        <p class="sheet-note">工单提交后由人事处理，答复一次即结案；再不服可于次月发起新工单。</p>
+        <p class="sheet-note">提交后由人事核实并答复，处理进展可在「我的工单」查看。</p>
         <div class="sheet-act">
           <button class="act-btn ghost" @click="cancelCreateTicket">再想想</button>
           <button class="act-btn primary" @click="confirmCreateTicket">确认提交</button>

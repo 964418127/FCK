@@ -146,3 +146,30 @@ test('对话脚本：常乐豆查完即结论，无解释入口、无围墙词�
   assert.equal(account.rows.length, 3, '账户级三数：本月结算 / 可用余额 / 提现冻结')
   assert.equal(account.note, undefined, '卡内不得带围墙注释')
 })
+
+test('员工侧防泄漏：对话脚本不得出现内部机制词汇', () => {
+  // 文档/内部规则用语不得原封给到员工侧：
+  // 预核查（内部工件名）、优先级/P1-P3（人事侧排队机制）、归因分类（Agent 内部判定）、
+  // 结案规则（内部 SLA，直译给员工像「只理你一次」）、闸门判定权表述
+  const BANNED = [
+    /预核查/,
+    /优先级/,
+    /P[123]/,
+    /数据疑问型/,
+    /规则不认型/,
+    /一次答复即结案/,
+    /答复一次即结案/,
+    /判定成立/,
+    /额度剩/
+  ]
+  for (const [id, script] of Object.entries(DIALOG_SCRIPTS)) {
+    const texts = Object.values(script.nodes).map(n => n.text || '').join('\n')
+    const labels = Object.values(script.nodes)
+      .flatMap(n => (n.options || []).map(o => o.label))
+      .join('\n')
+    for (const re of BANNED) {
+      assert.doesNotMatch(texts, re, `脚本 ${id} 气泡文本出现内部词汇 ${re}`)
+      assert.doesNotMatch(labels, re, `脚本 ${id} 选项出现内部词汇 ${re}`)
+    }
+  }
+})
