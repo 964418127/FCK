@@ -357,7 +357,7 @@ export const DIALOG_SCRIPTS = {
       b1: { from: 'user', text: '常乐豆本月结算了多少', next: 'b2' },
       b2: {
         from: 'agent',
-        text: '常乐豆仅提供账户级汇总，明细组成与规则不在解答范围：',
+        text: '你本月的常乐豆账户情况：',
         card: {
           type: 'account',
           rows: [
@@ -367,18 +367,10 @@ export const DIALOG_SCRIPTS = {
           ]
         },
         options: [
-          { label: '这 260 豆是怎么构成的', next: 'b3' },
-          { label: '好的', next: 'b4' }
+          { label: '好的', next: 'b3' }
         ]
       },
-      b3: {
-        from: 'agent',
-        text: '常乐豆只提供账户级汇总（本月结算 / 可用余额 / 提现冻结），组成明细与计算规则不在解答范围。如有进一步疑问，可以反映给直属管理。',
-        options: [
-          { label: '好的', next: 'b4' }
-        ]
-      },
-      b4: { from: 'agent', text: '好的，还有其他薪酬问题随时问我。', end: true }
+      b3: { from: 'agent', text: '好的，还有其他薪酬问题随时问我。', end: true }
     }
   },
   'forecast': {

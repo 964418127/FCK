@@ -108,13 +108,17 @@ test('对话脚本：主脚本节点引用完整、成单链路可达', () => {
   assert.ok(visited.has('hold'), '从入口应可达「暂不提交」节点')
 })
 
-test('对话脚本：常乐豆短脚本封顶在账户级，试算短脚本直接拒绝', () => {
+test('对话脚本：常乐豆查完即结论，无解释入口、无围墙词汇泄到员工侧', () => {
   const bean = DIALOG_SCRIPTS.bean
   const texts = Object.values(bean.nodes).map(n => n.text || '').join('\n')
   assert.match(texts, /本月结算/)
-  assert.match(texts, /不在解答范围/)
-  const fc = DIALOG_SCRIPTS.forecast
-  const ftexts = Object.values(fc.nodes).map(n => n.text || '').join('\n')
-  assert.match(ftexts, /不在解答范围/)
-  assert.match(ftexts, /已发放工资条/)
+  // 围墙词汇不得出现在员工侧：说「有明细但不给」等于告诉员工明细存在
+  assert.doesNotMatch(texts, /明细|不在解答范围|构成|规则/)
+  // 不得提供追问解释的入口：除「好的」外不允许其他选项
+  const b2 = bean.nodes.b2
+  assert.equal(b2.options.length, 1)
+  assert.equal(b2.options[0].label, '好的')
+  const account = b2.card
+  assert.equal(account.rows.length, 3, '账户级三数：本月结算 / 可用余额 / 提现冻结')
+  assert.equal(account.note, undefined, '卡内不得带围墙注释')
 })

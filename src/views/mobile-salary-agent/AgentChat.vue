@@ -80,7 +80,6 @@
 
               <!-- 常乐豆账户级三数卡 -->
               <div v-if="m.card && m.card.type === 'account'" class="account-card">
-                <p class="ac-note">仅账户级汇总 · 明细不在解答范围</p>
                 <div v-for="r in m.card.rows" :key="r.label" class="ac-row">
                   <span>{{ r.label }}</span>
                   <b>{{ r.value }}</b>
@@ -235,7 +234,6 @@ function goTickets () { router.push('/mobile-salary-agent/tickets') }
 
 /* 常乐豆账户级卡 */
 .account-card { margin-top: 10px; border-top: 1px solid #f5f5f5; padding-top: 10px; }
-.ac-note { margin: 0 0 8px; font-size: 11px; color: #bfbfbf; }
 .ac-row { display: flex; justify-content: space-between; font-size: 13px; color: #595959; padding: 7px 0; }
 .ac-row b { color: #262626; font-weight: 500; }
 .ac-row + .ac-row { border-top: 1px solid #f5f5f5; }
