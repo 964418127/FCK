@@ -1157,9 +1157,10 @@ const shownRound = computed(() => viewRound(selSpace.value))
 const runDates = computed(() => viewRoundDates(selSpace.value))
 const runReadonly = computed(() => shownRound.value?.status === 'ended')
 const occCols = computed(() => `150px repeat(${runDates.value.length}, minmax(78px, 1fr))`)
-/* 状态就是「此刻落在这轮的哪一段」：申领窗口 / 等开始 / 正在上 / 过完了 */
+/* 状态就是「此刻落在这轮的哪一段」：承接窗口 / 等开始 / 正在上 / 过完了。
+   用「承接」不用「申领」：一轮混着直派/抢/申领三种方式，「申领」只是其中一种的动词（业务 2026-11-26 定） */
 function roundStatusLabel(st) {
-  return st === 'applying' ? '申领中' : st === 'locked' ? '已截止 · 待开始' : st === 'running' ? '执行中' : st === 'ended' ? '已结束' : ''
+  return st === 'applying' ? '承接中' : st === 'locked' ? '已截止 · 待开始' : st === 'running' ? '执行中' : st === 'ended' ? '已结束' : ''
 }
 /* 下一轮还没生成：只说什么时候发，不给假数据 */
 const nextPub = computed(() => nextPublish(selSpace.value))

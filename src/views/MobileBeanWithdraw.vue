@@ -130,6 +130,9 @@ const onSubmit = () => {
 .mobile-bean-withdraw-confirm {
   background: #f7f7f8;
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   color: #1a1a1a;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;

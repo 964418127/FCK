@@ -346,6 +346,9 @@ const monthTotal = computed(() => {
 .mobile-bean-view {
   background: #f7f7f8;
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 40px;
   color: #1a1a1a;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;

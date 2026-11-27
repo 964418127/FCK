@@ -179,6 +179,9 @@ const onConfirmWithdraw = () => {
 .mobile-bean-account {
   background: #f7f7f8;
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 32px;
   color: #1a1a1a;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;

@@ -1,22 +1,22 @@
 {
   "packages": [
     {
-      "scope": "/docs/hr-schedule",
-      "home": "/docs/hr-schedule",
-      "file": "/docs/hr-schedule/hr-schedule-offline.zip",
-      "generatedAt": "2026-11-24T10:43:09.249Z",
-      "generatedAtText": "2026/11/24 18:43:09",
-      "pages": 19,
-      "sizeText": "10.8 MB"
-    },
-    {
       "scope": "/docs/salary-agent",
       "home": "/docs/salary-agent",
       "file": "/docs/salary-agent/salary-agent-offline.zip",
-      "generatedAt": "2026-11-23T14:01:29.051Z",
-      "generatedAtText": "2026/11/23 22:01:29",
-      "pages": 15,
+      "generatedAt": "2026-11-26T10:23:00.501Z",
+      "generatedAtText": "2026/11/26 18:23:00",
+      "pages": 17,
       "sizeText": "2.2 MB"
+    },
+    {
+      "scope": "/docs/hr-schedule",
+      "home": "/docs/hr-schedule",
+      "file": "/docs/hr-schedule/hr-schedule-offline.zip",
+      "generatedAt": "2026-11-25T04:26:35.880Z",
+      "generatedAtText": "2026/11/25 12:26:35",
+      "pages": 19,
+      "sizeText": "10.8 MB"
     }
   ]
 }

@@ -98,7 +98,6 @@
           <p v-if="partialLeaveOf(r)" class="rc-note">已报备：{{ partialLeaveOf(r).result }}</p>
           <p v-if="noteOf(r)" class="rc-note">{{ noteOf(r) }}</p>
           <p v-else-if="swapPendingInfo(r)" class="rc-note">已发给 {{ swapPendingInfo(r).to }}，{{ swapPendingInfo(r).deadline }} 前没答复自动失效</p>
-          <p v-if="r.status === 'active' && !outTo(r) && overtimeOf(r)" class="rc-overtime">{{ overtimeOf(r) }}</p>
 
           <div v-if="r.status === 'active' && !outTo(r) && pendingNoticeOf(r)" class="rc-acts pending">
             <span class="rc-pending">人事安排你顶上这个班，确认一下</span>
@@ -581,12 +580,6 @@ function noteOf(r) {
   /* 章标已经说了这条班怎么来的，这里不再重复一句 */
   return ''
 }
-function overtimeOf(r) {
-  if (me.value?.kind !== 'fulltime') return ''
-  const total = myRows.value.filter(x => x.date === r.date && x.status === 'active' && !outTo(x))
-    .reduce((s, x) => s + hours5(rowSpan(x).start, rowSpan(x).end), 0)
-  return total > 8 ? `当天合计 ${Math.round(total * 10) / 10} 小时，超出标准时间的部分计加班` : ''
-}
 function pendingNoticeOf(r) {
   return myNotices().find(n => n.kind === 'makeup' && !n.acked && n.date === r.date && n.to === meId.value)
 }
@@ -748,7 +741,9 @@ function ackMakeup(r) {
 </script>
 
 <style scoped>
-.m-page { min-height: 100vh; background: #f5f5f5; padding-bottom: 24px; }
+/* 自滚动页（与 v3/v4 移动端同款写法）：壳对根节点强制 height:100% 收编面板，
+   流式写法的根 padding-bottom 会被溢出内容覆盖（滚到底贴边），自滚动让 padding 进滚动内容 */
+.m-page { min-height: 100vh; height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #f5f5f5; padding-bottom: 24px; }
 .page-header {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; gap: 8px;
@@ -795,7 +790,6 @@ function ackMakeup(r) {
 .rc-where { display: flex; align-items: center; gap: 4px; margin-top: 5px; font-size: 12px; color: #6a6a75; }
 .strike { text-decoration: line-through; color: #b5b5bd !important; }
 .rc-note { margin: 9px 0 0; font-size: 11.5px; color: #8a8a95; line-height: 1.65; }
-.rc-overtime { margin: 6px 0 0; font-size: 11.5px; color: #a86a12; line-height: 1.6; }
 .rc-acts { display: flex; gap: 10px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #f0eaec; }
 .rc-acts .act-btn { height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12px; }
 .rc-acts.pending { align-items: center; }

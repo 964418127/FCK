@@ -183,6 +183,15 @@ export const sidebarMenu = [
   { ...welfareGroup, kind: 'multi' },
 
   {
+    index: 'salary-agent',
+    label: '薪酬咨询助手',
+    icon: Reading,
+    children: [
+      { index: 'salary-agent-tickets', label: '薪酬工单列表', icon: Tickets }
+    ]
+  },
+
+  {
     index: 'finance-accrual',
     label: '财务计提',
     icon: Money,

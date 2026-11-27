@@ -48,6 +48,7 @@ export const mobileMenuGroups = [
       { id: 'm-pt-salary-dashboard-2', label: '非全日制薪酬看板2', icon: DataLine, to: '/mobile-part-time-salary-dashboard-2' },
       { id: 'm-bean-account', label: '常乐豆账户', icon: Coin, to: '/mobile-bean-account' },
       { id: 'm-bean-view', label: '示例自助查询', icon: Document, to: '/mobile-bean-view' },
+      { id: 'm-salary-agent', label: '薪酬咨询助手', icon: Document, to: { name: 'mobile-salary-agent' } },
       { id: 'm-notification', label: '通知', icon: Bell, to: '/mobile-notification', badge: true }
     ]
   },
@@ -57,7 +58,8 @@ export const mobileMenuGroups = [
     items: [
       { id: 'm-schedule-mine', label: '我的排班', icon: Calendar, to: '/v3/m' },
       { id: 'm-schedule-v4', label: '我的排班 v4', icon: Calendar, to: '/v4/m' },
-      { id: 'm-schedule-v5', label: '我的排班 v5', icon: Calendar, to: '/v5/m' }
+      { id: 'm-schedule-v5', label: '我的排班 v5', icon: Calendar, to: '/v5/m' },
+      { id: 'm-salary-agent-hr', label: '薪酬工单处理', icon: Document, to: { name: 'mobile-salary-agent-hr' } }
     ]
   },
   {

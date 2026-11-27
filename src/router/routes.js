@@ -846,6 +846,14 @@ export const routes = [
         meta: {
           title: '工资单详情（v2）'
         }
+      },
+      {
+        path: 'salary-agent-tickets',
+        name: 'salary-agent-tickets',
+        component: () => import('../views/SalaryTicketList.vue'),
+        meta: {
+          title: '薪酬工单列表'
+        }
       }
     ]
   },
@@ -863,6 +871,31 @@ export const routes = [
     component: () => import('../views/MobileMenu.vue'),
     meta: {
       title: '移动端菜单'
+    }
+  },
+  // 薪酬咨询助手（原型）：员工对话 / 我的工单 / 人事工单处理 —— 顶层平铺，App.vue 按 /mobile 前缀挂移动壳
+  {
+    path: '/mobile-salary-agent',
+    name: 'mobile-salary-agent',
+    component: () => import('../views/mobile-salary-agent/AgentChat.vue'),
+    meta: {
+      title: '薪酬咨询助手'
+    }
+  },
+  {
+    path: '/mobile-salary-agent/tickets',
+    name: 'mobile-salary-agent-tickets',
+    component: () => import('../views/mobile-salary-agent/AgentTickets.vue'),
+    meta: {
+      title: '我的工单'
+    }
+  },
+  {
+    path: '/mobile-salary-agent/hr',
+    name: 'mobile-salary-agent-hr',
+    component: () => import('../views/mobile-salary-agent/HrTickets.vue'),
+    meta: {
+      title: '薪酬工单处理（人事）'
     }
   },
   {
