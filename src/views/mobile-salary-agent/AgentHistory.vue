@@ -2,7 +2,7 @@
   移动端 · 薪酬咨询助手（员工侧 · 历史咨询）
   这里全部是「已结束」的咨询（进行中的就是当前对话，不进历史）。
   点一条 = 查看当时的记录（只读）；要继续，到对话页底部功能区点「继续对话」更新状态。
-  顶部演示控件用于展示 24h 自动结束规则（演示辅具，不属业务文案）。
+  时间推进控件是演示辅具，仅在 ?dev=1 时出现，正常员工侧不露。
   视觉沿用移动端规范：全屏页、白 sticky 页头、白卡 12px、品牌红 #a40035。
 -->
 <template>
@@ -18,8 +18,8 @@
         <p>这里只保留已结束的咨询。无工单的咨询 24 小时后结束；有工单的咨询在工单结案后保留 24 小时。点开可查看当时记录，需要继续时在对话页点「继续对话」。</p>
       </div>
 
-      <!-- 演示控件：推进时间展示 24h 自动结束 -->
-      <div class="demo-bar">
+      <!-- 演示辅具：仅 ?dev=1 出现，用于推进时间展示 24h 自动结束 -->
+      <div v-if="showDev" class="demo-bar">
         <span class="db-label">演示时间 {{ demoNow }}</span>
         <button class="db-btn" @click="advanceDemoHours(24)">+24 小时</button>
         <button class="db-btn ghost" @click="resetDemoTime">恢复</button>
@@ -58,11 +58,13 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { historySessions, demoNow, advanceDemoHours, resetDemoTime, loadSession } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
+const route = useRoute()
+const showDev = route.query.dev === '1'
 
 function openSession (s) {
   loadSession(s.id)

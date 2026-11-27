@@ -34,9 +34,20 @@ async function main () {
     await new Promise(r => setTimeout(r, 500))
   }
 
-  // 打开会恢复最近进行中的会话，先经底部功能区新建对话回到欢迎态
-  await clickByText('.dock-tool', '新建对话')
-  await clickByText('.chips button', '客次提成')
+  // 打开会恢复最近进行中的会话，先经 + 号功能弹层新建对话回到欢迎态
+  await page.click('.cp-plus')
+  await new Promise(r => setTimeout(r, 400))
+  await clickByText('.ts-item', '新建对话')
+  // 输入框真实发送：填入快捷问题并点发送按钮
+  await page.evaluate(() => {
+    const input = document.querySelector('.cp-input')
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setter.call(input, '查一下我 11 月上半月的客次提成')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await new Promise(r => setTimeout(r, 300))
+  await page.click('.cp-send')
+  await new Promise(r => setTimeout(r, 600))
   await clickByText('.opt-btn', '客次提成不对')
   await clickByText('.opt-btn', '金额算错了')
   await clickByText('.opt-btn', '11 月 1 日')

@@ -27,12 +27,12 @@
             <li><b>能查</b>：本人最近 3 个月已发放的薪酬结论，以及本月算薪前的业务预估</li>
             <li><b>不查</b>：试算未来月份收入、他人薪酬、3 个月之前的月份</li>
           </ul>
-          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在底部「历史记录」查看。</p>
+          <p class="hero-keep">咨询记录保留 24 小时；无工单的咨询到时自动结束，有工单的咨询在工单结案后保留 24 小时。历史记录可在左下角「+」里查看。</p>
           <p class="hero-quota">本月工单可提交 <b>{{ monthlyLeft }}/2</b> 次，提交工单会占用次数。</p>
         </div>
-        <p class="chips-title">你可以这样问</p>
+        <p class="chips-title">你可以这样问（点一下填进输入框）</p>
         <div class="chips">
-          <button v-for="q in quickQuestions" :key="q.script" @click="start(q.script)">{{ q.label }}</button>
+          <button v-for="q in quickQuestions" :key="q.label" @click="fillDraft(q.label)">{{ q.label }}</button>
         </div>
       </div>
 
@@ -121,24 +121,45 @@
       </template>
     </div>
 
-    <!-- 对话框附近的功能区：常见功能入口都在这里，不在页头堆按钮 -->
-    <div class="dock">
-      <!-- 查看历史记录态：继续对话为主操作 -->
-      <button v-if="isViewingHistory" class="dock-primary" @click="doContinue">
+    <!-- 底部输入区：输入框是主体，功能入口收进 + 号弹层（对话产品通行形态） -->
+    <div class="composer">
+      <!-- 查看历史记录态：只读，不提供输入，改为继续对话 -->
+      <button v-if="isViewingHistory" class="composer-continue" @click="doContinue">
         <el-icon><ChatDotRound /></el-icon>继续对话
       </button>
-      <div class="dock-tools">
-        <button class="dock-tool" @click="goHistory">
-          <el-icon><Clock /></el-icon><span>历史记录</span>
+      <template v-else>
+        <button class="cp-plus" :class="{ on: showTools }" @click="showTools = !showTools" aria-label="更多功能">
+          <el-icon><Plus /></el-icon>
         </button>
-        <button class="dock-tool" @click="goTickets">
-          <el-icon><Tickets /></el-icon><span>我的工单</span>
+        <input
+          v-model="draft"
+          class="cp-input"
+          type="text"
+          placeholder="输入你的薪酬问题"
+          @keyup.enter="onSend"
+        />
+        <button class="cp-send" :disabled="!draft.trim()" @click="onSend">
+          <el-icon><Promotion /></el-icon>
         </button>
-        <button class="dock-tool" @click="newDialog">
-          <el-icon><Plus /></el-icon><span>新建对话</span>
-        </button>
+      </template>
+    </div>
+
+    <!-- + 号展开的功能区（次级入口，不占输入行） -->
+    <div v-if="showTools && !isViewingHistory" class="tools-mask" @click.self="showTools = false">
+      <div class="tools-sheet">
+        <div class="ts-bar"></div>
+        <div class="ts-grid">
+          <button class="ts-item" @click="toolGo(goHistory)">
+            <span class="ts-ic"><el-icon><Clock /></el-icon></span><span>历史记录</span>
+          </button>
+          <button class="ts-item" @click="toolGo(goTickets)">
+            <span class="ts-ic"><el-icon><Tickets /></el-icon></span><span>我的工单</span>
+          </button>
+          <button class="ts-item" @click="toolGo(newDialog)">
+            <span class="ts-ic"><el-icon><Plus /></el-icon></span><span>新建对话</span>
+          </button>
+        </div>
       </div>
-      <p class="dock-hint">演示原型 · 点击对话中的回复选项推进</p>
     </div>
 
     <!-- 成单确认弹层 -->
@@ -166,8 +187,8 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ArrowRight, Clock, Tickets, Plus, ChatDotRound } from '@element-plus/icons-vue'
-import { dialog, dialogPendingConfirm, currentEndInfo, isViewingHistory, openScript, pickOption, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, continueSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
+import { ArrowLeft, ArrowRight, Clock, Tickets, Plus, ChatDotRound, Promotion } from '@element-plus/icons-vue'
+import { dialog, dialogPendingConfirm, currentEndInfo, isViewingHistory, pickOption, sendText, confirmCreateTicket, cancelCreateTicket, newDialog, loadSession, continueSession, resumeLastSession, monthlyLeft } from '../../mock/salaryAgentTicketsStore.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -180,12 +201,23 @@ onMounted(() => {
 })
 
 const quickQuestions = [
-  { script: 'piecework', label: '查一下我 11 月上半月的客次提成' },
-  { script: 'bean', label: '常乐豆本月结算了多少' },
-  { script: 'estimate', label: '我这个月提成有多少了' }
+  { label: '查一下我 11 月上半月的客次提成' },
+  { label: '常乐豆本月结算了多少' },
+  { label: '我这个月提成有多少了' }
 ]
 
-function start (id) { openScript(id) }
+const draft = ref('')
+const showTools = ref(false)
+
+function fillDraft (text) { draft.value = text }
+function onSend () {
+  const text = draft.value.trim()
+  if (!text) return
+  sendText(text)
+  draft.value = ''
+  showTools.value = false
+}
+function toolGo (fn) { showTools.value = false; fn() }
 function pick (i) { pickOption(i) }
 
 function splitLines (text) { return String(text || '').split('\n') }
@@ -216,7 +248,7 @@ function doContinue () {
 </script>
 
 <style scoped>
-.chat-page { display: flex; flex-direction: column; }
+.chat-page { display: flex; flex-direction: column; position: relative; }
 .page-header { position: sticky; top: 0; z-index: 10; height: 48px; background: #fff; display: flex; align-items: center; padding: 0 12px; gap: 8px; border-bottom: 1px solid #f0e7ea; }
 .page-header h1 { font-size: 16px; font-weight: 500; color: #262626; flex: 1; margin: 0; }
 .back-icon { font-size: 20px; color: #595959; }
@@ -293,14 +325,24 @@ function doContinue () {
 
 .ticket-link { display: flex; align-items: center; gap: 4px; margin-top: 10px; background: #fceff2; border: none; color: #a40035; font-size: 13px; padding: 10px 14px; border-radius: 12px; }
 
-/* 输入条（演示假条） */
-/* 对话框附近的功能区 */
-.dock { flex: none; background: #fff; border-top: 1px solid #f0f0f0; padding: 8px 12px 10px; }
-.dock-primary { width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #c31450, #a40035); color: #fff; border: none; border-radius: 10px; padding: 10px 0; font-size: 13px; margin-bottom: 8px; }
-.dock-tools { display: flex; }
-.dock-tool { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; color: #595959; font-size: 11px; padding: 4px 0; }
-.dock-tool .el-icon { font-size: 18px; color: #a40035; }
-.dock-hint { text-align: center; font-size: 11px; color: #bfbfbf; margin: 6px 0 0; }
+/* 底部输入区：输入框是主体，功能入口收进 + 号 */
+.composer { flex: none; display: flex; align-items: center; gap: 8px; background: #fff; border-top: 1px solid #f0f0f0; padding: 8px 12px; }
+.cp-plus { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e8e8e8; background: #fff; color: #a40035; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.cp-plus.on { background: #fceff2; border-color: #f0d5dc; transform: rotate(45deg); }
+.cp-input { flex: 1; min-width: 0; height: 38px; border: 1px solid #eee; background: #f7f7f7; border-radius: 19px; padding: 0 14px; font-size: 13px; color: #262626; outline: none; }
+.cp-input:focus { border-color: #e0b3c0; background: #fff; }
+.cp-input::placeholder { color: #bfbfbf; }
+.cp-send { flex: none; width: 36px; height: 36px; border-radius: 50%; border: none; background: linear-gradient(135deg, #c31450, #a40035); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.cp-send:disabled { background: #f0f0f0; color: #bfbfbf; }
+.composer-continue { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; background: linear-gradient(135deg, #c31450, #a40035); color: #fff; border: none; border-radius: 19px; font-size: 13px; }
+
+/* + 号功能区弹层 */
+.tools-mask { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 150; display: flex; align-items: flex-end; }
+.tools-sheet { width: 100%; background: #fff; border-radius: 16px 16px 0 0; padding: 8px 16px 24px; }
+.ts-bar { width: 36px; height: 4px; border-radius: 2px; background: #e8e8e8; margin: 0 auto 16px; }
+.ts-grid { display: flex; }
+.ts-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; color: #595959; font-size: 12px; padding: 6px 0; }
+.ts-ic { width: 46px; height: 46px; border-radius: 14px; background: #fceff2; color: #a40035; display: flex; align-items: center; justify-content: center; font-size: 22px; }
 
 /* 自写底部弹层 */
 .sheet-mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; z-index: 200; }

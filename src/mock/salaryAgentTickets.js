@@ -250,6 +250,18 @@ export function buildSeedTickets () {
  * meta 随选项累积进对话上下文（取证包），action='confirm-ticket' 触发成单确认弹层。
  * card: verify = 求证链四步卡；account = 常乐豆账户级三数卡。
  */
+/**
+ * 自由输入 → 脚本匹配（纯函数）。员工在输入框自己打字时，按关键词命中最贴近的演示脚本。
+ * 优先级：专名（常乐豆）> 本月预估 > 客次提成；都不命中返回 null 走引导话术。
+ */
+export function matchScript (text) {
+  const t = String(text || '')
+  if (/常乐豆/.test(t)) return 'bean'
+  if (/这个月|本月|预估|有多少|多少/.test(t) && /提成|收入|工资|薪酬/.test(t)) return 'estimate'
+  if (/客次|提成/.test(t)) return 'piecework'
+  return null
+}
+
 export const DIALOG_SCRIPTS = {
   'piecework': {
     id: 'piecework',

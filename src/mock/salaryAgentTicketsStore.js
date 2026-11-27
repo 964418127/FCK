@@ -16,6 +16,7 @@ import {
   sessionEndInfo,
   addHours,
   DIALOG_SCRIPTS,
+  matchScript,
   MONTHLY_QUOTA,
   MONTH_NOW,
   monthlyUsedOf,
@@ -151,15 +152,15 @@ export function endSession (id) {
 
 function touch (d) { if (d) d.updatedAt = state.demoNow }
 
-/** 发起新咨询：新建一条会话并推进到脚本首个助手节点 */
-export function openScript (scriptId) {
+/** 发起新咨询：新建一条会话并推进到脚本首个助手节点；firstText 可覆盖首句用户气泡（自由输入用） */
+export function openScript (scriptId, firstText) {
   const script = DIALOG_SCRIPTS[scriptId]
   if (!script) return
   const session = buildNewSession(nextSessionId(state.sessions), state.demoNow)
   const first = script.nodes[script.entry]
   const messages = []
   if (first.from === 'user') {
-    messages.push({ from: 'user', text: first.text })
+    messages.push({ from: 'user', text: (firstText && firstText.trim()) || first.text })
     const next = script.nodes[first.next]
     pushAgentNode(messages, next)
     Object.assign(session, { scriptId, nodeId: first.next, messages, ended: !!next.end })
@@ -167,6 +168,35 @@ export function openScript (scriptId) {
     pushAgentNode(messages, first)
     Object.assign(session, { scriptId, nodeId: script.entry, messages, ended: !!first.end })
   }
+  state.sessions.push(session)
+  state.currentSessionId = session.id
+}
+
+/** 输入框自由发送：引导话术（员工语言，不含内部机制词） */
+const GUIDE_TEXT = '这个问题我暂时帮不上。我主要帮你查本人最近 3 个月已发放薪酬的求证，以及本月算薪前的预估。换个问法试试，比如：客次提成、常乐豆、这个月提成有多少。'
+
+/**
+ * 输入框发送统一入口：
+ * - 对话进行中：追加用户气泡 + 助手自然回应，不打断当前脚本（选项仍可点）
+ * - 欢迎态 / 已结束态：关键词命中脚本则发起新咨询；未命中则建一条引导会话
+ */
+export function sendText (text) {
+  const t = String(text || '').trim()
+  if (!t) return
+  const d = currentSession()
+  if (d && !d.ended && !d.pendingConfirm && !currentEndInfo.value.ended && d.messages.length) {
+    d.messages.push({ from: 'user', text: t })
+    d.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
+    touch(d)
+    return
+  }
+  const scriptId = matchScript(t)
+  if (scriptId) { openScript(scriptId, t); return }
+  const session = buildNewSession(nextSessionId(state.sessions), state.demoNow)
+  session.title = t.length > 14 ? t.slice(0, 14) + '…' : t
+  session.messages.push({ from: 'user', text: t })
+  session.messages.push({ from: 'agent', text: GUIDE_TEXT, card: null, options: null, ticketLink: false })
+  session.ended = true
   state.sessions.push(session)
   state.currentSessionId = session.id
 }

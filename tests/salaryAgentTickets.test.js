@@ -9,6 +9,7 @@ import {
   buildTicketFromCtx,
   statusLabel,
   DIALOG_SCRIPTS,
+  matchScript,
   addHours,
   sessionEndInfo,
   buildSeedSessions
@@ -80,6 +81,15 @@ test('成单：上下文组装出完整工单（取证包 + 预核查 + P1）', 
   assert.equal(t.reply, null)
   // 成单后额度扣减
   assert.equal(monthlyUsedOf([...tickets, t], 'E-107', '2026-11'), 1)
+})
+
+test('自由输入匹配脚本：专名 > 本月预估 > 客次提成；不命中返回 null', () => {
+  assert.equal(matchScript('常乐豆本月结算了多少'), 'bean')
+  assert.equal(matchScript('我这个月提成有多少了'), 'estimate')
+  assert.equal(matchScript('预估一下本月收入'), 'estimate')
+  assert.equal(matchScript('查一下我的客次提成'), 'piecework')
+  assert.equal(matchScript('提成怎么算的'), 'piecework')
+  assert.equal(matchScript('今天天气怎么样'), null)
 })
 
 test('状态标签齐全', () => {
