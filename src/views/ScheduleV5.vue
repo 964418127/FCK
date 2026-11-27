@@ -823,7 +823,7 @@
           </p>
           <table class="data-table">
             <thead>
-              <tr><th style="width: 110px;">发生时间</th><th style="width: 84px;">类型</th><th style="width: 72px;">谁</th><th style="width: 180px;">影响的班次</th><th>结果</th><th style="width: 70px;">留痕</th></tr>
+              <tr><th style="width: 110px;">发生时间</th><th style="width: 84px;">类型</th><th style="width: 72px;">谁</th><th style="width: 180px;">影响的班次</th><th>结果</th><th style="width: 70px;">结论</th></tr>
             </thead>
             <tbody>
               <tr v-if="!factRows.length"><td colspan="6" class="empty-cell">这一轮还没有事实——切顶部其他轮查看</td></tr>
@@ -842,11 +842,8 @@
                 <tr v-if="openFact === f.id" class="trace-row">
                   <td colspan="6">
                     <div class="trace">
-                      <span class="tr-title">这一条事实带动的班次：</span>
-                      <span v-for="pid in f.placements" :key="pid" class="tr-item">
-                        {{ traceLine(pid) }}
-                      </span>
-                      <span v-if="!f.placements?.length" class="tr-item muted">无（不找人顶）</span>
+                      <span class="tr-title">结论：</span>
+                      <span v-for="(ln, i) in factLines(f)" :key="i" class="tr-item">{{ ln }}</span>
                     </div>
                   </td>
                 </tr>
@@ -1950,12 +1947,32 @@ function jumpFact(id) {
   nextTick(() => document.querySelector('.data-table tr.hl')?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
   setTimeout(() => { if (hlFact.value === id) hlFact.value = '' }, 2600)
 }
-function traceLine(pid) {
-  const p = v5.placements.find(x => x.id === pid)
-  if (!p) return ''
-  const nm = personById(v5, p.personId)?.name
-  const s = slotById(v5, p.slotId)
-  return `${p.date.slice(5)} ${s?.name} · ${nm} · ${p.status === 'covered' ? '时间被占用' : p.way}`
+/* 事实展开 = 结论明细，不重复行内已有的「谁/影响的班次」：
+   只列这条事实新增的占位（补位/顶班，带 fromFact），格式「人 · 日期 时段 · 方式」——补的是一段时段，不写班次名称；
+   换班没有新占位，列两侧互换（谁 · 哪天哪段 · 换班）；没有新增占位按结果给「无——…」 */
+function factLines(f) {
+  const period = p => {
+    const t = p.seg || slotById(v5, p.slotId)
+    return t ? `${t.start}–${t.end}` : ''
+  }
+  const line = (p, way) => `${personById(v5, p.personId)?.name || ''} · ${p.date.slice(5)} ${period(p)} · ${way}`
+  const added = v5.placements.filter(p => p.fromFact === f.id)
+  if (added.length) {
+    return added.map(p => line(p, p.way?.includes('补位') ? '补位' : p.way?.includes('顶班') ? '顶班' : p.way))
+  }
+  const swapped = v5.placements.filter(p => p.swap?.factId === f.id)
+  if (swapped.length) {
+    const a = swapped.find(p => p.id === f.placementId) || swapped[0]
+    const b = swapped.find(p => p.id !== a.id)
+    const na = personById(v5, a.personId)?.name
+    const nb = personById(v5, b.personId)?.name
+    return [line({ ...a, personId: b.personId }, '换班'), line({ ...b, personId: a.personId }, '换班')]
+  }
+  const r = f.result || ''
+  if (r.includes('未超 30 分钟')) return ['无——只记占用，不触发缺口判定']
+  if (r.includes('不补充')) return ['无——按班次规则不补人']
+  if (r.includes('没人能顶') || r.includes('留空')) return ['无——时段留空，人事处理']
+  return ['无']
 }
 
 /* 定人：从缺口格子直接进来，时段和日期已经带好；空几个名额就一次选几个 */
