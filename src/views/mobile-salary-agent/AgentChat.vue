@@ -20,14 +20,13 @@
         <div class="hero-card">
           <div class="hero-row">
             <span class="hero-dot"></span>
-            <span class="hero-badge">只查自己的 · 已发放的</span>
+            <span class="hero-badge">只查自己的 · 最近 3 个月</span>
           </div>
           <p class="hero-t1">你好，我是薪酬咨询助手</p>
           <p class="hero-t2">只回答你本人已发放工资条的求证，每一笔都走完整还原链。</p>
           <ul class="hero-rules">
-            <li><b>能查</b>：本人已发放月份的薪酬项、计算过程与结论</li>
-            <li><b>不查</b>：试算未来收入、他人薪酬、未发放月份</li>
-            <li><b>常乐豆</b>：只提供账户级汇总，明细不在解答范围</li>
+            <li><b>能查</b>：本人最近 3 个月已发放的薪酬项、计算过程与结论</li>
+            <li><b>不查</b>：试算未来收入、他人薪酬、3 个月之前的月份</li>
           </ul>
         </div>
         <p class="chips-title">你可以这样问</p>
